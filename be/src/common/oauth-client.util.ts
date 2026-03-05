@@ -6,7 +6,7 @@ export function getAllowedClientUrls(): string[] {
   const envValue = process.env.ALLOWED_CLIENT_URLS || '';
 
   if (!envValue.trim()) {
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3001';
     return [clientUrl];
   }
 

@@ -31,6 +31,6 @@ export class UrlHelperService {
 
   buildResetLink(tokenRaw: string, clientUrl?: string): string {
     const base = clientUrl || getDefaultClientUrl();
-    return `${base}/auth/reset?token=${encodeURIComponent(tokenRaw)}`;
+    return `${base}/reset-password?token=${encodeURIComponent(tokenRaw)}`;
   }
 }

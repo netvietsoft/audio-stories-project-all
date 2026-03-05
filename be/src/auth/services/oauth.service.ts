@@ -18,6 +18,20 @@ export interface GoogleUserData {
 export class OAuthService {
   private readonly logger = new Logger(OAuthService.name);
 
+  private async ensureDefaultUserRoleId(): Promise<number> {
+    const role = await this.prisma.role.upsert({
+      where: { slug: 'user' },
+      update: {},
+      create: {
+        name: 'USER',
+        slug: 'user',
+        description: 'Default user role',
+      },
+    });
+
+    return role.id;
+  }
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly userClaimsService: UserClaimsService,
@@ -41,6 +55,8 @@ export class OAuthService {
     }
 
     if (!user) {
+      const defaultRoleId = await this.ensureDefaultUserRoleId();
+
       user = await this.prisma.user.create({
         data: {
           email: google.email,
@@ -48,6 +64,7 @@ export class OAuthService {
           googleId: google.provider_user_id,
           avatarUrl: google.avatar_url,
           country: country,
+          roleId: defaultRoleId,
         },
       });
     } else {

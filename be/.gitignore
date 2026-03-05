@@ -6,6 +6,7 @@
 .env
 .env.test
 .env.production
+.env*
 
 # Logs
 *.log

@@ -9,7 +9,10 @@ import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env'],
+    }),
     PrismaModule,
     AuthModule,
     MailModule,

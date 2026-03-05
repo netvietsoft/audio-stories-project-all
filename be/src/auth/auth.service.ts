@@ -32,6 +32,20 @@ export interface RegisterLocalDto {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
+  private async ensureDefaultUserRoleId(): Promise<number> {
+    const role = await this.prisma.role.upsert({
+      where: { slug: 'user' },
+      update: {},
+      create: {
+        name: 'USER',
+        slug: 'user',
+        description: 'Default user role',
+      },
+    });
+
+    return role.id;
+  }
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly tokenService: TokenService,
@@ -87,12 +101,15 @@ export class AuthService {
     }
 
     if (!user) {
+      const defaultRoleId = await this.ensureDefaultUserRoleId();
+
       user = await this.prisma.user.create({
         data: {
           email: dto.email,
           displayName: dto.name || '',
           passwordHash: await argon2.hash(dto.password),
-          country: country
+          country: country,
+          roleId: defaultRoleId,
         },
       });
     } else {

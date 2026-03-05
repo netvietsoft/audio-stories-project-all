@@ -1,0 +1,554 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String    @id @default(uuid()) @db.VarChar(36)
+  email                String    @unique @db.VarChar(255)
+  passwordHash         String?   @map("password_hash") @db.VarChar(255)
+  displayName          String    @map("display_name") @db.VarChar(100)
+  avatarUrl            String?   @map("avatar_url") @db.Text
+  roleId               Int       @default(4) @map("role_id") @db.UnsignedInt
+  credits              Int       @default(0) @db.UnsignedInt
+  googleId             String?   @unique @map("google_id") @db.VarChar(100)
+  isActive             Boolean   @default(true) @map("is_active")
+  totalUnlockedStories Int       @default(0) @map("total_unlocked_stories") @db.UnsignedInt
+  vipTier              Int       @default(0) @map("vip_tier") @db.UnsignedTinyInt
+  vipExpirationDate    DateTime? @map("vip_expiration_date")
+  emailVerifiedAt      DateTime? @map("email_verified_at")
+  country              String?   @db.VarChar(100)
+  lastLoginAt          DateTime? @map("last_login_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deletedAt            DateTime? @map("deleted_at")
+
+  role Role @relation(fields: [roleId], references: [id])
+
+  oauthAccounts       OAuthAccount[]
+  refreshTokens       RefreshToken[]
+  authTokens          AuthToken[]
+  userFavorites       UserFavorite[]
+  listeningHistory    ListeningHistory[]
+  userFollowAuthors   UserFollowAuthor[]
+  reviews             Review[]
+  reviewLikes         ReviewLike[]
+  creditTransactions  CreditTransaction[]
+  payments            Payment[]
+  memberships         Membership[]
+  notifications       Notification[]
+  audioReports        AudioReport[]
+  playlists           Playlist[]
+  chapterComments     ChapterComment[]
+
+  @@index([roleId])
+  @@index([isActive])
+  @@index([totalUnlockedStories])
+  @@index([vipTier])
+  @@index([deletedAt])
+  @@index([vipExpirationDate])
+  @@map("users")
+}
+
+model OAuthAccount {
+  id             String   @id @default(uuid())
+  provider       String   @db.VarChar(50)
+  providerUserId String   @db.VarChar(255)
+  profile        Json?
+  userId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@map("auth_oauth_account")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
+  token     String   @unique @db.VarChar(512)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+enum AuthTokenType {
+  VERIFY_EMAIL
+  VERIFY_CODE
+  PASSWORD_RESET
+}
+
+model AuthToken {
+  id        String        @id @default(uuid()) @db.VarChar(36)
+  userId    String        @map("user_id") @db.VarChar(36)
+  type      AuthTokenType
+  token     String        @unique @db.VarChar(512)
+  expiresAt DateTime      @map("expires_at")
+  isUsed    Boolean       @default(false) @map("is_used")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([expiresAt])
+  @@map("auth_tokens")
+}
+
+model Author {
+  id             String   @id @default(uuid()) @db.VarChar(36)
+  name           String   @db.VarChar(150)
+  slug           String   @unique @db.VarChar(200)
+  avatarUrl      String?  @map("avatar_url") @db.Text
+  bio            String?  @db.Text
+  followersCount Int      @default(0) @map("followers_count") @db.UnsignedInt
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  stories           Story[]
+  userFollowAuthors UserFollowAuthor[]
+  memberships       Membership[]
+
+  @@index([name])
+  @@map("authors")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement()) @db.UnsignedInt
+  name        String   @unique @db.VarChar(50)
+  slug        String   @unique @db.VarChar(50)
+  description String?  @db.VarChar(255)
+  permissions Json?    // Restored
+  createdAt   DateTime @default(now()) @map("created_at") // Restored
+
+  users User[]
+
+  @@map("roles")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement()) @db.UnsignedInt
+  name        String   @unique @db.VarChar(100)
+  slug        String   @unique @db.VarChar(120)
+  description String?  @db.Text
+  iconUrl     String?  @map("icon_url") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  stories StoryCategory[]
+
+  @@map("categories")
+}
+
+enum StoryStatus {
+  ongoing
+  completed
+}
+
+model Story {
+  id            String      @id @default(uuid()) @db.VarChar(36)
+  title         String      @db.VarChar(300)
+  slug          String      @unique @db.VarChar(350)
+  description   String?     @db.Text
+  thumbnailUrl  String?     @map("thumbnail_url") @db.Text
+  authorId      String      @map("author_id") @db.VarChar(36)
+  status        StoryStatus @default(ongoing)
+  totalChapters Int         @default(0) @map("total_chapters") @db.UnsignedInt
+  totalViews    BigInt      @default(0) @map("total_views") @db.UnsignedBigInt
+  averageRating Decimal     @default(0) @map("average_rating") @db.Decimal(3, 2)
+  ratingCount   Int         @default(0) @map("rating_count") @db.UnsignedInt
+  isFeatured    Boolean     @default(false) @map("is_featured")
+  featuredOrder Int?        @map("featured_order")
+  publishedAt   DateTime?   @map("published_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  deletedAt     DateTime?   @map("deleted_at")
+
+  author           Author             @relation(fields: [authorId], references: [id])
+  categories       StoryCategory[]
+  chapters         Chapter[]
+  userFavorites    UserFavorite[]
+  listeningHistory ListeningHistory[]
+  reviews          Review[]
+  audioReports     AudioReport[]
+  playlistItems    PlaylistItem[]
+  chapterComments  ChapterComment[]
+
+  @@index([title])
+  @@index([authorId])
+  @@index([status, isFeatured, publishedAt, updatedAt])
+  @@index([totalViews(sort: Desc)])
+  @@index([averageRating(sort: Desc)])
+  @@map("stories")
+}
+
+model StoryCategory {
+  storyId    String   @map("story_id") @db.VarChar(36)
+  categoryId Int      @map("category_id") @db.UnsignedInt
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  story    Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([storyId, categoryId])
+  @@index([categoryId])
+  @@map("story_categories")
+}
+
+enum ChapterAccessType {
+  free
+  timed
+  vip
+}
+
+model Chapter {
+  id             String            @id @default(uuid()) @db.VarChar(36)
+  storyId        String            @map("story_id") @db.VarChar(36)
+  chapterNumber  Float             @map("chapter_number") @db.Float
+  title          String            @db.VarChar(300)
+  content        String?           @db.LongText
+  r2AudioUrl     String?           @map("r2_audio_url") @db.VarChar(500)
+  youtubeVideoId String?           @map("youtube_video_id") @db.VarChar(20)
+  audioDuration  Int?              @map("audio_duration") @db.UnsignedInt
+  accessType     ChapterAccessType @default(free) @map("access_type")
+  unlocksAt      DateTime?         @map("unlocks_at")
+  viewCount      BigInt            @default(0) @map("view_count") @db.UnsignedBigInt
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  deletedAt      DateTime?         @map("deleted_at")
+
+  story            Story              @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  listeningHistory ListeningHistory[]
+  audioReports     AudioReport[]
+  playlistItems    PlaylistItem[]
+  chapterComments  ChapterComment[]
+
+  @@unique([storyId, chapterNumber])
+  @@index([accessType])
+  @@index([unlocksAt])
+  @@index([storyId, chapterNumber(sort: Asc)])
+  @@map("chapters")
+}
+
+model UserFavorite {
+  userId    String   @map("user_id") @db.VarChar(36)
+  storyId   String   @map("story_id") @db.VarChar(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@id([userId, storyId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("user_favorites")
+}
+
+model ListeningHistory {
+  id              String   @id @default(uuid()) @db.VarChar(36)
+  userId          String   @map("user_id") @db.VarChar(36)
+  storyId         String   @map("story_id") @db.VarChar(36)
+  chapterId       String   @map("chapter_id") @db.VarChar(36)
+  progressSeconds Int      @default(0) @map("progress_seconds") @db.UnsignedInt
+  lastListenedAt  DateTime @default(now()) @map("last_listened_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story   Story   @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterId])
+  @@index([lastListenedAt])
+  @@index([userId, lastListenedAt(sort: Desc)])
+  @@map("listening_history")
+}
+
+model UserFollowAuthor {
+  userId    String   @map("user_id") @db.VarChar(36)
+  authorId  String   @map("author_id") @db.VarChar(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  author Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@id([userId, authorId])
+  @@index([authorId])
+  @@map("user_follow_authors")
+}
+
+model Review {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  userId     String   @map("user_id") @db.VarChar(36)
+  storyId    String   @map("story_id") @db.VarChar(36)
+  rating     Int      @db.TinyInt
+  content    String?  @db.Text
+  likesCount Int      @default(0) @map("likes_count") @db.UnsignedInt
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story       Story        @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  reviewLikes ReviewLike[]
+
+  @@unique([userId, storyId])
+  @@index([storyId, createdAt(sort: Desc)])
+  @@index([storyId, likesCount(sort: Desc)])
+  @@map("reviews")
+}
+
+model ReviewLike {
+  userId    String   @map("user_id") @db.VarChar(36)
+  reviewId  String   @map("review_id") @db.VarChar(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@id([userId, reviewId])
+  @@map("review_likes")
+}
+
+enum CreditTransactionType {
+  topup
+  spend
+  refund
+  admin_adjust
+}
+
+model CreditTransaction {
+  id            String                @id @default(uuid()) @db.VarChar(36)
+  userId        String                @map("user_id") @db.VarChar(36)
+  type          CreditTransactionType
+  amount        Int
+  balanceBefore Int                   @map("balance_before") @db.UnsignedInt
+  balanceAfter  Int                   @map("balance_after") @db.UnsignedInt
+  referenceId   String?               @map("reference_id") @db.VarChar(36)
+  description   String?               @db.VarChar(255)
+  createdAt     DateTime              @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([type, createdAt])
+  @@index([referenceId])
+  @@map("credit_transactions")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+model Payment {
+  id              String        @id @default(uuid()) @db.VarChar(36)
+  userId          String        @map("user_id") @db.VarChar(36)
+  packageCode     String        @map("package_code") @db.VarChar(50)
+  amountVnd       Int           @map("amount_vnd") @db.UnsignedInt
+  creditsAdded    Int           @map("credits_added") @db.UnsignedInt
+  status          PaymentStatus @default(PENDING)
+  qrData          String?       @map("qr_data") @db.Text
+  transactionCode String?       @map("transaction_code") @db.VarChar(100)
+  paidAt          DateTime?     @map("paid_at")
+  expiresAt       DateTime      @map("expires_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status, expiresAt])
+  @@index([transactionCode])
+  @@index([userId, status])
+  @@map("payments")
+}
+
+enum MembershipType {
+  all_authors
+  specific_author
+}
+
+model Membership {
+  id           String         @id @default(uuid()) @db.VarChar(36)
+  userId       String         @map("user_id") @db.VarChar(36)
+  type         MembershipType
+  authorId     String?        @map("author_id") @db.VarChar(36)
+  startDate    DateTime       @map("start_date")
+  endDate      DateTime       @map("end_date")
+  creditsSpent Int            @map("credits_spent") @db.UnsignedInt
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  author Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, type, authorId, endDate])
+  @@index([endDate])
+  @@map("memberships")
+}
+
+enum NotificationType {
+  new_chapter
+  transaction
+  membership_expiry
+  system
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.VarChar(36)
+  userId    String           @map("user_id") @db.VarChar(36)
+  type      NotificationType
+  title     String           @db.VarChar(255)
+  body      String           @db.Text
+  isRead    Boolean          @default(false) @map("is_read")
+  metadata  Json?
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@index([type, createdAt])
+  @@map("notifications")
+}
+
+enum SettingType {
+  string
+  number
+  boolean
+  json
+}
+
+model SiteSetting {
+  key         String      @id @unique @db.VarChar(100)
+  value       String?     @db.Text
+  type        SettingType @default(string)
+  description String?     @db.VarChar(255)
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  @@map("site_settings")
+}
+
+model Banner {
+  id         Int       @id @default(autoincrement()) @db.UnsignedInt
+  title      String    @db.VarChar(255)
+  imageUrl   String    @map("image_url") @db.Text
+  linkUrl    String?   @map("link_url") @db.VarChar(500)
+  position   String    @default("home_hero") @db.VarChar(50)
+  orderIndex Int       @default(0) @map("order_index") @db.UnsignedInt
+  isActive   Boolean   @default(true) @map("is_active")
+  startDate  DateTime? @map("start_date")
+  endDate    DateTime? @map("end_date")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([position])
+  @@index([orderIndex])
+  @@index([isActive])
+  @@index([startDate, endDate])
+  @@map("banners")
+}
+
+enum AudioReportType {
+  broken_link
+  bad_quality
+  missing_audio
+  wrong_chapter
+  other
+}
+
+enum AudioReportStatus {
+  pending
+  resolved
+  ignored
+}
+
+model AudioReport {
+  id         String            @id @default(uuid()) @db.VarChar(36)
+  userId     String?           @map("user_id") @db.VarChar(36)
+  chapterId  String            @map("chapter_id") @db.VarChar(36)
+  storyId    String            @map("story_id") @db.VarChar(36)
+  type       AudioReportType
+  note       String?           @db.Text
+  status     AudioReportStatus @default(pending)
+  adminNote  String?           @map("admin_note") @db.Text
+  resolvedAt DateTime?         @map("resolved_at")
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  story   Story   @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([chapterId])
+  @@index([storyId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("audio_reports")
+}
+
+model Playlist {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  userId     String   @map("user_id") @db.VarChar(36)
+  name       String   @db.VarChar(200)
+  coverUrl   String?  @map("cover_url") @db.Text
+  totalItems Int      @default(0) @map("total_items") @db.UnsignedInt
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playlistItems PlaylistItem[]
+
+  @@index([userId])
+  @@map("playlists")
+}
+
+model PlaylistItem {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  playlistId String   @map("playlist_id") @db.VarChar(36)
+  chapterId  String   @map("chapter_id") @db.VarChar(36)
+  storyId    String   @map("story_id") @db.VarChar(36)
+  orderIndex Int      @default(0) @map("order_index") @db.UnsignedInt
+  addedAt    DateTime @default(now()) @map("added_at")
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  chapter  Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  story    Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([playlistId])
+  @@index([orderIndex])
+  @@map("playlist_items")
+}
+
+model ChapterComment {
+  id               String   @id @default(uuid()) @db.VarChar(36)
+  userId           String   @map("user_id") @db.VarChar(36)
+  chapterId        String   @map("chapter_id") @db.VarChar(36)
+  storyId          String   @map("story_id") @db.VarChar(36)
+  parentId         String?  @map("parent_id") @db.VarChar(36)
+  content          String   @db.Text
+  timestampSeconds Int?     @map("timestamp_seconds") @db.UnsignedInt
+  likesCount       Int      @default(0) @map("likes_count") @db.UnsignedInt
+  isHidden         Boolean  @default(false) @map("is_hidden")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  story   Story            @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  parent  ChapterComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies ChapterComment[] @relation("CommentReplies")
+
+  @@index([chapterId])
+  @@index([parentId])
+  @@index([isHidden])
+  @@index([createdAt])
+  @@map("chapter_comments")
+}

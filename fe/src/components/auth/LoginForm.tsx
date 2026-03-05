@@ -8,14 +8,27 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { loginSchenma } from "@/lib/validation/auth";
 import GoogleOAthButton from "./GoogleOAuthBtn";
-import { useAuth } from "@/auth/use-auth";
+import { apiClient } from "@/lib/api/api-client";
+import { useAuthStore } from "@/store/authStore";
 
 type LoginFormValues = z.infer<typeof loginSchenma>;
+
+type LoginResponse = {
+    access_token: string;
+    refresh_token: string;
+};
+
+type MeResponse = {
+    sub: string;
+    email: string;
+    name?: string | null;
+    avatar_url?: string | null;
+};
 
 export default function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { login } = useAuth();
+    const setAuth = useAuthStore((state) => state.setAuth);
 
     const {
         register,
@@ -30,18 +43,42 @@ export default function LoginForm() {
     const onSubmit = async (data: LoginFormValues) => {
         try {
             setSubmitError(null);
-            await login({ email: data.email, password: data.password });
+
+            const loginRes = await apiClient.post<LoginResponse>("/auth/login", {
+                email: data.email,
+                password: data.password,
+            });
+
+            const { access_token, refresh_token } = loginRes.data;
+
+            const meRes = await apiClient.get<MeResponse>("/auth/me", {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                },
+            });
+
+            setAuth(
+                {
+                    id: meRes.data.sub,
+                    email: meRes.data.email,
+                    name: meRes.data.name ?? undefined,
+                    avatar: meRes.data.avatar_url ?? undefined,
+                },
+                access_token,
+                refresh_token,
+            );
+
             const redirect = searchParams.get("redirect") || "/";
             router.replace(redirect);
         } catch (error) {
-            const message =
+            const message: unknown =
                 typeof error === "object" &&
                 error !== null &&
                 "response" in error &&
-                typeof (error as any).response?.data?.message === "string"
+                ((typeof (error as any).response?.data?.message === "string") || Array.isArray((error as any).response?.data?.message))
                     ? (error as any).response.data.message
                     : "Đăng nhập thất bại. Vui lòng kiểm tra lại email/mật khẩu.";
-            setSubmitError(message);
+            setSubmitError(Array.isArray(message) ? String(message[0]) : String(message));
         }
     }
 

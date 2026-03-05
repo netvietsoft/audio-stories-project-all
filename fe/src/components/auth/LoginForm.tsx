@@ -1,0 +1,102 @@
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { loginSchenma } from "@/lib/validation/auth";
+import GoogleOAthButton from "./GoogleOAuthBtn";
+import { useAuth } from "@/auth/use-auth";
+
+type LoginFormValues = z.infer<typeof loginSchenma>;
+
+export default function LoginForm() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { login } = useAuth();
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchenma),
+    });
+
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
+    const onSubmit = async (data: LoginFormValues) => {
+        try {
+            setSubmitError(null);
+            await login({ email: data.email, password: data.password });
+            const redirect = searchParams.get("redirect") || "/";
+            router.replace(redirect);
+        } catch (error) {
+            const message =
+                typeof error === "object" &&
+                error !== null &&
+                "response" in error &&
+                typeof (error as any).response?.data?.message === "string"
+                    ? (error as any).response.data.message
+                    : "Đăng nhập thất bại. Vui lòng kiểm tra lại email/mật khẩu.";
+            setSubmitError(message);
+        }
+    }
+
+    return (
+        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <h2 className="text-2xl font-bold text-center mb-6">Đăng nhập</h2>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                {submitError && (
+                    <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{submitError}</p>
+                )}
+                <div>
+                    <label className="block text-sm font-medium mb-1">Email</label>
+                    <input 
+                        {...register("email")}
+                        type="email"
+                        className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                        placeholder="Nhập email của bạn"
+                    />
+                    {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1">Mật khẩu</label>
+                    <input 
+                        {...register("password")}
+                        type="password"
+                        className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/>
+                    {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+                </div>
+                <div className="flex items-center justify-between">
+                    <label className="flex items-center">
+                        <input type="checkbox" {...register("rememberMe")} className="rounded border-gray-300" />
+                        <span className="ml-2 text-sm text-gray-600 dark:text-gray-300">Ghi nhớ đăng nhập</span>
+                    </label>
+                    <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">Quên mật khẩu?</Link>
+                </div>
+                <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors disabled:opacity-50">
+                    {isSubmitting ? "Đang xử lý..." : "Đăng nhập"}
+                </button>
+            </form>
+
+            <div className="mt-6 flex items-center justify-center">
+                <span>Hoặc</span>
+            </div>
+
+            <div className="mt-4">
+                <GoogleOAthButton />
+            </div>
+
+            <p className="mt-4 text-center text-sm">
+                Chưa có tài khoản? <Link href="/register" className="text-blue-600 hover:underline">Đăng ký ngay</Link>
+            </p>
+        </div>
+    );
+}

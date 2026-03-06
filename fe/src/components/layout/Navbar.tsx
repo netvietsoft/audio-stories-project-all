@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { 
-  Search, Moon, Sun, Bell, User, 
-  ChevronDown, LogOut, Coins, Menu, X, Settings
+import {
+  Search, Moon, Sun, Bell, User,
+  ChevronDown, LogOut, Coins, Menu, X, Settings,
+  UserCircle, History, SeparatorVertical
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
+import { useUserStore } from "@/stores/user-store";
 
 export default function Navbar() {
   const router = useRouter();
@@ -18,7 +20,7 @@ export default function Navbar() {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  
+
   // State cho Mobile/Tablet Menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -40,17 +42,17 @@ export default function Navbar() {
       <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md">
         <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
           <div className="flex items-center justify-between h-16">
-            
+
             {/* LOGO & MENU CHÍNH (Desktop) */}
             <div className="flex items-center gap-8">
               <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                 AudioTruyen
               </Link>
-              
+
               {/* Menu Desktop (Ẩn khi màn hình nhỏ hơn lg) */}
               <nav className="hidden lg:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">
                 <Link href="/" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Trang chủ</Link>
-                <div 
+                <div
                   className="relative"
                   onMouseEnter={() => setIsCategoryOpen(true)}
                   onMouseLeave={() => setIsCategoryOpen(false)}
@@ -73,18 +75,18 @@ export default function Navbar() {
             {/* RIGHT SECTION */}
             <div className="flex items-center gap-3">
               <div className="hidden md:flex relative">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearch}
-                  placeholder="Tìm truyện..." 
+                  placeholder="Tìm truyện..."
                   className="w-44 lg:w-56 xl:w-64 pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               </div>
 
-              <button 
+              <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
               >
@@ -98,7 +100,7 @@ export default function Navbar() {
 
                 {/* Chuông thông báo */}
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={() => {
                       setIsNotifOpen(!isNotifOpen);
                       setIsUserMenuOpen(false); // Đóng menu user nếu đang mở
@@ -123,60 +125,50 @@ export default function Navbar() {
                   )}
                 </div>
 
-                {!mounted ? null : !isAuthenticated ? (
-                  <div className="hidden sm:flex items-center gap-2">
-                    <Link
-                      href="/login"
-                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                    >
-                      Đăng nhập
-                    </Link>
-                    <Link
-                      href="/register"
-                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-                    >
-                      Đăng ký
-                    </Link>
+                {/* Avatar */}
+                {!user ? (
+                  <div className="flex items-center gap-2">
+                    <Link href="/login" className="px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm font-medium">Đăng nhập</Link>
                   </div>
-                ) : (
-                  <div className="relative">
-                    <button 
-                      onClick={() => {
+                ) : (<div className="relative">
+                  <button
+                    onClick={
+                      () => {
                         setIsUserMenuOpen(!isUserMenuOpen);
-                        setIsNotifOpen(false);
-                      }}
-                      className="flex items-center gap-2 rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                    >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
-                        {(user?.name?.[0] || user?.email?.[0] || "U").toUpperCase()}
-                      </div>
-                      <span className="hidden sm:block max-w-[140px] truncate text-sm text-gray-700 dark:text-gray-200">
-                        {user?.name || user?.email}
-                      </span>
-                      <ChevronDown className="h-4 w-4 text-gray-500" />
-                    </button>
+                        setIsNotifOpen(false); // Đóng thông báo nếu đang mở
+                      }
+                    }
+                    className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} alt="Avatar" className="h-8 w-8 rounded-full bg-gray-200" />
+                  </button>
 
-                    {isUserMenuOpen && (
-                      <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-700 dark:bg-gray-800">
-                        <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">
-                          <User className="h-4 w-4" /> Trang cá nhân
-                        </Link>
-                        <Link href="/settings" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">
-                          <Settings className="h-4 w-4" /> Cài đặt
-                        </Link>
-                        <button
-                          onClick={logout}
-                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
-                        >
-                          <LogOut className="h-4 w-4" /> Đăng xuất
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  {/* Dropdown User */}
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 z-50">
+                      <p className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">Xin chào, {user.name || user.email}</p>
+                      <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <UserCircle className="h-4 w-4" /> Trang cá nhân
+                      </Link>
+                      <Link href="/history" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <History className="h-4 w-4" /> Lịch sử nghe
+                      </Link>
+                      <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                      <button
+                        onClick={() => {
+                          useUserStore.getState().clearAuth();
+                          router.push("/login");
+                        }}
+                        className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        <LogOut className="h-4 w-4" /> Đăng xuất
+                      </button>
+                    </div>
+                  )}
+                </div>)}
 
                 {/* Nút Hamburger cho Tablet (Hiển thị bên phải Avatar khi màn hình < lg và > md) */}
-                <button 
+                <button
                   onClick={() => setIsMobileMenuOpen(true)}
                   className="hidden md:block lg:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 ml-1"
                 >
@@ -187,13 +179,13 @@ export default function Navbar() {
           </div>
         </div>
       </header>
-      
+
       {/* OVERLAY MENU (Dành cho Mobile & Tablet) */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[60] bg-white dark:bg-gray-950 flex flex-col pt-20 px-6 lg:hidden animate-in slide-in-from-bottom-5">
-          
+
           {/* NÚT TẮT (CLOSE) DÀNH CHO OVERLAY */}
-          <button 
+          <button
             onClick={() => setIsMobileMenuOpen(false)}
             // Thêm "hidden md:flex" vào dòng class dưới đây:
             className="hidden md:flex absolute top-5 right-5 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
@@ -203,17 +195,17 @@ export default function Navbar() {
           {/* Kết thúc phần thêm mới */}
 
           <div className="relative mb-6">
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearch}
-              placeholder="Nhập tên truyện rồi ấn Enter..." 
+              placeholder="Nhập tên truyện rồi ấn Enter..."
               className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-900 text-lg outline-none"
             />
             <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
           </div>
-          
+
           <nav className="flex flex-col space-y-4 text-xl font-medium text-gray-800 dark:text-gray-200">
             <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>Trang chủ</Link>
             <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)}>Thể loại</Link>
@@ -225,7 +217,7 @@ export default function Navbar() {
       )}
 
       {/* NÚT TRÔI NỔI (FAB) CHO MOBILE (Chỉ hiện khi < md) */}
-      <button 
+      <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         className="md:hidden fixed bottom-6 right-6 z-[70] p-4 rounded-full bg-blue-600 text-white shadow-2xl hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
       >

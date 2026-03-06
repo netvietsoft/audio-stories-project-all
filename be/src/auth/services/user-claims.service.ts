@@ -9,7 +9,6 @@ export interface UserClaims {
 }
 
 export interface UserInfo {
-  sub: string;
   email: string;
   name: string | null;
   avatar_url: string | null;
@@ -18,14 +17,6 @@ export interface UserInfo {
   roles: string[];
   permissions: string[];
   // Premium & download fields (for FE compatibility)
-  is_premium: boolean;
-  premium_expires_at: Date | null;
-  premium_expired: boolean;
-  current_package_id: string | null;
-  daily_download_count: number;
-  monthly_download_count: number;
-  daily_download_limit: number;
-  monthly_download_limit: number;
   credits: number;
   vip_tier: number;
 }
@@ -69,35 +60,7 @@ export class UserClaimsService {
 
     const claims = await this.buildUserClaims(userId);
 
-    // Check if premium has expired
-    const now = new Date();
-    let isPremium = (user.vipTier || 0) > 0;
-    let premiumExpired = false;
-
-    if (isPremium && user.vipExpirationDate) {
-      if (new Date(user.vipExpirationDate) < now) {
-        premiumExpired = true;
-        isPremium = false;
-      }
-    }
-
-    // Reset daily download count if needed (7h sáng UTC+7 = 0h UTC)
-    // Reset daily download count (Mocked as the fields were removed from schema)
-    let dailyDownloadCount = 0;
-    let monthlyDownloadCount = 0;
-
-    if (!isPremium) {
-      const resetHourUTC = 0;
-      const todayReset = new Date();
-      todayReset.setUTCHours(resetHourUTC, 0, 0, 0);
-
-      /* Fields removed from schema - skipping reset logic for now */
-    } else {
-      /* Fields removed from schema - skipping reset logic for now */
-    }
-
     return {
-      sub: claims.sub,
       email: claims.email,
       name: user.displayName,
       avatar_url: user.avatarUrl,
@@ -105,14 +68,6 @@ export class UserClaimsService {
       status: 'ACTIVE', // status field removed from schema, defaulting to ACTIVE
       roles: claims.roles,
       permissions: claims.permissions,
-      is_premium: isPremium,
-      premium_expires_at: user.vipExpirationDate,
-      premium_expired: premiumExpired,
-      current_package_id: null, // field removed
-      daily_download_count: dailyDownloadCount,
-      monthly_download_count: monthlyDownloadCount,
-      daily_download_limit: 3,
-      monthly_download_limit: 200,
       credits: user.credits,
       vip_tier: user.vipTier,
     };

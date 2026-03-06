@@ -32,6 +32,10 @@ export class ExploreQueryDto {
   status?: 'ongoing' | 'completed';
 
   @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
   @IsIn(storySortOptions)
   sort?: StorySortOption = 'latest';
 }

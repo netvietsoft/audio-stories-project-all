@@ -301,9 +301,8 @@ export class AuthService {
       }
     });
   }
-
   async getAdminStats() {
-    const [totalUsers, totalStories, monthlyPayments] = await Promise.all([
+    const [totalUsers, totalStories, monthlyPayments, recentUsers, recentReports] = await Promise.all([
       this.prisma.user.count({ where: { deletedAt: null } }),
       this.prisma.story.count({ where: { deletedAt: null } }),
       this.prisma.payment.findMany({
@@ -314,6 +313,26 @@ export class AuthService {
           },
         },
         select: { amountVnd: true },
+      }),
+      this.prisma.user.findMany({
+        where: { deletedAt: null },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          email: true,
+          displayName: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.audioReport.findMany({
+        where: { status: 'pending' },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          story: { select: { title: true } },
+          chapter: { select: { chapterNumber: true } },
+        },
       }),
     ]);
 
@@ -352,6 +371,8 @@ export class AuthService {
       monthlyRevenue,
       growth24h,
       activeLast24h,
+      recentUsers,
+      recentReports,
     };
   }
 

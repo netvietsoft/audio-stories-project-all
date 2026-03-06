@@ -3,7 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle } from 'lucide-react';
+
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api/api-client';
 import { useUserStore } from '@/stores/user-store';
@@ -98,8 +99,13 @@ export default function AdminLayout({
     const navItems = [
         { href: '/admin', label: 'Dashboard', icon: Home },
         { href: '/admin/users', label: 'Quản lý Người dùng', icon: Users },
+        { href: '/admin/stories', label: 'Quản lý Truyện', icon: Newspaper },
+        { href: '/admin/categories', label: 'Quản lý Danh mục', icon: LayoutGrid },
+        { href: '/admin/authors', label: 'Quản lý Tác giả', icon: UserCircle },
         { href: '/admin/settings', label: 'Cài đặt', icon: Settings },
     ];
+
+
 
     return (
         <div className="flex h-screen bg-[#F8FAFC]">

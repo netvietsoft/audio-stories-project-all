@@ -7,6 +7,9 @@ import { MailModule } from './mail/mail.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StatsModule } from './stats/stats.module';
 import { StoriesModule } from './stories/stories.module';
+import { CategoriesModule } from './categories/categories.module';
+import { AuthorsModule } from './authors/authors.module';
+import { ChaptersModule } from './chapters/chapters.module';
 
 @Module({
   imports: [
@@ -19,7 +22,13 @@ import { StoriesModule } from './stories/stories.module';
     MailModule,
     StatsModule,
     StoriesModule,
+    CategoriesModule,
+    AuthorsModule,
+    ChaptersModule,
   ],
+
+
+
   controllers: [AppController],
   providers: [AppService],
 })

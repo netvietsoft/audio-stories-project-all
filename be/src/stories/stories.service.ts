@@ -3,10 +3,41 @@ import { Prisma, StoryStatus } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
 import { ExploreQueryDto } from './dto/explore-query.dto';
+import { CreateStoryDto } from './dto/create-story.dto';
 
 @Injectable()
 export class StoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
+
+  async create(data: CreateStoryDto) {
+    const { categoryIds, ...storyData } = data;
+
+    const story = await this.prisma.story.create({
+      data: {
+        ...storyData,
+        categories: categoryIds
+          ? {
+            create: categoryIds.map((id) => ({
+              categoryId: id,
+            })),
+          }
+          : undefined,
+      },
+      include: {
+        author: {
+          select: { id: true, name: true },
+        },
+        categories: {
+          include: {
+            category: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    return this.serializeStory(story);
+  }
+
 
   private serializeStory(story: any) {
     return {
@@ -69,14 +100,22 @@ export class StoriesService {
     const where: Prisma.StoryWhereInput = {
       deletedAt: null,
       ...(query.status ? { status: query.status as StoryStatus } : {}),
+      ...(query.search
+        ? {
+          OR: [
+            { title: { contains: query.search } },
+            { author: { name: { contains: query.search } } },
+          ],
+        }
+        : {}),
       ...(query.categoryId
         ? {
-            categories: {
-              some: {
-                categoryId: query.categoryId,
-              },
+          categories: {
+            some: {
+              categoryId: query.categoryId,
             },
-          }
+          },
+        }
         : {}),
       ...(query.authorId ? { authorId: query.authorId } : {}),
     };
@@ -104,6 +143,9 @@ export class StoriesService {
               name: true,
             },
           },
+          _count: {
+            select: { chapters: true },
+          },
         },
       }),
     ]);
@@ -114,6 +156,57 @@ export class StoriesService {
         total,
         page,
         lastPage: Math.max(1, Math.ceil(total / limit)),
+      },
+    };
+  }
+
+  async findAllAdmin(query: ExploreQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+
+    const where: Prisma.StoryWhereInput = {
+      // Admin sees everything (including soft deleted if needed, but let's stick to non-deleted for now)
+      deletedAt: null,
+      ...(query.status ? { status: query.status as StoryStatus } : {}),
+      ...(query.search
+        ? {
+          OR: [
+            { title: { contains: query.search } },
+            { author: { name: { contains: query.search } } },
+          ],
+        }
+        : {}),
+    };
+
+    const [total, stories] = await Promise.all([
+      this.prisma.story.count({ where }),
+      this.prisma.story.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          author: {
+            select: { id: true, name: true },
+          },
+          categories: {
+            include: {
+              category: { select: { name: true } },
+            },
+          },
+          _count: {
+            select: { chapters: true },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: stories.map((s) => this.serializeStory(s)),
+      meta: {
+        total,
+        page,
+        lastPage: Math.ceil(total / limit),
       },
     };
   }

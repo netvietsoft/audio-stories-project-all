@@ -4,12 +4,20 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+<<<<<<< HEAD
 import {
   Search, Moon, Sun, Bell, UserCircle,
   ChevronDown, History, LogOut, Coins, Menu, X,
   SeparatorVertical
 } from "lucide-react";
 import { useUserStore } from "@/stores/user-store";
+=======
+import { 
+  Search, Moon, Sun, Bell, User, 
+  ChevronDown, LogOut, Coins, Menu, X, Settings
+} from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+>>>>>>> master
 
 export default function Navbar() {
   const router = useRouter();
@@ -24,7 +32,11 @@ export default function Navbar() {
   // State cho Mobile/Tablet Menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+<<<<<<< HEAD
   const isLoggedIn = true;
+=======
+  const { user, isAuthenticated, logout } = useAuthStore();
+>>>>>>> master
   const unreadNotifs = 3;
 
   useEffect(() => setMounted(true), []);
@@ -125,6 +137,7 @@ export default function Navbar() {
                   )}
                 </div>
 
+<<<<<<< HEAD
                 {/* Avatar */}
                 {!user ? (
                   <div className="flex items-center gap-2">
@@ -166,6 +179,59 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>)}
+=======
+                {!mounted ? null : !isAuthenticated ? (
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Link
+                      href="/login"
+                      className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      Đăng nhập
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                    >
+                      Đăng ký
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <button 
+                      onClick={() => {
+                        setIsUserMenuOpen(!isUserMenuOpen);
+                        setIsNotifOpen(false);
+                      }}
+                      className="flex items-center gap-2 rounded-full p-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
+                        {(user?.name?.[0] || user?.email?.[0] || "U").toUpperCase()}
+                      </div>
+                      <span className="hidden sm:block max-w-[140px] truncate text-sm text-gray-700 dark:text-gray-200">
+                        {user?.name || user?.email}
+                      </span>
+                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                    </button>
+
+                    {isUserMenuOpen && (
+                      <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                        <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">
+                          <User className="h-4 w-4" /> Trang cá nhân
+                        </Link>
+                        <Link href="/settings" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">
+                          <Settings className="h-4 w-4" /> Cài đặt
+                        </Link>
+                        <button
+                          onClick={logout}
+                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                        >
+                          <LogOut className="h-4 w-4" /> Đăng xuất
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+>>>>>>> master
 
                 {/* Nút Hamburger cho Tablet (Hiển thị bên phải Avatar khi màn hình < lg và > md) */}
                 <button

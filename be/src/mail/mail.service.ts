@@ -43,6 +43,26 @@ export class MailService {
     });
   }
 
+  async sendResetPasswordCode(to: string, code: string) {
+    return await this.transport.sendMail({
+      from: this.from,
+      to,
+      subject: 'Password reset code',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #333;">Reset Your Password</h2>
+          <p>Use the verification code below to reset your password. The code will expire in 10 minutes.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="display: inline-block; background-color: #f5f5f5; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px 40px;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #333;">${code}</span>
+            </div>
+          </div>
+          <p style="color: #999; font-size: 14px;">If you did not request this, please ignore this email.</p>
+        </div>
+      `,
+    });
+  }
+
   async sendVerificationCode(to: string, code: string) {
     return await this.transport.sendMail({
       from: this.from,

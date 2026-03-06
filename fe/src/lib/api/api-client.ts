@@ -2,7 +2,7 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 import { API_BASE_URL, REFRESH_TOKEN_ENDPOINT } from "@/constants/auth";
 import { clearAuthCookies, setAuthCookies } from "@/lib/auth/cookies";
-import { useUserStore } from "@/stores/user-store";
+import { getAccessToken, getRefreshToken, useAuthStore } from "@/store/authStore";
 
 type RetryRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
@@ -28,9 +28,9 @@ let refreshTokenPromise: Promise<string | null> | null = null;
 const refreshAccessToken = async (): Promise<string | null> => {
   if (!refreshTokenPromise) {
     refreshTokenPromise = (async () => {
-      const store = useUserStore.getState();
+      const refreshToken = getRefreshToken();
 
-      if (!store.refreshToken) {
+      if (!refreshToken) {
         return null;
       }
 
@@ -40,22 +40,22 @@ const refreshAccessToken = async (): Promise<string | null> => {
           undefined,
           {
             headers: {
-              "x-refresh-token": store.refreshToken,
+              "x-refresh-token": refreshToken,
             },
           },
         );
 
         const { access_token, refresh_token } = response.data;
 
-        useUserStore.setState({
-          accessToken: access_token,
-          refreshToken: refresh_token,
-        });
+        const currentUser = useAuthStore.getState().user;
+        if (currentUser) {
+          useAuthStore.getState().setAuth(currentUser, access_token, refresh_token);
+        }
         setAuthCookies(access_token, refresh_token);
 
         return access_token;
       } catch {
-        useUserStore.getState().clearAuth();
+        useAuthStore.getState().logout();
         clearAuthCookies();
         return null;
       } finally {
@@ -68,7 +68,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
 };
 
 apiClient.interceptors.request.use((config) => {
-  const accessToken = useUserStore.getState().accessToken;
+  const accessToken = getAccessToken();
 
   if (accessToken) {
     config.headers.set("Authorization", `Bearer ${accessToken}`);

@@ -24,6 +24,9 @@ export type UserProfile = {
   name?: string;
   avatarUrl?: string;
   roles?: string[];
+  vipTier?: number;
+  vipExpirationDate?: string | null;
+  credits: number;
 };
 
 type UserState = {

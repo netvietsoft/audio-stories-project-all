@@ -30,6 +30,9 @@ type BackendMeResponse = {
   name?: string | null;
   avatar_url?: string | null;
   roles?: string[];
+  vip_tier?: number;
+  credits?: number;
+  premium_expires_at?: string | null;
 };
 
 const normalizeUserProfile = (profile: BackendMeResponse): UserProfile => ({
@@ -38,6 +41,9 @@ const normalizeUserProfile = (profile: BackendMeResponse): UserProfile => ({
   name: profile.name ?? undefined,
   avatarUrl: profile.avatar_url ?? undefined,
   roles: profile.roles ?? [],
+  vipTier: profile.vip_tier,
+  vipExpirationDate: profile.premium_expires_at,
+  credits: profile.credits ?? 0,
 });
 
 type AuthContextValue = {

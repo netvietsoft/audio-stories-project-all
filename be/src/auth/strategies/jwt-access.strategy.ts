@@ -37,10 +37,16 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt') {
     try {
       if (!payload || !payload.sub) return null;
 
-      const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        include: { role: true }
+      });
       if (!user) return null;
 
-      return { ...user, sub: payload.sub, roles: payload.roles, permissions: payload.permissions };
+      // Ensure roles is always an array for RolesGuard
+      const roles = user.role ? [user.role.name] : [];
+
+      return { ...user, sub: payload.sub, roles, permissions: payload.permissions };
     } catch (error) {
       this.logger.error('Error during JWT validation:', error);
       return null;

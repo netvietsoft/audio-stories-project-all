@@ -26,6 +26,8 @@ export interface UserInfo {
   monthly_download_count: number;
   daily_download_limit: number;
   monthly_download_limit: number;
+  credits: number;
+  vip_tier: number;
 }
 
 @Injectable()
@@ -111,6 +113,8 @@ export class UserClaimsService {
       monthly_download_count: monthlyDownloadCount,
       daily_download_limit: 3,
       monthly_download_limit: 200,
+      credits: user.credits,
+      vip_tier: user.vipTier,
     };
   }
 

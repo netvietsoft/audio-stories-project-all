@@ -9,12 +9,15 @@ import {
   HttpCode,
   Body,
   Query,
+  Param,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { JwtAccessGuard } from './guards/jwt-access.guard';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { RolesGuard } from './guards/roles.guard';
+import { Roles } from './decorators/roles.decorator';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { Account } from './decorators/account.decorator';
 import { RegisterDto } from './dto/register.dto';
@@ -198,5 +201,26 @@ export class AuthController {
   @UseGuards(JwtAccessGuard)
   async searchUsers(@Query('email') email: string) {
     return this.auth.searchUsersByEmail(email);
+  }
+
+  @Get('users')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  async findAllUsers() {
+    return this.auth.findAllUsers();
+  }
+
+  @Get('admin/stats')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  async getAdminStats() {
+    return this.auth.getAdminStats();
+  }
+
+  @Get('users/:id')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  async findOneUser(@Param('id') id: string) {
+    return this.auth.findOneUser(id);
   }
 }

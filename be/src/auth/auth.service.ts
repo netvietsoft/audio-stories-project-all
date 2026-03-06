@@ -274,4 +274,139 @@ export class AuthService {
       avatar_url: u.avatarUrl
     }));
   }
+
+  async findAllUsers() {
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        avatarUrl: true,
+        country: true,
+        role: {
+          select: {
+            name: true,
+            slug: true
+          }
+        },
+        credits: true,
+        vipTier: true,
+        vipExpirationDate: true,
+        createdAt: true,
+        lastLoginAt: true,
+        emailVerifiedAt: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
+  async getAdminStats() {
+    const [totalUsers, totalStories, monthlyPayments] = await Promise.all([
+      this.prisma.user.count({ where: { deletedAt: null } }),
+      this.prisma.story.count({ where: { deletedAt: null } }),
+      this.prisma.payment.findMany({
+        where: {
+          status: 'SUCCESS',
+          paidAt: {
+            gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+          },
+        },
+        select: { amountVnd: true },
+      }),
+    ]);
+
+    const monthlyRevenue = monthlyPayments.reduce((sum, p) => sum + p.amountVnd, 0);
+
+    // Calculate 24h activity growth
+    const now = new Date();
+    const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const prev24h = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+
+    const [activeLast24h, activePrev24h] = await Promise.all([
+      this.prisma.user.count({
+        where: {
+          lastLoginAt: { gte: last24h },
+          deletedAt: null,
+        },
+      }),
+      this.prisma.user.count({
+        where: {
+          lastLoginAt: { gte: prev24h, lt: last24h },
+          deletedAt: null,
+        },
+      }),
+    ]);
+
+    let growth24h = 0;
+    if (activePrev24h > 0) {
+      growth24h = Math.round(((activeLast24h - activePrev24h) / activePrev24h) * 100);
+    } else if (activeLast24h > 0) {
+      growth24h = 100;
+    }
+
+    return {
+      totalUsers,
+      totalStories,
+      monthlyRevenue,
+      growth24h,
+      activeLast24h,
+    };
+  }
+
+  async findOneUser(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        role: true,
+        userFavorites: {
+          include: {
+            story: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                thumbnailUrl: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 20
+        },
+        listeningHistory: {
+          include: {
+            story: {
+              select: { title: true }
+            },
+            chapter: {
+              select: { title: true, chapterNumber: true }
+            }
+          },
+          orderBy: { lastListenedAt: 'desc' },
+          take: 10
+        },
+        creditTransactions: {
+          orderBy: { createdAt: 'desc' },
+          take: 20
+        },
+        payments: {
+          orderBy: { createdAt: 'desc' },
+          take: 10
+        },
+        memberships: {
+          include: {
+            author: {
+              select: { name: true }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        },
+        oauthAccounts: true
+      }
+    });
+
+    if (!user) throw new BadRequestException('User not found');
+    return user;
+  }
 }

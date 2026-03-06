@@ -26,6 +26,9 @@ type BackendMeResponse = {
   name?: string | null;
   avatar_url?: string | null;
   roles?: string[];
+  vip_tier?: number;
+  credits?: number;
+  premium_expires_at?: string | null;
 };
 
 const normalizeUserProfile = (profile: BackendMeResponse): UserProfile => ({
@@ -34,6 +37,9 @@ const normalizeUserProfile = (profile: BackendMeResponse): UserProfile => ({
   name: profile.name ?? undefined,
   avatarUrl: profile.avatar_url ?? undefined,
   roles: profile.roles ?? [],
+  vipTier: profile.vip_tier,
+  vipExpirationDate: profile.premium_expires_at,
+  credits: profile.credits ?? 0,
 });
 
 export default function VerifyEmailForm() {
@@ -94,9 +100,9 @@ export default function VerifyEmailForm() {
     } catch (error) {
       const message =
         typeof error === "object" &&
-        error !== null &&
-        "response" in error &&
-        typeof (error as any).response?.data?.message === "string"
+          error !== null &&
+          "response" in error &&
+          typeof (error as any).response?.data?.message === "string"
           ? (error as any).response.data.message
           : "Xác minh thất bại. Vui lòng kiểm tra lại mã và thử lại.";
       setSubmitError(message);
@@ -117,9 +123,9 @@ export default function VerifyEmailForm() {
     } catch (error) {
       const message =
         typeof error === "object" &&
-        error !== null &&
-        "response" in error &&
-        typeof (error as any).response?.data?.message === "string"
+          error !== null &&
+          "response" in error &&
+          typeof (error as any).response?.data?.message === "string"
           ? (error as any).response.data.message
           : "Không thể gửi lại mã. Vui lòng thử lại.";
       setResendError(message);

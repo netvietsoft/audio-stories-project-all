@@ -5,17 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
-  Search, Moon, Sun, Bell, UserCircle,
-  ChevronDown, History, LogOut, Coins, Menu, X,
-  SeparatorVertical
+  Search, Moon, Sun, Bell, User,
+  ChevronDown, LogOut, Coins, Menu, X, Settings,
+  UserCircle, History, SeparatorVertical
 } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
 import { useUserStore } from "@/stores/user-store";
 
 export default function Navbar() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const { user } = useUserStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -24,7 +24,7 @@ export default function Navbar() {
   // State cho Mobile/Tablet Menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const isLoggedIn = !!user;
+  const { user, isAuthenticated, logout } = useAuthStore();
   const unreadNotifs = 3;
 
   useEffect(() => setMounted(true), []);
@@ -40,24 +40,24 @@ export default function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
           <div className="flex items-center justify-between h-16">
 
             {/* LOGO & MENU CHÍNH (Desktop) */}
             <div className="flex items-center gap-8">
-              <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                 AudioTruyen
               </Link>
 
               {/* Menu Desktop (Ẩn khi màn hình nhỏ hơn lg) */}
               <nav className="hidden lg:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">
-                <Link href="/" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Trang chủ</Link>
+                <Link href="/" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Trang chủ</Link>
                 <div
                   className="relative"
                   onMouseEnter={() => setIsCategoryOpen(true)}
                   onMouseLeave={() => setIsCategoryOpen(false)}
                 >
-                  <button className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  <button className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">
                     Thể loại <ChevronDown className="ml-1 h-4 w-4" />
                   </button>
                   {isCategoryOpen && (
@@ -67,8 +67,8 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
-                <Link href="/new" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Mới đăng</Link>
-                <Link href="/trending" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">Trending</Link>
+                <Link href="/new" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Mới đăng</Link>
+                <Link href="/trending" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Trending</Link>
               </nav>
             </div>
 
@@ -81,7 +81,7 @@ export default function Navbar() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearch}
                   placeholder="Tìm truyện..."
-                  className="w-48 lg:w-64 pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none"
+                  className="w-44 lg:w-56 xl:w-64 pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               </div>
@@ -94,7 +94,7 @@ export default function Navbar() {
               </button>
 
               <div className="flex items-center gap-1 sm:gap-3">
-                <Link href="/topup" className="hidden sm:flex items-center gap-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors">
+                <Link href="/topup" className="hidden sm:flex items-center gap-1.5 whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors">
                   <Coins className="h-4 w-4" /> <span>Nạp tiền</span>
                 </Link>
 
@@ -140,7 +140,7 @@ export default function Navbar() {
                     }
                     className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <img src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} alt="Avatar" className="h-8 w-8 rounded-full bg-gray-200" />
+                    <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} alt="Avatar" className="h-8 w-8 rounded-full bg-gray-200" />
                   </button>
 
                   {/* Dropdown User */}
@@ -177,46 +177,44 @@ export default function Navbar() {
               </div>
             </div>
           </div>
-        </div >
-      </header >
+        </div>
+      </header>
 
       {/* OVERLAY MENU (Dành cho Mobile & Tablet) */}
-      {
-        isMobileMenuOpen && (
-          <div className="fixed inset-0 z-[60] bg-white dark:bg-gray-950 flex flex-col pt-20 px-6 lg:hidden animate-in slide-in-from-bottom-5">
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] bg-white dark:bg-gray-950 flex flex-col pt-20 px-6 lg:hidden animate-in slide-in-from-bottom-5">
 
-            {/* NÚT TẮT (CLOSE) DÀNH CHO OVERLAY */}
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              // Thêm "hidden md:flex" vào dòng class dưới đây:
-              className="hidden md:flex absolute top-5 right-5 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            >
-              <X className="h-6 w-6" />
-            </button>
-            {/* Kết thúc phần thêm mới */}
+          {/* NÚT TẮT (CLOSE) DÀNH CHO OVERLAY */}
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            // Thêm "hidden md:flex" vào dòng class dưới đây:
+            className="hidden md:flex absolute top-5 right-5 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          {/* Kết thúc phần thêm mới */}
 
-            <div className="relative mb-6">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearch}
-                placeholder="Nhập tên truyện rồi ấn Enter..."
-                className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-900 text-lg outline-none"
-              />
-              <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
-            </div>
-
-            <nav className="flex flex-col space-y-4 text-xl font-medium text-gray-800 dark:text-gray-200">
-              <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>Trang chủ</Link>
-              <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)}>Thể loại</Link>
-              <Link href="/new" onClick={() => setIsMobileMenuOpen(false)}>Mới đăng</Link>
-              <Link href="/trending" onClick={() => setIsMobileMenuOpen(false)}>Thịnh hành</Link>
-              <Link href="/topup" className="text-amber-600 dark:text-amber-500" onClick={() => setIsMobileMenuOpen(false)}>Nạp Credits</Link>
-            </nav>
+          <div className="relative mb-6">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearch}
+              placeholder="Nhập tên truyện rồi ấn Enter..."
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-900 text-lg outline-none"
+            />
+            <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
           </div>
-        )
-      }
+
+          <nav className="flex flex-col space-y-4 text-xl font-medium text-gray-800 dark:text-gray-200">
+            <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>Trang chủ</Link>
+            <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)}>Thể loại</Link>
+            <Link href="/new" onClick={() => setIsMobileMenuOpen(false)}>Mới đăng</Link>
+            <Link href="/trending" onClick={() => setIsMobileMenuOpen(false)}>Thịnh hành</Link>
+            <Link href="/topup" className="text-amber-600 dark:text-amber-500" onClick={() => setIsMobileMenuOpen(false)}>Nạp Credits</Link>
+          </nav>
+        </div>
+      )}
 
       {/* NÚT TRÔI NỔI (FAB) CHO MOBILE (Chỉ hiện khi < md) */}
       <button

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -11,6 +12,7 @@ import { apiClient } from "@/lib/api/api-client";
 type ForgotFormValues = z.infer<typeof forgotShema>;
 
 export default function ForgotForm() {
+  const router = useRouter();
     const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -30,6 +32,9 @@ export default function ForgotForm() {
               redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
             });
             setIsSuccess(true);
+            setTimeout(() => {
+              router.push(`/reset-password?email=${encodeURIComponent(data.email)}`);
+            }, 1000);
         } catch (error) {
             const message =
               typeof error === "object" &&
@@ -54,7 +59,7 @@ export default function ForgotForm() {
                     </div>
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Kiểm tra email của bạn</h3>
                     <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-                        Chúng tôi đã gửi một đường dẫn đặt lại mật khẩu đến email bạn vừa nhập. Vui lòng kiểm tra cả hộp thư rác (Spam).
+                      Chúng tôi đã gửi mã đặt lại mật khẩu 6 số đến email bạn vừa nhập. Vui lòng nhập mã ở bước tiếp theo.
                     </p>
                     <Link 
                         href="/login" 
@@ -67,7 +72,7 @@ export default function ForgotForm() {
                 /* TRẠNG THÁI 2: Chưa gửi -> Hiển thị form nhập email */
                 <>
           <p className="text-center text-gray-600 dark:text-gray-400 text-sm mb-6">
-            Đừng lo lắng! Hãy nhập email bạn đã đăng ký, chúng tôi sẽ gửi cho bạn đường dẫn để đặt lại mật khẩu.
+            Đừng lo lắng! Hãy nhập email bạn đã đăng ký, chúng tôi sẽ gửi cho bạn mã 6 số để đặt lại mật khẩu.
           </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -94,7 +99,7 @@ export default function ForgotForm() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               ) : null}
-              {isSubmitting ? "Đang gửi..." : "Gửi link đặt lại mật khẩu"}
+              {isSubmitting ? "Đang gửi..." : "Gửi mã đặt lại mật khẩu"}
             </button>
           </form>
 

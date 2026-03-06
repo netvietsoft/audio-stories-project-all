@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StatsModule } from './stats/stats.module';
+import { StoriesModule } from './stories/stories.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { StatsModule } from './stats/stats.module';
     AuthModule,
     MailModule,
     StatsModule,
+    StoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

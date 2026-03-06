@@ -79,7 +79,7 @@ const UserAvatar = ({ user }: { user: User }) => {
                     onError={() => setImageError(true)}
                 />
             ) : (
-                (user.displayName?.[0] || user.email[0]).toUpperCase()
+                (user.displayName?.[0] || user.email?.[0] || '?').toUpperCase()
             )}
         </div>
     );

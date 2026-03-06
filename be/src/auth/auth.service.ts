@@ -202,8 +202,8 @@ export class AuthService {
     return this.passwordService.forgotPassword(email, redirectUri);
   }
 
-  async resetPassword(tokenRaw: string, newPassword: string): Promise<{ ok: boolean }> {
-    return this.passwordService.resetPassword(tokenRaw, newPassword);
+  async resetPassword(email: string, code: string, newPassword: string): Promise<{ ok: boolean }> {
+    return this.passwordService.resetPassword(email, code, newPassword);
   }
 
   async getUserInfo(userId: string): Promise<UserInfo> {

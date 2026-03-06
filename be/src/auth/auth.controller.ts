@@ -185,7 +185,7 @@ export class AuthController {
   @Post('reset-password')
   @HttpCode(200)
   async reset(@Body() dto: ResetDto) {
-    return this.auth.resetPassword(dto.token, dto.newPassword);
+    return this.auth.resetPassword(dto.email, dto.code, dto.newPassword);
   }
 
   @Post('check-premium')

@@ -136,22 +136,42 @@ export class StoriesService {
         skip: (page - 1) * limit,
         take: limit,
         orderBy,
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          _count: {
-            select: { chapters: true },
-          },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          thumbnailUrl: true,
+          status: true,
+          totalViews: true,
+          authorId: true,
         },
       }),
     ]);
 
+    const authorIds = [...new Set(stories.map((story) => story.authorId).filter(Boolean))];
+    const authors = authorIds.length
+      ? await this.prisma.author.findMany({
+          where: {
+            id: {
+              in: authorIds,
+            },
+          },
+          select: {
+            id: true,
+            name: true,
+          },
+        })
+      : [];
+
+    const authorMap = new Map(authors.map((author) => [author.id, author]));
+
+    const normalizedStories = stories.map((story) => ({
+      ...story,
+      author: authorMap.get(story.authorId) ?? undefined,
+    }));
+
     return {
-      data: stories.map((story) => this.serializeStory(story)),
+      data: normalizedStories.map((story) => this.serializeStory(story)),
       meta: {
         total,
         page,
@@ -241,6 +261,7 @@ export class StoriesService {
             chapterNumber: true,
             content: true,
             r2AudioUrl: true,
+            youtubeVideoId: true,
             audioDuration: true,
             accessType: true,
             unlocksAt: true,

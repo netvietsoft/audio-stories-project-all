@@ -22,6 +22,7 @@ export type AudioTrack = {
   id: string;
   title: string;
   storySlug?: string;
+  chapterNumber?: number;
   author?: string;
   audioUrl: string;
   coverUrl?: string;

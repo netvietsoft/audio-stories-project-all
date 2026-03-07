@@ -148,9 +148,12 @@ export default function GlobalPlayer() {
     return null;
   }
 
-  const chapterHref = currentTrack.storySlug
-    ? `/story/${currentTrack.storySlug}?chapterId=${currentTrack.id}`
-    : undefined;
+  const chapterHref =
+    currentTrack.storySlug && currentTrack.chapterNumber
+      ? `/story/${currentTrack.storySlug}/chuong-${currentTrack.chapterNumber}`
+      : currentTrack.storySlug
+        ? `/story/${currentTrack.storySlug}`
+        : undefined;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/85 px-3 py-2 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/85 sm:px-4">

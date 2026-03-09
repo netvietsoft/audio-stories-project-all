@@ -170,7 +170,7 @@ export default function ProfilePage() {
                                         <CreditCard className="w-5 h-5 text-amber-500" />
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="font-extrabold text-green-700 dark:text-green-400 text-lg leading-tight">{(user.credits).toLocaleString("vi-VN")}</span>
+                                        <span className="font-extrabold text-green-700 dark:text-green-400 text-lg leading-tight">{Number(user.credits ?? 0).toLocaleString("vi-VN")}</span>
                                     </div>
                                 </div>
                             </div>

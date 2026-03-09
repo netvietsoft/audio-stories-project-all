@@ -1,7 +1,6 @@
-/// <reference types="multer" />
 import { Body, Controller, Get, Param, Post, Query, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { S3Service } from '@/upload/s3.service';
+import { S3Service, type UploadFilePayload } from '@/upload/s3.service';
 
 
 
@@ -23,7 +22,7 @@ export class StoriesController {
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadAudio(@UploadedFile() file: Express.Multer.File) {
+  async uploadAudio(@UploadedFile() file: UploadFilePayload) {
     const url = await this.s3Service.uploadFile(file, 'audio-stories');
     return { url };
   }

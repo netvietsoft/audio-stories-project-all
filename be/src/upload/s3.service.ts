@@ -1,8 +1,13 @@
-/// <reference types="multer" />
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
+
+export type UploadFilePayload = {
+    originalname: string;
+    buffer: Buffer;
+    mimetype: string;
+};
 
 @Injectable()
 export class S3Service {
@@ -24,7 +29,7 @@ export class S3Service {
         this.bucketName = this.configService.get<string>('AWS_BUCKET_NAME')!;
     }
 
-    async uploadFile(file: Express.Multer.File, folder: string = 'audio'): Promise<string> {
+    async uploadFile(file: UploadFilePayload, folder: string = 'audio'): Promise<string> {
         const fileExtension = file.originalname.split('.').pop();
         const fileName = `${folder}/${uuidv4()}.${fileExtension}`;
 

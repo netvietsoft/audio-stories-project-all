@@ -178,32 +178,60 @@ async function main() {
     stories.push(story);
   }
 
-  for (let i = 0; i < 20; i += 1) {
-    const story = stories[i % stories.length];
-    const chapterNumber = i + 1;
+  const paragraphTemplates = [
+    'Trời đêm phủ kín dãy núi, tiếng gió thổi qua khe đá nghe như lời thì thầm cổ xưa. Nhân vật chính ngồi tĩnh tọa, cố giữ tâm thần bình ổn giữa linh khí cuộn trào.',
+    'Trong khoảnh khắc mở mắt, hắn cảm nhận được mạch khí vận hành nhanh hơn trước gấp bội. Một tia sáng mỏng như tơ lướt qua đầu ngón tay, báo hiệu cảnh giới đã có dấu hiệu đột phá.',
+    'Nhưng ngay khi niềm vui vừa chớm nở, uy áp từ xa đã ập tới như thủy triều. Một bóng người lạ đứng trên đỉnh vách đá, mang theo khí tức khiến cả sơn cốc chìm vào im lặng.',
+    'Hắn hít sâu một hơi, nắm chặt chuôi kiếm rồi bước từng bước chậm rãi. Dù kết cục chưa rõ, đêm nay nhất định phải mở ra chương mới cho vận mệnh của chính mình.',
+  ];
 
-    await prisma.chapter.upsert({
-      where: {
-        storyId_chapterNumber: {
+  for (let storyIndex = 0; storyIndex < stories.length; storyIndex += 1) {
+    const story = stories[storyIndex]!;
+
+    for (let chapterNumber = 1; chapterNumber <= 18; chapterNumber += 1) {
+      const chapterSeed = storyIndex * 20 + chapterNumber;
+      const paragraphCount = 3 + (chapterNumber % 2);
+      const content = Array.from({ length: paragraphCount }, (_, idx) => {
+        const template = paragraphTemplates[(chapterNumber + idx) % paragraphTemplates.length]!;
+        return `[Đoạn ${idx + 1}] ${template}`;
+      }).join('\n\n');
+
+      const accessType = chapterNumber % 9 === 0 ? 'vip' : chapterNumber % 4 === 0 ? 'timed' : 'free';
+      const unlocksAt =
+        accessType === 'timed'
+          ? new Date(Date.now() + ((chapterNumber % 5) + 1) * 24 * 60 * 60 * 1000)
+          : null;
+      const youtubeVideoId = chapterNumber % 3 === 0 ? 'dQw4w9WgXcQ' : null;
+
+      await prisma.chapter.upsert({
+        where: {
+          storyId_chapterNumber: {
+            storyId: story.id,
+            chapterNumber,
+          },
+        },
+        update: {
+          title: `Chương ${chapterNumber}: Biến chuyển linh lực`,
+          content,
+          r2AudioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(chapterSeed % 16) + 1}.mp3`,
+          youtubeVideoId,
+          audioDuration: 540 + chapterNumber * 12,
+          accessType,
+          unlocksAt,
+        },
+        create: {
           storyId: story.id,
           chapterNumber,
+          title: `Chương ${chapterNumber}: Biến chuyển linh lực`,
+          content,
+          r2AudioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(chapterSeed % 16) + 1}.mp3`,
+          youtubeVideoId,
+          audioDuration: 540 + chapterNumber * 12,
+          accessType,
+          unlocksAt,
         },
-      },
-      update: {
-        title: `Chương ${chapterNumber}`,
-        r2AudioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(i % 16) + 1}.mp3`,
-        audioDuration: 600 + i * 7,
-        accessType: i % 5 === 0 ? 'vip' : 'free',
-      },
-      create: {
-        storyId: story.id,
-        chapterNumber,
-        title: `Chương ${chapterNumber}`,
-        r2AudioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(i % 16) + 1}.mp3`,
-        audioDuration: 600 + i * 7,
-        accessType: i % 5 === 0 ? 'vip' : 'free',
-      },
-    });
+      });
+    }
   }
 
   console.log('Seed completed!');

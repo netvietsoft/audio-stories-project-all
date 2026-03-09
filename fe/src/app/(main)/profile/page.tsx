@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
     User, Mail, Shield, Calendar, CreditCard,
@@ -103,6 +104,16 @@ export default function ProfilePage() {
                             <span className="font-semibold text-blue-600 dark:text-blue-400">Nạp Credits</span>
                             <ChevronRight className="w-4 h-4 ml-auto" />
                         </button>
+                        <Link href="/profile/favorites" className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-100 dark:border-gray-700 group text-gray-700 dark:text-gray-200">
+                            <Heart className="w-5 h-5 text-red-500" />
+                            <span className="font-semibold">Truyện yêu thích</span>
+                            <ChevronRight className="w-4 h-4 ml-auto text-gray-300" />
+                        </Link>
+                        <Link href="/profile/history" className="w-full flex items-center gap-3 px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group text-gray-700 dark:text-gray-200">
+                            <Clock className="w-5 h-5 text-blue-500" />
+                            <span className="font-semibold">Lịch sử nghe</span>
+                            <ChevronRight className="w-4 h-4 ml-auto text-gray-300" />
+                        </Link>
                     </div>
                 </div>
 

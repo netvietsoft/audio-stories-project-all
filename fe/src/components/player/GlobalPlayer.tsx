@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, X } from "lucide-react";
 
+import { apiClient } from "@/lib/api/api-client";
 import { useAudioStore } from "@/stores/audio-store";
+import { useUserStore } from "@/stores/user-store";
 
 const formatDuration = (seconds?: number | null) => {
   if (!seconds || seconds <= 0) return "00:00";
@@ -16,6 +18,9 @@ const formatDuration = (seconds?: number | null) => {
 export default function GlobalPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [mounted, setMounted] = useState(false);
+  const lastSyncedProgressRef = useRef<Map<string, number>>(new Map());
+
+  const accessToken = useUserStore((state) => state.accessToken);
 
   const currentTrack = useAudioStore((state) => state.currentTrack);
   const isPlaying = useAudioStore((state) => state.isPlaying);
@@ -39,6 +44,35 @@ export default function GlobalPlayer() {
   const toggleMute = useAudioStore((state) => state.toggleMute);
 
   const speedOptions = [0.75, 1, 1.25, 1.5, 2] as const;
+
+  const syncHistory = useCallback(
+    async (force = false) => {
+      if (!accessToken || !currentTrack) return;
+
+      const storyId = currentTrack.storyId;
+      const chapterId = currentTrack.chapterId || currentTrack.id;
+      if (!storyId || !chapterId) return;
+
+      const liveTime = Math.floor(audioRef.current?.currentTime || 0);
+      if (!force && liveTime < 3) return;
+
+      const key = `${storyId}:${chapterId}`;
+      const lastSynced = lastSyncedProgressRef.current.get(key) || 0;
+      if (!force && liveTime <= lastSynced) return;
+
+      try {
+        await apiClient.post("/history/sync", {
+          storyId,
+          chapterId,
+          progressSeconds: liveTime,
+        });
+        lastSyncedProgressRef.current.set(key, liveTime);
+      } catch {
+        // Keep player resilient if history sync is temporarily unavailable.
+      }
+    },
+    [accessToken, currentTrack],
+  );
 
   const cycleSpeed = () => {
     const currentIndex = speedOptions.findIndex((item) => item === playbackRate);
@@ -138,6 +172,28 @@ export default function GlobalPlayer() {
     setCurrentTime(seekTarget);
     clearSeekTarget();
   }, [clearSeekTarget, seekTarget, setCurrentTime]);
+
+  useEffect(() => {
+    if (!isPlaying) {
+      void syncHistory(true);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      void syncHistory(false);
+    }, 10_000);
+
+    return () => {
+      clearInterval(timer);
+      void syncHistory(true);
+    };
+  }, [isPlaying, syncHistory]);
+
+  useEffect(() => {
+    return () => {
+      void syncHistory(true);
+    };
+  }, [syncHistory]);
 
   const progress = useMemo(() => {
     if (!duration || duration <= 0) return 0;
@@ -242,6 +298,7 @@ export default function GlobalPlayer() {
           />
           <button
             onClick={() => {
+              void syncHistory(true);
               togglePlay(false);
               setTrack(null);
             }}

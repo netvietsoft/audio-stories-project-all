@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { useState } from "react";
 
-import { Eye, Heart } from "lucide-react";
+import { Eye } from "lucide-react";
+import FavoriteButton from "@/components/shared/FavoriteButton";
 
 type StoryCardStory = {
   id: string;
@@ -21,7 +21,6 @@ type StoryCardProps = {
 
 export default function StoryCard({ story }: StoryCardProps) {
   const statusLabel = story.status === "completed" ? "Full" : "Đang ra";
-  const [isFav, setIsFav] = useState(false);
 
   return (
     <Link
@@ -38,22 +37,9 @@ export default function StoryCard({ story }: StoryCardProps) {
           {statusLabel}
         </span>
 
-        <button
-          type="button"
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            setIsFav((prev) => !prev);
-          }}
-          className={`absolute right-2 top-2 rounded-full p-2 backdrop-blur-sm transition ${
-            isFav
-              ? "bg-red-500/90 text-white"
-              : "bg-black/35 text-white hover:bg-white/30"
-          }`}
-          aria-label="Them vao yeu thich"
-        >
-          <Heart className="h-4 w-4" fill={isFav ? "currentColor" : "none"} />
-        </button>
+        <div className="absolute right-2 top-2">
+          <FavoriteButton storyId={story.id} />
+        </div>
 
         <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/90 via-black/65 to-transparent p-3">
           <h3 className="line-clamp-2 text-sm font-semibold text-white drop-shadow-md">{story.title}</h3>

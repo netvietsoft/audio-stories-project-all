@@ -32,6 +32,7 @@ interface Story {
     slug: string;
     thumbnailUrl: string | null;
     status: 'ongoing' | 'completed';
+    isRecommended: boolean;
     totalViews: number;
     averageRating: number | string;
     createdAt: string;
@@ -76,6 +77,7 @@ export default function StoriesPage() {
     const [filterStatus, setFilterStatus] = useState('all');
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
+    const [updatingRecommendId, setUpdatingRecommendId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchStories();
@@ -104,6 +106,27 @@ export default function StoriesPage() {
         e.preventDefault();
         setPage(1);
         fetchStories();
+    };
+
+    const toggleRecommended = async (story: Story) => {
+        setUpdatingRecommendId(story.id);
+        try {
+            await apiClient.patch(`/stories/${story.id}/recommended`, {
+                isRecommended: !story.isRecommended,
+            });
+
+            setStories((prev) =>
+                prev.map((item) =>
+                    item.id === story.id
+                        ? { ...item, isRecommended: !item.isRecommended }
+                        : item,
+                ),
+            );
+        } catch (error) {
+            console.error('Failed to update recommended flag:', error);
+        } finally {
+            setUpdatingRecommendId(null);
+        }
     };
 
     const formatDate = (dateString: string) => {
@@ -220,6 +243,7 @@ export default function StoriesPage() {
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Chương</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Lượt nghe</th>
+                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Đề xuất</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Đánh giá</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Ngày tạo</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
@@ -229,7 +253,7 @@ export default function StoriesPage() {
                             {isLoading ? (
                                 Array(5).fill(0).map((_, i) => (
                                     <tr key={i} className="animate-pulse">
-                                        <td colSpan={7} className="px-8 py-6">
+                                        <td colSpan={8} className="px-8 py-6">
                                             <div className="h-12 bg-slate-50 rounded-2xl" />
                                         </td>
                                     </tr>
@@ -276,6 +300,17 @@ export default function StoriesPage() {
                                             </div>
                                         </td>
                                         <td className="px-8 py-5 text-center">
+                                            <button
+                                                disabled={updatingRecommendId === story.id}
+                                                onClick={() => void toggleRecommended(story)}
+                                                className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider transition ${story.isRecommended
+                                                    ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'} disabled:opacity-50`}
+                                            >
+                                                {story.isRecommended ? 'Đang bật' : 'Đang tắt'}
+                                            </button>
+                                        </td>
+                                        <td className="px-8 py-5 text-center">
                                             <div className="flex items-center justify-center gap-1 text-amber-500 bg-amber-50 px-2 py-1 rounded-lg border border-amber-100 max-w-fit mx-auto">
                                                 <Star className="w-3.5 h-3.5 fill-amber-500" />
                                                 <span className="text-xs font-black">{Number(story.averageRating).toFixed(1)}</span>
@@ -311,7 +346,7 @@ export default function StoriesPage() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={7} className="px-8 py-20 text-center">
+                                    <td colSpan={8} className="px-8 py-20 text-center">
                                         <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
                                             <Newspaper className="w-8 h-8 text-slate-300" />
                                         </div>

@@ -24,6 +24,7 @@ import {
 
 import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
+import RecommendedSlider from "@/components/story/RecommendedSlider";
 import StoryReader from "@/components/story/StoryReader";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
@@ -74,13 +75,7 @@ type StoryDetail = {
   chapters: ChapterItem[];
 };
 
-type HomeResponse = {
-  trending: StoryListItem[];
-  newest: StoryListItem[];
-  featured: StoryListItem[];
-};
-
-type ExploreResponse = {
+type RecommendedResponse = {
   data: StoryListItem[];
 };
 
@@ -145,10 +140,7 @@ export default function StoryChapterPage() {
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [story, setStory] = useState<StoryDetail | null>(null);
-  const [relatedStories, setRelatedStories] = useState<StoryListItem[]>([]);
-  const [trendingStories, setTrendingStories] = useState<StoryListItem[]>([]);
-  const [popularStories, setPopularStories] = useState<StoryListItem[]>([]);
-  const [newestStories, setNewestStories] = useState<StoryListItem[]>([]);
+  const [recommendedStories, setRecommendedStories] = useState<StoryListItem[]>([]);
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   const [isChapterMenuOpen, setIsChapterMenuOpen] = useState(false);
   const [chapterQuery, setChapterQuery] = useState("");
@@ -185,14 +177,11 @@ export default function StoryChapterPage() {
 
     const fetchDetail = async () => {
       try {
-        const [detailResult, homeResult, popularResult] = await Promise.allSettled([
+        const [detailResult, recommendedResult] = await Promise.allSettled([
           apiClient.get<StoryDetail>(`/stories/${slug}`),
-          apiClient.get<HomeResponse>("/stories/home"),
-          apiClient.get<ExploreResponse>("/stories/explore", {
+          apiClient.get<RecommendedResponse>("/stories/recommended", {
             params: {
-              page: 1,
-              limit: 5,
-              sort: "views",
+              limit: 12,
             },
           }),
         ]);
@@ -202,8 +191,8 @@ export default function StoryChapterPage() {
         }
 
         const detailRes = detailResult.value;
-        const homeData = homeResult.status === "fulfilled" ? homeResult.value.data : null;
-        const popularData = popularResult.status === "fulfilled" ? popularResult.value.data : null;
+        const recommendedData =
+          recommendedResult.status === "fulfilled" ? recommendedResult.value.data?.data || [] : [];
 
         const detail = detailRes.data;
         setStory(detail);
@@ -222,31 +211,7 @@ export default function StoryChapterPage() {
           }
         }
 
-        setTrendingStories(homeData?.trending?.slice(0, 5) || []);
-        setNewestStories(homeData?.newest?.slice(0, 5) || []);
-        setPopularStories(popularData?.data || []);
-
-        const firstCategoryId = detail.categories?.[0]?.category?.id;
-
-        if (firstCategoryId) {
-          try {
-            const relatedRes = await apiClient.get<ExploreResponse>("/stories/explore", {
-              params: {
-                page: 1,
-                limit: 10,
-                categoryId: firstCategoryId,
-                sort: "views",
-              },
-            });
-
-            const filtered = (relatedRes.data.data || []).filter((item) => item.slug !== detail.slug).slice(0, 3);
-            setRelatedStories(filtered);
-          } catch {
-            setRelatedStories((homeData?.featured || []).filter((item) => item.slug !== detail.slug).slice(0, 3));
-          }
-        } else {
-          setRelatedStories((homeData?.featured || []).filter((item) => item.slug !== detail.slug).slice(0, 3));
-        }
+        setRecommendedStories(recommendedData.filter((item) => item.slug !== detail.slug));
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu chi tiết truyện:", error);
         setStory(null);
@@ -540,53 +505,6 @@ export default function StoryChapterPage() {
     setShowTopupAction(false);
     setIsUnlockModalOpen(false);
   };
-
-  const rankingBlock = (title: string, list: StoryListItem[]) => (
-    <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <h3 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-      <div className="space-y-3">
-        {list.slice(0, 5).map((item, index) => (
-          <Link key={item.id} href={`/story/${item.slug}`} className="flex items-center gap-3 rounded-lg p-1 hover:bg-gray-50 dark:hover:bg-gray-800">
-            <div className="relative h-14 w-10 shrink-0 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800">
-              <img
-                src={item.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
-                alt={item.title}
-                className="h-full w-full object-cover"
-              />
-              <span className="absolute left-1 top-1 rounded bg-blue-600 px-1.5 text-[10px] font-semibold text-white">#{index + 1}</span>
-            </div>
-            <div className="min-w-0">
-              <p className="line-clamp-1 text-sm font-medium text-gray-900 dark:text-gray-100">{item.title}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{Number(item.totalViews || 0).toLocaleString("vi-VN")} luot xem</p>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-
-  const suggestionBlock = (title: string, list: StoryListItem[]) => (
-    <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <h3 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-      <div className="space-y-3">
-        {list.slice(0, 5).map((item) => (
-          <Link key={item.id} href={`/story/${item.slug}`} className="flex items-center gap-3 rounded-lg p-1 hover:bg-gray-50 dark:hover:bg-gray-800">
-            <div className="relative h-14 w-10 shrink-0 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800">
-              <img
-                src={item.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
-                alt={item.title}
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <div className="min-w-0">
-              <p className="line-clamp-1 text-sm font-medium text-gray-900 dark:text-gray-100">{item.title}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{Number(item.totalViews || 0).toLocaleString("vi-VN")} luot xem</p>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
 
   if (isLoading) {
     return <p className="text-sm text-gray-500 dark:text-gray-400">Truyện đang tải, bạn đợi xíu nhé!</p>;
@@ -911,12 +829,7 @@ export default function StoryChapterPage() {
         </aside>
       </div>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {suggestionBlock("Có thể bạn sẽ thích", relatedStories)}
-        {rankingBlock("Truyện trending", trendingStories)}
-        {rankingBlock("Truyện phổ biến", popularStories)}
-        {rankingBlock("Truyện mới đăng", newestStories)}
-      </section>
+      <RecommendedSlider stories={recommendedStories} />
 
       {isUnlockModalOpen ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4">

@@ -1,8 +1,9 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
+import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/auth";
 import { API_BASE_URL, REFRESH_TOKEN_ENDPOINT } from "@/constants/auth";
 import { clearAuthCookies, setAuthCookies } from "@/lib/auth/cookies";
-import { getAccessToken, getRefreshToken, useAuthStore } from "@/store/authStore";
+import { useUserStore } from "@/stores/user-store";
 
 type RetryRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
@@ -28,7 +29,9 @@ let refreshTokenPromise: Promise<string | null> | null = null;
 const refreshAccessToken = async (): Promise<string | null> => {
   if (!refreshTokenPromise) {
     refreshTokenPromise = (async () => {
-      const refreshToken = getRefreshToken();
+      const refreshToken =
+        useUserStore.getState().refreshToken ||
+        (typeof window !== "undefined" ? localStorage.getItem(REFRESH_TOKEN_KEY) : null);
 
       if (!refreshToken) {
         return null;
@@ -47,15 +50,31 @@ const refreshAccessToken = async (): Promise<string | null> => {
 
         const { access_token, refresh_token } = response.data;
 
-        const currentUser = useAuthStore.getState().user;
+        const currentUser = useUserStore.getState().user;
         if (currentUser) {
-          useAuthStore.getState().setAuth(currentUser, access_token, refresh_token);
+          useUserStore.getState().setAuth({
+            user: currentUser,
+            accessToken: access_token,
+            refreshToken: refresh_token,
+          });
+        } else {
+          useUserStore.getState().updateAccessToken(access_token);
         }
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem(ACCESS_TOKEN_KEY, access_token);
+          localStorage.setItem(REFRESH_TOKEN_KEY, refresh_token);
+        }
+
         setAuthCookies(access_token, refresh_token);
 
         return access_token;
       } catch {
-        useAuthStore.getState().logout();
+        useUserStore.getState().clearAuth();
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(ACCESS_TOKEN_KEY);
+          localStorage.removeItem(REFRESH_TOKEN_KEY);
+        }
         clearAuthCookies();
         return null;
       } finally {
@@ -68,7 +87,9 @@ const refreshAccessToken = async (): Promise<string | null> => {
 };
 
 apiClient.interceptors.request.use((config) => {
-  const accessToken = getAccessToken();
+  const accessToken =
+    useUserStore.getState().accessToken ||
+    (typeof window !== "undefined" ? localStorage.getItem(ACCESS_TOKEN_KEY) : null);
 
   if (accessToken) {
     config.headers.set("Authorization", `Bearer ${accessToken}`);

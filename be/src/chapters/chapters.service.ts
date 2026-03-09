@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
+import { CreateStandaloneChapterDto } from './dto/create-standalone-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ChapterQueryDto } from './dto/chapter-query.dto';
 import { Prisma } from '@prisma/client';
@@ -90,10 +91,13 @@ export class ChaptersService {
         return chapter;
     }
 
-    async createStandalone(data: CreateChapterDto) {
+    async createStandalone(data: CreateStandaloneChapterDto) {
+        const { storyId, ...chapterData } = data;
+
         return this.prisma.chapter.create({
             data: {
-                ...data,
+                ...chapterData,
+                storyId,
             },
         });
     }

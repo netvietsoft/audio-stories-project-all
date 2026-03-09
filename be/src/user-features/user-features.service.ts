@@ -49,9 +49,11 @@ export class UserFeaturesService {
   }
 
   private serializeStory(story: any) {
+    const chapterCount = story?._count?.chapters;
     return {
       ...story,
       totalViews: typeof story.totalViews === 'bigint' ? Number(story.totalViews) : story.totalViews,
+      totalChapters: typeof chapterCount === 'number' ? chapterCount : (story.totalChapters ?? 0),
     };
   }
 
@@ -214,6 +216,11 @@ export class UserFeaturesService {
               name: true,
             },
           },
+          _count: {
+            select: {
+              chapters: true,
+            },
+          },
         },
       }),
     ]);
@@ -369,7 +376,7 @@ export class UserFeaturesService {
           },
         });
 
-        if (!chapter) continue;
+        if (!chapter || !chapter.storyId) continue;
 
         merged.set(chapter.id, {
           id: `pending:${userId}:${chapter.id}`,

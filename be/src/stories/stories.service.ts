@@ -46,7 +46,7 @@ export class StoriesService {
       await this.prisma.chapter.updateMany({
         where: {
           id: { in: chapterIds },
-          storyId: null, // Only assign chapters that are not already assigned
+          deletedAt: null,
         },
         data: {
           storyId: story.id,
@@ -109,6 +109,36 @@ export class StoriesService {
       trending: trending.map((story) => this.serializeStory(story)),
       newest: newest.map((story) => this.serializeStory(story)),
       featured: featured.map((story) => this.serializeStory(story)),
+    };
+  }
+
+  async getRecommendedStories(limit = 12) {
+    const safeLimit = Math.min(Math.max(limit || 12, 1), 15);
+    const stories = await this.prisma.story.findMany({
+      where: {
+        deletedAt: null,
+        isRecommended: true,
+      },
+      take: safeLimit,
+      orderBy: [{ updatedAt: 'desc' }, { totalViews: 'desc' }],
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        thumbnailUrl: true,
+        status: true,
+        totalViews: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      data: stories.map((story) => this.serializeStory(story)),
     };
   }
 
@@ -323,5 +353,31 @@ export class StoriesService {
         name: 'asc',
       },
     });
+  }
+
+  async updateRecommended(id: string, isRecommended: boolean) {
+    const existing = await this.prisma.story.findUnique({
+      where: { id },
+      select: { id: true, deletedAt: true },
+    });
+
+    if (!existing || existing.deletedAt) {
+      throw new NotFoundException('Story not found');
+    }
+
+    const updated = await this.prisma.story.update({
+      where: { id },
+      data: { isRecommended },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return this.serializeStory(updated);
   }
 }

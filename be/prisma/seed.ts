@@ -29,7 +29,7 @@ async function main() {
 
   console.log('Created default roles');
 
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@media-ai.app';
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@truyen-audio.app';
   const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
 
   const existingAdmin = await prisma.user.findUnique({

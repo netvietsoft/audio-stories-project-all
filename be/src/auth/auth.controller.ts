@@ -81,7 +81,18 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAccessGuard)
   async me(@Account() user: any) {
-    return await this.auth.getUserInfo(user.id);
+    const userInfo = await this.auth.getUserInfo(user.id);
+    // Add debug info
+    return {
+      ...userInfo,
+      _debug: {
+        jwtPayload: {
+          sub: user.sub,
+          roles: user.roles,
+          permissions: user.permissions,
+        },
+      },
+    };
   }
 
   @Patch('me')

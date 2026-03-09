@@ -107,13 +107,33 @@ export default function PackagesPage() {
             console.log('Making API request...');
             
             if (editingCode) {
+                // For update, only send allowed fields (exclude code, createdAt, updatedAt)
+                const updateData = {
+                    name: formData.name,
+                    priceVnd: formData.priceVnd,
+                    credits: formData.credits,
+                    description: formData.description,
+                    isActive: formData.isActive,
+                    displayOrder: formData.displayOrder,
+                };
                 console.log('PATCH request to:', `/packages/${editingCode}`);
-                const response = await apiClient.patch(`/packages/${editingCode}`, formData);
+                console.log('PATCH data:', updateData);
+                const response = await apiClient.patch(`/packages/${editingCode}`, updateData);
                 console.log('PATCH response:', response);
             } else {
+                // For create, send all fields except timestamps
+                const createData = {
+                    code: formData.code,
+                    name: formData.name,
+                    priceVnd: formData.priceVnd,
+                    credits: formData.credits,
+                    description: formData.description,
+                    isActive: formData.isActive,
+                    displayOrder: formData.displayOrder,
+                };
                 console.log('POST request to:', '/packages');
-                console.log('POST data:', formData);
-                const response = await apiClient.post('/packages', formData);
+                console.log('POST data:', createData);
+                const response = await apiClient.post('/packages', createData);
                 console.log('POST response:', response);
             }
             

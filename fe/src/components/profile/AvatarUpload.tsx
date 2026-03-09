@@ -24,6 +24,9 @@ export default function AvatarUpload() {
                     const newAvatarUrl = res[0]?.url;
                     if (!newAvatarUrl) return;
 
+                    // Capture old avatar URL to delete later
+                    const oldAvatarUrl = user.avatarUrl;
+
                     try {
                         // Update Backend
                         await apiClient.patch("/auth/me", {
@@ -37,6 +40,23 @@ export default function AvatarUpload() {
                         });
 
                         alert("Cập nhật ảnh đại diện thành công!");
+
+                        // Delete old avatar if it exists and is an UploadThing URL
+                        if (oldAvatarUrl && oldAvatarUrl.includes("uploadthing.com")) {
+                            const fileKey = oldAvatarUrl.split("/f/")[1];
+                            if (fileKey) {
+                                try {
+                                    await fetch("/api/avatar/delete", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ fileKey }),
+                                    });
+                                    console.log("Successfully requested deletion of old avatar:", fileKey);
+                                } catch (deleteError) {
+                                    console.error("Failed to delete old avatar from UploadThing", deleteError);
+                                }
+                            }
+                        }
                     } catch (error) {
                         console.error("Failed to sync avatar with backend", error);
                         alert("Lỗi khi đồng bộ ảnh đại diện với máy chủ.");

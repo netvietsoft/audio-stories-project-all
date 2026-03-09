@@ -12,7 +12,7 @@ export class MailService {
     private readonly cfg: ConfigService,
   ) {
     const email = this.cfg.get('SMTP_FROM') || this.cfg.get('SMTP_USER') || 'no-reply@example.com';
-    this.from = `Media AI <${email}>`;
+    this.from = `NetViet Audio <${email}>`;
   }
 
   async sendVerifyEmail(to: string, link: string) {

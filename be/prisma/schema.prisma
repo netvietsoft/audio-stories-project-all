@@ -214,7 +214,7 @@ enum ChapterAccessType {
 
 model Chapter {
   id             String            @id @default(uuid()) @db.VarChar(36)
-  storyId        String            @map("story_id") @db.VarChar(36)
+  storyId        String?           @map("story_id") @db.VarChar(36)
   chapterNumber  Float             @map("chapter_number") @db.Float
   title          String            @db.VarChar(300)
   content        String?           @db.LongText
@@ -228,7 +228,7 @@ model Chapter {
   updatedAt      DateTime          @updatedAt @map("updated_at")
   deletedAt      DateTime?         @map("deleted_at")
 
-  story            Story              @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  story            Story?             @relation(fields: [storyId], references: [id], onDelete: Cascade)
   listeningHistory ListeningHistory[]
   audioReports     AudioReport[]
   playlistItems    PlaylistItem[]

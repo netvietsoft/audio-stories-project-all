@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
+import { ChapterQueryDto } from './dto/chapter-query.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ChaptersService {
@@ -12,6 +14,47 @@ export class ChaptersService {
             where: { storyId, deletedAt: null },
             orderBy: { chapterNumber: 'asc' },
         });
+    }
+
+    async findAllGlobal(query: ChapterQueryDto) {
+        const { page = 1, limit = 20, search } = query;
+        const skip = (page - 1) * limit;
+
+        const where: Prisma.ChapterWhereInput = {
+            deletedAt: null,
+            ...(search
+                ? {
+                    OR: [
+                        { title: { contains: search } },
+                    ],
+                }
+                : {}),
+        };
+
+        const [chapters, total] = await Promise.all([
+            this.prisma.chapter.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    story: {
+                        select: { title: true },
+                    },
+                },
+            }),
+            this.prisma.chapter.count({ where }),
+        ]);
+
+        return {
+            data: chapters,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
     }
 
     async findOne(id: string) {
@@ -31,10 +74,26 @@ export class ChaptersService {
         const story = await this.prisma.story.findUnique({ where: { id: storyId } });
         if (!story) throw new NotFoundException('Story not found');
 
+        const [chapter] = await this.prisma.$transaction([
+            this.prisma.chapter.create({
+                data: {
+                    ...data,
+                    storyId,
+                },
+            }),
+            this.prisma.story.update({
+                where: { id: storyId },
+                data: { totalChapters: { increment: 1 } },
+            }),
+        ]);
+
+        return chapter;
+    }
+
+    async createStandalone(data: CreateChapterDto) {
         return this.prisma.chapter.create({
             data: {
                 ...data,
-                storyId,
             },
         });
     }
@@ -49,12 +108,27 @@ export class ChaptersService {
     }
 
     async remove(id: string) {
-        await this.findOne(id);
+        const chapter = await this.findOne(id);
 
-        // Soft delete
-        return this.prisma.chapter.update({
-            where: { id },
-            data: { deletedAt: new Date() },
-        });
+        // Soft delete and decrement totalChapters
+        const updates: any[] = [
+            this.prisma.chapter.update({
+                where: { id },
+                data: { deletedAt: new Date() },
+            })
+        ];
+
+        if (chapter.storyId) {
+            updates.push(
+                this.prisma.story.update({
+                    where: { id: chapter.storyId },
+                    data: { totalChapters: { decrement: 1 } },
+                })
+            );
+        }
+
+        const [updatedChapter] = await this.prisma.$transaction(updates);
+
+        return updatedChapter;
     }
 }

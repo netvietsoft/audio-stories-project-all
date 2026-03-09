@@ -7,10 +7,12 @@ import {
     Param,
     Delete,
     UseGuards,
+    Query,
 } from '@nestjs/common';
 import { ChaptersService } from './chapters.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
+import { ChapterQueryDto } from './dto/chapter-query.dto';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { Roles } from '@/auth/decorators/roles.decorator';
@@ -34,6 +36,20 @@ export class ChaptersController {
         @Body() createChapterDto: CreateChapterDto,
     ) {
         return this.chaptersService.create(storyId, createChapterDto);
+    }
+
+    @Post('chapters')
+    @UseGuards(JwtAccessGuard, RolesGuard)
+    @Roles('ADMIN')
+    createStandalone(@Body() createChapterDto: CreateChapterDto) {
+        return this.chaptersService.createStandalone(createChapterDto);
+    }
+
+    @Get('chapters')
+    @UseGuards(JwtAccessGuard, RolesGuard)
+    @Roles('ADMIN')
+    findAllGlobal(@Query() query: ChapterQueryDto) {
+        return this.chaptersService.findAllGlobal(query);
     }
 
     @Get('chapters/:id')

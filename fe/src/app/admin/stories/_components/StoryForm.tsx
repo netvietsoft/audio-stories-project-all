@@ -20,6 +20,8 @@ import {
 import Link from 'next/link';
 
 import { apiClient } from '@/lib/api/api-client';
+import { UploadButton } from '@/lib/uploadthing';
+import { ChapterForm } from '../[id]/chapters/_components/ChapterForm';
 
 const storySchema = z.object({
 
@@ -30,7 +32,6 @@ const storySchema = z.object({
     authorId: z.string().uuid('Vui lòng chọn tác giả'),
     status: z.enum(['ongoing', 'completed']),
     categoryIds: z.array(z.number()).min(1, 'Chọn ít nhất một thể loại'),
-    audioUrl: z.string().optional(),
 });
 
 
@@ -41,13 +42,20 @@ interface Category {
     name: string;
 }
 
+interface Chapter {
+    id: string;
+    chapterNumber: number;
+    title: string;
+    storyId?: string | null;
+}
+
 interface Author {
     id: string;
     name: string;
 }
 
 interface StoryFormProps {
-    initialData?: Partial<StoryFormValues>;
+    initialData?: Partial<StoryFormValues> & { id?: string };
     onSubmit: (data: StoryFormValues) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
@@ -57,18 +65,24 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
     const [categories, setCategories] = useState<Category[]>([]);
     const [authors, setAuthors] = useState<Author[]>([]);
     const [isFetchingMeta, setIsFetchingMeta] = useState(true);
-    const [audioFile, setAudioFile] = useState<File | null>(null);
-    const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+    const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
 
+    // Available chapters for selection (all chapters in system)
+    const [availableChapters, setAvailableChapters] = useState<Chapter[]>([]);
+    const [selectedChapterIds, setSelectedChapterIds] = useState<string[]>([]);
 
     // Searchable Select States
     const [isAuthorOpen, setIsAuthorOpen] = useState(false);
     const [authorSearch, setAuthorSearch] = useState('');
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
     const [categorySearch, setCategorySearch] = useState('');
+    const [chapters, setChapters] = useState<Chapter[]>([]);
+    const [isChapterOpen, setIsChapterOpen] = useState(false);
+    const [chapterSearch, setChapterSearch] = useState('');
 
     const authorRef = React.useRef<HTMLDivElement>(null);
     const categoryRef = React.useRef<HTMLDivElement>(null);
+    const chapterRef = React.useRef<HTMLDivElement>(null);
 
     const {
         register,
@@ -96,12 +110,20 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
     useEffect(() => {
         const fetchMetadata = async () => {
             try {
-                const [catsRes, authorsRes] = await Promise.all([
+                const [catsRes, authorsRes, allChaptersRes] = await Promise.all([
                     apiClient.get('/stories/categories'),
                     apiClient.get('/stories/authors'),
+                    apiClient.get('/chapters?limit=1000'), // Fetch all available chapters
                 ]);
                 setCategories(catsRes.data);
                 setAuthors(authorsRes.data);
+                setAvailableChapters(allChaptersRes.data.data);
+
+                if (initialData?.id) {
+                    const chapsRes = await apiClient.get(`/stories/${initialData.id}/chapters`);
+                    setChapters(chapsRes.data);
+                    setSelectedChapterIds(chapsRes.data.map((c: Chapter) => c.id));
+                }
             } catch (error) {
                 console.error('Failed to fetch metadata:', error);
             } finally {
@@ -119,6 +141,9 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
             }
             if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
                 setIsCategoryOpen(false);
+            }
+            if (chapterRef.current && !chapterRef.current.contains(event.target as Node)) {
+                setIsChapterOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -145,16 +170,9 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
         try {
             let finalData = { ...values };
 
-            if (audioFile) {
-                setIsUploadingAudio(true);
-                const formData = new FormData();
-                formData.append('file', audioFile);
-
-                const uploadRes = await apiClient.post('/stories/upload-audio', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                });
-
-                finalData.audioUrl = uploadRes.data.url;
+            // Include selected chapter IDs for new stories
+            if (!initialData?.id && selectedChapterIds.length > 0) {
+                (finalData as any).chapterIds = selectedChapterIds;
             }
 
             await onSubmit(finalData);
@@ -162,7 +180,7 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
             console.error('Failed to submit story:', error);
             alert('Có lỗi xảy ra khi lưu truyện. Vui lòng thử lại.');
         } finally {
-            setIsUploadingAudio(false);
+            setIsUploadingThumbnail(false);
         }
     };
 
@@ -182,6 +200,25 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
     const filteredCategories = categories.filter(c =>
         c.name.toLowerCase().includes(categorySearch.toLowerCase())
     );
+
+    const filteredChapters = initialData?.id
+        ? chapters.filter(c =>
+            c.title.toLowerCase().includes(chapterSearch.toLowerCase()) || c.chapterNumber.toString().includes(chapterSearch)
+        )
+        : availableChapters.filter(c =>
+            (c.title.toLowerCase().includes(chapterSearch.toLowerCase()) || c.chapterNumber.toString().includes(chapterSearch)) &&
+            !c.storyId // Only show chapters not assigned to any story
+        );
+
+    const selectedChapters = availableChapters.filter(c => selectedChapterIds.includes(c.id));
+
+    const handleChapterToggle = (chapterId: string) => {
+        if (selectedChapterIds.includes(chapterId)) {
+            setSelectedChapterIds(prev => prev.filter(id => id !== chapterId));
+        } else {
+            setSelectedChapterIds(prev => [...prev, chapterId]);
+        }
+    };
 
     const selectedAuthor = authors.find(a => a.id === selectedAuthorId);
 
@@ -237,7 +274,7 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                                 className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                                 title="Quản lý tác giả"
                             >
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-4 h-4 text-blue-600" />
                             </Link>
                         </div>
                         <div className="relative">
@@ -306,7 +343,7 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                                 className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                                 title="Quản lý thể loại"
                             >
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-4 h-4 text-blue-600" />
                             </Link>
                         </div>
                         <div className="relative">
@@ -373,6 +410,131 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                         {errors.categoryIds && <p className="text-xs font-bold text-red-500 ml-2">{errors.categoryIds.message}</p>}
                     </div>
 
+                    {/* Hàng 5: Quản lý chương */}
+                    <div className="space-y-4" ref={chapterRef}>
+                        <div className="flex items-center justify-between">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Chương</label>
+                            {initialData?.id ? (
+                                <Link
+                                    href={`/admin/stories/${initialData.id}/chapters`}
+                                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                    title="Quản lý / Thêm chương"
+                                >
+                                    <Plus className="w-5 h-5 text-blue-600" />
+                                </Link>
+                            ) : (
+                                <Link
+                                    href="/admin/chapters"
+                                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                    title="Quản lý chương"
+                                >
+                                    <Plus className="w-5 h-5 text-blue-600" />
+                                </Link>
+                            )}
+                        </div>
+                        <div className="relative">
+                            <button
+                                type="button"
+                                onClick={() => setIsChapterOpen(!isChapterOpen)}
+                                className="w-full bg-slate-50 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between min-h-[56px]"
+                            >
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedChapterIds.length > 0 ? (
+                                        <span className="text-slate-700">
+                                            {initialData?.id 
+                                                ? `Đã có ${chapters.length} chương` 
+                                                : `Đã chọn ${selectedChapterIds.length} chương`}
+                                        </span>
+                                    ) : (
+                                        <span className="text-slate-400">
+                                            {initialData?.id ? 'Xem danh sách chương' : 'Chọn chương có sẵn'}
+                                        </span>
+                                    )}
+                                </div>
+                                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${isChapterOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {isChapterOpen && (
+                                <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="p-4 border-b border-slate-100">
+                                        <div className="relative">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                autoFocus
+                                                placeholder="Tìm theo tên hoặc số chương..."
+                                                className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                                                value={chapterSearch}
+                                                onChange={(e) => setChapterSearch(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                        {filteredChapters.length > 0 ? (
+                                            filteredChapters.map((chap: Chapter) => (
+                                                initialData?.id ? (
+                                                    <Link
+                                                        key={chap.id}
+                                                        href={`/admin/stories/${initialData.id}/chapters`}
+                                                        className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center justify-between group block"
+                                                    >
+                                                        <span>Chương {chap.chapterNumber}: {chap.title}</span>
+                                                        <Music className="w-4 h-4 text-slate-300 group-hover:text-indigo-600" />
+                                                    </Link>
+                                                ) : (
+                                                    <button
+                                                        key={chap.id}
+                                                        type="button"
+                                                        onClick={() => handleChapterToggle(chap.id)}
+                                                        className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center justify-between group"
+                                                    >
+                                                        <span>Chương {chap.chapterNumber}: {chap.title}</span>
+                                                        {selectedChapterIds.includes(chap.id) && (
+                                                            <Check className="w-4 h-4 text-indigo-600" />
+                                                        )}
+                                                    </button>
+                                                )
+                                            ))
+                                        ) : (
+                                            <div className="px-6 py-4 text-sm font-medium text-slate-400 italic">
+                                                {initialData?.id 
+                                                    ? 'Không tìm thấy chương nào' 
+                                                    : 'Không có chương chưa gán. Vui lòng tạo chương mới tại trang Quản lý Chương.'}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* Display selected chapters for new story */}
+                        {!initialData?.id && selectedChapters.length > 0 && (
+                            <div className="mt-4 space-y-2">
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Các chương đã chọn:</p>
+                                <div className="space-y-2">
+                                    {selectedChapters.map((chap) => (
+                                        <div
+                                            key={chap.id}
+                                            className="flex items-center justify-between bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5"
+                                        >
+                                            <span className="text-sm font-bold text-indigo-900">
+                                                Chương {chap.chapterNumber}: {chap.title}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleChapterToggle(chap.id)}
+                                                className="p-1 text-indigo-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                                title="Bỏ chọn"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Description */}
                     <div className="space-y-2">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Mô tả chi tiết</label>
@@ -384,88 +546,88 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                         />
                     </div>
 
-                    {/* Thumbnail URL */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ảnh bìa (Thumbnail URL)</label>
-                        <div className="flex gap-4">
-                            <div className="flex-1 space-y-2">
-                                <input
-                                    {...register('thumbnailUrl')}
-                                    placeholder="https://example.com/image.jpg"
-                                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                                />
-                            </div>
-                            <div className="w-24 h-32 rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200 overflow-hidden shrink-0">
-                                {watch('thumbnailUrl') ? (
-                                    <img src={watch('thumbnailUrl')} alt="Preview" className="w-full h-full object-cover" />
-                                ) : (
-                                    <ImageIcon className="w-8 h-8 text-slate-300" />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Audio Upload */}
+                    {/* Thumbnail Upload using UploadThing - Redesigned */}
                     <div className="space-y-4">
-                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Audio File (MP3/WAV)</label>
-                        <div className="flex flex-col gap-4">
-                            <div className="relative group">
-                                <input
-                                    type="file"
-                                    accept="audio/*"
-                                    onChange={(e) => setAudioFile(e.target.files?.[0] || null)}
-                                    className="hidden"
-                                    id="audio-upload"
-                                />
-                                <label
-                                    htmlFor="audio-upload"
-                                    className="flex flex-col items-center justify-center w-full min-h-[140px] px-6 py-8 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[24px] cursor-pointer hover:border-indigo-500/40 hover:bg-indigo-50/30 transition-all group"
+                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ảnh bìa (Thumbnail)</label>
+
+                        {watch('thumbnailUrl') ? (
+                            <div className="relative group w-full aspect-[2/3] md:w-48 overflow-hidden rounded-[32px] border-4 border-white shadow-2xl transition-transform hover:scale-[1.02] mx-auto md:mx-0">
+                                <img src={watch('thumbnailUrl')} alt="Thumbnail" className="w-full h-full object-cover" />
+                                <button
+                                    type="button"
+                                    onClick={() => setValue('thumbnailUrl', '')}
+                                    className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-black/10"
+                                    title="Xóa ảnh hiện tại"
                                 >
-                                    {audioFile ? (
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="p-3 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-100">
-                                                <Music className="w-6 h-6 text-white" />
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-sm font-bold text-slate-900 line-clamp-1">{audioFile.name}</p>
-                                                <p className="text-xs font-medium text-slate-400">{(audioFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
-                                                <Upload className="w-6 h-6 text-slate-400 group-hover:text-indigo-600" />
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-sm font-bold text-slate-700">Click để chọn file âm thanh</p>
-                                                <p className="text-xs font-medium text-slate-400">Hỗ trợ file MP3, WAV (Tối đa 50MB)</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </label>
-                                {audioFile && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setAudioFile(null)}
-                                        className="absolute top-4 right-4 p-2 bg-white/80 backdrop-blur-sm text-red-500 rounded-lg hover:bg-red-50 transition-colors shadow-sm"
-                                        title="Xóa file đã chọn"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                )}
+                                    <Trash2 className="w-5 h-5" />
+                                </button>
                             </div>
-                            {watch('audioUrl') && !audioFile && (
-                                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center gap-3">
-                                    <div className="p-2 bg-emerald-500 rounded-lg text-white">
-                                        <Check className="w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Đã có audio URL</p>
-                                        <p className="text-sm font-medium text-emerald-600 truncate">{watch('audioUrl')}</p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        ) : (
+                            <div className="relative group">
+                                <UploadButton
+                                    endpoint="imageUploader"
+                                    onUploadProgress={() => setIsUploadingThumbnail(true)}
+                                    onClientUploadComplete={async (res) => {
+                                        setIsUploadingThumbnail(false);
+                                        if (res && res[0]) {
+                                            const newUrl = res[0].url;
+                                            setValue('thumbnailUrl', newUrl);
+                                        }
+                                    }}
+                                    onUploadError={(error: Error) => {
+                                        setIsUploadingThumbnail(false);
+                                        alert(`Lỗi tải ảnh: ${error.message}`);
+                                    }}
+                                    appearance={{
+                                        container: {
+                                            width: "100%",
+                                        },
+                                        button({ ready, isUploading }) {
+                                            return {
+                                                width: "100%",
+                                                minHeight: "160px",
+                                                backgroundColor: "#f8fafc", // bg-slate-50
+                                                border: "2px dashed #e2e8f0", // border-slate-200
+                                                borderRadius: "24px",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: "12px",
+                                                color: "#334155", // text-slate-700
+                                                transition: "all 0.2s",
+                                                cursor: "pointer",
+                                                fontSize: "0px", // Hide default browser file text
+                                                ...(isUploading ? { opacity: 0.7, cursor: "not-allowed" } : {}),
+                                            };
+                                        },
+                                        allowedContent: {
+                                            display: "none"
+                                        }
+                                    }}
+                                    content={{
+                                        button({ isUploading }) {
+                                            if (isUploading) return (
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                                                    <span className="text-sm font-bold">Đang tải ảnh...</span>
+                                                </div>
+                                            );
+                                            return (
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                                                        <Upload className="w-6 h-6 text-indigo-600" />
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <p className="text-sm font-bold text-slate-700 uppercase tracking-tight">Click để chọn ảnh bìa</p>
+                                                        <p className="text-xs font-medium text-slate-400 mt-1">Hỗ trợ tất cả định dạng ảnh (Tối đa 4MB)</p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                    }}
+                                />
+                                <input {...register('thumbnailUrl')} type="hidden" />
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -482,18 +644,20 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                     </button>
                     <button
                         type="submit"
-                        disabled={isLoading || isUploadingAudio}
+                        disabled={isLoading || isUploadingThumbnail}
                         className="px-8 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-100 flex items-center gap-3 disabled:opacity-50"
                     >
-                        {isLoading || isUploadingAudio ? (
+                        {isLoading || isUploadingThumbnail ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                             <Save className="w-4 h-4" />
                         )}
-                        {isUploadingAudio ? 'Đang tải audio...' : 'Lưu truyện'}
+                        {isUploadingThumbnail ? 'Đang tải ảnh...' : 'Lưu truyện'}
                     </button>
                 </div>
             </div>
+
+
         </form>
     );
 };

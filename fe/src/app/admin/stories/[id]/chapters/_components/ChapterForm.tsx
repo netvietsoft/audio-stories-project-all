@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,6 +13,7 @@ import {
     Clock,
     Lock,
 } from 'lucide-react';
+import { UploadButton } from '@/lib/uploadthing';
 
 const chapterSchema = z.object({
     chapterNumber: z.number().min(0, 'Số chương không được âm'),
@@ -46,6 +47,8 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
     const {
         register,
         handleSubmit,
+        watch,
+        setValue,
         formState: { errors },
     } = useForm<ChapterFormValues>({
         resolver: zodResolver(chapterSchema) as any,
@@ -60,6 +63,8 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
             ...initialData as any,
         },
     });
+
+    const [isUploadingAudio, setIsUploadingAudio] = useState(false);
 
 
 
@@ -99,16 +104,84 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
+                <div className="space-y-4 md:col-span-2">
                     <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                        <Music className="w-4 h-4 text-indigo-500" />
-                        Audio URL (Cloudflare R2)
+                        <Music className="w-5 h-5 text-indigo-500" />
+                        File Âm Thanh (MP3/WAV)
                     </label>
-                    <input
-                        {...register('r2AudioUrl')}
-                        placeholder="https://audio.truyen-audio.app/..."
-                        className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                    />
+                    <div className="relative group">
+                        <UploadButton
+                            endpoint="audioUploader"
+                            onUploadProgress={() => setIsUploadingAudio(true)}
+                            onClientUploadComplete={async (res) => {
+                                setIsUploadingAudio(false);
+                                if (res && res[0]) {
+                                    setValue('r2AudioUrl', res[0].url);
+                                }
+                            }}
+                            onUploadError={(error: Error) => {
+                                setIsUploadingAudio(false);
+                                alert(`Lỗi tải audio: ${error.message}`);
+                            }}
+                            appearance={{
+                                container: { width: "100%" },
+                                button({ isUploading }) {
+                                    return {
+                                        width: "100%",
+                                        minHeight: "160px",
+                                        backgroundColor: "#f8fafc", // bg-slate-50
+                                        border: "2px dashed #e2e8f0", // border-slate-200
+                                        borderRadius: "24px",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "12px",
+                                        color: "#334155", // text-slate-700
+                                        transition: "all 0.2s",
+                                        cursor: "pointer",
+                                        fontSize: "0px", // Hide default text
+                                        ...(isUploading ? { opacity: 0.7, cursor: "not-allowed" } : {}),
+                                    };
+                                },
+                                allowedContent: { display: "none" },
+                            }}
+                            content={{
+                                button({ isUploading }) {
+                                    if (isUploading) return (
+                                        <div className="flex flex-col items-center gap-3">
+                                            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                                            <span className="text-sm font-bold">Đang tải audio...</span>
+                                        </div>
+                                    );
+                                    return (
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                                                <Music className="w-6 h-6 text-indigo-600" />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-sm font-bold text-slate-700 uppercase tracking-tight">Click để chọn file âm thanh</p>
+                                                <p className="text-xs font-medium text-slate-400 mt-1">Hỗ trợ file MP3, WAV (Tối đa 64MB)</p>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                            }}
+                        />
+                        <input {...register('r2AudioUrl')} type="hidden" />
+                    </div>
+
+                    {watch('r2AudioUrl') && (
+                        <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+                            <audio controls src={watch('r2AudioUrl')} className="w-full max-w-md h-10" />
+                            <button
+                                type="button"
+                                onClick={() => setValue('r2AudioUrl', '')}
+                                className="p-2 bg-white text-red-500 hover:bg-red-50 border border-red-100 rounded-xl transition-all shadow-sm shrink-0"
+                                title="Xóa audio"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="space-y-2">
@@ -164,15 +237,15 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                 </button>
                 <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || isUploadingAudio}
                     className="px-8 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-100 flex items-center gap-3 disabled:opacity-50"
                 >
-                    {isLoading ? (
+                    {isLoading || isUploadingAudio ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                         <Save className="w-4 h-4" />
                     )}
-                    Lưu chương
+                    {isUploadingAudio ? 'Đang tải audio...' : 'Lưu chương'}
                 </button>
             </div>
         </form>

@@ -369,7 +369,7 @@ export class UserFeaturesService {
           },
         });
 
-        if (!chapter) continue;
+        if (!chapter || !chapter.storyId) continue;
 
         merged.set(chapter.id, {
           id: `pending:${userId}:${chapter.id}`,

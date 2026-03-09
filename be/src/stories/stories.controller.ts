@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { S3Service, type UploadFilePayload } from '@/upload/s3.service';
 
@@ -6,6 +6,7 @@ import { S3Service, type UploadFilePayload } from '@/upload/s3.service';
 
 import { ExploreQueryDto } from './dto/explore-query.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
+import { UpdateRecommendedDto } from './dto/update-recommended.dto';
 import { StoriesService } from './stories.service';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
@@ -69,6 +70,18 @@ export class StoriesController {
   @Get('explore')
   explore(@Query() query: ExploreQueryDto) {
     return this.storiesService.exploreStories(query);
+  }
+
+  @Get('recommended')
+  getRecommended(@Query('limit') limit?: string) {
+    return this.storiesService.getRecommendedStories(Number(limit) || 12);
+  }
+
+  @Patch(':id/recommended')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  updateRecommended(@Param('id') id: string, @Body() dto: UpdateRecommendedDto) {
+    return this.storiesService.updateRecommended(id, dto.isRecommended);
   }
 
   @Get(':slug')

@@ -32,6 +32,8 @@ const storySchema = z.object({
     authorId: z.string().uuid('Vui lòng chọn tác giả'),
     status: z.enum(['ongoing', 'completed']),
     categoryIds: z.array(z.number()).min(1, 'Chọn ít nhất một thể loại'),
+    audioUrl: z.string().optional(),
+    isRecommended: z.boolean().optional(),
 });
 
 
@@ -99,6 +101,7 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
             thumbnailUrl: '',
             status: 'ongoing',
             categoryIds: [],
+            isRecommended: false,
             ...initialData,
         },
     });
@@ -263,6 +266,16 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                                 <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                             </div>
                         </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                        <label className="flex cursor-pointer items-center justify-between gap-4">
+                            <div>
+                                <p className="text-sm font-black uppercase tracking-wider text-slate-700">Đề xuất ở trang đọc</p>
+                                <p className="mt-1 text-xs font-medium text-slate-500">Bật để truyện xuất hiện trong slider "Có thể bạn sẽ thích".</p>
+                            </div>
+                            <input type="checkbox" {...register('isRecommended')} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                        </label>
                     </div>
 
                     {/* Hàng 3: Chọn tác giả nguyên 1 hàng (Searchable Dropdown) */}

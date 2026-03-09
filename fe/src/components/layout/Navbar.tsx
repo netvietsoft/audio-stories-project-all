@@ -170,10 +170,18 @@ export default function Navbar() {
                   )}
                 </div>)}
 
-                {/* Nút Hamburger cho Tablet (Hiển thị bên phải Avatar khi màn hình < lg và > md) */}
+                {/* Nút Hamburger cho mobile/tablet, nằm cạnh avatar */}
+                <button
+                  onClick={() => setIsMobileMenuOpen(true)}
+                  className="md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 ml-1"
+                  aria-label="Mở menu"
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
                   className="hidden md:block lg:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 ml-1"
+                  aria-label="Mở menu"
                 >
                   <Menu className="h-6 w-6" />
                 </button>
@@ -190,12 +198,11 @@ export default function Navbar() {
           {/* NÚT TẮT (CLOSE) DÀNH CHO OVERLAY */}
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            // Thêm "hidden md:flex" vào dòng class dưới đây:
-            className="hidden md:flex absolute top-5 right-5 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            className="absolute top-5 right-5 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Đóng menu"
           >
             <X className="h-6 w-6" />
           </button>
-          {/* Kết thúc phần thêm mới */}
 
           <div className="relative mb-6">
             <input
@@ -219,13 +226,7 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* NÚT TRÔI NỔI (FAB) CHO MOBILE (Chỉ hiện khi < md) */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="md:hidden fixed bottom-6 right-6 z-[70] p-4 rounded-full bg-blue-600 text-white shadow-2xl hover:bg-blue-700 transition-all hover:scale-105 active:scale-95"
-      >
-        {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-      </button>
+
     </>
   );
 }

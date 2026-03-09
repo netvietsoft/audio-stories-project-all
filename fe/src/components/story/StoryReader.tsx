@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MessageSquare, Send, X } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
@@ -10,6 +10,7 @@ type InlineComment = {
   content: string;
   authorName: string;
   createdAt: string;
+  authorAvatarUrl?: string | null;
 };
 
 type ParagraphItem = {
@@ -26,6 +27,7 @@ type ParagraphCommentsResponse = {
     user?: {
       displayName?: string;
       name?: string;
+      avatarUrl?: string | null;
     };
   }>;
   data?: {
@@ -36,6 +38,22 @@ type ParagraphCommentsResponse = {
       user?: {
         displayName?: string;
         name?: string;
+        avatarUrl?: string | null;
+      };
+    }>;
+  };
+};
+
+type ChapterCommentsResponse = {
+  data?: {
+    comments?: Array<{
+      id?: string;
+      content?: string;
+      createdAt?: string;
+      user?: {
+        displayName?: string;
+        name?: string;
+        avatarUrl?: string | null;
       };
     }>;
   };
@@ -76,9 +94,14 @@ export default function StoryReader({
   onUnlockRequest,
 }: StoryReaderProps) {
   const [openParagraphId, setOpenParagraphId] = useState<string | null>(null);
-  const [commentDraft, setCommentDraft] = useState("");
+  const [paragraphDrafts, setParagraphDrafts] = useState<Record<string, string>>({});
+  const [chapterDraft, setChapterDraft] = useState("");
   const [paragraphComments, setParagraphComments] = useState<Record<string, InlineComment[]>>({});
   const [loadedParagraphs, setLoadedParagraphs] = useState<Record<string, boolean>>({});
+  const [chapterComments, setChapterComments] = useState<InlineComment[]>([]);
+  const [isLoadingChapterComments, setIsLoadingChapterComments] = useState(false);
+  const [isSubmittingParagraph, setIsSubmittingParagraph] = useState(false);
+  const [isSubmittingChapter, setIsSubmittingChapter] = useState(false);
 
   const paragraphs = useMemo(() => {
     if (!chapterId) return [];
@@ -124,18 +147,52 @@ export default function StoryReader({
     return items;
   }, [adInterval, paragraphs]);
 
-  const loadParagraphComments = async (paragraphId: string) => {
+  const normalizeComments = (rawComments: ParagraphCommentsResponse["comments"] = []): InlineComment[] => {
+    return rawComments.map((item) => ({
+      id: item.id || `${Math.random().toString(36).slice(2)}`,
+      content: item.content || "",
+      authorName: item.user?.displayName || item.user?.name || "Độc giả",
+      authorAvatarUrl: item.user?.avatarUrl,
+      createdAt: item.createdAt || new Date().toISOString(),
+    }));
+  };
+
+  const loadChapterComments = async () => {
+    if (!chapterId) return;
+
+    setIsLoadingChapterComments(true);
+    try {
+      const response = await apiClient.get<ChapterCommentsResponse>(`/chapters/${chapterId}/comments`, {
+        params: {
+          scope: "chapter",
+          page: 1,
+          limit: 30,
+        },
+      });
+      const rawComments = response?.data?.data?.comments || [];
+      setChapterComments(normalizeComments(rawComments));
+    } catch {
+      setChapterComments([]);
+    } finally {
+      setIsLoadingChapterComments(false);
+    }
+  };
+
+  const loadParagraphComments = async (paragraphId: string, paragraphIndex: number) => {
+    if (!chapterId) return;
     if (loadedParagraphs[paragraphId]) return;
 
     try {
-      const response = await apiClient.get<ParagraphCommentsResponse>(`/paragraphs/${paragraphId}/comments`);
+      const response = await apiClient.get<ParagraphCommentsResponse>(`/chapters/${chapterId}/comments`, {
+        params: {
+          scope: "paragraph",
+          paragraphIndex,
+          page: 1,
+          limit: 30,
+        },
+      });
       const rawComments = response?.data?.data?.comments || response?.data?.comments || [];
-      const normalized: InlineComment[] = rawComments.map((item) => ({
-        id: item.id || `${paragraphId}-${Math.random().toString(36).slice(2)}`,
-        content: item.content || "",
-        authorName: item.user?.displayName || item.user?.name || "Độc giả",
-        createdAt: item.createdAt || new Date().toISOString(),
-      }));
+      const normalized = normalizeComments(rawComments);
 
       setParagraphComments((prev) => ({
         ...prev,
@@ -154,30 +211,89 @@ export default function StoryReader({
     }
   };
 
-  const openCommentPopup = (paragraphId: string) => {
+  const openCommentPopup = (paragraphId: string, paragraphIndex: number) => {
     setOpenParagraphId((prev) => (prev === paragraphId ? null : paragraphId));
     if (!loadedParagraphs[paragraphId]) {
-      void loadParagraphComments(paragraphId);
+      void loadParagraphComments(paragraphId, paragraphIndex);
     }
   };
 
-  const submitParagraphComment = (paragraphId: string) => {
-    const contentValue = commentDraft.trim();
+  const submitParagraphComment = async (paragraph: ParagraphItem) => {
+    if (!chapterId) return;
+    const contentValue = (paragraphDrafts[paragraph.id] || "").trim();
     if (!contentValue) return;
 
-    const newComment: InlineComment = {
-      id: `${paragraphId}-${Date.now()}`,
-      content: contentValue,
-      authorName: "Bạn",
-      createdAt: new Date().toISOString(),
-    };
+    setIsSubmittingParagraph(true);
+    try {
+      const response = await apiClient.post<{ data?: any }>(`/chapters/${chapterId}/comments`, {
+        content: contentValue,
+        scope: "paragraph",
+        paragraphIndex: paragraph.index,
+      });
 
-    setParagraphComments((prev) => ({
-      ...prev,
-      [paragraphId]: [...(prev[paragraphId] || []), newComment],
-    }));
-    setCommentDraft("");
+      const created = response?.data?.data;
+      const newComment: InlineComment = {
+        id: created?.id || `${paragraph.id}-${Date.now()}`,
+        content: created?.content || contentValue,
+        authorName: created?.user?.displayName || created?.user?.name || "Bạn",
+        authorAvatarUrl: created?.user?.avatarUrl,
+        createdAt: created?.createdAt || new Date().toISOString(),
+      };
+
+      setParagraphComments((prev) => ({
+        ...prev,
+        [paragraph.id]: [...(prev[paragraph.id] || []), newComment],
+      }));
+      setParagraphDrafts((prev) => ({ ...prev, [paragraph.id]: "" }));
+    } catch {
+      // silent fail to avoid breaking reading flow
+    } finally {
+      setIsSubmittingParagraph(false);
+    }
   };
+
+  const submitChapterComment = async () => {
+    if (!chapterId) return;
+    const contentValue = chapterDraft.trim();
+    if (!contentValue) return;
+
+    setIsSubmittingChapter(true);
+    try {
+      const response = await apiClient.post<{ data?: any }>(`/chapters/${chapterId}/comments`, {
+        content: contentValue,
+        scope: "chapter",
+      });
+
+      const created = response?.data?.data;
+      const newComment: InlineComment = {
+        id: created?.id || `chapter-${Date.now()}`,
+        content: created?.content || contentValue,
+        authorName: created?.user?.displayName || created?.user?.name || "Bạn",
+        authorAvatarUrl: created?.user?.avatarUrl,
+        createdAt: created?.createdAt || new Date().toISOString(),
+      };
+
+      setChapterComments((prev) => [newComment, ...prev]);
+      setChapterDraft("");
+    } catch {
+      // silent fail to avoid breaking reading flow
+    } finally {
+      setIsSubmittingChapter(false);
+    }
+  };
+
+  useEffect(() => {
+    setOpenParagraphId(null);
+    setParagraphDrafts({});
+    setParagraphComments({});
+    setLoadedParagraphs({});
+    setChapterDraft("");
+    setChapterComments([]);
+
+    if (chapterId) {
+      void loadChapterComments();
+    }
+  }, [chapterId]);
 
   if (!paragraphs.length) {
     return <p className="text-base leading-loose text-gray-500 dark:text-gray-300">Chương này chưa có bản truyện chữ.</p>;
@@ -228,7 +344,7 @@ export default function StoryReader({
               <p className="text-lg leading-loose text-gray-800 dark:text-gray-100">{paragraph.content}</p>
 
               <button
-                onClick={() => openCommentPopup(paragraph.id)}
+                onClick={() => openCommentPopup(paragraph.id, paragraph.index)}
                 className={`absolute bottom-0 right-0 inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white/90 px-2 py-1 text-xs text-slate-600 transition-all duration-200 hover:bg-white dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-300 sm:bottom-auto sm:top-1/2 sm:-right-12 sm:-translate-y-1/2 ${
                   comments.length > 0
                     ? "opacity-40 group-hover:opacity-100"
@@ -268,14 +384,20 @@ export default function StoryReader({
 
                   <div className="mt-3 flex gap-2">
                     <input
-                      value={commentDraft}
-                      onChange={(event) => setCommentDraft(event.target.value)}
+                      value={paragraphDrafts[paragraph.id] || ""}
+                      onChange={(event) =>
+                        setParagraphDrafts((prev) => ({
+                          ...prev,
+                          [paragraph.id]: event.target.value,
+                        }))
+                      }
                       placeholder="Viết bình luận cho đoạn này..."
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
                     />
                     <button
-                      onClick={() => submitParagraphComment(paragraph.id)}
-                      className="rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700"
+                      onClick={() => void submitParagraphComment(paragraph)}
+                      disabled={isSubmittingParagraph}
+                      className="rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
                       aria-label="Gửi bình luận"
                     >
                       <Send className="h-4 w-4" />
@@ -303,6 +425,41 @@ export default function StoryReader({
           </div>
         );
       })}
+      <section className="mt-8 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Bình luận toàn chương</h3>
+
+        <div className="mt-3 flex gap-2">
+          <input
+            value={chapterDraft}
+            onChange={(event) => setChapterDraft(event.target.value)}
+            placeholder="Viết bình luận cho toàn chương..."
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
+          />
+          <button
+            onClick={() => void submitChapterComment()}
+            disabled={isSubmittingChapter}
+            className="rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+            aria-label="Gửi bình luận toàn chương"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {isLoadingChapterComments ? (
+            <p className="text-xs text-gray-500">Đang tải bình luận...</p>
+          ) : chapterComments.length ? (
+            chapterComments.map((comment) => (
+              <div key={comment.id} className="rounded-md bg-gray-50 px-3 py-2 text-sm dark:bg-gray-800">
+                <p className="font-semibold text-gray-700 dark:text-gray-200">{comment.authorName}</p>
+                <p className="mt-1 text-gray-600 dark:text-gray-300">{comment.content}</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-gray-500">Chưa có bình luận nào cho toàn chương này.</p>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

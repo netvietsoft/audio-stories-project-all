@@ -17,15 +17,16 @@ type StoryCardStory = {
 
 type StoryCardProps = {
   story: StoryCardStory;
+  className?: string;
 };
 
-export default function StoryCard({ story }: StoryCardProps) {
+export default function StoryCard({ story, className }: StoryCardProps) {
   const statusLabel = story.status === "completed" ? "Full" : "Đang ra";
 
   return (
     <Link
       href={`/story/${story.slug}`}
-      className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900"
+      className={`group block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900 ${className || ""}`}
     >
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
         <img

@@ -1,4 +1,4 @@
-import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { StoryStatus } from '@prisma/client';
 import { CreateChapterDto } from '@/chapters/dto/create-chapter.dto';
@@ -31,6 +31,10 @@ export class CreateStoryDto {
     @IsOptional()
     @IsString()
     audioUrl?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    isRecommended?: boolean;
 
     @IsOptional()
     @IsArray()

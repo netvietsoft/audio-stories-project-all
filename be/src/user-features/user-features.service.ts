@@ -49,9 +49,11 @@ export class UserFeaturesService {
   }
 
   private serializeStory(story: any) {
+    const chapterCount = story?._count?.chapters;
     return {
       ...story,
       totalViews: typeof story.totalViews === 'bigint' ? Number(story.totalViews) : story.totalViews,
+      totalChapters: typeof chapterCount === 'number' ? chapterCount : (story.totalChapters ?? 0),
     };
   }
 
@@ -212,6 +214,11 @@ export class UserFeaturesService {
             select: {
               id: true,
               name: true,
+            },
+          },
+          _count: {
+            select: {
+              chapters: true,
             },
           },
         },

@@ -16,6 +16,7 @@ import { CommentsModule } from './comments/comments.module';
 import { SettingsModule } from './settings/settings.module';
 import { MembershipsModule } from './memberships/memberships.module';
 import { PackagesModule } from './packages/packages.module';
+import { ChapterCommentsModule } from './chapter-comments/chapter-comments.module';
 import { UserFeaturesModule } from './user-features/user-features.module';
 
 @Module({
@@ -38,6 +39,7 @@ import { UserFeaturesModule } from './user-features/user-features.module';
     SettingsModule,
     MembershipsModule,
     PackagesModule,
+    ChapterCommentsModule,
     UserFeaturesModule,
   ],
   controllers: [AppController],

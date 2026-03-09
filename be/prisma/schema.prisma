@@ -66,6 +66,7 @@ model OAuthAccount {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerUserId])
+  @@index([userId], map: "auth_oauth_account_user_id_fkey")
   @@map("auth_oauth_account")
 }
 
@@ -166,6 +167,7 @@ model Story {
   averageRating Decimal     @default(0) @map("average_rating") @db.Decimal(3, 2)
   ratingCount   Int         @default(0) @map("rating_count") @db.UnsignedInt
   isFeatured    Boolean     @default(false) @map("is_featured")
+  isRecommended Boolean     @default(false) @map("is_recommended")
   featuredOrder Int?        @map("featured_order")
   publishedAt   DateTime?   @map("published_at")
   audioUrl      String?     @map("audio_url") @db.Text
@@ -189,6 +191,7 @@ model Story {
   @@index([status, isFeatured, publishedAt, updatedAt])
   @@index([totalViews(sort: Desc)])
   @@index([averageRating(sort: Desc)])
+  @@index([isRecommended, updatedAt])
   @@map("stories")
 }
 

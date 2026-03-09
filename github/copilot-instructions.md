@@ -7,7 +7,7 @@
 - **Backend:** NestJS.
 - **Frontend & CMS:** Next.js (Specify whether using App Router or Pages Router in context).
 - **Database:** MySQL.
-- **ORM:** TypeORM.
+- **ORM:** Prisma.
 
 # STRICT RULES (MUST FOLLOW)
 
@@ -15,26 +15,26 @@
 - DO NOT generate, suggest, or use `Dockerfile`, `docker-compose.yml`, or any containerization tools.
 - All services must be assumed to run natively on the host machine.
 
-## 2. Database & TypeORM Migrations
-- **NEVER** write manual SQL migration files or manual TypeORM migration classes.
-- Only utilize TypeORM's `migration:generate` command to automatically generate migrations based on Entity changes.
-- When creating or updating database schema, ONLY provide the updated `@Entity()` class definitions. 
-- If asked how to apply changes, instruct the user to run the auto-generate script (e.g., `npm run typeorm migration:generate -n <MigrationName>` and `npm run typeorm migration:run`).
-- Ensure all Entity columns are explicitly typed and mapped to MySQL native types.
+## 2. Database & Prisma Migrations
+- **NEVER** write manual SQL migration files or manual Prisma migration classes.
+- Only utilize Prisma's `migrate dev` command to automatically generate migrations based on Schema changes.
+- When creating or updating database schema, ONLY provide the updated `schema.prisma` file.
+- If asked how to apply changes, instruct the user to run the auto-generate script (e.g., `npx prisma migrate dev --name <MigrationName>`).
+- Ensure all Model fields are explicitly typed and mapped to MySQL native types.
 
 ## 3. NestJS Guidelines
 - Strictly follow NestJS modular architecture (`Module`, `Controller`, `Service`).
 - Use Dependency Injection. Do not instantiate services manually.
 - Always use DTOs (Data Transfer Objects) with `class-validator` and `class-transformer` for input validation.
-- Handle database operations strictly inside the Service layer using injected TypeORM Repositories.
-- Use yarn for be
+- Handle database operations strictly inside the Service layer using injected Prisma Client.
+- Use yarn for backend dependencies.
 
 ## 4. Next.js Guidelines
 - Use TailwindCSS for styling.
 - Keep components small and reusable.
 - Ensure proper separation between Client Components (`"use client"`) and Server Components if using App Router.
 - State management for global features (like the sticky audio player) should be handled via React Context or Zustand, cleanly separated from UI logic.
-- Use npm for fe
+- Use npm for frontend dependencies.
 
 ## 5. Security & Error Handling
 - Never hardcode credentials, secrets, or API keys in the code. Use environment variables.

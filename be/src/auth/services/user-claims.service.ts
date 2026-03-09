@@ -19,6 +19,9 @@ export interface UserInfo {
   // Premium & download fields (for FE compatibility)
   credits: number;
   vip_tier: number;
+  premium_expires_at: Date | null;
+  allow_email_noti: boolean;
+  allow_bell_noti: boolean;
 }
 
 @Injectable()
@@ -70,6 +73,9 @@ export class UserClaimsService {
       permissions: claims.permissions,
       credits: user.credits,
       vip_tier: user.vipTier,
+      premium_expires_at: user.vipExpirationDate,
+      allow_email_noti: user.allowEmailNoti,
+      allow_bell_noti: user.allowBellNoti,
     };
   }
 

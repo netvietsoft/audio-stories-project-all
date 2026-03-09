@@ -219,6 +219,8 @@ export class AuthService {
       data: {
         displayName: dto.name !== undefined ? (dto.name?.trim() || '') : undefined,
         avatarUrl: dto.avatar_url !== undefined ? (dto.avatar_url || null) : undefined,
+        allowEmailNoti: dto.allow_email_noti,
+        allowBellNoti: dto.allow_bell_noti,
       },
     });
 

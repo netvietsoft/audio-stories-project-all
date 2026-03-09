@@ -33,6 +33,8 @@ type BackendMeResponse = {
   vip_tier?: number;
   credits?: number;
   premium_expires_at?: string | null;
+  allow_email_noti?: boolean;
+  allow_bell_noti?: boolean;
 };
 
 const normalizeUserProfile = (profile: BackendMeResponse): UserProfile => ({
@@ -43,6 +45,8 @@ const normalizeUserProfile = (profile: BackendMeResponse): UserProfile => ({
   roles: profile.roles ?? [],
   vipTier: profile.vip_tier,
   vipExpirationDate: profile.premium_expires_at,
+  allowEmailNoti: profile.allow_email_noti,
+  allowBellNoti: profile.allow_bell_noti,
   credits: profile.credits ?? 0,
 });
 

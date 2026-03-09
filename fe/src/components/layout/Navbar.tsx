@@ -11,7 +11,23 @@ import {
 } from "lucide-react";
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/auth";
 import { clearAuthCookies } from "@/lib/auth/cookies";
+import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
+
+type NotificationItem = {
+  id: string;
+  title: string;
+  body: string;
+  isRead: boolean;
+  createdAt: string;
+};
+
+type NotificationsResponse = {
+  data: NotificationItem[];
+  meta?: {
+    unreadCount?: number;
+  };
+};
 
 export default function Navbar() {
   const router = useRouter();
@@ -26,9 +42,46 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const user = useUserStore((state) => state.user);
-  const unreadNotifs = 3;
+  const [notifs, setNotifs] = useState<NotificationItem[]>([]);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!user) {
+      setNotifs([]);
+      setUnreadNotifs(0);
+      return;
+    }
+
+    const loadNotifications = async () => {
+      try {
+        const response = await apiClient.get<NotificationsResponse>("/notifications", {
+          params: {
+            page: 1,
+            limit: 5,
+          },
+        });
+        const rows = response.data.data || [];
+        setNotifs(rows);
+        setUnreadNotifs(response.data.meta?.unreadCount ?? rows.filter((row) => !row.isRead).length);
+      } catch {
+        setNotifs([]);
+      }
+    };
+
+    void loadNotifications();
+  }, [user]);
+
+  const markRead = async (id: string) => {
+    try {
+      await apiClient.patch(`/notifications/${id}/read`);
+      setNotifs((prev) => prev.map((item) => (item.id === id ? { ...item, isRead: true } : item)));
+      setUnreadNotifs((prev) => Math.max(0, prev - 1));
+    } catch {
+      // Ignore read errors in quick dropdown action
+    }
+  };
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && searchQuery.trim()) {
@@ -118,9 +171,18 @@ export default function Navbar() {
                   {isNotifOpen && (
                     <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-2 z-50">
                       <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 font-medium">Thông báo mới</div>
-                      <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                        Chương mới: <b>Phàm Nhân Tu Tiên</b> tập 124 đã có audio!
-                      </div>
+                      {notifs.length ? notifs.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => void markRead(item.id)}
+                          className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${item.isRead ? "text-gray-500 dark:text-gray-400" : "text-gray-800 dark:text-gray-200"}`}
+                        >
+                          <p className="font-medium">{item.title}</p>
+                          <p className="mt-1 line-clamp-2 text-xs opacity-80">{item.body}</p>
+                        </button>
+                      )) : (
+                        <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">Chưa có thông báo nào.</div>
+                      )}
                       <Link href="/notifications" className="block px-4 py-2 text-center text-sm text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-50 dark:hover:bg-gray-700">Xem tất cả</Link>
                     </div>
                   )}

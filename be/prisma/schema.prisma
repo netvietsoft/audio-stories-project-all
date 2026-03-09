@@ -23,6 +23,8 @@ model User {
   vipTier              Int       @default(0) @map("vip_tier") @db.UnsignedTinyInt
   vipExpirationDate    DateTime? @map("vip_expiration_date")
   emailVerifiedAt      DateTime? @map("email_verified_at")
+  allowEmailNoti       Boolean   @default(true) @map("allow_email_noti")
+  allowBellNoti        Boolean   @default(true) @map("allow_bell_noti")
   country              String?   @db.VarChar(100)
   lastLoginAt          DateTime? @map("last_login_at")
   createdAt            DateTime  @default(now()) @map("created_at")
@@ -46,6 +48,7 @@ model User {
   audioReports        AudioReport[]
   playlists           Playlist[]
   chapterComments     ChapterComment[]
+  commentReactions    CommentReaction[]
 
   @@index([roleId])
   @@index([isActive])
@@ -614,6 +617,7 @@ model ChapterComment {
   story   Story            @relation(fields: [storyId], references: [id], onDelete: Cascade)
   parent  ChapterComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies ChapterComment[] @relation("CommentReplies")
+  reactions CommentReaction[]
 
   @@index([userId])
   @@index([chapterId])
@@ -622,4 +626,27 @@ model ChapterComment {
   @@index([isHidden])
   @@index([createdAt])
   @@map("chapter_comments")
+}
+
+enum CommentReactionType {
+  helpful
+  like
+  love
+}
+
+model CommentReaction {
+  id        String              @id @default(uuid()) @db.VarChar(36)
+  userId    String              @map("user_id") @db.VarChar(36)
+  commentId String              @map("comment_id") @db.VarChar(36)
+  type      CommentReactionType
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment ChapterComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId, type])
+  @@index([commentId])
+  @@index([userId])
+  @@index([commentId, type])
+  @@map("comment_reactions")
 }

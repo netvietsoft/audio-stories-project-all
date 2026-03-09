@@ -1,0 +1,2 @@
+﻿src/chapters/chapters.service.ts(77,26): error TS2322: Type 'string | null' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.

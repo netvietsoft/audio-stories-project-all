@@ -1,5 +1,7 @@
-import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { StoryStatus } from '@prisma/client';
+import { CreateChapterDto } from '@/chapters/dto/create-chapter.dto';
 
 export class CreateStoryDto {
     @IsString()
@@ -32,7 +34,17 @@ export class CreateStoryDto {
 
     @IsOptional()
     @IsArray()
-
     @IsInt({ each: true })
     categoryIds?: number[];
+
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CreateChapterDto)
+    chapters?: CreateChapterDto[];
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    chapterIds?: string[];
 }

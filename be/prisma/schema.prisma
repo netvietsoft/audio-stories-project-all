@@ -57,11 +57,11 @@ model User {
 model OAuthAccount {
   id             String   @id @default(uuid())
   provider       String   @db.VarChar(50)
-  providerUserId String   @db.VarChar(255)
+  providerUserId String   @map("provider_user_id") @db.VarChar(255)
   profile        Json?
-  userId         String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  userId         String   @map("user_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -201,6 +201,7 @@ model StoryCategory {
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@id([storyId, categoryId])
+  @@index([storyId])
   @@index([categoryId])
   @@map("story_categories")
 }
@@ -213,7 +214,7 @@ enum ChapterAccessType {
 
 model Chapter {
   id             String            @id @default(uuid()) @db.VarChar(36)
-  storyId        String            @map("story_id") @db.VarChar(36)
+  storyId        String?           @map("story_id") @db.VarChar(36)
   chapterNumber  Float             @map("chapter_number") @db.Float
   title          String            @db.VarChar(300)
   content        String?           @db.LongText
@@ -227,7 +228,7 @@ model Chapter {
   updatedAt      DateTime          @updatedAt @map("updated_at")
   deletedAt      DateTime?         @map("deleted_at")
 
-  story            Story              @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  story            Story?             @relation(fields: [storyId], references: [id], onDelete: Cascade)
   listeningHistory ListeningHistory[]
   audioReports     AudioReport[]
   playlistItems    PlaylistItem[]
@@ -249,6 +250,8 @@ model UserFavorite {
   story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
 
   @@id([userId, storyId])
+  @@index([userId])
+  @@index([storyId])
   @@index([userId, createdAt(sort: Desc)])
   @@map("user_favorites")
 }
@@ -267,6 +270,9 @@ model ListeningHistory {
   chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
 
   @@unique([userId, chapterId])
+  @@index([userId])
+  @@index([chapterId])
+  @@index([storyId])
   @@index([lastListenedAt])
   @@index([userId, lastListenedAt(sort: Desc)])
   @@map("listening_history")
@@ -281,6 +287,7 @@ model UserFollowAuthor {
   author Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@id([userId, authorId])
+  @@index([userId])
   @@index([authorId])
   @@map("user_follow_authors")
 }
@@ -300,6 +307,8 @@ model Review {
   reviewLikes ReviewLike[]
 
   @@unique([userId, storyId])
+  @@index([userId])
+  @@index([storyId])
   @@index([storyId, createdAt(sort: Desc)])
   @@index([storyId, likesCount(sort: Desc)])
   @@map("reviews")
@@ -314,6 +323,8 @@ model ReviewLike {
   review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
 
   @@id([userId, reviewId])
+  @@index([userId])
+  @@index([reviewId])
   @@map("review_likes")
 }
 
@@ -392,6 +403,8 @@ model Membership {
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   author Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
+  @@index([userId])
+  @@index([authorId])
   @@index([userId, type, authorId, endDate])
   @@index([endDate])
   @@map("memberships")
@@ -416,6 +429,7 @@ model Notification {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@index([userId, isRead, createdAt(sort: Desc)])
   @@index([type, createdAt])
   @@map("notifications")
@@ -525,6 +539,8 @@ model PlaylistItem {
   story    Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
 
   @@index([playlistId])
+  @@index([chapterId])
+  @@index([storyId])
   @@index([orderIndex])
   @@map("playlist_items")
 }
@@ -548,7 +564,9 @@ model ChapterComment {
   parent  ChapterComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies ChapterComment[] @relation("CommentReplies")
 
+  @@index([userId])
   @@index([chapterId])
+  @@index([storyId])
   @@index([parentId])
   @@index([isHidden])
   @@index([createdAt])

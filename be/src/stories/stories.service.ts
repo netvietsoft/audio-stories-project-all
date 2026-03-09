@@ -10,7 +10,7 @@ export class StoriesService {
   constructor(private readonly prisma: PrismaService) { }
 
   async create(data: CreateStoryDto) {
-    const { categoryIds, ...storyData } = data;
+    const { categoryIds, chapters, chapterIds, ...storyData } = data;
 
     const story = await this.prisma.story.create({
       data: {
@@ -20,6 +20,12 @@ export class StoriesService {
             create: categoryIds.map((id) => ({
               categoryId: id,
             })),
+          }
+          : undefined,
+        totalChapters: (chapters?.length || 0) + (chapterIds?.length || 0),
+        chapters: chapters?.length
+          ? {
+            create: chapters,
           }
           : undefined,
       },
@@ -34,6 +40,19 @@ export class StoriesService {
         },
       },
     });
+
+    // Assign existing chapters to this story if chapterIds provided
+    if (chapterIds && chapterIds.length > 0) {
+      await this.prisma.chapter.updateMany({
+        where: {
+          id: { in: chapterIds },
+          storyId: null, // Only assign chapters that are not already assigned
+        },
+        data: {
+          storyId: story.id,
+        },
+      });
+    }
 
     return this.serializeStory(story);
   }
@@ -151,16 +170,16 @@ export class StoriesService {
     const authorIds = [...new Set(stories.map((story) => story.authorId).filter(Boolean))];
     const authors = authorIds.length
       ? await this.prisma.author.findMany({
-          where: {
-            id: {
-              in: authorIds,
-            },
+        where: {
+          id: {
+            in: authorIds,
           },
-          select: {
-            id: true,
-            name: true,
-          },
-        })
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      })
       : [];
 
     const authorMap = new Map(authors.map((author) => [author.id, author]));
@@ -198,12 +217,16 @@ export class StoriesService {
         : {}),
     };
 
+    const isAll = query.all === 'true';
+
     const [total, stories] = await Promise.all([
       this.prisma.story.count({ where }),
       this.prisma.story.findMany({
         where,
-        skip: (page - 1) * limit,
-        take: limit,
+        ...(isAll ? {} : {
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
         orderBy: { createdAt: 'desc' },
         include: {
           author: {

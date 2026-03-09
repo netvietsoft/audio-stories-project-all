@@ -37,8 +37,14 @@ export class StoriesController {
     return this.storiesService.create(createStoryDto);
   }
 
-  @Get('admin')
+  @Get()
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  findAll(@Query() query: ExploreQueryDto) {
+    return this.storiesService.findAllAdmin(query);
+  }
 
+  @Get('admin')
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')
   findAllAdmin(@Query() query: ExploreQueryDto) {

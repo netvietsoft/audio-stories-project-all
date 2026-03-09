@@ -162,7 +162,7 @@ export default function ProfilePage() {
                                         <Shield className="w-5 h-5 text-gray-400" />
                                     </div>
                                     <div className="flex flex-col gap-1">
-                                        <span className="font-mono text-xs font-bold text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded w-fit">
+                                        <span className="font-mono text-xs font-bold text-gray-500 dark:bg-gray-800 px-2 py-1 rounded w-fit">
                                             Level {user.vipTier || 0}
                                         </span>
                                         {user.vipExpirationDate && (

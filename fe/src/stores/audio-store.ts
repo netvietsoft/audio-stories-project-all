@@ -20,6 +20,8 @@ const getStorage = (): StateStorage =>
 
 export type AudioTrack = {
   id: string;
+  storyId?: string;
+  chapterId?: string;
   title: string;
   storySlug?: string;
   chapterNumber?: number;

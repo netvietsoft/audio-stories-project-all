@@ -7,7 +7,7 @@ import { useTheme } from "next-themes";
 import {
   Search, Moon, Sun, Bell, User,
   ChevronDown, LogOut, Coins, Menu, X, Settings,
-  UserCircle, History, SeparatorVertical
+  UserCircle, History, Heart, SeparatorVertical
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useUserStore } from "@/stores/user-store";
@@ -150,7 +150,10 @@ export default function Navbar() {
                       <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                         <UserCircle className="h-4 w-4" /> Trang cá nhân
                       </Link>
-                      <Link href="/history" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <Link href="/profile/favorites" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <Heart className="h-4 w-4" /> Yêu thích
+                      </Link>
+                      <Link href="/profile/history" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                         <History className="h-4 w-4" /> Lịch sử nghe
                       </Link>
                       <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>

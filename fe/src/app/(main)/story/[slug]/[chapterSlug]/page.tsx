@@ -6,7 +6,6 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ChevronDown,
   CreditCard,
-  Heart,
   ListMusic,
   Lock,
   Pause,
@@ -24,6 +23,7 @@ import {
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import FavoriteButton from "@/components/shared/FavoriteButton";
 import StoryReader from "@/components/story/StoryReader";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
@@ -157,7 +157,6 @@ export default function StoryChapterPage() {
   const [sleepMinutesLeft, setSleepMinutesLeft] = useState<number | null>(null);
   const [isShuffle, setIsShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState<"off" | "all" | "one">("off");
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
   const [unlockError, setUnlockError] = useState("");
   const [showTopupAction, setShowTopupAction] = useState(false);
@@ -249,7 +248,7 @@ export default function StoryChapterPage() {
           setRelatedStories((homeData?.featured || []).filter((item) => item.slug !== detail.slug).slice(0, 3));
         }
       } catch (error) {
-        console.error("Loi khi tai du lieu chi tiet truyen:", error);
+        console.error("Lỗi khi tải dữ liệu chi tiết truyện:", error);
         setStory(null);
       } finally {
         setIsLoading(false);
@@ -313,14 +312,14 @@ export default function StoryChapterPage() {
   }, [isVipActive, selectedChapter]);
 
   const lockReasonLabel = useMemo(() => {
-    if (!selectedChapter) return "Chuong nay dang bi khoa.";
+    if (!selectedChapter) return "Chương nay đang bị khóa.";
     if (selectedChapter.accessType === "vip") {
-      return "Chuong nay danh cho tai khoan VIP.";
+      return "Chương này dành cho tài khoản VIP.";
     }
     if (selectedChapter.accessType === "timed") {
-      return getUnlockLabel(selectedChapter) || "Chuong nay se mo trong thoi gian toi.";
+      return getUnlockLabel(selectedChapter) || "Chương nay sẽ mở trong thời gian tới.";
     }
-    return "Chuong nay dang bi khoa.";
+    return "Chương nay đang bị khóa.";
   }, [selectedChapter]);
 
   const filteredChapters = useMemo(() => {
@@ -331,7 +330,7 @@ export default function StoryChapterPage() {
       (chapter) =>
         chapter.title.toLowerCase().includes(q) ||
         String(chapter.chapterNumber).includes(q) ||
-        `chuong ${chapter.chapterNumber}`.includes(q),
+        `chương ${chapter.chapterNumber}`.includes(q),
     );
   }, [chapterQuery, story]);
 
@@ -365,7 +364,9 @@ export default function StoryChapterPage() {
 
       const mappedQueue = selectedStory.chapters.map((item) => ({
         id: item.id,
-        title: `Chuong ${item.chapterNumber}: ${item.title}`,
+        storyId: selectedStory.id,
+        chapterId: item.id,
+        title: `Chương ${item.chapterNumber}: ${item.title}`,
         storySlug: selectedStory.slug,
         chapterNumber: item.chapterNumber,
         author: selectedStory.author?.name,
@@ -375,7 +376,9 @@ export default function StoryChapterPage() {
 
       const track = {
         id: chapter.id,
-        title: `Chuong ${chapter.chapterNumber}: ${chapter.title}`,
+        storyId: selectedStory.id,
+        chapterId: chapter.id,
+        title: `Chương ${chapter.chapterNumber}: ${chapter.title}`,
         storySlug: selectedStory.slug,
         chapterNumber: chapter.chapterNumber,
         author: selectedStory.author?.name,
@@ -610,17 +613,10 @@ export default function StoryChapterPage() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-3">
-              <button
-                onClick={() => setIsFavorite((prev) => !prev)}
-                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                  isFavorite
-                    ? "border-red-300 bg-red-50 text-red-600 dark:border-red-700 dark:bg-red-900/20 dark:text-red-300"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                }`}
-              >
-                <Heart className="h-4 w-4" fill={isFavorite ? "currentColor" : "none"} />
-                Thêm vào mục yêu thích
-              </button>
+              <div className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-2 py-1.5 dark:border-gray-700">
+                <FavoriteButton storyId={story.id} size="sm" className="bg-transparent text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20" />
+                <span className="pr-2 text-sm font-medium text-gray-700 dark:text-gray-200">Thêm vào mục yêu thích</span>
+              </div>
 
               <button
                 onClick={onShare}
@@ -716,13 +712,13 @@ export default function StoryChapterPage() {
                   />
                 </div>
                 <p className="line-clamp-2 text-center text-xs text-gray-500 dark:text-gray-400">
-                  Chuong {selectedChapter.chapterNumber}
+                  Chương {selectedChapter.chapterNumber}
                 </p>
               </div>
 
               <div className="space-y-3">
                 <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Chuong {selectedChapter.chapterNumber}: {selectedChapter.title}
+                  Chương {selectedChapter.chapterNumber}: {selectedChapter.title}
                 </p>
                 
                 <input
@@ -879,7 +875,7 @@ export default function StoryChapterPage() {
                 </div>
               ) : null}
 
-              {!hasPlayableAudio ? <p className="text-xs text-amber-600 dark:text-amber-300">Chuong hien tai chua co file audio de phat.</p> : null}
+              {!hasPlayableAudio ? <p className="text-xs text-amber-600 dark:text-amber-300">Chương hiện tại chưa có file audio để phát.</p> : null}
             </div>
           </section>
 
@@ -887,7 +883,7 @@ export default function StoryChapterPage() {
             <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">YouTube Player</h2>
             {chapterIsLocked ? (
               <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
-                <p className="inline-flex items-center gap-1 font-semibold"><Lock className="h-4 w-4" /> Chuong nay dang bi khoa</p>
+                <p className="inline-flex items-center gap-1 font-semibold"><Lock className="h-4 w-4" /> Chương này đang bị khóa</p>
                 <p className="mt-1">{lockReasonLabel}</p>
                 <button
                   onClick={openUnlockModal}
@@ -908,7 +904,7 @@ export default function StoryChapterPage() {
               </div>
             ) : (
               <div className="rounded-xl bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-800/40 dark:text-gray-300">
-                Chua co video YouTube cho chuong nay.
+                Chưa có video Youtube cho chương này.
               </div>
             )}
           </section>

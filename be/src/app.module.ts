@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -10,6 +11,7 @@ import { StoriesModule } from './stories/stories.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AuthorsModule } from './authors/authors.module';
 import { ChaptersModule } from './chapters/chapters.module';
+import { UserFeaturesModule } from './user-features/user-features.module';
 
 @Module({
   imports: [
@@ -17,6 +19,7 @@ import { ChaptersModule } from './chapters/chapters.module';
       isGlobal: true,
       envFilePath: ['.env'],
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     AuthModule,
     MailModule,
@@ -25,6 +28,7 @@ import { ChaptersModule } from './chapters/chapters.module';
     CategoriesModule,
     AuthorsModule,
     ChaptersModule,
+    UserFeaturesModule,
   ],
 
 

@@ -18,6 +18,8 @@ import { MembershipsModule } from './memberships/memberships.module';
 import { PackagesModule } from './packages/packages.module';
 import { ChapterCommentsModule } from './chapter-comments/chapter-comments.module';
 import { UserFeaturesModule } from './user-features/user-features.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { UserFeaturesModule } from './user-features/user-features.module';
     PackagesModule,
     ChapterCommentsModule,
     UserFeaturesModule,
+    ReviewsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

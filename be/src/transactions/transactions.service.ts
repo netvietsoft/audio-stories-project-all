@@ -7,6 +7,86 @@ import { Prisma } from '@prisma/client';
 export class TransactionsService {
     constructor(private readonly prisma: PrismaService) { }
 
+    async findMyTransactions(userId: string, page = 1, limit = 20) {
+        const safeLimit = Math.min(Math.max(limit, 1), 50);
+
+        const [payments, credits] = await Promise.all([
+            this.prisma.payment.findMany({
+                where: { userId },
+                orderBy: { createdAt: 'desc' },
+                take: 200,
+                select: {
+                    id: true,
+                    amountVnd: true,
+                    creditsAdded: true,
+                    status: true,
+                    packageCode: true,
+                    transactionCode: true,
+                    createdAt: true,
+                    paidAt: true,
+                },
+            }),
+            this.prisma.creditTransaction.findMany({
+                where: { userId },
+                orderBy: { createdAt: 'desc' },
+                take: 200,
+                select: {
+                    id: true,
+                    type: true,
+                    amount: true,
+                    balanceBefore: true,
+                    balanceAfter: true,
+                    description: true,
+                    referenceId: true,
+                    createdAt: true,
+                },
+            }),
+        ]);
+
+        const merged = [
+            ...payments.map((item) => ({
+                id: `payment:${item.id}`,
+                source: 'payment' as const,
+                createdAt: item.createdAt,
+                amount: item.amountVnd,
+                status: item.status,
+                content: `Nap goi ${item.packageCode}${item.transactionCode ? ` (${item.transactionCode})` : ''}`,
+                metadata: {
+                    paymentId: item.id,
+                    paidAt: item.paidAt,
+                    creditsAdded: item.creditsAdded,
+                },
+            })),
+            ...credits.map((item) => ({
+                id: `credit:${item.id}`,
+                source: 'credit' as const,
+                createdAt: item.createdAt,
+                amount: item.amount,
+                status: 'SUCCESS',
+                content: item.description || `Giao dich ${item.type}`,
+                metadata: {
+                    creditTransactionId: item.id,
+                    type: item.type,
+                    referenceId: item.referenceId,
+                    balanceBefore: item.balanceBefore,
+                    balanceAfter: item.balanceAfter,
+                },
+            })),
+        ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+        const start = (page - 1) * safeLimit;
+        const end = start + safeLimit;
+
+        return {
+            data: merged.slice(start, end),
+            meta: {
+                total: merged.length,
+                page,
+                lastPage: Math.max(1, Math.ceil(merged.length / safeLimit)),
+            },
+        };
+    }
+
     async findAllPayments(query: TransactionQueryDto) {
         const { page = 1, limit = 20, search, status } = query;
         const skip = (page - 1) * limit;

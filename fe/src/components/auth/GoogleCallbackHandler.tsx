@@ -4,19 +4,24 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { apiClient } from "@/lib/api/api-client";
-import { useAuthStore } from "@/store/authStore";
+import { setAuthCookies } from "@/lib/auth/cookies";
+import { useUserStore } from "@/stores/user-store";
 
 type MeResponse = {
   sub: string;
   email: string;
   name?: string | null;
   avatar_url?: string | null;
+  roles?: string[];
+  vip_tier?: number;
+  credits?: number;
+  premium_expires_at?: string | null;
 };
 
 export default function GoogleCallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const setAuth = useUserStore((state) => state.setAuth);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -37,16 +42,22 @@ export default function GoogleCallbackHandler() {
           },
         });
 
-        setAuth(
-          {
+        setAuth({
+          user: {
             id: meRes.data.sub,
             email: meRes.data.email,
             name: meRes.data.name ?? undefined,
-            avatar: meRes.data.avatar_url ?? undefined,
+            avatarUrl: meRes.data.avatar_url ?? undefined,
+            roles: meRes.data.roles ?? [],
+            vipTier: meRes.data.vip_tier,
+            vipExpirationDate: meRes.data.premium_expires_at,
+            credits: meRes.data.credits ?? 0,
           },
           accessToken,
           refreshToken,
-        );
+        });
+
+        setAuthCookies(accessToken, refreshToken);
 
         router.replace("/");
       } catch {

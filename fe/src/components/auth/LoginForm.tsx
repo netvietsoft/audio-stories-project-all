@@ -9,7 +9,8 @@ import { useState } from "react";
 import { loginSchenma } from "@/lib/validation/auth";
 import GoogleOAthButton from "./GoogleOAuthBtn";
 import { apiClient } from "@/lib/api/api-client";
-import { useAuthStore } from "@/store/authStore";
+import { setAuthCookies } from "@/lib/auth/cookies";
+import { useUserStore } from "@/stores/user-store";
 
 type LoginFormValues = z.infer<typeof loginSchenma>;
 
@@ -23,12 +24,16 @@ type MeResponse = {
     email: string;
     name?: string | null;
     avatar_url?: string | null;
+    roles?: string[];
+    vip_tier?: number;
+    credits?: number;
+    premium_expires_at?: string | null;
 };
 
 export default function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const setAuth = useAuthStore((state) => state.setAuth);
+    const setAuth = useUserStore((state) => state.setAuth);
 
     const {
         register,
@@ -57,16 +62,22 @@ export default function LoginForm() {
                 },
             });
 
-            setAuth(
-                {
+            setAuth({
+                user: {
                     id: meRes.data.sub,
                     email: meRes.data.email,
                     name: meRes.data.name ?? undefined,
-                    avatar: meRes.data.avatar_url ?? undefined,
+                    avatarUrl: meRes.data.avatar_url ?? undefined,
+                    roles: meRes.data.roles ?? [],
+                    vipTier: meRes.data.vip_tier,
+                    vipExpirationDate: meRes.data.premium_expires_at,
+                    credits: meRes.data.credits ?? 0,
                 },
-                access_token,
-                refresh_token,
-            );
+                accessToken: access_token,
+                refreshToken: refresh_token,
+            });
+
+            setAuthCookies(access_token, refresh_token);
 
             const redirect = searchParams.get("redirect") || "/";
             router.replace(redirect);

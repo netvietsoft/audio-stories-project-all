@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ChaptersService } from './chapters.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
+import { CreateStandaloneChapterDto } from './dto/create-standalone-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ChapterQueryDto } from './dto/chapter-query.dto';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
@@ -41,7 +42,7 @@ export class ChaptersController {
     @Post('chapters')
     @UseGuards(JwtAccessGuard, RolesGuard)
     @Roles('ADMIN')
-    createStandalone(@Body() createChapterDto: CreateChapterDto) {
+    createStandalone(@Body() createChapterDto: CreateStandaloneChapterDto) {
         return this.chaptersService.createStandalone(createChapterDto);
     }
 

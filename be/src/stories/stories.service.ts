@@ -46,7 +46,7 @@ export class StoriesService {
       await this.prisma.chapter.updateMany({
         where: {
           id: { in: chapterIds },
-          storyId: null, // Only assign chapters that are not already assigned
+          deletedAt: null,
         },
         data: {
           storyId: story.id,

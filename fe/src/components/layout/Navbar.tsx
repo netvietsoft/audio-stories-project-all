@@ -9,7 +9,8 @@ import {
   ChevronDown, LogOut, Coins, Menu, X, Settings,
   UserCircle, History, Heart, SeparatorVertical
 } from "lucide-react";
-import { useAuthStore } from "@/store/authStore";
+import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/auth";
+import { clearAuthCookies } from "@/lib/auth/cookies";
 import { useUserStore } from "@/stores/user-store";
 
 export default function Navbar() {
@@ -24,7 +25,7 @@ export default function Navbar() {
   // State cho Mobile/Tablet Menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const { user, isAuthenticated, logout } = useAuthStore();
+  const user = useUserStore((state) => state.user);
   const unreadNotifs = 3;
 
   useEffect(() => setMounted(true), []);
@@ -140,7 +141,7 @@ export default function Navbar() {
                     }
                     className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} alt="Avatar" className="h-8 w-8 rounded-full bg-gray-200" />
+                    <img src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} alt="Avatar" className="h-8 w-8 rounded-full bg-gray-200" />
                   </button>
 
                   {/* Dropdown User */}
@@ -160,6 +161,11 @@ export default function Navbar() {
                       <button
                         onClick={() => {
                           useUserStore.getState().clearAuth();
+                          clearAuthCookies();
+                          if (typeof window !== "undefined") {
+                            localStorage.removeItem(ACCESS_TOKEN_KEY);
+                            localStorage.removeItem(REFRESH_TOKEN_KEY);
+                          }
                           router.push("/login");
                         }}
                         className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"

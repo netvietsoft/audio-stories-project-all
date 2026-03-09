@@ -1,0 +1,31 @@
+import { IsBoolean, IsInt, IsOptional, IsPositive, IsString, MaxLength } from 'class-validator';
+
+export class UpdatePackageDto {
+    @IsString()
+    @IsOptional()
+    @MaxLength(100)
+    name?: string;
+
+    @IsInt()
+    @IsPositive()
+    @IsOptional()
+    priceVnd?: number;
+
+    @IsInt()
+    @IsPositive()
+    @IsOptional()
+    credits?: number;
+
+    @IsString()
+    @IsOptional()
+    @MaxLength(255)
+    description?: string;
+
+    @IsBoolean()
+    @IsOptional()
+    isActive?: boolean;
+
+    @IsInt()
+    @IsOptional()
+    displayOrder?: number;
+}

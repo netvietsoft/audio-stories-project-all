@@ -38,4 +38,8 @@ export class ExploreQueryDto {
   @IsOptional()
   @IsIn(storySortOptions)
   sort?: StorySortOption = 'latest';
+
+  @IsOptional()
+  @IsString()
+  all?: string;
 }

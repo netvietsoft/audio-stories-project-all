@@ -7,6 +7,7 @@ import {
     MoreVertical,
     Calendar,
     ChevronRight,
+    ChevronDown,
     Loader2,
     Filter,
     ArrowUpDown,
@@ -189,7 +190,7 @@ export default function StoriesPage() {
                         />
                     </form>
                     <div className="flex items-center gap-3 w-full lg:w-auto">
-                        <div className="relative flex-1 lg:w-48">
+                        <div className="relative flex-1 lg:w-56">
                             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <select
                                 value={filterStatus}
@@ -197,13 +198,13 @@ export default function StoriesPage() {
                                     setFilterStatus(e.target.value);
                                     setPage(1);
                                 }}
-                                className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-10 pr-10 text-sm font-bold text-slate-600 appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                                className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-10 pr-10 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
                             >
                                 <option value="all">Tất cả trạng thái</option>
                                 <option value="ongoing">Đang ra (Ongoing)</option>
                                 <option value="completed">Đã xong (Completed)</option>
                             </select>
-                            <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 rotate-90 pointer-events-none" />
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         </div>
                     </div>
                 </div>

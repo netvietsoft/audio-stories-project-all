@@ -10,6 +10,11 @@ import { StoriesModule } from './stories/stories.module';
 import { CategoriesModule } from './categories/categories.module';
 import { AuthorsModule } from './authors/authors.module';
 import { ChaptersModule } from './chapters/chapters.module';
+import { TransactionsModule } from './transactions/transactions.module';
+import { CommentsModule } from './comments/comments.module';
+import { SettingsModule } from './settings/settings.module';
+import { MembershipsModule } from './memberships/memberships.module';
+import { PackagesModule } from './packages/packages.module';
 
 @Module({
   imports: [
@@ -25,6 +30,11 @@ import { ChaptersModule } from './chapters/chapters.module';
     CategoriesModule,
     AuthorsModule,
     ChaptersModule,
+    TransactionsModule,
+    CommentsModule,
+    SettingsModule,
+    MembershipsModule,
+    PackagesModule,
   ],
 
 

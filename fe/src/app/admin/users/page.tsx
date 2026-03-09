@@ -10,6 +10,7 @@ import {
     Shield,
     Star,
     ChevronRight,
+    ChevronDown,
     Loader2,
     Filter,
     ArrowUpDown,
@@ -209,15 +210,18 @@ export default function UsersPage() {
                         />
                     </div>
                     <div className="flex items-center gap-3">
-                        <select
-                            value={filterRole}
-                            onChange={(e) => setFilterRole(e.target.value)}
-                            className="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
-                        >
-                            <option value="all">Tất cả vai trò</option>
-                            <option value="admin">Quản trị viên</option>
-                            <option value="user">Người dùng</option>
-                        </select>
+                        <div className="relative min-w-[160px]">
+                            <select
+                                value={filterRole}
+                                onChange={(e) => setFilterRole(e.target.value)}
+                                className="w-full pl-6 pr-10 py-2.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-700 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer"
+                            >
+                                <option value="all">Tất cả vai trò</option>
+                                <option value="admin">Quản trị viên</option>
+                                <option value="user">Người dùng</option>
+                            </select>
+                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        </div>
                         <button className="p-2.5 bg-white border border-slate-200 rounded-2xl text-slate-600 hover:bg-slate-50 transition-all">
                             <Filter className="w-5 h-5" />
                         </button>

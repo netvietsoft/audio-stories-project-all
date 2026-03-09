@@ -170,16 +170,16 @@ export class StoriesService {
     const authorIds = [...new Set(stories.map((story) => story.authorId).filter(Boolean))];
     const authors = authorIds.length
       ? await this.prisma.author.findMany({
-          where: {
-            id: {
-              in: authorIds,
-            },
+        where: {
+          id: {
+            in: authorIds,
           },
-          select: {
-            id: true,
-            name: true,
-          },
-        })
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      })
       : [];
 
     const authorMap = new Map(authors.map((author) => [author.id, author]));
@@ -217,12 +217,16 @@ export class StoriesService {
         : {}),
     };
 
+    const isAll = query.all === 'true';
+
     const [total, stories] = await Promise.all([
       this.prisma.story.count({ where }),
       this.prisma.story.findMany({
         where,
-        skip: (page - 1) * limit,
-        take: limit,
+        ...(isAll ? {} : {
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
         orderBy: { createdAt: 'desc' },
         include: {
           author: {

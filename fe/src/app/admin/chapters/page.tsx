@@ -15,6 +15,9 @@ import {
     BookOpen,
     ChevronLeft,
     ChevronRight,
+    ChevronDown,
+    Filter,
+    Check,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api/api-client';
 import { ChapterForm } from '../stories/[id]/chapters/_components/ChapterForm';
@@ -43,13 +46,42 @@ export default function ChaptersGlobalPage() {
     const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [page, setPage] = useState(1);
+    const [filterAccess, setFilterAccess] = useState('all');
+    const [filterStoryId, setFilterStoryId] = useState('all');
+    const [stories, setStories] = useState<any[]>([]);
+    const [isStoryFilterOpen, setIsStoryFilterOpen] = useState(false);
+    const [storySearch, setStorySearch] = useState('');
+    const storyFilterRef = React.useRef<HTMLDivElement>(null);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
     const limit = 20;
 
     useEffect(() => {
         fetchChapters();
-    }, [page, searchTerm]);
+    }, [page, searchTerm, filterAccess, filterStoryId]);
+
+    useEffect(() => {
+        const fetchStories = async () => {
+            try {
+                const res = await apiClient.get('/stories?all=true');
+                setStories(Array.isArray(res.data) ? res.data : res.data.data || []);
+            } catch (error) {
+                console.error('Failed to fetch stories:', error);
+            }
+        };
+        fetchStories();
+    }, []);
+
+    // Handle click outside for searchable select
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (storyFilterRef.current && !storyFilterRef.current.contains(event.target as Node)) {
+                setIsStoryFilterOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const fetchChapters = async () => {
         setIsLoading(true);
@@ -58,6 +90,8 @@ export default function ChaptersGlobalPage() {
                 page: page.toString(),
                 limit: limit.toString(),
                 ...(searchTerm && { search: searchTerm }),
+                ...(filterAccess !== 'all' && { accessType: filterAccess }),
+                ...(filterStoryId !== 'all' && { storyId: filterStoryId }),
             });
             const res = await apiClient.get(`/chapters?${params}`);
             setChapters(res.data.data);
@@ -153,6 +187,87 @@ export default function ChaptersGlobalPage() {
                             setPage(1);
                         }}
                     />
+                </div>
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-56">
+                        <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <select
+                            value={filterAccess}
+                            onChange={(e) => {
+                                setFilterAccess(e.target.value);
+                                setPage(1);
+                            }}
+                            className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-10 pr-10 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                        >
+                            <option value="all">Tất cả loại truy cập</option>
+                            <option value="free">Miễn phí (Free)</option>
+                            <option value="timed">Mở khóa theo thời gian</option>
+                            <option value="vip">Dành cho VIP</option>
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+
+                    {/* Story Filter (Searchable) */}
+                    <div className="relative flex-1 md:w-64" ref={storyFilterRef}>
+                        <button
+                            onClick={() => setIsStoryFilterOpen(!isStoryFilterOpen)}
+                            className="w-full h-full bg-slate-50 border-none rounded-2xl py-3 pl-6 pr-10 text-sm font-bold text-slate-700 flex items-center justify-between hover:ring-2 hover:ring-indigo-500/10 transition-all cursor-pointer"
+                        >
+                            <span className="truncate">
+                                {filterStoryId === 'all' ? 'Tất cả truyện' : stories.find(s => s.id === filterStoryId)?.title || 'Lọc theo truyện'}
+                            </span>
+                            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isStoryFilterOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isStoryFilterOpen && (
+                            <div className="absolute z-50 top-full mt-2 left-0 right-0 bg-white border border-slate-100 rounded-[24px] shadow-2xl p-2 animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
+                                <div className="relative mb-2">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        placeholder="Tìm truyện..."
+                                        className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold focus:ring-2 focus:ring-indigo-500/20"
+                                        value={storySearch}
+                                        onChange={(e) => setStorySearch(e.target.value)}
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                    <button
+                                        onClick={() => {
+                                            setFilterStoryId('all');
+                                            setIsStoryFilterOpen(false);
+                                            setPage(1);
+                                        }}
+                                        className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${filterStoryId === 'all' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
+                                    >
+                                        Tất cả truyện
+                                        {filterStoryId === 'all' && <Check className="w-4 h-4" />}
+                                    </button>
+                                    <div className="h-px bg-slate-100 my-1 mx-2" />
+                                    {stories.filter(s => (s.title || '').toLowerCase().includes(storySearch.toLowerCase())).length > 0 ? (
+                                        stories.filter(s => (s.title || '').toLowerCase().includes(storySearch.toLowerCase())).map((story) => (
+                                            <button
+                                                key={story.id}
+                                                onClick={() => {
+                                                    setFilterStoryId(story.id);
+                                                    setIsStoryFilterOpen(false);
+                                                    setStorySearch('');
+                                                    setPage(1);
+                                                }}
+                                                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between group transition-all ${filterStoryId === story.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'}`}
+                                            >
+                                                <span className="truncate">{story.title}</span>
+                                                {filterStoryId === story.id && <Check className="w-4 h-4 shrink-0" />}
+                                            </button>
+                                        ))
+                                    ) : (
+                                        <p className="p-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Không tìm thấy</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

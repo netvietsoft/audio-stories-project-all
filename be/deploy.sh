@@ -45,21 +45,13 @@ restore_env() {
     echo "✅ Restored .env file from backup"
 }
 
-# Function to cleanup and switch back to original branch
+# Function to cleanup
 cleanup_and_restore() {
     local exit_code=$?
     echo ""
     
     # Cleanup build archives
     rm -f be-source.tar.gz 2>/dev/null || true
-    
-    # Switch back to original branch if not already there
-    local current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
-    if [ -n "$ORIGINAL_BRANCH" ] && [ "$current_branch" != "$ORIGINAL_BRANCH" ]; then
-        echo "🔄 Switching back to original branch: $ORIGINAL_BRANCH"
-        git checkout "$ORIGINAL_BRANCH" 2>/dev/null || true
-        echo "✅ Returned to branch: $ORIGINAL_BRANCH"
-    fi
     
     # Always restore .env file
     restore_env
@@ -80,6 +72,7 @@ trap 'echo ""; echo "⚠️  Received SIGTERM, cleaning up..."; exit 143' TERM
 trap cleanup_and_restore EXIT
 
 read -p "Enter DEV | PROD: " env
+env=$(echo "$env" | tr -d '\r')
 
 # Setup Host and Env File
 if [ "$env" == 'DEV' ]; then
@@ -91,38 +84,37 @@ elif [ "$env" == 'PROD' ]; then
     HOST=72.62.198.196
     ENV_FILE=.env.prod
 else
-    echo "❌ Invalid environment"
+    echo "❌ Invalid environment: '$env'"
     exit 1
 fi
 
 read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
-SSH_USER=${SSH_USER:-nguyenvanthanh}
+SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 
 # Server path
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
 
-# Save current branch and switch to main (or deploy branch)
-ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-echo "🔄 Current branch: $ORIGINAL_BRANCH"
-
-# Backup .env file BEFORE switching branches
+# Backup .env file
 backup_env
 
-# Push changes (Requires push.sh)
-if [ -f "./push.sh" ]; then
-    ./push.sh
-    echo "✅ Already push to main"
+# Auto Git Workflow
+echo "🔄 Preparing Git changes..."
+git add .
+# Only commit if there are changes
+if ! git diff-index --quiet HEAD --; then
+    echo "📝 Committing changes..."
+    git commit -m "Deploy BE: $(date '+%Y-%m-%d %H:%M:%S')"
 else
-    echo "⚠️  push.sh not found, skipping..."
+    echo "ℹ️  No changes to commit"
 fi
 
-# Sync with origin/main
-echo "🔄 Fetching latest from origin/main..."
-git fetch origin main
+echo "📤 Pushing to master..."
+git push origin HEAD:master
+echo "✅ Pushed to master"
 
-echo "🔄 Resetting main to origin/main..."
-git reset --hard origin/main
-echo "✅ main is now synced with origin/main"
+# Sync local branch with master to be safe
+git fetch origin master
+git reset --hard origin/master
 
 # Prepare .env file for build
 echo "📝 Preparing .env file for build..."
@@ -155,10 +147,6 @@ echo "🚀 Deploying on server..."
 ssh $SSH_USER@$HOST << EOF
 cd $SERVER_DIR
 
-# Sync with latest origin/main
-git fetch origin main
-git reset --hard origin/main
-
 # Extract source
 if [ -f "be-source.tar.gz" ]; then
     echo "Extracting source..."
@@ -169,15 +157,26 @@ fi
 
 # Install dependencies and build
 echo "📦 Installing dependencies..."
-yarn install
-npx prisma generate
+if command -v yarn >/dev/null 2>&1; then
+    yarn install
+    npx prisma generate
+else
+    echo "  ⚠️  yarn not found, using npm..."
+    npm install
+    npx prisma generate
+fi
 
 echo "📦 Building application on server..."
-yarn build
+if command -v yarn >/dev/null 2>&1; then
+    yarn build
+else
+    npm run build
+fi
 
 # Reload PM2
-pm2 startOrReload ecosystem.config.js --update-env
-pm2 save
+if [ -f "ecosystem.config.js" ]; then
+    pm2 startOrReload ecosystem.config.js --update-env && pm2 save
+fi
 
 echo "✅ Deployed!"
 pm2 list

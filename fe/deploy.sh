@@ -8,7 +8,7 @@ set -e
 # ==========================================
 APP_NAME="web-truyen-audio-fe"
 
-# Temp directory to backup .env file (assuming .env is used for production)
+# Temp directory to backup .env file
 ENV_BACKUP_DIR="/tmp/${APP_NAME}-env-backup-$$"
 
 # Function to backup .env file before branch switch
@@ -80,6 +80,7 @@ trap 'echo ""; echo "⚠️  Received SIGTERM, cleaning up..."; exit 143' TERM
 trap cleanup_and_restore EXIT
 
 read -p "Enter DEV | PROD: " env
+env=$(echo "$env" | tr -d '\r')
 
 # Setup Host and Env File
 if [ "$env" == 'DEV' ]; then
@@ -91,38 +92,30 @@ elif [ "$env" == 'PROD' ]; then
     HOST=72.62.198.196
     ENV_FILE=.env.prod
 else
-    echo "❌ Invalid environment"
+    echo "❌ Invalid environment: '$env'"
     exit 1
 fi
 
 read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
-SSH_USER=${SSH_USER:-nguyenvanthanh}
+SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 
 # Server path
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
 
-# Save current branch and switch to main (or deploy branch)
+# Save current branch
 ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 echo "🔄 Current branch: $ORIGINAL_BRANCH"
 
-# Backup .env file BEFORE switching branches
+# Backup .env file
 backup_env
 
-# Push changes (Requires push.sh)
-if [ -f "./push.sh" ]; then
-    ./push.sh
-    echo "✅ Already push to main"
-else
-    echo "⚠️  push.sh not found, skipping..."
-fi
+# Sync with origin/master
+echo "🔄 Fetching latest from origin/master..."
+git fetch origin master
 
-# Sync with origin/main
-echo "🔄 Fetching latest from origin/main..."
-git fetch origin main
-
-echo "🔄 Resetting main to origin/main..."
-git reset --hard origin/main
-echo "✅ main is now synced with origin/main"
+echo "🔄 Resetting to origin/master..."
+git reset --hard origin/master
+echo "✅ Local workspace is now synced with origin/master"
 
 # Prepare .env file for build
 echo "📝 Preparing .env file for build..."
@@ -139,7 +132,10 @@ echo "✅ .next folder cleaned"
 
 # Create archive of source code
 echo "📦 Creating archive of source code..."
-TAR_FILES="src public next.config.ts package.json yarn.lock ecosystem.config.js tsconfig.json tailwind.config.ts postcss.config.mjs"
+TAR_FILES="src public next.config.ts package.json yarn.lock tsconfig.json tailwind.config.ts postcss.config.mjs"
+# Add ecosystem if exists
+[ -f "ecosystem.config.js" ] && TAR_FILES="$TAR_FILES ecosystem.config.js"
+
 tar -czf next-source.tar.gz $TAR_FILES
 
 # Upload to server
@@ -160,9 +156,9 @@ echo "🚀 Deploying on server..."
 ssh $SSH_USER@$HOST << EOF
 cd $SERVER_DIR
 
-# Sync with latest origin/main
-git fetch origin main
-git reset --hard origin/main
+# Sync with latest origin/master (Removed because we are uploading source via tar)
+# git fetch origin master
+# git reset --hard origin/master
 
 # Extract source
 if [ -f "next-source.tar.gz" ]; then
@@ -174,14 +170,24 @@ fi
 
 # Install dependencies and build
 echo "📦 Installing dependencies..."
-yarn install
+if command -v yarn >/dev/null 2>&1; then
+    yarn install
+else
+    echo "  ⚠️  yarn not found, using npm..."
+    npm install
+fi
 
 echo "📦 Building application on server..."
-yarn build
+if command -v yarn >/dev/null 2>&1; then
+    yarn build
+else
+    npm run build
+fi
 
 # Reload PM2
-pm2 startOrReload ecosystem.config.js --update-env
-pm2 save
+if [ -f "ecosystem.config.js" ]; then
+    pm2 startOrReload ecosystem.config.js --update-env && pm2 save
+fi
 
 echo "✅ Deployed!"
 pm2 list

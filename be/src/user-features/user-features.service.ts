@@ -175,21 +175,21 @@ export class UserFeaturesService {
       ...(query.status ? { status: query.status as StoryStatus } : {}),
       ...(query.categoryId
         ? {
-            categories: {
-              some: {
-                categoryId: query.categoryId,
-              },
+          categories: {
+            some: {
+              categoryId: query.categoryId,
             },
-          }
+          },
+        }
         : {}),
       ...(query.authorId ? { authorId: query.authorId } : {}),
       ...(query.search
         ? {
-            OR: [
-              { title: { contains: query.search } },
-              { author: { name: { contains: query.search } } },
-            ],
-          }
+          OR: [
+            { title: { contains: query.search } },
+            { author: { name: { contains: query.search } } },
+          ],
+        }
         : {}),
     };
 
@@ -244,26 +244,47 @@ export class UserFeaturesService {
     };
 
     if (!this.redisEnabled || !this.redis) {
-      await this.prisma.listeningHistory.upsert({
-        where: {
-          userId_chapterId: {
-            userId,
-            chapterId: dto.chapterId,
+      try {
+        await this.prisma.listeningHistory.upsert({
+          where: {
+            userId_chapterId: {
+              userId,
+              chapterId: dto.chapterId,
+            },
           },
-        },
-        update: {
-          storyId: dto.storyId,
-          progressSeconds: payload.progressSeconds,
-          lastListenedAt: new Date(payload.lastListenedAt),
-        },
-        create: {
-          userId,
-          storyId: dto.storyId,
-          chapterId: dto.chapterId,
-          progressSeconds: payload.progressSeconds,
-          lastListenedAt: new Date(payload.lastListenedAt),
-        },
-      });
+          update: {
+            storyId: dto.storyId,
+            progressSeconds: payload.progressSeconds,
+            lastListenedAt: new Date(payload.lastListenedAt),
+          },
+          create: {
+            userId,
+            storyId: dto.storyId,
+            chapterId: dto.chapterId,
+            progressSeconds: payload.progressSeconds,
+            lastListenedAt: new Date(payload.lastListenedAt),
+          },
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          // Fallback to update if create failed due to race condition
+          await this.prisma.listeningHistory.update({
+            where: {
+              userId_chapterId: {
+                userId,
+                chapterId: dto.chapterId,
+              },
+            },
+            data: {
+              storyId: dto.storyId,
+              progressSeconds: payload.progressSeconds,
+              lastListenedAt: new Date(payload.lastListenedAt),
+            },
+          });
+        } else {
+          throw error;
+        }
+      }
 
       return { synced: true, mode: 'db' };
     }

@@ -33,7 +33,17 @@ export class UserClaimsService {
   async buildUserClaims(userId: string): Promise<UserClaims> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { role: true },
+      select: {
+        id: true,
+        email: true,
+        roleId: true,
+        role: {
+          select: {
+            name: true,
+            permissions: true,
+          },
+        },
+      },
     });
     if (!user) throw new UnauthorizedException('User not found');
 
@@ -58,7 +68,20 @@ export class UserClaimsService {
   }
 
   async getUserInfo(userId: string): Promise<UserInfo> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        avatarUrl: true,
+        credits: true,
+        vipTier: true,
+        vipExpirationDate: true,
+        allowEmailNoti: true,
+        allowBellNoti: true,
+      },
+    });
     if (!user) throw new UnauthorizedException('User not found');
 
     const claims = await this.buildUserClaims(userId);

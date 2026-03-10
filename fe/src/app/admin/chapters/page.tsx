@@ -26,6 +26,7 @@ interface Chapter {
     id: string;
     chapterNumber: number;
     title: string;
+    description: string | null;
     content: string | null;
     r2AudioUrl: string | null;
     youtubeVideoId: string | null;
@@ -129,14 +130,33 @@ export default function ChaptersGlobalPage() {
         setIsSubmitting(true);
         try {
             if (editingChapter) {
-                await apiClient.patch(`/chapters/${editingChapter.id}`, data);
+                const updatePayload = {
+                    chapterNumber: data.chapterNumber,
+                    title: data.title,
+                    description: data.description || undefined,
+                    content: data.content || undefined,
+                    r2AudioUrl: data.r2AudioUrl || undefined,
+                    youtubeVideoId: data.youtubeVideoId || undefined,
+                    audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
+                    accessType: data.accessType,
+                };
+                await apiClient.patch(`/chapters/${editingChapter.id}`, updatePayload);
             } else {
-                await apiClient.post(`/chapters`, data);
+                const createPayload = {
+                    ...data,
+                    description: data.description || undefined,
+                    content: data.content || undefined,
+                    r2AudioUrl: data.r2AudioUrl || undefined,
+                    youtubeVideoId: data.youtubeVideoId || undefined,
+                    audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
+                };
+                await apiClient.post(`/chapters`, createPayload);
             }
             setIsModalOpen(false);
             fetchChapters();
         } catch (error) {
             console.error('Failed to save chapter:', error);
+            alert('Không thể lưu chương. Vui lòng kiểm tra dữ liệu và thử lại.');
         } finally {
             setIsSubmitting(false);
         }
@@ -444,6 +464,7 @@ export default function ChaptersGlobalPage() {
                                 initialData={editingChapter ? {
                                     chapterNumber: editingChapter.chapterNumber,
                                     title: editingChapter.title,
+                                    description: editingChapter.description ?? undefined,
                                     content: editingChapter.content ?? undefined,
                                     r2AudioUrl: editingChapter.r2AudioUrl ?? undefined,
                                     youtubeVideoId: editingChapter.youtubeVideoId ?? undefined,

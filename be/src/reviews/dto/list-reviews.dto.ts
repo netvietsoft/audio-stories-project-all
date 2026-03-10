@@ -4,6 +4,7 @@ import { IsEnum, IsInt, IsOptional, Min } from 'class-validator';
 export enum ReviewSortType {
   NEWEST = 'newest',
   HIGHEST = 'highest',
+  HELPFUL = 'helpful',
 }
 
 export class ListReviewsDto {

@@ -14,7 +14,7 @@ export type StoryFilterValue = {
   categoryId: string;
   authorId: string;
   status: "" | "completed" | "ongoing";
-  sort: "latest" | "views" | "title_asc" | "chapters_desc";
+  sort: "latest" | "views" | "rating" | "title_asc" | "chapters_desc";
 };
 
 type StoryFilterBarProps = {
@@ -82,6 +82,7 @@ export default function StoryFilterBar({
         >
           <option value="latest">Mới cập nhật</option>
           <option value="views">Lượt xem nhiều nhất</option>
+          <option value="rating">Đánh giá cao nhất</option>
           <option value="title_asc">Tên A-Z</option>
           <option value="chapters_desc">Số chương nhiều nhất</option>
         </select>

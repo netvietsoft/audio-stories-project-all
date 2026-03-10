@@ -548,9 +548,9 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                         )}
                     </div>
 
-                    {/* Description */}
+                    {/* Story Introduction */}
                     <div className="space-y-2">
-                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Mô tả chi tiết</label>
+                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Giới thiệu truyện</label>
                         <textarea
                             {...register('description')}
                             rows={5}

@@ -17,10 +17,13 @@ import {
   Shuffle,
   SkipBack,
   SkipForward,
+  Heart,
   Star,
+  ThumbsUp,
   Timer,
   Volume2,
   VolumeX,
+  Smile,
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
@@ -34,6 +37,7 @@ type ChapterItem = {
   id: string;
   title: string;
   chapterNumber: number;
+  description?: string | null;
   content: string | null;
   r2AudioUrl: string | null;
   youtubeVideoId?: string | null;
@@ -95,6 +99,22 @@ type ReviewItem = {
   id: string;
   rating: number;
   content: string | null;
+  likesCount: number;
+  helpfulCount: number;
+  likedByMe?: boolean;
+  helpfulByMe?: boolean;
+  repliesCount?: number;
+  replies?: ReviewReplyItem[];
+  createdAt: string;
+  user?: {
+    displayName?: string;
+  };
+};
+
+type ReviewReplyItem = {
+  id: string;
+  parentId?: string | null;
+  content: string;
   createdAt: string;
   user?: {
     displayName?: string;
@@ -103,7 +123,14 @@ type ReviewItem = {
 
 type ReviewsResponse = {
   data: ReviewItem[];
+  meta?: {
+    total?: number;
+    page?: number;
+    lastPage?: number;
+  };
 };
+
+type ReviewSort = "newest" | "helpful" | "highest";
 
 const formatDuration = (seconds?: number | null) => {
   if (!seconds || seconds <= 0) return "--:--";
@@ -172,6 +199,13 @@ export default function StoryChapterPage() {
   const [myRating, setMyRating] = useState(5);
   const [reviewDraft, setReviewDraft] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewSort, setReviewSort] = useState<ReviewSort>("helpful");
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewLastPage, setReviewLastPage] = useState(1);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [reviewReplyDrafts, setReviewReplyDrafts] = useState<Record<string, string>>({});
+  const [reviewReplyTarget, setReviewReplyTarget] = useState<Record<string, string | null>>({});
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null);
   const [isChapterMenuOpen, setIsChapterMenuOpen] = useState(false);
   const [chapterQuery, setChapterQuery] = useState("");
@@ -203,6 +237,35 @@ export default function StoryChapterPage() {
   const setPlaybackRate = useAudioStore((state) => state.setPlaybackRate);
   const toggleMute = useAudioStore((state) => state.toggleMute);
 
+  const loadReviews = useCallback(
+    async (storyIdOrSlug: string, sort: ReviewSort, page: number, append = false) => {
+      setIsLoadingReviews(true);
+      try {
+        const reviewsRes = await apiClient.get<ReviewsResponse>(`/stories/${storyIdOrSlug}/reviews`, {
+          params: { page, limit: 5, sort },
+        });
+        const rows = reviewsRes.data?.data || [];
+        setReviews((prev) => (append ? [...prev, ...rows] : rows));
+        setReviewPage(reviewsRes.data?.meta?.page || page);
+        setReviewLastPage(reviewsRes.data?.meta?.lastPage || 1);
+      } finally {
+        setIsLoadingReviews(false);
+      }
+    },
+    [],
+  );
+
+  const refreshRatingAndReviews = useCallback(
+    async (storyIdOrSlug: string, sort = reviewSort) => {
+      const [statsRes] = await Promise.all([
+        apiClient.get<RatingStatsResponse>(`/stories/${storyIdOrSlug}/rating-stats`),
+        loadReviews(storyIdOrSlug, sort, 1, false),
+      ]);
+      setRatingStats(statsRes.data.data);
+    },
+    [loadReviews, reviewSort],
+  );
+
   useEffect(() => {
     if (!slug) return;
 
@@ -217,7 +280,7 @@ export default function StoryChapterPage() {
           }),
           apiClient.get<RatingStatsResponse>(`/stories/${slug}/rating-stats`),
           apiClient.get<ReviewsResponse>(`/stories/${slug}/reviews`, {
-            params: { page: 1, limit: 5, sort: "newest" },
+            params: { page: 1, limit: 5, sort: "helpful" },
           }),
         ]);
 
@@ -232,6 +295,8 @@ export default function StoryChapterPage() {
           ratingResult.status === "fulfilled" ? ratingResult.value.data?.data || null : null;
         const fetchedReviews =
           reviewsResult.status === "fulfilled" ? reviewsResult.value.data?.data || [] : [];
+        const fetchedReviewsMeta =
+          reviewsResult.status === "fulfilled" ? reviewsResult.value.data?.meta : undefined;
 
         const detail = detailRes.data;
         setStory(detail);
@@ -253,6 +318,8 @@ export default function StoryChapterPage() {
         setRecommendedStories(recommendedData.filter((item) => item.slug !== detail.slug));
         setRatingStats(fetchedRatingStats);
         setReviews(fetchedReviews);
+        setReviewPage(fetchedReviewsMeta?.page || 1);
+        setReviewLastPage(fetchedReviewsMeta?.lastPage || 1);
       } catch (error) {
         console.error("Lỗi khi tải dữ liệu chi tiết truyện:", error);
         setStory(null);
@@ -263,6 +330,11 @@ export default function StoryChapterPage() {
 
     fetchDetail();
   }, [chapterSlug, router, slug]);
+
+  useEffect(() => {
+    if (!story) return;
+    void loadReviews(story.id, reviewSort, 1, false);
+  }, [loadReviews, reviewSort, story]);
 
   useEffect(
     () => () => {
@@ -481,7 +553,7 @@ export default function StoryChapterPage() {
       try {
         await navigator.share({
           title: story?.title || "AudioTruyen",
-          text: "Nghe truyen nay cung minh nhe",
+          text: "Nghe truyện này cùng mình nhé",
           url,
         });
         return;
@@ -492,7 +564,7 @@ export default function StoryChapterPage() {
 
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(url);
-      alert("Da sao chep lien ket truyen");
+      alert("Đã sao chép liên kết truyện");
     }
   };
 
@@ -527,7 +599,7 @@ export default function StoryChapterPage() {
     }
 
     if ((user.credits ?? 0) < VIP_UNLOCK_COST) {
-      setUnlockError("Credits khong du de mo VIP. Vui long nap them credits.");
+      setUnlockError("Credits không đủ để mở VIP. Vui lòng nạp thêm credits.");
       setShowTopupAction(true);
       return;
     }
@@ -561,18 +633,50 @@ export default function StoryChapterPage() {
         content: reviewDraft.trim() || undefined,
       });
 
-      const [statsRes, reviewsRes] = await Promise.all([
-        apiClient.get<RatingStatsResponse>(`/stories/${story.id}/rating-stats`),
-        apiClient.get<ReviewsResponse>(`/stories/${story.id}/reviews`, {
-          params: { page: 1, limit: 5, sort: "newest" },
-        }),
-      ]);
-      setRatingStats(statsRes.data.data);
-      setReviews(reviewsRes.data.data || []);
+      await refreshRatingAndReviews(story.id);
       setReviewDraft("");
+      setShowEmojiPicker(false);
     } finally {
       setIsSubmittingReview(false);
     }
+  };
+
+  const toggleReviewLike = async (reviewId: string) => {
+    if (!story) return;
+    await apiClient.post(`/stories/${story.id}/reviews/${reviewId}/like`);
+    await loadReviews(story.id, reviewSort, 1, false);
+  };
+
+  const toggleReviewHelpful = async (reviewId: string) => {
+    if (!story) return;
+    await apiClient.post(`/stories/${story.id}/reviews/${reviewId}/helpful`);
+    await loadReviews(story.id, reviewSort, 1, false);
+  };
+
+  const submitReviewReply = async (reviewId: string) => {
+    if (!story) return;
+    const content = (reviewReplyDrafts[reviewId] || "").trim();
+    if (!content) return;
+
+    await apiClient.post(`/stories/${story.id}/reviews/${reviewId}/replies`, {
+      content,
+      parentId: reviewReplyTarget[reviewId] || undefined,
+    });
+
+    setReviewReplyDrafts((prev) => ({ ...prev, [reviewId]: "" }));
+    setReviewReplyTarget((prev) => ({ ...prev, [reviewId]: null }));
+    await loadReviews(story.id, reviewSort, 1, false);
+  };
+
+  const loadMoreReviews = async () => {
+    if (!story) return;
+    if (reviewPage >= reviewLastPage) return;
+    await loadReviews(story.id, reviewSort, reviewPage + 1, true);
+  };
+
+  const collapseReviews = async () => {
+    if (!story) return;
+    await loadReviews(story.id, reviewSort, 1, false);
   };
 
   if (isLoading) {
@@ -616,86 +720,10 @@ export default function StoryChapterPage() {
           </section>
 
           <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Danh gia tu doc gia</h2>
-
-            <div className="mt-4 grid gap-4 lg:grid-cols-[260px_1fr]">
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
-                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                  {Number(ratingStats?.averageRating || 0).toFixed(1)}
-                </p>
-                <p className="mt-1 text-xs text-gray-500">{ratingStats?.ratingCount || 0} luot danh gia</p>
-
-                <div className="mt-3 space-y-2">
-                  {(ratingStats?.distribution || []).map((item) => {
-                    const total = ratingStats?.ratingCount || 1;
-                    const width = Math.round((item.count / total) * 100);
-                    return (
-                      <div key={item.rating} className="flex items-center gap-2 text-xs">
-                        <span className="w-8">{item.rating}★</span>
-                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                          <div className="h-full rounded-full bg-amber-500" style={{ width: `${width}%` }} />
-                        </div>
-                        <span className="w-8 text-right">{item.count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="rounded-xl border border-gray-200 p-3 dark:border-gray-700">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Gui danh gia cua ban</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setMyRating(star)}
-                        className={`rounded-md p-1 ${myRating >= star ? "text-amber-500" : "text-gray-300 dark:text-gray-600"}`}
-                      >
-                        <Star className="h-5 w-5 fill-current" />
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {["😍", "🔥", "👏", "💯", "❤️"].map((emoji) => (
-                      <button
-                        key={emoji}
-                        onClick={() => setReviewDraft((prev) => `${prev}${emoji}`)}
-                        className="rounded-full border border-gray-300 px-2 py-0.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-
-                  <textarea
-                    value={reviewDraft}
-                    onChange={(event) => setReviewDraft(event.target.value)}
-                    placeholder="Chia se cam nhan cua ban..."
-                    className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
-                    rows={3}
-                  />
-                  <button
-                    onClick={() => void submitReview()}
-                    disabled={isSubmittingReview}
-                    className="mt-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    Gui danh gia
-                  </button>
-                </div>
-
-                <div className="space-y-2">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="rounded-xl border border-gray-200 p-3 text-sm dark:border-gray-700">
-                      <p className="font-semibold text-gray-900 dark:text-gray-100">{review.user?.displayName || "Doc gia"}</p>
-                      <p className="text-xs text-amber-500">{"★".repeat(review.rating)}</p>
-                      <p className="mt-1 text-gray-600 dark:text-gray-300">{review.content || "(Khong co noi dung)"}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Giới thiệu chương</h2>
+            <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
+              {selectedChapter.description || "Chương này chưa có phần giới thiệu."}
+            </p>
           </section>
 
           <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
@@ -712,6 +740,245 @@ export default function StoryChapterPage() {
               />
             </div>
           </section>
+
+          <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Đánh giá từ độc giả</h2>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr]">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  {Number(ratingStats?.averageRating || 0).toFixed(1)}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">{ratingStats?.ratingCount || 0} lượt đánh giá</p>
+
+                <div className="mt-3 space-y-2">
+                  {(ratingStats?.distribution || [])
+                    .slice()
+                    .sort((a, b) => b.rating - a.rating)
+                    .map((item) => {
+                      const total = ratingStats?.ratingCount || 1;
+                      const width = Math.round((item.count / total) * 100);
+                      return (
+                        <div key={item.rating} className="flex items-center gap-2 text-xs">
+                          <span className="w-10 font-medium">{item.rating} sao</span>
+                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                            <div className="h-full rounded-full bg-amber-500" style={{ width: `${width}%` }} />
+                          </div>
+                          <span className="w-7 text-right">{item.count}</span>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="rounded-xl border border-gray-200 p-3 dark:border-gray-700">
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Viết đánh giá của bạn</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setMyRating(star)}
+                        className={`rounded-md p-1 ${myRating >= star ? "text-amber-500" : "text-gray-300 dark:text-gray-600"}`}
+                      >
+                        <Star className="h-5 w-5 fill-current" />
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="relative mt-2">
+                    <textarea
+                      value={reviewDraft}
+                      onChange={(event) => setReviewDraft(event.target.value)}
+                      placeholder="Chia sẻ cảm nhận của bạn..."
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                      rows={3}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowEmojiPicker((prev) => !prev)}
+                      className="absolute bottom-2 right-2 rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700"
+                    >
+                      <Smile className="h-4 w-4" />
+                    </button>
+                    {showEmojiPicker ? (
+                      <div className="absolute bottom-10 right-2 z-10 flex gap-1 rounded-md border border-gray-200 bg-white p-1 shadow dark:border-gray-700 dark:bg-gray-900">
+                        {["😍", "🔥", "👏", "💯", "❤️"].map((emoji) => (
+                          <button
+                            key={emoji}
+                            onClick={() => {
+                              setReviewDraft((prev) => `${prev}${emoji}`);
+                              setShowEmojiPicker(false);
+                            }}
+                            className="rounded px-1.5 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <button
+                    onClick={() => void submitReview()}
+                    disabled={isSubmittingReview}
+                    className="mt-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Gửi đánh giá
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setReviewSort("newest")}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
+                      reviewSort === "newest"
+                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-200"
+                        : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                    }`}
+                  >
+                    Mới nhất
+                  </button>
+                  <button
+                    onClick={() => setReviewSort("helpful")}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
+                      reviewSort === "helpful"
+                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-200"
+                        : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                    }`}
+                  >
+                    Hữu ích
+                  </button>
+                  <button
+                    onClick={() => setReviewSort("highest")}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
+                      reviewSort === "highest"
+                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-200"
+                        : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                    }`}
+                  >
+                    Nhiều sao
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="rounded-xl border border-gray-200 p-3 text-sm dark:border-gray-700">
+                      <p className="text-gray-800 dark:text-gray-100">
+                        <span className="font-semibold">{review.user?.displayName || "Độc giả"}</span>
+                        <span className="mx-2 text-gray-400">|</span>
+                        <span>{review.content || "(Không có nội dung)"}</span>
+                      </p>
+                      <p className="mt-1 text-xs text-amber-500">{"★".repeat(review.rating)}</p>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                        <button
+                          onClick={() => void toggleReviewLike(review.id)}
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 ${
+                            review.likedByMe
+                              ? "border-pink-300 bg-pink-50 text-pink-700 dark:border-pink-800 dark:bg-pink-900/30 dark:text-pink-200"
+                              : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          <Heart className={`h-3.5 w-3.5 ${review.likedByMe ? "fill-current" : ""}`} />
+                          {review.likesCount || 0}
+                        </button>
+                        <button
+                          onClick={() => void toggleReviewHelpful(review.id)}
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 ${
+                            review.helpfulByMe
+                              ? "border-green-300 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/30 dark:text-green-200"
+                              : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          <ThumbsUp className="h-3.5 w-3.5" />
+                          Hữu ích {review.helpfulCount || 0}
+                        </button>
+                        <button
+                          onClick={() =>
+                            setReviewReplyTarget((prev) => ({
+                              ...prev,
+                              [review.id]: prev[review.id] ? null : review.id,
+                            }))
+                          }
+                          className="rounded-full border border-gray-300 px-2 py-1 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                        >
+                          Trả lời{review.repliesCount ? ` (${review.repliesCount})` : ""}
+                        </button>
+                      </div>
+
+                      {(review.replies || []).length ? (
+                        <div className="mt-2 space-y-1 rounded-md bg-gray-50 p-2 text-xs dark:bg-gray-800/50">
+                          {(review.replies || []).map((reply) => (
+                            <p key={reply.id} className="text-gray-700 dark:text-gray-200">
+                              <span className="font-semibold">{reply.user?.displayName || "Độc giả"}</span>: {reply.content}
+                            </p>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      {reviewReplyTarget[review.id] ? (
+                        <div className="mt-2 space-y-2">
+                          <textarea
+                            rows={2}
+                            value={reviewReplyDrafts[review.id] || ""}
+                            onChange={(event) =>
+                              setReviewReplyDrafts((prev) => ({
+                                ...prev,
+                                [review.id]: event.target.value,
+                              }))
+                            }
+                            className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                            placeholder="Viết trả lời..."
+                          />
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => void submitReviewReply(review.id)}
+                              className="rounded-md bg-blue-600 px-2.5 py-1 text-xs font-medium text-white"
+                            >
+                              Gửi
+                            </button>
+                            <button
+                              onClick={() =>
+                                setReviewReplyTarget((prev) => ({
+                                  ...prev,
+                                  [review.id]: null,
+                                }))
+                              }
+                              className="rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+
+                  {isLoadingReviews ? <p className="text-xs text-gray-500">Đang tải đánh giá...</p> : null}
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {reviewPage < reviewLastPage ? (
+                      <button
+                        onClick={() => void loadMoreReviews()}
+                        className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                      >
+                        Xem thêm 5 đánh giá
+                      </button>
+                    ) : null}
+                    {reviews.length > 5 ? (
+                      <button
+                        onClick={() => void collapseReviews()}
+                        className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                      >
+                        Thu gọn còn 5 đánh giá
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>          
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
@@ -744,7 +1011,7 @@ export default function StoryChapterPage() {
                 <input
                   value={chapterQuery}
                   onChange={(event) => setChapterQuery(event.target.value)}
-                  placeholder="Tim so chuong hoac ten chuong..."
+                  placeholder="Tìm số chương hoặc tên chương..."
                   className="mb-2 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
                 />
                 <div className="max-h-64 space-y-1 overflow-y-auto pr-1">

@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 
 // Patch BigInt so it can be serialized to JSON natively
 (BigInt.prototype as any).toJSON = function () {
@@ -19,6 +20,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+  app.useGlobalFilters(new PrismaExceptionFilter());
 
   const corsEnv = process.env.CORS || process.env.ALLOWED_CLIENT_URLS || '';
   const allowedOrigins = corsEnv

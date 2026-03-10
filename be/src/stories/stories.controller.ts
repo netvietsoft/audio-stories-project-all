@@ -7,6 +7,7 @@ import { S3Service, type UploadFilePayload } from '@/upload/s3.service';
 import { ExploreQueryDto } from './dto/explore-query.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { UpdateRecommendedDto } from './dto/update-recommended.dto';
+import { UpdateStoryDto } from './dto/update-story.dto';
 import { StoriesService } from './stories.service';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
@@ -52,6 +53,13 @@ export class StoriesController {
     return this.storiesService.findAllAdmin(query);
   }
 
+  @Get('admin/:id')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  findOneAdmin(@Param('id') id: string) {
+    return this.storiesService.findOneAdmin(id);
+  }
+
   @Get('home')
   getHome() {
     return this.storiesService.getHomeStories();
@@ -60,6 +68,11 @@ export class StoriesController {
   @Get('categories')
   getCategories() {
     return this.storiesService.getAllCategories();
+  }
+
+  @Get('categories-with-count')
+  getCategoriesWithCount() {
+    return this.storiesService.getAllCategoriesWithCount();
   }
 
   @Get('authors')
@@ -77,11 +90,28 @@ export class StoriesController {
     return this.storiesService.getRecommendedStories(Number(limit) || 12);
   }
 
+  @Get('categories/top')
+  getTopCategories(@Query('limit') limit?: string) {
+    return this.storiesService.getTopCategories(Number(limit) || 5);
+  }
+
+  @Get('hall-of-fame')
+  getHallOfFame(@Query('limit') limit?: string) {
+    return this.storiesService.getHallOfFame(Number(limit) || 3);
+  }
+
   @Patch(':id/recommended')
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')
   updateRecommended(@Param('id') id: string, @Body() dto: UpdateRecommendedDto) {
     return this.storiesService.updateRecommended(id, dto.isRecommended);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  updateStory(@Param('id') id: string, @Body() dto: UpdateStoryDto) {
+    return this.storiesService.updateStory(id, dto);
   }
 
   @Get(':slug')

@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   Search, Moon, Sun, Bell, User,
-  ChevronDown, LogOut, Coins, Menu, X, Settings,
-  UserCircle, History, Heart, SeparatorVertical
+  ChevronDown, LogOut, Coins, Menu, X,
+  UserCircle, History, Heart
 } from "lucide-react";
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/auth";
 import { clearAuthCookies } from "@/lib/auth/cookies";
@@ -29,6 +29,13 @@ type NotificationsResponse = {
   };
 };
 
+type TopCategoryItem = {
+  id: number;
+  name: string;
+  slug: string;
+  storiesCount: number;
+};
+
 export default function Navbar() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -44,6 +51,7 @@ export default function Navbar() {
   const user = useUserStore((state) => state.user);
   const [notifs, setNotifs] = useState<NotificationItem[]>([]);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
+  const [topCategories, setTopCategories] = useState<TopCategoryItem[]>([]);
 
   useEffect(() => setMounted(true), []);
 
@@ -72,6 +80,21 @@ export default function Navbar() {
 
     void loadNotifications();
   }, [user]);
+
+  useEffect(() => {
+    const loadTopCategories = async () => {
+      try {
+        const response = await apiClient.get<{ data: TopCategoryItem[] }>("/stories/categories/top", {
+          params: { limit: 5 },
+        });
+        setTopCategories(response.data.data || []);
+      } catch {
+        setTopCategories([]);
+      }
+    };
+
+    void loadTopCategories();
+  }, []);
 
   const markRead = async (id: string) => {
     try {
@@ -116,13 +139,18 @@ export default function Navbar() {
                   </button>
                   {isCategoryOpen && (
                     <div className="absolute top-full left-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 mt-1">
-                      <Link href="/categories/tien-hiep" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">Tiên Hiệp</Link>
+                      {topCategories.map((item) => (
+                        <Link key={item.id} href={`/categories/${item.slug}`} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
+                          {item.name}
+                        </Link>
+                      ))}
                       <Link href="/categories" className="block px-4 py-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700">Xem tất cả &rarr;</Link>
                     </div>
                   )}
                 </div>
                 <Link href="/new" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Mới đăng</Link>
                 <Link href="/trending" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Trending</Link>
+                <Link href="/vinh-danh" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Vinh danh</Link>
               </nav>
             </div>
 
@@ -289,6 +317,7 @@ export default function Navbar() {
             <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)}>Thể loại</Link>
             <Link href="/new" onClick={() => setIsMobileMenuOpen(false)}>Mới đăng</Link>
             <Link href="/trending" onClick={() => setIsMobileMenuOpen(false)}>Thịnh hành</Link>
+            <Link href="/vinh-danh" onClick={() => setIsMobileMenuOpen(false)}>Vinh danh</Link>
             <Link href="/topup" className="text-amber-600 dark:text-amber-500" onClick={() => setIsMobileMenuOpen(false)}>Nạp Credits</Link>
           </nav>
         </div>

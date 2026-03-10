@@ -3,26 +3,61 @@ import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { CreateReviewReplyDto } from './dto/create-review-reply.dto';
+import { ListReviewRepliesDto } from './dto/list-review-replies.dto';
 import { ListReviewsDto, ReviewSortType } from './dto/list-reviews.dto';
 
 @Injectable()
 export class ReviewsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private normalizeReview(row: any) {
+  private normalizeReview(row: any, currentUserId?: string) {
+    const likedByMe = currentUserId
+      ? (row.reviewLikes || []).some((item: { userId: string }) => item.userId === currentUserId)
+      : false;
+    const helpfulByMe = currentUserId
+      ? (row.reviewHelpfuls || []).some((item: { userId: string }) => item.userId === currentUserId)
+      : false;
+
     return {
       id: row.id,
       rating: row.rating,
       content: row.content,
       likesCount: row.likesCount,
+      helpfulCount: row.helpfulCount || 0,
+      likedByMe,
+      helpfulByMe,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
       user: {
         id: row.user?.id,
-        displayName: row.user?.displayName || 'Doc gia',
+        displayName: row.user?.displayName || 'Độc giả',
         avatarUrl: row.user?.avatarUrl || null,
       },
+      repliesCount: row._count?.replies || 0,
+      replies: (row.replies || []).map((reply: any) => ({
+        id: reply.id,
+        parentId: reply.parentId,
+        content: reply.content,
+        createdAt: reply.createdAt,
+        user: {
+          id: reply.user?.id,
+          displayName: reply.user?.displayName || 'Độc giả',
+          avatarUrl: reply.user?.avatarUrl || null,
+        },
+      })),
     };
+  }
+
+  private async ensureReview(reviewId: string) {
+    const review = await this.prisma.review.findUnique({
+      where: { id: reviewId },
+      select: { id: true },
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
   }
 
   private async resolveStoryId(storyIdOrSlug: string) {
@@ -92,7 +127,7 @@ export class ReviewsService {
     };
   }
 
-  async listReviews(storyIdOrSlug: string, query: ListReviewsDto) {
+  async listReviews(storyIdOrSlug: string, query: ListReviewsDto, currentUserId?: string) {
     const storyId = await this.resolveStoryId(storyIdOrSlug);
 
     const page = query.page ?? 1;
@@ -101,6 +136,8 @@ export class ReviewsService {
     const orderBy: Prisma.ReviewOrderByWithRelationInput[] =
       query.sort === ReviewSortType.HIGHEST
         ? [{ rating: 'desc' }, { createdAt: 'desc' }]
+        : query.sort === ReviewSortType.HELPFUL
+          ? [{ helpfulCount: 'desc' }, { likesCount: 'desc' }, { rating: 'desc' }, { createdAt: 'desc' }]
         : [{ createdAt: 'desc' }];
 
     const where: Prisma.ReviewWhereInput = { storyId };
@@ -120,12 +157,41 @@ export class ReviewsService {
               avatarUrl: true,
             },
           },
+          reviewLikes: {
+            select: {
+              userId: true,
+            },
+          },
+          reviewHelpfuls: {
+            select: {
+              userId: true,
+            },
+          },
+          replies: {
+            where: { parentId: null },
+            orderBy: { createdAt: 'desc' },
+            take: 2,
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  displayName: true,
+                  avatarUrl: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              replies: true,
+            },
+          },
         },
       }),
     ]);
 
     return {
-      data: rows.map((row) => this.normalizeReview(row)),
+      data: rows.map((row) => this.normalizeReview(row, currentUserId)),
       meta: {
         total,
         page,
@@ -175,7 +241,215 @@ export class ReviewsService {
     });
 
     return {
-      data: this.normalizeReview(result),
+      data: this.normalizeReview(result, userId),
+    };
+  }
+
+  async toggleLike(reviewId: string, userId: string) {
+    await this.ensureReview(reviewId);
+
+    const existing = await this.prisma.reviewLike.findUnique({
+      where: {
+        userId_reviewId: {
+          userId,
+          reviewId,
+        },
+      },
+    });
+
+    if (existing) {
+      await this.prisma.reviewLike.delete({
+        where: {
+          userId_reviewId: {
+            userId,
+            reviewId,
+          },
+        },
+      });
+    } else {
+      await this.prisma.reviewLike.create({
+        data: {
+          userId,
+          reviewId,
+        },
+      });
+    }
+
+    const likesCount = await this.prisma.reviewLike.count({ where: { reviewId } });
+    await this.prisma.review.update({
+      where: { id: reviewId },
+      data: { likesCount },
+    });
+
+    return {
+      data: {
+        likedByMe: !existing,
+        likesCount,
+      },
+    };
+  }
+
+  async toggleHelpful(reviewId: string, userId: string) {
+    await this.ensureReview(reviewId);
+
+    const existing = await this.prisma.reviewHelpful.findUnique({
+      where: {
+        userId_reviewId: {
+          userId,
+          reviewId,
+        },
+      },
+    });
+
+    if (existing) {
+      await this.prisma.reviewHelpful.delete({
+        where: {
+          userId_reviewId: {
+            userId,
+            reviewId,
+          },
+        },
+      });
+    } else {
+      await this.prisma.reviewHelpful.create({
+        data: {
+          userId,
+          reviewId,
+        },
+      });
+    }
+
+    const helpfulCount = await this.prisma.reviewHelpful.count({ where: { reviewId } });
+    await this.prisma.review.update({
+      where: { id: reviewId },
+      data: { helpfulCount },
+    });
+
+    return {
+      data: {
+        helpfulByMe: !existing,
+        helpfulCount,
+      },
+    };
+  }
+
+  async listReplies(reviewId: string, query: ListReviewRepliesDto) {
+    await this.ensureReview(reviewId);
+
+    const page = query.page ?? 1;
+    const limit = Math.min(query.limit ?? 10, 50);
+
+    const where: Prisma.ReviewReplyWhereInput = {
+      reviewId,
+      parentId: null,
+    };
+
+    const [total, rows] = await Promise.all([
+      this.prisma.reviewReply.count({ where }),
+      this.prisma.reviewReply.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              displayName: true,
+              avatarUrl: true,
+            },
+          },
+          children: {
+            orderBy: { createdAt: 'asc' },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  displayName: true,
+                  avatarUrl: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        parentId: row.parentId,
+        content: row.content,
+        createdAt: row.createdAt,
+        user: {
+          id: row.user.id,
+          displayName: row.user.displayName || 'Độc giả',
+          avatarUrl: row.user.avatarUrl || null,
+        },
+        children: row.children.map((child) => ({
+          id: child.id,
+          parentId: child.parentId,
+          content: child.content,
+          createdAt: child.createdAt,
+          user: {
+            id: child.user.id,
+            displayName: child.user.displayName || 'Độc giả',
+            avatarUrl: child.user.avatarUrl || null,
+          },
+        })),
+      })),
+      meta: {
+        total,
+        page,
+        lastPage: Math.max(1, Math.ceil(total / limit)),
+      },
+    };
+  }
+
+  async createReply(reviewId: string, userId: string, dto: CreateReviewReplyDto) {
+    await this.ensureReview(reviewId);
+
+    if (dto.parentId) {
+      const parent = await this.prisma.reviewReply.findUnique({
+        where: { id: dto.parentId },
+        select: { id: true, reviewId: true },
+      });
+
+      if (!parent || parent.reviewId !== reviewId) {
+        throw new NotFoundException('Parent reply not found');
+      }
+    }
+
+    const created = await this.prisma.reviewReply.create({
+      data: {
+        reviewId,
+        userId,
+        parentId: dto.parentId,
+        content: dto.content.trim(),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            displayName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    return {
+      data: {
+        id: created.id,
+        parentId: created.parentId,
+        content: created.content,
+        createdAt: created.createdAt,
+        user: {
+          id: created.user.id,
+          displayName: created.user.displayName || 'Độc giả',
+          avatarUrl: created.user.avatarUrl || null,
+        },
+      },
     };
   }
 }

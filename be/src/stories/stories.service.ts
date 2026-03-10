@@ -4,6 +4,7 @@ import { Prisma, StoryStatus } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ExploreQueryDto } from './dto/explore-query.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
+import { UpdateStoryDto } from './dto/update-story.dto';
 
 @Injectable()
 export class StoriesService {
@@ -145,6 +146,15 @@ export class StoriesService {
   async exploreStories(query: ExploreQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
+    const now = new Date();
+    const trendWindowStart =
+      query.trendWindow === 'today'
+        ? new Date(now.getTime() - 24 * 60 * 60 * 1000)
+        : query.trendWindow === 'week'
+          ? new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          : query.trendWindow === 'month'
+            ? new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+            : null;
 
     const where: Prisma.StoryWhereInput = {
       deletedAt: null,
@@ -167,11 +177,14 @@ export class StoriesService {
         }
         : {}),
       ...(query.authorId ? { authorId: query.authorId } : {}),
+      ...(trendWindowStart ? { updatedAt: { gte: trendWindowStart } } : {}),
     };
 
     const orderBy: Prisma.StoryOrderByWithRelationInput =
       query.sort === 'views'
         ? { totalViews: 'desc' }
+        : query.sort === 'rating'
+          ? { averageRating: 'desc' }
         : query.sort === 'title_asc'
           ? { title: 'asc' }
           : query.sort === 'chapters_desc'
@@ -192,40 +205,102 @@ export class StoriesService {
           thumbnailUrl: true,
           status: true,
           totalViews: true,
-          authorId: true,
+          averageRating: true,
+          createdAt: true,
+          author: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          categories: {
+            include: {
+              category: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
         },
       }),
     ]);
 
-    const authorIds = [...new Set(stories.map((story) => story.authorId).filter(Boolean))];
-    const authors = authorIds.length
-      ? await this.prisma.author.findMany({
-        where: {
-          id: {
-            in: authorIds,
-          },
-        },
-        select: {
-          id: true,
-          name: true,
-        },
-      })
-      : [];
-
-    const authorMap = new Map(authors.map((author) => [author.id, author]));
-
-    const normalizedStories = stories.map((story) => ({
-      ...story,
-      author: authorMap.get(story.authorId) ?? undefined,
-    }));
-
     return {
-      data: normalizedStories.map((story) => this.serializeStory(story)),
+      data: stories.map((story) => this.serializeStory(story)),
       meta: {
         total,
         page,
         lastPage: Math.max(1, Math.ceil(total / limit)),
       },
+    };
+  }
+
+  async getTopCategories(limit = 5) {
+    const safeLimit = Math.min(Math.max(limit || 5, 1), 20);
+    const grouped = await this.prisma.storyCategory.groupBy({
+      by: ['categoryId'],
+      _count: {
+        storyId: true,
+      },
+      orderBy: {
+        _count: {
+          storyId: 'desc',
+        },
+      },
+      take: safeLimit,
+    });
+
+    const ids = grouped.map((item) => item.categoryId);
+    const categories = ids.length
+      ? await this.prisma.category.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      })
+      : [];
+
+    const categoryMap = new Map(categories.map((item) => [item.id, item]));
+    return {
+      data: grouped
+        .map((item) => {
+          const category = categoryMap.get(item.categoryId);
+          if (!category) return null;
+          return {
+            ...category,
+            storiesCount: item._count.storyId,
+          };
+        })
+        .filter(Boolean),
+    };
+  }
+
+  async getHallOfFame(limit = 3) {
+    const safeLimit = Math.min(Math.max(limit || 3, 1), 20);
+    const users = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        vipTier: { gt: 0 },
+      },
+      orderBy: [{ vipTier: 'desc' }, { credits: 'desc' }, { totalUnlockedStories: 'desc' }],
+      take: safeLimit,
+      select: {
+        id: true,
+        displayName: true,
+        avatarUrl: true,
+        vipTier: true,
+        credits: true,
+        totalUnlockedStories: true,
+      },
+    });
+
+    return {
+      data: users,
     };
   }
 
@@ -284,6 +359,76 @@ export class StoriesService {
     };
   }
 
+  async findOneAdmin(id: string) {
+    const story = await this.prisma.story.findUnique({
+      where: { id },
+      include: {
+        author: {
+          select: { id: true, name: true },
+        },
+        categories: {
+          include: {
+            category: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    if (!story || story.deletedAt) {
+      throw new NotFoundException('Story not found');
+    }
+
+    return this.serializeStory(story);
+  }
+
+  async updateStory(id: string, data: UpdateStoryDto) {
+    const existing = await this.prisma.story.findUnique({
+      where: { id },
+      select: { id: true, deletedAt: true },
+    });
+
+    if (!existing || existing.deletedAt) {
+      throw new NotFoundException('Story not found');
+    }
+
+    const { categoryIds, ...storyData } = data;
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      if (categoryIds) {
+        await tx.storyCategory.deleteMany({ where: { storyId: id } });
+        if (categoryIds.length > 0) {
+          await tx.storyCategory.createMany({
+            data: categoryIds.map((categoryId) => ({
+              storyId: id,
+              categoryId,
+            })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      return tx.story.update({
+        where: { id },
+        data: storyData,
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          categories: {
+            include: {
+              category: { select: { id: true, name: true } },
+            },
+          },
+        },
+      });
+    });
+
+    return this.serializeStory(updated);
+  }
+
   async getStoryDetail(slug: string) {
     const story = await this.prisma.story.findUnique({
       where: { slug },
@@ -312,6 +457,7 @@ export class StoriesService {
             id: true,
             title: true,
             chapterNumber: true,
+            description: true,
             content: true,
             r2AudioUrl: true,
             youtubeVideoId: true,
@@ -341,6 +487,33 @@ export class StoriesService {
         name: 'asc',
       },
     });
+  }
+
+  async getAllCategoriesWithCount() {
+    const categories = await this.prisma.category.findMany({
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        _count: {
+          select: {
+            stories: true,
+          },
+        },
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    return {
+      data: categories.map((item) => ({
+        id: item.id,
+        name: item.name,
+        slug: item.slug,
+        storiesCount: item._count.stories,
+      })),
+    };
   }
 
   async getAllAuthors() {

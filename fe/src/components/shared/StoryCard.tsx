@@ -10,9 +10,16 @@ type StoryCardStory = {
   thumbnailUrl: string | null;
   status: "ongoing" | "completed";
   totalViews: number;
+  averageRating?: number | string;
+  createdAt?: string;
   author?: {
     name: string;
   };
+  categories?: Array<{
+    category: {
+      name: string;
+    };
+  }>;
 };
 
 type StoryCardProps = {
@@ -21,7 +28,12 @@ type StoryCardProps = {
 };
 
 export default function StoryCard({ story, className }: StoryCardProps) {
-  const statusLabel = story.status === "completed" ? "Full" : "Đang ra";
+  const isNew = story.createdAt
+    ? Date.now() - new Date(story.createdAt).getTime() <= 7 * 24 * 60 * 60 * 1000
+    : false;
+  const statusLabel = story.status === "completed" ? "Full" : isNew ? "New" : "Đang ra";
+  const categoryLabel = story.categories?.[0]?.category?.name || "Đang cập nhật";
+  const rating = Number(story.averageRating || 0).toFixed(1);
 
   return (
     <Link
@@ -38,16 +50,23 @@ export default function StoryCard({ story, className }: StoryCardProps) {
           {statusLabel}
         </span>
 
+        <span className="absolute left-2 top-10 rounded-md bg-black/70 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
+          {categoryLabel}
+        </span>
+
         <div className="absolute right-2 top-2">
           <FavoriteButton storyId={story.id} />
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/90 via-black/65 to-transparent p-3">
           <h3 className="line-clamp-2 text-sm font-semibold text-white drop-shadow-md">{story.title}</h3>
-          <p className="mt-1 truncate text-xs text-gray-200">{story.author?.name || "Dang cap nhat"}</p>
-          <div className="mt-1 flex items-center gap-1 text-xs text-gray-200">
+          <p className="mt-1 truncate text-xs text-gray-200">{story.author?.name || "Đang cập nhật"}</p>
+          <div className="mt-1 flex items-center justify-between text-xs text-gray-200">
+            <span>★ {rating}</span>
+            <span className="inline-flex items-center gap-1">
             <Eye className="h-3.5 w-3.5" />
-            <span>{Number(story.totalViews || 0).toLocaleString("vi-VN")} luot nghe</span>
+            {Number(story.totalViews || 0).toLocaleString("vi-VN")}
+            </span>
           </div>
         </div>
       </div>

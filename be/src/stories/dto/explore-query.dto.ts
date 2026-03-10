@@ -1,8 +1,11 @@
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
 
-export const storySortOptions = ['latest', 'views', 'title_asc', 'chapters_desc'] as const;
+export const storySortOptions = ['latest', 'views', 'rating', 'title_asc', 'chapters_desc'] as const;
 export type StorySortOption = (typeof storySortOptions)[number];
+
+export const trendWindowOptions = ['all', 'today', 'week', 'month'] as const;
+export type TrendWindowOption = (typeof trendWindowOptions)[number];
 
 export class ExploreQueryDto {
   @IsOptional()
@@ -42,4 +45,8 @@ export class ExploreQueryDto {
   @IsOptional()
   @IsString()
   all?: string;
+
+  @IsOptional()
+  @IsIn(trendWindowOptions)
+  trendWindow?: TrendWindowOption = 'all';
 }

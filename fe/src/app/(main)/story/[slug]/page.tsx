@@ -123,6 +123,13 @@ export default function StoryChaptersPage() {
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Giới thiệu truyện</h2>
+        <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
+          {story.description || "Truyện đang cập nhật phần giới thiệu."}
+        </p>
+      </section>
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="inline-flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
             <ListMusic className="h-5 w-5" /> Danh sách chương
@@ -141,7 +148,7 @@ export default function StoryChaptersPage() {
               >
                 <div className="min-w-0">
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {chapter.title}
+                    Chương {chapter.chapterNumber}: {chapter.title}
                   </p>
                   <div className="mt-1 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
                     <span className="inline-flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> Đọc/Nghe</span>

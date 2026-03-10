@@ -24,6 +24,7 @@ interface Chapter {
     id: string;
     chapterNumber: number;
     title: string;
+    description: string | null;
     content: string | null;
     r2AudioUrl: string | null;
     youtubeVideoId: string | null;
@@ -310,6 +311,7 @@ export default function ChaptersPage() {
                                 initialData={editingChapter ? {
                                     chapterNumber: editingChapter.chapterNumber,
                                     title: editingChapter.title,
+                                    description: editingChapter.description ?? undefined,
                                     content: editingChapter.content ?? undefined,
                                     r2AudioUrl: editingChapter.r2AudioUrl ?? undefined,
                                     youtubeVideoId: editingChapter.youtubeVideoId ?? undefined,

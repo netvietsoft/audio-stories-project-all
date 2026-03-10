@@ -373,7 +373,7 @@ export default function ProfilePage() {
                             <p className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">Quản lý</p>
                         </div>
                         <button
-                            onClick={() => router.push("/profile")}
+                            onClick={() => router.push("/profile/settings")}
                             className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
                         >
                             <Settings className="h-5 w-5 text-gray-400 transition-transform group-hover:rotate-45" />
@@ -387,6 +387,14 @@ export default function ProfilePage() {
                             <CreditCard className="h-5 w-5" />
                             <span className="font-semibold">Nạp credits</span>
                             <ChevronRight className="ml-auto h-4 w-4" />
+                        </button>
+                        <button
+                            onClick={() => router.push("/profile/transactions")}
+                            className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+                        >
+                            <CreditCard className="h-5 w-5 text-green-500" />
+                            <span className="font-semibold">Lich su giao dich</span>
+                            <ChevronRight className="ml-auto h-4 w-4 text-gray-300" />
                         </button>
                         <button
                             onClick={() => setActivePanel("favorites")}

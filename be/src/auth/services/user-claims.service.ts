@@ -19,6 +19,9 @@ export interface UserInfo {
   // Premium & download fields (for FE compatibility)
   credits: number;
   vip_tier: number;
+  premium_expires_at: Date | null;
+  allow_email_noti: boolean;
+  allow_bell_noti: boolean;
 }
 
 @Injectable()
@@ -30,7 +33,17 @@ export class UserClaimsService {
   async buildUserClaims(userId: string): Promise<UserClaims> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { role: true },
+      select: {
+        id: true,
+        email: true,
+        roleId: true,
+        role: {
+          select: {
+            name: true,
+            permissions: true,
+          },
+        },
+      },
     });
     if (!user) throw new UnauthorizedException('User not found');
 
@@ -55,7 +68,20 @@ export class UserClaimsService {
   }
 
   async getUserInfo(userId: string): Promise<UserInfo> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        avatarUrl: true,
+        credits: true,
+        vipTier: true,
+        vipExpirationDate: true,
+        allowEmailNoti: true,
+        allowBellNoti: true,
+      },
+    });
     if (!user) throw new UnauthorizedException('User not found');
 
     const claims = await this.buildUserClaims(userId);
@@ -70,6 +96,9 @@ export class UserClaimsService {
       permissions: claims.permissions,
       credits: user.credits,
       vip_tier: user.vipTier,
+      premium_expires_at: user.vipExpirationDate,
+      allow_email_noti: user.allowEmailNoti,
+      allow_bell_noti: user.allowBellNoti,
     };
   }
 

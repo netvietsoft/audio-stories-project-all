@@ -84,6 +84,24 @@ export class MailService {
     });
   }
 
+  async sendMembershipExpiryReminder(to: string, hoursLeft: number, endDate: Date) {
+    const endAt = endDate.toLocaleString('vi-VN');
+
+    return await this.transport.sendMail({
+      from: this.from,
+      to,
+      subject: `Goi hoi vien sap het han trong ${hoursLeft} gio`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #333;">Nhac nho goi hoi vien sap het han</h2>
+          <p>Goi hoi vien cua ban se het han trong khoang <strong>${hoursLeft} gio</strong>.</p>
+          <p>Thoi diem het han du kien: <strong>${endAt}</strong>.</p>
+          <p>Vui long gia han som de khong bi gian doan quyen loi VIP.</p>
+        </div>
+      `,
+    });
+  }
+
   // Send collaboration invite email to user
   async sendCollaborationInvite(
     to: string,

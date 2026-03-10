@@ -23,6 +23,8 @@ model User {
   vipTier              Int       @default(0) @map("vip_tier") @db.UnsignedTinyInt
   vipExpirationDate    DateTime? @map("vip_expiration_date")
   emailVerifiedAt      DateTime? @map("email_verified_at")
+  allowEmailNoti       Boolean   @default(true) @map("allow_email_noti")
+  allowBellNoti        Boolean   @default(true) @map("allow_bell_noti")
   country              String?   @db.VarChar(100)
   lastLoginAt          DateTime? @map("last_login_at")
   createdAt            DateTime  @default(now()) @map("created_at")
@@ -39,6 +41,8 @@ model User {
   userFollowAuthors   UserFollowAuthor[]
   reviews             Review[]
   reviewLikes         ReviewLike[]
+  reviewHelpfuls      ReviewHelpful[]
+  reviewReplies       ReviewReply[]
   creditTransactions  CreditTransaction[]
   payments            Payment[]
   memberships         Membership[]
@@ -46,6 +50,7 @@ model User {
   audioReports        AudioReport[]
   playlists           Playlist[]
   chapterComments     ChapterComment[]
+  commentReactions    CommentReaction[]
 
   @@index([roleId])
   @@index([isActive])
@@ -191,8 +196,8 @@ model Story {
   @@index([title])
   @@index([authorId])
   @@index([status, isFeatured, publishedAt, updatedAt])
-  @@index([totalViews(sort: Desc)])
-  @@index([averageRating(sort: Desc)])
+  @@index([totalViews])
+  @@index([averageRating])
   @@index([isRecommended, updatedAt])
   @@map("stories")
 }
@@ -222,6 +227,7 @@ model Chapter {
   storyId        String?           @map("story_id") @db.VarChar(36)
   chapterNumber  Float             @map("chapter_number") @db.Float
   title          String            @db.VarChar(300)
+  description    String?           @db.Text
   content        String?           @db.LongText
   r2AudioUrl     String?           @map("r2_audio_url") @db.VarChar(500)
   youtubeVideoId String?           @map("youtube_video_id") @db.VarChar(20)
@@ -257,7 +263,7 @@ model UserFavorite {
   @@id([userId, storyId])
   @@index([userId])
   @@index([storyId])
-  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, createdAt])
   @@map("user_favorites")
 }
 
@@ -279,7 +285,7 @@ model ListeningHistory {
   @@index([chapterId])
   @@index([storyId])
   @@index([lastListenedAt])
-  @@index([userId, lastListenedAt(sort: Desc)])
+  @@index([userId, lastListenedAt])
   @@map("listening_history")
 }
 
@@ -304,18 +310,22 @@ model Review {
   rating     Int      @db.TinyInt
   content    String?  @db.Text
   likesCount Int      @default(0) @map("likes_count") @db.UnsignedInt
+  helpfulCount Int    @default(0) @map("helpful_count") @db.UnsignedInt
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   story       Story        @relation(fields: [storyId], references: [id], onDelete: Cascade)
   reviewLikes ReviewLike[]
+  reviewHelpfuls ReviewHelpful[]
+  replies     ReviewReply[]
 
   @@unique([userId, storyId])
   @@index([userId])
   @@index([storyId])
-  @@index([storyId, createdAt(sort: Desc)])
-  @@index([storyId, likesCount(sort: Desc)])
+  @@index([storyId, createdAt])
+  @@index([storyId, likesCount])
+  @@index([storyId, helpfulCount])
   @@map("reviews")
 }
 
@@ -331,6 +341,40 @@ model ReviewLike {
   @@index([userId])
   @@index([reviewId])
   @@map("review_likes")
+}
+
+model ReviewHelpful {
+  userId    String   @map("user_id") @db.VarChar(36)
+  reviewId  String   @map("review_id") @db.VarChar(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@id([userId, reviewId])
+  @@index([userId])
+  @@index([reviewId])
+  @@map("review_helpful")
+}
+
+model ReviewReply {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  reviewId  String   @map("review_id") @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
+  parentId  String?  @map("parent_id") @db.VarChar(36)
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  review   Review        @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent   ReviewReply?  @relation("ReviewReplyChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children ReviewReply[] @relation("ReviewReplyChildren")
+
+  @@index([reviewId, createdAt])
+  @@index([userId])
+  @@index([parentId])
+  @@map("review_replies")
 }
 
 enum CreditTransactionType {
@@ -354,7 +398,7 @@ model CreditTransaction {
   user User @relation(fields: [userId], references: [id])
 
   @@index([userId])
-  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, createdAt])
   @@index([type, createdAt])
   @@index([referenceId])
   @@map("credit_transactions")
@@ -481,7 +525,7 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@index([userId, isRead, createdAt])
   @@index([type, createdAt])
   @@map("notifications")
 }
@@ -614,6 +658,7 @@ model ChapterComment {
   story   Story            @relation(fields: [storyId], references: [id], onDelete: Cascade)
   parent  ChapterComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies ChapterComment[] @relation("CommentReplies")
+  reactions CommentReaction[]
 
   @@index([userId])
   @@index([chapterId])
@@ -622,4 +667,27 @@ model ChapterComment {
   @@index([isHidden])
   @@index([createdAt])
   @@map("chapter_comments")
+}
+
+enum CommentReactionType {
+  helpful
+  like
+  love
+}
+
+model CommentReaction {
+  id        String              @id @default(uuid()) @db.VarChar(36)
+  userId    String              @map("user_id") @db.VarChar(36)
+  commentId String              @map("comment_id") @db.VarChar(36)
+  type      CommentReactionType
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment ChapterComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId, type])
+  @@index([commentId])
+  @@index([userId])
+  @@index([commentId, type])
+  @@map("comment_reactions")
 }

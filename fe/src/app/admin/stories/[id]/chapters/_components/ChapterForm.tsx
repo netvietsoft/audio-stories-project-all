@@ -21,20 +21,27 @@ import { UploadButton } from '@/lib/uploadthing';
 import { apiClient } from '@/lib/api/api-client';
 
 const chapterSchema = z.object({
-    chapterNumber: z.number().min(0, 'Số chương không được âm'),
+    chapterNumber: z.coerce.number().min(0, 'Số chương không được âm'),
     title: z.string().min(1, 'Tiêu đề không được để trống'),
+    description: z.string().max(2000, 'Giới thiệu chương tối đa 2000 ký tự').optional(),
     content: z.string().optional(),
     r2AudioUrl: z.string().optional(),
     youtubeVideoId: z.string().optional(),
-    audioDuration: z.number().optional(),
+    audioDuration: z.preprocess(
+        (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : Number(value)),
+        z.number().min(0, 'Thời lượng không hợp lệ').optional(),
+    ),
     accessType: z.enum(['free', 'timed', 'vip']),
-    unlocksAt: z.string().optional(),
-    storyId: z.string().uuid('Vui lòng chọn truyện').optional(),
+    storyId: z.preprocess(
+        (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : value),
+        z.string().uuid('Vui lòng chọn truyện').optional(),
+    ),
 });
 
 type ChapterFormValues = {
     chapterNumber: number;
     title: string;
+    description?: string;
     content?: string;
     r2AudioUrl?: string;
     youtubeVideoId?: string;
@@ -70,6 +77,7 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
         defaultValues: {
             chapterNumber: 1,
             title: '',
+            description: '',
             content: '',
             r2AudioUrl: '',
             youtubeVideoId: '',
@@ -252,6 +260,17 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
             </div>
 
             <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Giới thiệu chương (tùy chọn)</label>
+                <textarea
+                    {...register('description')}
+                    rows={3}
+                    placeholder="Nhập phần giới thiệu ngắn cho chương..."
+                    className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none font-bold text-slate-700"
+                />
+                {errors.description && <p className="text-xs font-bold text-red-500 ml-2">{errors.description.message}</p>}
+            </div>
+
+            <div className="space-y-2">
                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Nội dung chữ (tùy chọn)</label>
                 <textarea
                     {...register('content')}
@@ -372,6 +391,7 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                         {...register('audioDuration')}
                         className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all"
                     />
+                    {errors.audioDuration && <p className="text-xs font-bold text-red-500 ml-2">{errors.audioDuration.message}</p>}
                 </div>
 
                 <div className="space-y-2 md:col-span-2">

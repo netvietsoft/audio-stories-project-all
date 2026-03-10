@@ -26,6 +26,8 @@ export type UserProfile = {
   roles?: string[];
   vipTier?: number;
   vipExpirationDate?: string | null;
+  allowEmailNoti?: boolean;
+  allowBellNoti?: boolean;
   credits: number;
 };
 

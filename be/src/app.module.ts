@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+﻿import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
@@ -19,6 +19,8 @@ import { PackagesModule } from './packages/packages.module';
 import { ChapterCommentsModule } from './chapter-comments/chapter-comments.module';
 import { UserFeaturesModule } from './user-features/user-features.module';
 import { BillingModule } from './billing/billing.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -43,6 +45,8 @@ import { BillingModule } from './billing/billing.module';
     ChapterCommentsModule,
     UserFeaturesModule,
     BillingModule,
+    ReviewsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

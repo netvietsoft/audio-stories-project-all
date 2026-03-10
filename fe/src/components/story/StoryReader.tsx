@@ -11,7 +11,16 @@ type InlineComment = {
   authorName: string;
   createdAt: string;
   authorAvatarUrl?: string | null;
+  reactions?: {
+    helpful: number;
+    like: number;
+    love: number;
+  };
+  repliesCount?: number;
+  replies?: InlineComment[];
 };
+
+type CommentSort = "newest" | "helpful" | "all";
 
 type ParagraphItem = {
   id: string;
@@ -29,6 +38,27 @@ type ParagraphCommentsResponse = {
       name?: string;
       avatarUrl?: string | null;
     };
+    reactions?: {
+      helpful?: number;
+      like?: number;
+      love?: number;
+    };
+    repliesCount?: number;
+    replies?: Array<{
+      id?: string;
+      content?: string;
+      createdAt?: string;
+      user?: {
+        displayName?: string;
+        name?: string;
+        avatarUrl?: string | null;
+      };
+      reactions?: {
+        helpful?: number;
+        like?: number;
+        love?: number;
+      };
+    }>;
   }>;
   data?: {
     comments?: Array<{
@@ -40,6 +70,27 @@ type ParagraphCommentsResponse = {
         name?: string;
         avatarUrl?: string | null;
       };
+      reactions?: {
+        helpful?: number;
+        like?: number;
+        love?: number;
+      };
+      repliesCount?: number;
+      replies?: Array<{
+        id?: string;
+        content?: string;
+        createdAt?: string;
+        user?: {
+          displayName?: string;
+          name?: string;
+          avatarUrl?: string | null;
+        };
+        reactions?: {
+          helpful?: number;
+          like?: number;
+          love?: number;
+        };
+      }>;
     }>;
   };
 };
@@ -55,6 +106,27 @@ type ChapterCommentsResponse = {
         name?: string;
         avatarUrl?: string | null;
       };
+      reactions?: {
+        helpful?: number;
+        like?: number;
+        love?: number;
+      };
+      repliesCount?: number;
+      replies?: Array<{
+        id?: string;
+        content?: string;
+        createdAt?: string;
+        user?: {
+          displayName?: string;
+          name?: string;
+          avatarUrl?: string | null;
+        };
+        reactions?: {
+          helpful?: number;
+          like?: number;
+          love?: number;
+        };
+      }>;
     }>;
   };
 };
@@ -95,13 +167,11 @@ export default function StoryReader({
 }: StoryReaderProps) {
   const [openParagraphId, setOpenParagraphId] = useState<string | null>(null);
   const [paragraphDrafts, setParagraphDrafts] = useState<Record<string, string>>({});
-  const [chapterDraft, setChapterDraft] = useState("");
+  const [replyTargetByParagraph, setReplyTargetByParagraph] = useState<Record<string, string | null>>({});
   const [paragraphComments, setParagraphComments] = useState<Record<string, InlineComment[]>>({});
   const [loadedParagraphs, setLoadedParagraphs] = useState<Record<string, boolean>>({});
-  const [chapterComments, setChapterComments] = useState<InlineComment[]>([]);
-  const [isLoadingChapterComments, setIsLoadingChapterComments] = useState(false);
   const [isSubmittingParagraph, setIsSubmittingParagraph] = useState(false);
-  const [isSubmittingChapter, setIsSubmittingChapter] = useState(false);
+  const [commentSort, setCommentSort] = useState<CommentSort>("newest");
 
   const paragraphs = useMemo(() => {
     if (!chapterId) return [];
@@ -154,33 +224,31 @@ export default function StoryReader({
       authorName: item.user?.displayName || item.user?.name || "Độc giả",
       authorAvatarUrl: item.user?.avatarUrl,
       createdAt: item.createdAt || new Date().toISOString(),
+      reactions: {
+        helpful: item.reactions?.helpful || 0,
+        like: item.reactions?.like || 0,
+        love: item.reactions?.love || 0,
+      },
+      repliesCount: item.repliesCount || 0,
+      replies:
+        item.replies?.map((reply) => ({
+          id: reply.id || `${Math.random().toString(36).slice(2)}`,
+          content: reply.content || "",
+          authorName: reply.user?.displayName || reply.user?.name || "Độc giả",
+          authorAvatarUrl: reply.user?.avatarUrl,
+          createdAt: reply.createdAt || new Date().toISOString(),
+          reactions: {
+            helpful: reply.reactions?.helpful || 0,
+            like: reply.reactions?.like || 0,
+            love: reply.reactions?.love || 0,
+          },
+        })) || [],
     }));
   };
 
-  const loadChapterComments = async () => {
+  const loadParagraphComments = async (paragraphId: string, paragraphIndex: number, force = false) => {
     if (!chapterId) return;
-
-    setIsLoadingChapterComments(true);
-    try {
-      const response = await apiClient.get<ChapterCommentsResponse>(`/chapters/${chapterId}/comments`, {
-        params: {
-          scope: "chapter",
-          page: 1,
-          limit: 30,
-        },
-      });
-      const rawComments = response?.data?.data?.comments || [];
-      setChapterComments(normalizeComments(rawComments));
-    } catch {
-      setChapterComments([]);
-    } finally {
-      setIsLoadingChapterComments(false);
-    }
-  };
-
-  const loadParagraphComments = async (paragraphId: string, paragraphIndex: number) => {
-    if (!chapterId) return;
-    if (loadedParagraphs[paragraphId]) return;
+    if (loadedParagraphs[paragraphId] && !force) return;
 
     try {
       const response = await apiClient.get<ParagraphCommentsResponse>(`/chapters/${chapterId}/comments`, {
@@ -189,6 +257,7 @@ export default function StoryReader({
           paragraphIndex,
           page: 1,
           limit: 30,
+          sort: commentSort,
         },
       });
       const rawComments = response?.data?.data?.comments || response?.data?.comments || [];
@@ -218,10 +287,87 @@ export default function StoryReader({
     }
   };
 
+  const toggleReaction = async (
+    commentId: string,
+    type: "helpful" | "like" | "love",
+    paragraphId?: string,
+  ) => {
+    try {
+      const response = await apiClient.post<{ data?: { reactions?: InlineComment["reactions"] } }>(
+        `/comments/${commentId}/reactions`,
+        { type },
+      );
+
+      const nextReactions = response?.data?.data?.reactions;
+      if (!nextReactions) return;
+
+      const updateOne = (item: InlineComment) =>
+        item.id === commentId ? { ...item, reactions: nextReactions } : item;
+
+      if (!paragraphId) return;
+
+      setParagraphComments((prev) => ({
+        ...prev,
+        [paragraphId]: (prev[paragraphId] || []).map((comment) => ({
+          ...updateOne(comment),
+          replies: (comment.replies || []).map(updateOne),
+        })),
+      }));
+    } catch {
+      // no-op for reaction errors
+    }
+  };
+
+  const loadMoreReplies = async (commentId: string, paragraphId?: string) => {
+    try {
+      const response = await apiClient.get<{ data?: { replies?: ParagraphCommentsResponse["comments"] } }>(
+        `/comments/${commentId}/replies`,
+        {
+          params: {
+            page: 1,
+            limit: 50,
+          },
+        },
+      );
+
+      const replies = normalizeComments(response?.data?.data?.replies || []);
+
+      const mergeReplies = (item: InlineComment) =>
+        item.id === commentId
+          ? {
+              ...item,
+              replies,
+              repliesCount: replies.length,
+            }
+          : item;
+
+      if (!paragraphId) return;
+
+      setParagraphComments((prev) => ({
+        ...prev,
+        [paragraphId]: (prev[paragraphId] || []).map(mergeReplies),
+      }));
+    } catch {
+      // no-op for lazy replies errors
+    }
+  };
+
+  const appendReplyToComment = (comments: InlineComment[], parentId: string, reply: InlineComment) =>
+    comments.map((comment) => {
+      if (comment.id !== parentId) return comment;
+      const nextReplies = [...(comment.replies || []), reply];
+      return {
+        ...comment,
+        replies: nextReplies,
+        repliesCount: Math.max(comment.repliesCount || 0, nextReplies.length),
+      };
+    });
+
   const submitParagraphComment = async (paragraph: ParagraphItem) => {
     if (!chapterId) return;
     const contentValue = (paragraphDrafts[paragraph.id] || "").trim();
     if (!contentValue) return;
+    const parentId = replyTargetByParagraph[paragraph.id] || undefined;
 
     setIsSubmittingParagraph(true);
     try {
@@ -229,6 +375,7 @@ export default function StoryReader({
         content: contentValue,
         scope: "paragraph",
         paragraphIndex: paragraph.index,
+        parentId,
       });
 
       const created = response?.data?.data;
@@ -238,13 +385,23 @@ export default function StoryReader({
         authorName: created?.user?.displayName || created?.user?.name || "Bạn",
         authorAvatarUrl: created?.user?.avatarUrl,
         createdAt: created?.createdAt || new Date().toISOString(),
+        reactions: {
+          helpful: 0,
+          like: 0,
+          love: 0,
+        },
+        replies: [],
+        repliesCount: 0,
       };
 
       setParagraphComments((prev) => ({
         ...prev,
-        [paragraph.id]: [...(prev[paragraph.id] || []), newComment],
+        [paragraph.id]: parentId
+          ? appendReplyToComment(prev[paragraph.id] || [], parentId, newComment)
+          : [...(prev[paragraph.id] || []), newComment],
       }));
       setParagraphDrafts((prev) => ({ ...prev, [paragraph.id]: "" }));
+      setReplyTargetByParagraph((prev) => ({ ...prev, [paragraph.id]: null }));
     } catch {
       // silent fail to avoid breaking reading flow
     } finally {
@@ -252,47 +409,13 @@ export default function StoryReader({
     }
   };
 
-  const submitChapterComment = async () => {
-    if (!chapterId) return;
-    const contentValue = chapterDraft.trim();
-    if (!contentValue) return;
-
-    setIsSubmittingChapter(true);
-    try {
-      const response = await apiClient.post<{ data?: any }>(`/chapters/${chapterId}/comments`, {
-        content: contentValue,
-        scope: "chapter",
-      });
-
-      const created = response?.data?.data;
-      const newComment: InlineComment = {
-        id: created?.id || `chapter-${Date.now()}`,
-        content: created?.content || contentValue,
-        authorName: created?.user?.displayName || created?.user?.name || "Bạn",
-        authorAvatarUrl: created?.user?.avatarUrl,
-        createdAt: created?.createdAt || new Date().toISOString(),
-      };
-
-      setChapterComments((prev) => [newComment, ...prev]);
-      setChapterDraft("");
-    } catch {
-      // silent fail to avoid breaking reading flow
-    } finally {
-      setIsSubmittingChapter(false);
-    }
-  };
-
   useEffect(() => {
     setOpenParagraphId(null);
     setParagraphDrafts({});
+    setReplyTargetByParagraph({});
     setParagraphComments({});
     setLoadedParagraphs({});
-    setChapterDraft("");
-    setChapterComments([]);
-
-    if (chapterId) {
-      void loadChapterComments();
-    }
+    setCommentSort("newest");
   }, [chapterId]);
 
   if (!paragraphs.length) {
@@ -360,13 +483,28 @@ export default function StoryReader({
                 <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Bình luận đoạn #{paragraph.index + 1}</p>
-                    <button
-                      onClick={() => setOpenParagraphId(null)}
-                      className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                      aria-label="Đóng bình luận"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={commentSort}
+                        onChange={(event) => {
+                          const nextSort = event.target.value as CommentSort;
+                          setCommentSort(nextSort);
+                          void loadParagraphComments(paragraph.id, paragraph.index, true);
+                        }}
+                        className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] dark:border-gray-700 dark:bg-gray-800"
+                      >
+                        <option value="newest">Mới nhất</option>
+                        <option value="helpful">Hữu ích</option>
+                        <option value="all">Tất cả</option>
+                      </select>
+                      <button
+                        onClick={() => setOpenParagraphId(null)}
+                        className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                        aria-label="Đóng bình luận"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
@@ -375,6 +513,57 @@ export default function StoryReader({
                         <div key={comment.id} className="rounded-md bg-gray-50 px-3 py-2 text-xs dark:bg-gray-800">
                           <p className="font-semibold text-gray-700 dark:text-gray-200">{comment.authorName}</p>
                           <p className="mt-1 text-gray-600 dark:text-gray-300">{comment.content}</p>
+                          <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                            <button
+                              onClick={() => void toggleReaction(comment.id, "helpful", paragraph.id)}
+                              className="rounded-full border border-gray-300 px-2 py-0.5 hover:bg-white dark:border-gray-700 dark:hover:bg-gray-700"
+                            >
+                              Hữu ích {comment.reactions?.helpful || 0}
+                            </button>
+                            <button
+                              onClick={() => void toggleReaction(comment.id, "like", paragraph.id)}
+                              className="rounded-full border border-gray-300 px-2 py-0.5 hover:bg-white dark:border-gray-700 dark:hover:bg-gray-700"
+                            >
+                              Thích {comment.reactions?.like || 0}
+                            </button>
+                            <button
+                              onClick={() => void toggleReaction(comment.id, "love", paragraph.id)}
+                              className="rounded-full border border-gray-300 px-2 py-0.5 hover:bg-white dark:border-gray-700 dark:hover:bg-gray-700"
+                            >
+                              Yêu thích {comment.reactions?.love || 0}
+                            </button>
+                            <button
+                              onClick={() =>
+                                setReplyTargetByParagraph((prev) => ({
+                                  ...prev,
+                                  [paragraph.id]: comment.id,
+                                }))
+                              }
+                              className="rounded-full border border-blue-300 px-2 py-0.5 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                            >
+                              Trả lời
+                            </button>
+                          </div>
+
+                          {(comment.replies?.length || 0) > 0 ? (
+                            <div className="mt-2 space-y-1 border-l border-gray-300 pl-2 dark:border-gray-600">
+                              {(comment.replies || []).map((reply) => (
+                                <div key={reply.id} className="rounded bg-white/70 px-2 py-1 dark:bg-gray-700/40">
+                                  <p className="font-semibold text-gray-700 dark:text-gray-200">{reply.authorName}</p>
+                                  <p className="text-gray-600 dark:text-gray-300">{reply.content}</p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+
+                          {(comment.repliesCount || 0) > (comment.replies?.length || 0) ? (
+                            <button
+                              onClick={() => void loadMoreReplies(comment.id, paragraph.id)}
+                              className="mt-2 text-[11px] font-semibold text-blue-600 hover:underline"
+                            >
+                              Xem thêm phản hồi
+                            </button>
+                          ) : null}
                         </div>
                       ))
                     ) : (
@@ -383,6 +572,22 @@ export default function StoryReader({
                   </div>
 
                   <div className="mt-3 flex gap-2">
+                    {replyTargetByParagraph[paragraph.id] ? (
+                      <div className="absolute -mt-7 rounded-md bg-blue-50 px-2 py-1 text-[11px] text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                        Đang trả lời bình luận.
+                        <button
+                          onClick={() =>
+                            setReplyTargetByParagraph((prev) => ({
+                              ...prev,
+                              [paragraph.id]: null,
+                            }))
+                          }
+                          className="ml-2 font-semibold underline"
+                        >
+                          Hủy
+                        </button>
+                      </div>
+                    ) : null}
                     <input
                       value={paragraphDrafts[paragraph.id] || ""}
                       onChange={(event) =>
@@ -425,41 +630,6 @@ export default function StoryReader({
           </div>
         );
       })}
-      <section className="mt-8 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Bình luận toàn chương</h3>
-
-        <div className="mt-3 flex gap-2">
-          <input
-            value={chapterDraft}
-            onChange={(event) => setChapterDraft(event.target.value)}
-            placeholder="Viết bình luận cho toàn chương..."
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
-          />
-          <button
-            onClick={() => void submitChapterComment()}
-            disabled={isSubmittingChapter}
-            className="rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-            aria-label="Gửi bình luận toàn chương"
-          >
-            <Send className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="mt-4 space-y-2">
-          {isLoadingChapterComments ? (
-            <p className="text-xs text-gray-500">Đang tải bình luận...</p>
-          ) : chapterComments.length ? (
-            chapterComments.map((comment) => (
-              <div key={comment.id} className="rounded-md bg-gray-50 px-3 py-2 text-sm dark:bg-gray-800">
-                <p className="font-semibold text-gray-700 dark:text-gray-200">{comment.authorName}</p>
-                <p className="mt-1 text-gray-600 dark:text-gray-300">{comment.content}</p>
-              </div>
-            ))
-          ) : (
-            <p className="text-xs text-gray-500">Chưa có bình luận nào cho toàn chương này.</p>
-          )}
-        </div>
-      </section>
     </div>
   );
 }

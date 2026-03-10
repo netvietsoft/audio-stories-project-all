@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
+import { ChapterAccessType } from '@prisma/client';
+import { IsEnum, IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
 
 export class ChapterQueryDto {
     @IsOptional()
@@ -17,4 +18,12 @@ export class ChapterQueryDto {
     @IsOptional()
     @IsString()
     search?: string;
+
+    @IsOptional()
+    @IsEnum(ChapterAccessType)
+    accessType?: ChapterAccessType;
+
+    @IsOptional()
+    @IsString()
+    storyId?: string;
 }

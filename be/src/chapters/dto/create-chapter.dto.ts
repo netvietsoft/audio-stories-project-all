@@ -13,6 +13,11 @@ export class CreateChapterDto {
 
     @IsString()
     @IsOptional()
+    @MaxLength(2000)
+    description?: string;
+
+    @IsString()
+    @IsOptional()
     content?: string;
 
     @IsString()

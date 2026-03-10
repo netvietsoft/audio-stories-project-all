@@ -12,7 +12,7 @@ module.exports = {
             max_memory_restart: "1G",
             env: {
                 NODE_ENV: "production",
-                PORT: 3001,
+                PORT: 3058,
                 DISPLAY: ":99",
             },
             error_file: "./logs/fe-err.log",

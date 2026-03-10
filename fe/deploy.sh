@@ -94,7 +94,6 @@ SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 # Server path
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
 
-<<<<<<< HEAD
 # Backup .env file
 backup_env
 
@@ -116,22 +115,6 @@ echo "✅ Pushed to master"
 # Sync local branch with master to be safe
 git fetch origin master
 git reset --hard origin/master
-=======
-# Save current branch
-ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-echo "🔄 Current branch: $ORIGINAL_BRANCH"
-
-# Backup .env file
-backup_env
-
-# Sync with origin/master
-echo "🔄 Fetching latest from origin/master..."
-git fetch origin master
-
-echo "🔄 Resetting to origin/master..."
-git reset --hard origin/master
-echo "✅ Local workspace is now synced with origin/master"
->>>>>>> a80a76fb4d9d50109e14d6d12b1ed1970493946f
 
 # Prepare .env file for build
 echo "📝 Preparing .env file for build..."
@@ -148,10 +131,7 @@ echo "✅ .next folder cleaned"
 
 # Create archive of source code
 echo "📦 Creating archive of source code..."
-TAR_FILES="src public next.config.ts package.json yarn.lock tsconfig.json tailwind.config.ts postcss.config.mjs"
-# Add ecosystem if exists
-[ -f "ecosystem.config.js" ] && TAR_FILES="$TAR_FILES ecosystem.config.js"
-
+TAR_FILES="src public next.config.ts package.json yarn.lock ecosystem.config.js tsconfig.json tailwind.config.ts postcss.config.mjs"
 tar -czf next-source.tar.gz $TAR_FILES
 
 # Upload to server
@@ -172,13 +152,6 @@ echo "🚀 Deploying on server..."
 ssh $SSH_USER@$HOST << EOF
 cd $SERVER_DIR
 
-<<<<<<< HEAD
-=======
-# Sync with latest origin/master (Removed because we are uploading source via tar)
-# git fetch origin master
-# git reset --hard origin/master
-
->>>>>>> a80a76fb4d9d50109e14d6d12b1ed1970493946f
 # Extract source
 if [ -f "next-source.tar.gz" ]; then
     echo "Extracting source..."

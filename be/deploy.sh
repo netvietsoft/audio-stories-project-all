@@ -108,7 +108,10 @@ else
     echo "ℹ️  No changes to commit"
 fi
 
-echo "📤 Pushing to master..."
+echo "� Syncing with remote master..."
+git pull origin master --rebase
+
+echo "�📤 Pushing to master..."
 git push origin HEAD:master
 echo "✅ Pushed to master"
 

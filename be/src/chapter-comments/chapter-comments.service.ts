@@ -8,7 +8,7 @@ import { ListRepliesDto } from './dto/list-replies.dto';
 
 @Injectable()
 export class ChapterCommentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   private async getReactionMap(commentIds: string[]) {
     if (!commentIds.length) {
@@ -250,6 +250,10 @@ export class ChapterCommentsService {
     }
 
     const isParagraphScope = dto.scope === ChapterCommentScope.PARAGRAPH;
+    if (!chapter.storyId) {
+      throw new NotFoundException('Chapter does not belong to a story');
+    }
+
     const created = await this.prisma.chapterComment.create({
       data: {
         userId,

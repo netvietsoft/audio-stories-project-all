@@ -18,6 +18,7 @@ import { MembershipsModule } from './memberships/memberships.module';
 import { PackagesModule } from './packages/packages.module';
 import { ChapterCommentsModule } from './chapter-comments/chapter-comments.module';
 import { UserFeaturesModule } from './user-features/user-features.module';
+import { BillingModule } from './billing/billing.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { NotificationsModule } from './notifications/notifications.module';
 
@@ -43,6 +44,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     PackagesModule,
     ChapterCommentsModule,
     UserFeaturesModule,
+    BillingModule,
     ReviewsModule,
     NotificationsModule,
   ],

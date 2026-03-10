@@ -47,6 +47,7 @@ type ChapterFormValues = {
     youtubeVideoId?: string;
     audioDuration?: number;
     accessType: 'free' | 'timed' | 'vip';
+    unlocksAt?: string;
     storyId?: string;
 };
 
@@ -119,6 +120,57 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
         const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
         const match = url.match(regExp);
         return (match && match[7] && match[7].length === 11) ? match[7] : url;
+    };
+
+    const formatContentIntoParagraphs = (text: string) => {
+        // Remove extra whitespace and split into sentences
+        const cleanText = text.trim().replace(/\s+/g, ' ');
+        
+        // Split by existing paragraph markers or double line breaks
+        const existingParagraphs = cleanText.split(/\n\n+/);
+        
+        const formattedParagraphs: string[] = [];
+        let paragraphNumber = 1;
+        
+        existingParagraphs.forEach(para => {
+            const words = para.trim().split(/\s+/);
+            
+            // If paragraph is already within range, keep it
+            if (words.length >= 200 && words.length <= 300) {
+                formattedParagraphs.push(`[Paragraph ${paragraphNumber}] ${para.trim()}`);
+                paragraphNumber++;
+            } else if (words.length < 200) {
+                // If too short, just add it as is
+                formattedParagraphs.push(`[Paragraph ${paragraphNumber}] ${para.trim()}`);
+                paragraphNumber++;
+            } else {
+                // If too long, split into chunks of 200-300 words
+                let currentChunk: string[] = [];
+                
+                words.forEach((word, index) => {
+                    currentChunk.push(word);
+                    
+                    // Create new paragraph when reaching 250 words (middle of range)
+                    // or at the end of the array
+                    if (currentChunk.length >= 250 || index === words.length - 1) {
+                        if (currentChunk.length > 0) {
+                            formattedParagraphs.push(`[Paragraph ${paragraphNumber}] ${currentChunk.join(' ')}`);
+                            paragraphNumber++;
+                            currentChunk = [];
+                        }
+                    }
+                });
+            }
+        });
+        
+        return formattedParagraphs.join('\n\n');
+    };
+
+    const handleContentPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+        e.preventDefault();
+        const pastedText = e.clipboardData.getData('text');
+        const formatted = formatContentIntoParagraphs(pastedText);
+        setValue('content', formatted);
     };
 
     return (
@@ -224,8 +276,12 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                     {...register('content')}
                     rows={6}
                     placeholder="Dán nội dung chương vào đây..."
+                    onPaste={handleContentPaste}
                     className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none font-bold text-slate-700"
                 />
+                <p className="text-xs font-medium text-slate-500 ml-2">
+                    Paste nội dung vào đây, hệ thống sẽ tự động chia thành các đoạn 200-300 từ với format [Paragraph N]
+                </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -355,6 +411,24 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                         <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
                 </div>
+
+                {/* Unlock Time Picker - Only show when accessType is 'timed' */}
+                {watch('accessType') === 'timed' && (
+                    <div className="space-y-2 md:col-span-2">
+                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-indigo-500" />
+                            Thời gian mở khóa
+                        </label>
+                        <input
+                            type="datetime-local"
+                            {...register('unlocksAt')}
+                            className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                        />
+                        <p className="text-xs font-medium text-slate-500 ml-2">
+                            Chương sẽ tự động mở khóa khi đến thời điểm này
+                        </p>
+                    </div>
+                )}
             </div>
 
             <div className="flex items-center justify-end gap-4 pt-4">

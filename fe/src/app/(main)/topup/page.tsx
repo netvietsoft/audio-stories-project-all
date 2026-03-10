@@ -98,9 +98,10 @@ export default function TopupPage() {
                     window.location.href = res.data.approval_url;
                 }
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Payment error:', error);
-            alert('Có lỗi xảy ra. Vui lòng thử lại.');
+            const errorMessage = error?.response?.data?.message || error?.message || 'Có lỗi xảy ra. Vui lòng thử lại.';
+            alert(errorMessage);
         } finally {
             setIsProcessing(false);
         }
@@ -115,9 +116,9 @@ export default function TopupPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="min-h-screen">
             {/* Header */}
-            <div className="bg-white border-b border-slate-200">
+            <div className="bg-white">
                 <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                     <div className="text-center">
                         <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-slate-900 mb-3 sm:mb-4">
@@ -206,20 +207,31 @@ export default function TopupPage() {
                                                     </p>
                                                 )}
 
-                                                {/* Credits & Price */}
-                                                <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-slate-50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-100">
-                                                    <div className="flex items-baseline gap-1.5">
-                                                        <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                                                            {pkg.credits.toLocaleString()}
-                                                        </span>
-                                                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                                            Credits
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-left sm:text-right">
-                                                        <span className="text-lg sm:text-xl font-black text-slate-900">
+                                                {/* Price & Credits */}
+                                                <div className="mb-4 sm:mb-6 bg-slate-50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-100">
+                                                    {/* Price on top */}
+                                                    <div className="mb-3">
+                                                        <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                                            Giá
+                                                        </div>
+                                                        <div className="text-2xl sm:text-3xl font-black text-slate-900">
                                                             {formatCurrency(pkg.priceVnd)}
-                                                        </span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Divider */}
+                                                    <div className="border-t border-slate-200 my-3"></div>
+                                                    
+                                                    {/* Credits on bottom */}
+                                                    <div>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                                                                {pkg.credits.toLocaleString()}
+                                                            </span>
+                                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                                                Credits
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
 

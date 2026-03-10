@@ -135,7 +135,7 @@ export default function ChaptersGlobalPage() {
                     title: data.title,
                     description: data.description || undefined,
                     content: data.content || undefined,
-                    r2AudioUrl: data.r2AudioUrl || undefined,
+                    audioUrl: data.audioUrl || undefined,
                     youtubeVideoId: data.youtubeVideoId || undefined,
                     audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
                     accessType: data.accessType,
@@ -146,7 +146,7 @@ export default function ChaptersGlobalPage() {
                     ...data,
                     description: data.description || undefined,
                     content: data.content || undefined,
-                    r2AudioUrl: data.r2AudioUrl || undefined,
+                    audioUrl: data.audioUrl || undefined,
                     youtubeVideoId: data.youtubeVideoId || undefined,
                     audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
                 };

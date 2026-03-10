@@ -393,7 +393,7 @@ export default function ProfilePage() {
                             className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
                         >
                             <CreditCard className="h-5 w-5 text-green-500" />
-                            <span className="font-semibold">Lich su giao dich</span>
+                            <span className="font-semibold">Lịch sử giao dịch</span>
                             <ChevronRight className="ml-auto h-4 w-4 text-gray-300" />
                         </button>
                         <button

@@ -25,7 +25,7 @@ const chapterSchema = z.object({
     title: z.string().min(1, 'Tiêu đề không được để trống'),
     description: z.string().max(2000, 'Giới thiệu chương tối đa 2000 ký tự').optional(),
     content: z.string().optional(),
-    r2AudioUrl: z.string().optional(),
+    audioUrl: z.string().optional(),
     youtubeVideoId: z.string().optional(),
     audioDuration: z.preprocess(
         (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : Number(value)),
@@ -43,7 +43,7 @@ type ChapterFormValues = {
     title: string;
     description?: string;
     content?: string;
-    r2AudioUrl?: string;
+    audioUrl?: string;
     youtubeVideoId?: string;
     audioDuration?: number;
     accessType: 'free' | 'timed' | 'vip';
@@ -53,7 +53,7 @@ type ChapterFormValues = {
 
 
 interface ChapterFormProps {
-    initialData?: Partial<ChapterFormValues>;
+    initialData?: Partial<ChapterFormValues> & { r2AudioUrl?: string };
     onSubmit: (data: ChapterFormValues) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
@@ -79,7 +79,7 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
             title: '',
             description: '',
             content: '',
-            r2AudioUrl: '',
+            audioUrl: initialData?.audioUrl || initialData?.r2AudioUrl || '',
             youtubeVideoId: '',
             audioDuration: 0,
             accessType: 'free' as any,
@@ -297,7 +297,10 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                             onClientUploadComplete={async (res) => {
                                 setIsUploadingAudio(false);
                                 if (res && res[0]) {
-                                    setValue('r2AudioUrl', res[0].url);
+                                    const uploadedUrl = (res[0] as any).ufsUrl || (res[0] as any).url;
+                                    if (uploadedUrl) {
+                                        setValue('audioUrl', uploadedUrl, { shouldDirty: true, shouldValidate: true });
+                                    }
                                 }
                             }}
                             onUploadError={(error: Error) => {
@@ -347,15 +350,15 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                                 }
                             }}
                         />
-                        <input {...register('r2AudioUrl')} type="hidden" />
+                        <input {...register('audioUrl')} type="hidden" />
                     </div>
 
-                    {watch('r2AudioUrl') && (
+                    {watch('audioUrl') && (
                         <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
-                            <audio controls src={watch('r2AudioUrl')} className="w-full max-w-md h-10" />
+                            <audio controls src={watch('audioUrl')} className="w-full max-w-md h-10" />
                             <button
                                 type="button"
-                                onClick={() => setValue('r2AudioUrl', '')}
+                                onClick={() => setValue('audioUrl', '')}
                                 className="p-2 bg-white text-red-500 hover:bg-red-50 border border-red-100 rounded-xl transition-all shadow-sm shrink-0"
                                 title="Xóa audio"
                             >

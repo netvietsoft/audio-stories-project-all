@@ -106,15 +106,36 @@ export default function ChaptersPage() {
         setIsSubmitting(true);
         try {
             if (editingChapter) {
-                const res = await apiClient.patch(`/chapters/${editingChapter.id}`, data);
-                setChapters(chapters.map(c => c.id === editingChapter.id ? { ...c, ...res.data } : c).sort((a, b) => a.chapterNumber - b.chapterNumber));
+                const updatePayload = {
+                    chapterNumber: data.chapterNumber,
+                    title: data.title,
+                    description: data.description || undefined,
+                    content: data.content || undefined,
+                    audioUrl: data.audioUrl || undefined,
+                    youtubeVideoId: data.youtubeVideoId || undefined,
+                    audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
+                    accessType: data.accessType,
+                };
+                await apiClient.patch(`/chapters/${editingChapter.id}`, updatePayload);
             } else {
-                const res = await apiClient.post(`/stories/${storyId}/chapters`, data);
-                setChapters([...chapters, res.data].sort((a, b) => a.chapterNumber - b.chapterNumber));
+                const createPayload = {
+                    chapterNumber: data.chapterNumber,
+                    title: data.title,
+                    description: data.description || undefined,
+                    content: data.content || undefined,
+                    audioUrl: data.audioUrl || undefined,
+                    youtubeVideoId: data.youtubeVideoId || undefined,
+                    audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
+                    accessType: data.accessType,
+                };
+                await apiClient.post(`/stories/${storyId}/chapters`, createPayload);
             }
+
+            await fetchChapters();
             setIsModalOpen(false);
         } catch (error) {
             console.error('Failed to save chapter:', error);
+            alert('Không thể lưu chương. Vui lòng kiểm tra dữ liệu (đặc biệt URL audio) và thử lại.');
         } finally {
             setIsSubmitting(false);
         }
@@ -210,7 +231,7 @@ export default function ChaptersPage() {
                                             <div className="flex items-center gap-3 mt-1.5">
                                                 {chapter.r2AudioUrl ? (
                                                     <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                                                        <Music className="w-3 h-3" /> R2 Audio
+                                                        <Music className="w-3 h-3" /> UploadThing Audio
                                                     </span>
                                                 ) : chapter.youtubeVideoId ? (
                                                     <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
@@ -314,6 +335,7 @@ export default function ChaptersPage() {
                                     description: editingChapter.description ?? undefined,
                                     content: editingChapter.content ?? undefined,
                                     r2AudioUrl: editingChapter.r2AudioUrl ?? undefined,
+                                    audioUrl: editingChapter.r2AudioUrl ?? undefined,
                                     youtubeVideoId: editingChapter.youtubeVideoId ?? undefined,
                                     audioDuration: editingChapter.audioDuration ?? 0,
                                     accessType: editingChapter.accessType,

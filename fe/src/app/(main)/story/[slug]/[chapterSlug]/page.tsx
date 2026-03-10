@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isAxiosError } from "axios";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -415,6 +416,39 @@ export default function StoryChapterPage() {
   const hasPlayableAudio = Boolean(selectedChapter?.r2AudioUrl);
 
   useEffect(() => {
+    if (!story || !currentTrack || currentTrack.storyId !== story.id) return;
+
+    const refreshedQueue = story.chapters.map((item) => ({
+      id: item.id,
+      storyId: story.id,
+      chapterId: item.id,
+      title: `Chương ${item.chapterNumber}: ${item.title}`,
+      storySlug: story.slug,
+      chapterNumber: item.chapterNumber,
+      author: story.author?.name,
+      audioUrl: item.r2AudioUrl || "",
+      coverUrl: story.thumbnailUrl || undefined,
+    }));
+    setQueue(refreshedQueue);
+
+    const latestChapter = story.chapters.find((chapter) => chapter.id === currentTrack.id);
+    if (!latestChapter) return;
+
+    const latestAudioUrl = latestChapter.r2AudioUrl || "";
+    if (currentTrack.audioUrl === latestAudioUrl) return;
+
+    setTrack({
+      ...currentTrack,
+      title: `Chương ${latestChapter.chapterNumber}: ${latestChapter.title}`,
+      storySlug: story.slug,
+      chapterNumber: latestChapter.chapterNumber,
+      author: story.author?.name,
+      audioUrl: latestAudioUrl,
+      coverUrl: story.thumbnailUrl || undefined,
+    });
+  }, [currentTrack, setQueue, setTrack, story]);
+
+  useEffect(() => {
     if (!currentTrack?.id || !story) return;
     const existsInStory = story.chapters.some((chapter) => chapter.id === currentTrack.id);
     if (existsInStory) {
@@ -643,29 +677,64 @@ export default function StoryChapterPage() {
 
   const toggleReviewLike = async (reviewId: string) => {
     if (!story) return;
-    await apiClient.post(`/stories/${story.id}/reviews/${reviewId}/like`);
-    await loadReviews(story.id, reviewSort, 1, false);
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+      return;
+    }
+
+    try {
+      await apiClient.post(`/stories/${story.id}/reviews/${reviewId}/like`);
+      await loadReviews(story.id, reviewSort, 1, false);
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 401) {
+        router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+      }
+    }
   };
 
   const toggleReviewHelpful = async (reviewId: string) => {
     if (!story) return;
-    await apiClient.post(`/stories/${story.id}/reviews/${reviewId}/helpful`);
-    await loadReviews(story.id, reviewSort, 1, false);
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+      return;
+    }
+
+    try {
+      await apiClient.post(`/stories/${story.id}/reviews/${reviewId}/helpful`);
+      await loadReviews(story.id, reviewSort, 1, false);
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 401) {
+        router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+      }
+    }
   };
 
   const submitReviewReply = async (reviewId: string) => {
     if (!story) return;
+    if (!user) {
+      router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+      return;
+    }
+
     const content = (reviewReplyDrafts[reviewId] || "").trim();
     if (!content) return;
+    const selectedParentId = reviewReplyTarget[reviewId] || undefined;
+    const parentId = selectedParentId && selectedParentId !== reviewId ? selectedParentId : undefined;
 
-    await apiClient.post(`/stories/${story.id}/reviews/${reviewId}/replies`, {
-      content,
-      parentId: reviewReplyTarget[reviewId] || undefined,
-    });
+    try {
+      await apiClient.post(`/stories/${story.id}/reviews/${reviewId}/replies`, {
+        content,
+        parentId,
+      });
 
-    setReviewReplyDrafts((prev) => ({ ...prev, [reviewId]: "" }));
-    setReviewReplyTarget((prev) => ({ ...prev, [reviewId]: null }));
-    await loadReviews(story.id, reviewSort, 1, false);
+      setReviewReplyDrafts((prev) => ({ ...prev, [reviewId]: "" }));
+      setReviewReplyTarget((prev) => ({ ...prev, [reviewId]: null }));
+      await loadReviews(story.id, reviewSort, 1, false);
+    } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 401) {
+        router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+      }
+    }
   };
 
   const loadMoreReviews = async () => {

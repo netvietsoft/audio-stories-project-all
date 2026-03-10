@@ -65,7 +65,7 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
 
       <div ref={trackRef} className="scrollbar-hide flex snap-x gap-3 overflow-x-auto pb-1">
         {stories.map((story) => (
-          <div key={story.id} className="h-[350px] w-[300px] min-w-[300px] flex-shrink-0 snap-start">
+          <div key={story.id} className="h-[250px] w-[100px] min-w-[210px] flex-shrink-0 snap-start">
             <StoryCard story={story} className="h-full w-full" />
           </div>
         ))}

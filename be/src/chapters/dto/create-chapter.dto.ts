@@ -27,6 +27,11 @@ export class CreateChapterDto {
 
     @IsString()
     @IsOptional()
+    @MaxLength(500)
+    audioUrl?: string;
+
+    @IsString()
+    @IsOptional()
     @MaxLength(20)
     youtubeVideoId?: string;
 

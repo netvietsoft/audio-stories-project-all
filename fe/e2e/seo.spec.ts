@@ -83,6 +83,8 @@ test.describe("sitemap.xml", () => {
 
 test.describe("Story page – Meta Tags & Structured Data", () => {
   test.skip(!TEST_STORY_SLUG, "⚠️  Set env TEST_STORY_SLUG=<slug> để chạy nhóm test này");
+  // Next.js dev server có thể cần thêm thời gian compile trang lần đầu
+  test.setTimeout(60_000);
 
   test("Trang truyện có <title> không rỗng", async ({ page }) => {
     await page.goto(`/story/${TEST_STORY_SLUG}`);

@@ -1,6 +1,8 @@
 ﻿import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -30,6 +32,13 @@ import { UploadModule } from './upload/upload.module';
       envFilePath: ['.env'],
     }),
     ScheduleModule.forRoot(),
+    // Rate limiting: 100 requests per 60 seconds per IP globally
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60_000,   // time-to-live in ms (60 seconds)
+        limit: 100,    // max requests per TTL per IP
+      },
+    ]),
     PrismaModule,
     AuthModule,
     MailModule,
@@ -51,6 +60,13 @@ import { UploadModule } from './upload/upload.module';
     UploadModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Apply ThrottlerGuard globally for all routes
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

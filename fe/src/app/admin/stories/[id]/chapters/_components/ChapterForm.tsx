@@ -17,8 +17,9 @@ import {
     Check,
     BookOpen,
 } from 'lucide-react';
-import { UploadButton } from '@/lib/uploadthing';
+
 import { apiClient } from '@/lib/api/api-client';
+import { AudioUploader } from '@/components/upload/AudioUploader';
 
 const chapterSchema = z.object({
     chapterNumber: z.coerce.number().min(0, 'Số chương không được âm'),
@@ -290,82 +291,13 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                         <Music className="w-5 h-5 text-indigo-500" />
                         File Âm Thanh (MP3/WAV)
                     </label>
-                    <div className="relative group">
-                        <UploadButton
-                            endpoint="audioUploader"
-                            onUploadProgress={() => setIsUploadingAudio(true)}
-                            onClientUploadComplete={async (res) => {
-                                setIsUploadingAudio(false);
-                                if (res && res[0]) {
-                                    const uploadedUrl = (res[0] as any).ufsUrl || (res[0] as any).url;
-                                    if (uploadedUrl) {
-                                        setValue('audioUrl', uploadedUrl, { shouldDirty: true, shouldValidate: true });
-                                    }
-                                }
-                            }}
-                            onUploadError={(error: Error) => {
-                                setIsUploadingAudio(false);
-                                alert(`Lỗi tải audio: ${error.message}`);
-                            }}
-                            appearance={{
-                                container: { width: "100%" },
-                                button({ isUploading }) {
-                                    return {
-                                        width: "100%",
-                                        minHeight: "160px",
-                                        backgroundColor: "#f8fafc", // bg-slate-50
-                                        border: "2px dashed #e2e8f0", // border-slate-200
-                                        borderRadius: "24px",
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: "12px",
-                                        color: "#334155", // text-slate-700
-                                        transition: "all 0.2s",
-                                        cursor: "pointer",
-                                        fontSize: "0px", // Hide default text
-                                        ...(isUploading ? { opacity: 0.7, cursor: "not-allowed" } : {}),
-                                    };
-                                },
-                                allowedContent: { display: "none" },
-                            }}
-                            content={{
-                                button({ isUploading }) {
-                                    if (isUploading) return (
-                                        <div className="flex flex-col items-center gap-3">
-                                            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-                                            <span className="text-sm font-bold">Đang tải audio...</span>
-                                        </div>
-                                    );
-                                    return (
-                                        <div className="flex flex-col items-center gap-3">
-                                            <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
-                                                <Music className="w-6 h-6 text-indigo-600" />
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-sm font-bold text-slate-700 uppercase tracking-tight">Click để chọn file âm thanh</p>
-                                                <p className="text-xs font-medium text-slate-400 mt-1">Hỗ trợ file MP3, WAV (Tối đa 64MB)</p>
-                                            </div>
-                                        </div>
-                                    );
-                                }
-                            }}
-                        />
-                        <input {...register('audioUrl')} type="hidden" />
-                    </div>
-
-                    {watch('audioUrl') && (
-                        <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
-                            <audio controls src={watch('audioUrl')} className="w-full max-w-md h-10" />
-                            <button
-                                type="button"
-                                onClick={() => setValue('audioUrl', '')}
-                                className="p-2 bg-white text-red-500 hover:bg-red-50 border border-red-100 rounded-xl transition-all shadow-sm shrink-0"
-                                title="Xóa audio"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                    )}
+                    <AudioUploader
+                        value={watch('audioUrl')}
+                        disabled={isLoading}
+                        onUploadingChange={setIsUploadingAudio}
+                        onChange={(url) => setValue('audioUrl', url, { shouldDirty: true, shouldValidate: true })}
+                    />
+                    <input {...register('audioUrl')} type="hidden" />
                 </div>
 
                 <div className="space-y-2">

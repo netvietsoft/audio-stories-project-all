@@ -231,7 +231,7 @@ export default function ChaptersPage() {
                                             <div className="flex items-center gap-3 mt-1.5">
                                                 {chapter.r2AudioUrl ? (
                                                     <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                                                        <Music className="w-3 h-3" /> UploadThing Audio
+                                                        <Music className="w-3 h-3" /> R2 Audio
                                                     </span>
                                                 ) : chapter.youtubeVideoId ? (
                                                     <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">

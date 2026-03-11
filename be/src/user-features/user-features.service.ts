@@ -16,6 +16,24 @@ type PendingHistoryPayload = {
   lastListenedAt: string;
 };
 
+type HistoryListItem = {
+  id: string;
+  userId: string;
+  storyId: string;
+  chapterId: string;
+  progressSeconds: number;
+  lastListenedAt: Date;
+  updatedAt: Date;
+  story: any;
+  chapter: {
+    id: string;
+    chapterNumber: number;
+    title: string;
+    audioDuration: number | null;
+    r2AudioUrl: string | null;
+  };
+};
+
 @Injectable()
 export class UserFeaturesService {
   private readonly logger = new Logger(UserFeaturesService.name);
@@ -339,7 +357,7 @@ export class UserFeaturesService {
       }),
     ]);
 
-    const merged = new Map(
+    const merged = new Map<string, HistoryListItem>(
       rows.map((row) => [
         row.chapterId,
         {
@@ -355,7 +373,7 @@ export class UserFeaturesService {
         this.scanUserPendingFromHash(this.HISTORY_PROCESSING_KEY, userId),
       ]);
 
-      const pendingAll = new Map([...pendingMain, ...pendingProcessing]);
+      const pendingAll = new Map<string, PendingHistoryPayload>([...pendingMain, ...pendingProcessing]);
 
       for (const [chapterId, pending] of pendingAll.entries()) {
         const existing = merged.get(chapterId);
@@ -419,7 +437,7 @@ export class UserFeaturesService {
       }
     }
 
-    const mergedList = [...merged.values()].sort(
+    const mergedList: HistoryListItem[] = [...merged.values()].sort(
       (a, b) => new Date(b.lastListenedAt).getTime() - new Date(a.lastListenedAt).getTime(),
     );
 

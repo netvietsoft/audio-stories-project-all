@@ -109,15 +109,15 @@ echo "🔄 Current branch: $ORIGINAL_BRANCH"
 # Backup .env file BEFORE switching branches
 backup_env
 
-# Auto Git Workflow
-echo "🔄 Preparing Git changes..."
-git add .
-# Only commit if there are changes
-if ! git diff-index --quiet HEAD --; then
-    echo "📝 Committing changes..."
-    git commit -m "Deploy BE: $(date '+%Y-%m-%d %H:%M:%S')"
+# Auto Git Workflow (only for current directory)
+echo "🔄 Preparing Git changes in current directory..."
+
+# Check if there are any changes in current directory
+if git diff --quiet . && git diff --cached --quiet .; then
+    echo "ℹ️  No changes to commit in current directory"
 else
-    echo "ℹ️  No changes to commit"
+    git add .
+    git commit -m "Deploy BE: $(date '+%Y-%m-%d %H:%M:%S')" . || echo "ℹ️  Nothing to commit"
 fi
 
 echo "📤 Pushing to master..."

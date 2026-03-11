@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import StoryCard from "@/components/shared/StoryCard";
+import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
 
 type StoryItem = {
@@ -48,7 +49,7 @@ type ExploreResponse = {
 type OptionFilters = {
   categoryId: string;
   authorId: string;
-  status: string;
+  status: "" | "completed" | "ongoing";
   sort: "latest" | "views" | "rating" | "title_asc" | "chapters_desc";
 };
 
@@ -94,6 +95,7 @@ export default function HomePage() {
   const [hall, setHall] = useState<HallMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
   const [quickFilter, setQuickFilter] = useState<OptionFilters>({
     categoryId: "",
@@ -201,6 +203,20 @@ export default function HomePage() {
           />
         ) : null}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-800/40" />
+        
+        {/* Next Button */}
+        {heroStories.length > 1 && (
+          <button
+            onClick={() => setHeroIndex((prev) => (prev === heroStories.length - 1 ? 0 : prev + 1))}
+            className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/10 p-3 backdrop-blur-sm transition-all hover:bg-white/20 hover:scale-110"
+            aria-label="Next slide"
+          >
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
+
         <div className="relative z-10 px-6 py-10 md:px-10 md:py-14">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Hero Section</p>
           <h1 className="mt-3 text-3xl font-black leading-tight md:text-5xl">
@@ -231,61 +247,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Bộ lọc nhanh</p>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-          Thể loại | Tác giả | Trạng thái | Sắp xếp | Nút lọc - chuyển trang tìm kiếm
-        </p>
-        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
-          <select
-            value={quickFilter.categoryId}
-            onChange={(e) => setQuickFilter((prev) => ({ ...prev, categoryId: e.target.value }))}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
-          >
-            <option value="">Tất cả thể loại</option>
-            {categories.map((item) => (
-              <option key={item.id} value={String(item.id)}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={quickFilter.authorId}
-            onChange={(e) => setQuickFilter((prev) => ({ ...prev, authorId: e.target.value }))}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
-          >
-            <option value="">Tất cả tác giả</option>
-            {authors.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={quickFilter.status}
-            onChange={(e) => setQuickFilter((prev) => ({ ...prev, status: e.target.value }))}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="ongoing">Đang ra</option>
-            <option value="completed">Hoàn thành</option>
-          </select>
-          <select
-            value={quickFilter.sort}
-            onChange={(e) => setQuickFilter((prev) => ({ ...prev, sort: e.target.value as OptionFilters["sort"] }))}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
-          >
-            <option value="latest">Mới cập nhật</option>
-            <option value="views">Lượt nghe cao nhất</option>
-            <option value="rating">Đánh giá cao nhất</option>
-            <option value="title_asc">Tên A-Z</option>
-            <option value="chapters_desc">Nhiều chương</option>
-          </select>
-          <button onClick={applyQuickFilter} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-            Lọc ngay
-          </button>
-        </div>
-      </section>
+      <StoryFilterBar
+        categories={categories}
+        authors={authors}
+        value={quickFilter}
+        onChange={setQuickFilter}
+        onApply={applyQuickFilter}
+      />
 
       {storySections.map((section) => (
         <section key={section.key} className="space-y-3">
@@ -320,7 +288,7 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {categories.map((cat) => (
+          {categories.slice(0, 3).map((cat) => (
             <Link
               key={cat.id}
               href={`/categories/${cat.slug}`}
@@ -330,6 +298,42 @@ export default function HomePage() {
               <p className="mt-1 text-xs text-slate-500">{cat.storiesCount} truyện</p>
             </Link>
           ))}
+          
+          {categories.length > 3 && (
+            <div className="relative">
+              <button
+                onClick={() => setShowAllCategories(!showAllCategories)}
+                className="w-full h-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 flex flex-col items-center justify-center gap-2"
+              >
+                <p className="font-semibold text-slate-900 dark:text-slate-100">Các thể loại khác</p>
+                <p className="text-xs text-slate-500">+{categories.length - 3} thể loại</p>
+              </button>
+
+              {showAllCategories && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-30" 
+                    onClick={() => setShowAllCategories(false)}
+                  />
+                  <div className="absolute z-40 top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="max-h-80 overflow-y-auto">
+                      {categories.slice(3).map((cat) => (
+                        <Link
+                          key={cat.id}
+                          href={`/categories/${cat.slug}`}
+                          onClick={() => setShowAllCategories(false)}
+                          className="block px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-100 dark:border-slate-700 last:border-b-0"
+                        >
+                          <p className="font-semibold text-slate-900 dark:text-slate-100">{cat.name}</p>
+                          <p className="mt-1 text-xs text-slate-500">{cat.storiesCount} truyện</p>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </section>
 

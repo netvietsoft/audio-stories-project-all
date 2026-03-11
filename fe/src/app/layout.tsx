@@ -21,7 +21,6 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-<<<<<<< HEAD
     metadataBase: new URL(SITE_URL),
     title: {
         default: SITE_NAME,
@@ -168,25 +167,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </body>
         </html>
     );
-=======
-  title: "Web Truyện Audio",
-  description: "Nền tảng nghe truyện audio chất lượng cao.",
-  manifest: "/manifest.json",
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="vi" suppressHydrationWarning>
-      <head>
-        <meta name="theme-color" content="#2563eb" />
-        <link rel="manifest" href="/manifest.json" />
-      </head>
-      <body className={`${inter.className} min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
-          <AppProviders>{children}</AppProviders>
-        </ThemeProvider>
-      </body>
-    </html>
-  );
->>>>>>> 8c465ef0528f9d81e28bbea6af67e61b03de2282
 }

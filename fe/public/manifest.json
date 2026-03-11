@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "Netviet Audio",
   "short_name": "Netviet Audio",
   "description": "Nền tảng nghe truyện audio chất lượng cao hàng đầu Việt Nam",
@@ -24,4 +25,27 @@
     }
   ],
   "categories": ["entertainment", "music"]
+=======
+  "name": "Web Truyen Audio",
+  "short_name": "AudioTruyen",
+  "description": "Nền tảng nghe truyện audio chất lượng cao",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+>>>>>>> 8c465ef0528f9d81e28bbea6af67e61b03de2282
 }

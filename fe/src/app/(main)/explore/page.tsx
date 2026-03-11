@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import StoryCard from "@/components/shared/StoryCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
+import { fetchExploreCached } from "@/lib/api/public-story-cache";
 
 type StoryItem = {
   id: string;
@@ -65,20 +66,18 @@ export default function ExplorePage() {
   const fetchStories = async (nextPage: number, replace = false) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get<ExploreResponse>("/stories/explore", {
-        params: {
-          page: nextPage,
-          limit: LIMIT,
-          ...(appliedFilters.categoryId ? { categoryId: appliedFilters.categoryId } : {}),
-          ...(appliedFilters.authorId ? { authorId: appliedFilters.authorId } : {}),
-          ...(appliedFilters.status ? { status: appliedFilters.status } : {}),
-          sort: appliedFilters.sort,
-        },
+      const response = await fetchExploreCached<ExploreResponse>({
+        page: nextPage,
+        limit: LIMIT,
+        ...(appliedFilters.categoryId ? { categoryId: appliedFilters.categoryId } : {}),
+        ...(appliedFilters.authorId ? { authorId: appliedFilters.authorId } : {}),
+        ...(appliedFilters.status ? { status: appliedFilters.status } : {}),
+        sort: appliedFilters.sort,
       });
 
-      setPage(response.data.meta.page);
-      setLastPage(response.data.meta.lastPage);
-      setStories((prev) => (replace ? response.data.data : [...prev, ...response.data.data]));
+      setPage(response.meta.page);
+      setLastPage(response.meta.lastPage);
+      setStories((prev) => (replace ? response.data : [...prev, ...response.data]));
     } finally {
       setIsLoading(false);
     }

@@ -8,7 +8,9 @@ import {
     Delete,
     UseGuards,
     ParseIntPipe,
+    UseInterceptors,
 } from '@nestjs/common';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -21,6 +23,9 @@ export class CategoriesController {
     constructor(private readonly categoriesService: CategoriesService) { }
 
     @Get()
+    @UseInterceptors(CacheInterceptor)
+    @CacheKey('categories:all')
+    @CacheTTL(3600)
     findAll() {
         return this.categoriesService.findAll();
     }

@@ -175,7 +175,7 @@ fi
 
 # Deploy on server
 echo "🚀 Deploying on server..."
-ssh $SSH_USER@$HOST << 'EOF'
+ssh $SSH_USER@$HOST << EOF
 cd $SERVER_DIR
 
 # Extract source

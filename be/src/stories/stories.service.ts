@@ -458,6 +458,7 @@ export class StoriesService {
             title: true,
             chapterNumber: true,
             description: true,
+            thumbnailUrl: true,
             content: true,
             r2AudioUrl: true,
             youtubeVideoId: true,

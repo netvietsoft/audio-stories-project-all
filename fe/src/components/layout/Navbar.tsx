@@ -150,7 +150,7 @@ export default function Navbar() {
                 </div>
                 <Link href="/new" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Mới đăng</Link>
                 <Link href="/trending" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Trending</Link>
-                <Link href="/vinh-danh" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Vinh danh</Link>
+                <Link href="/vinh-danh" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">BXH Hội Viên</Link>
               </nav>
             </div>
 

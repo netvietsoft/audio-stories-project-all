@@ -39,6 +39,7 @@ type ChapterItem = {
   title: string;
   chapterNumber: number;
   description?: string | null;
+  thumbnailUrl?: string | null;
   content: string | null;
   r2AudioUrl: string | null;
   youtubeVideoId?: string | null;
@@ -427,7 +428,7 @@ export default function StoryChapterPage() {
       chapterNumber: item.chapterNumber,
       author: story.author?.name,
       audioUrl: item.r2AudioUrl || "",
-      coverUrl: story.thumbnailUrl || undefined,
+      coverUrl: item.thumbnailUrl || story.thumbnailUrl || undefined,
     }));
     setQueue(refreshedQueue);
 
@@ -444,7 +445,7 @@ export default function StoryChapterPage() {
       chapterNumber: latestChapter.chapterNumber,
       author: story.author?.name,
       audioUrl: latestAudioUrl,
-      coverUrl: story.thumbnailUrl || undefined,
+      coverUrl: latestChapter.thumbnailUrl || story.thumbnailUrl || undefined,
     });
   }, [currentTrack, setQueue, setTrack, story]);
 
@@ -483,7 +484,7 @@ export default function StoryChapterPage() {
         chapterNumber: item.chapterNumber,
         author: selectedStory.author?.name,
         audioUrl: item.r2AudioUrl || "",
-        coverUrl: selectedStory.thumbnailUrl || undefined,
+        coverUrl: item.thumbnailUrl || selectedStory.thumbnailUrl || undefined,
       }));
 
       const track = {
@@ -495,7 +496,7 @@ export default function StoryChapterPage() {
         chapterNumber: chapter.chapterNumber,
         author: selectedStory.author?.name,
         audioUrl: chapter.r2AudioUrl || "",
-        coverUrl: selectedStory.thumbnailUrl || undefined,
+        coverUrl: chapter.thumbnailUrl || selectedStory.thumbnailUrl || undefined,
       };
 
       if (!chapter.r2AudioUrl) {
@@ -1112,7 +1113,7 @@ export default function StoryChapterPage() {
               <div className="flex flex-col items-center justify-center gap-3">
                 <div className={`relative h-28 w-28 overflow-hidden rounded-full border-4 border-blue-200 dark:border-blue-900 ${isPlaying ? "animate-spin [animation-duration:10s]" : ""}`}>
                   <img
-                    src={story.thumbnailUrl || "https://placehold.co/300x300?text=No+Cover"}
+                    src={selectedChapter.thumbnailUrl || story.thumbnailUrl || "https://placehold.co/300x300?text=No+Cover"}
                     alt={story.title}
                     className="h-full w-full object-cover"
                   />

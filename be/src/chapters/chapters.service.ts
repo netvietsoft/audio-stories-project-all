@@ -10,7 +10,7 @@ import { Prisma } from '@prisma/client';
 export class ChaptersService {
     constructor(private readonly prisma: PrismaService) { }
 
-    private normalizeAudioPayload<T extends { r2AudioUrl?: string; audioUrl?: string }>(data: T) {
+    private normalizeAudioPayload<T extends { r2AudioUrl?: string; audioUrl?: string; thumbnailUrl?: string }>(data: T) {
         const { audioUrl, ...rest } = data;
         return {
             ...rest,
@@ -85,10 +85,14 @@ export class ChaptersService {
         const story = await this.prisma.story.findUnique({ where: { id: storyId } });
         if (!story) throw new NotFoundException('Story not found');
 
+        console.log('Creating chapter with data:', data);
+        const normalizedData = this.normalizeAudioPayload(data);
+        console.log('Normalized data:', normalizedData);
+
         const [chapter] = await this.prisma.$transaction([
             this.prisma.chapter.create({
                 data: {
-                    ...this.normalizeAudioPayload(data),
+                    ...normalizedData,
                     storyId,
                 },
             }),
@@ -115,9 +119,13 @@ export class ChaptersService {
     async update(id: string, data: UpdateChapterDto) {
         await this.findOne(id);
 
+        console.log('Updating chapter with data:', data);
+        const normalizedData = this.normalizeAudioPayload(data);
+        console.log('Normalized data:', normalizedData);
+
         return this.prisma.chapter.update({
             where: { id },
-            data: this.normalizeAudioPayload(data),
+            data: normalizedData,
         });
     }
 

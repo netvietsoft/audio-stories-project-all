@@ -16,6 +16,7 @@ import {
     Search,
     Check,
     BookOpen,
+    Image,
 } from 'lucide-react';
 import { UploadButton } from '@/lib/uploadthing';
 import { apiClient } from '@/lib/api/api-client';
@@ -26,6 +27,7 @@ const chapterSchema = z.object({
     description: z.string().max(2000, 'Giới thiệu chương tối đa 2000 ký tự').optional(),
     content: z.string().optional(),
     audioUrl: z.string().optional(),
+    thumbnailUrl: z.string().optional(),
     youtubeVideoId: z.string().optional(),
     audioDuration: z.preprocess(
         (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : Number(value)),
@@ -44,6 +46,7 @@ type ChapterFormValues = {
     description?: string;
     content?: string;
     audioUrl?: string;
+    thumbnailUrl?: string;
     youtubeVideoId?: string;
     audioDuration?: number;
     accessType: 'free' | 'timed' | 'vip';
@@ -53,7 +56,7 @@ type ChapterFormValues = {
 
 
 interface ChapterFormProps {
-    initialData?: Partial<ChapterFormValues> & { r2AudioUrl?: string };
+    initialData?: Partial<ChapterFormValues> & { r2AudioUrl?: string; thumbnailUrl?: string };
     onSubmit: (data: ChapterFormValues) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
@@ -65,6 +68,56 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
     const [storySearch, setStorySearch] = useState('');
     const storyRef = useRef<HTMLDivElement>(null);
     const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+    const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+
+    // Helper function to extract file key from UploadThing URL
+    const extractFileKey = (url: string): string | null => {
+        try {
+            if (!url || typeof url !== 'string') return null;
+            
+            // UploadThing URLs format: 
+            // Old: https://utfs.io/f/{fileKey}
+            // New: https://hszdh7zpqp.ufs.sh/f/{fileKey}
+            const match = url.match(/\/f\/([^/?]+)/);
+            return match ? match[1] : null;
+        } catch {
+            return null;
+        }
+    };
+
+    // Helper function to delete old thumbnail from UploadThing
+    const deleteOldThumbnail = async (thumbnailUrl: string) => {
+        const fileKey = extractFileKey(thumbnailUrl);
+        if (!fileKey) return;
+
+        try {
+            await fetch('/api/chapter-thumbnail/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileKey }),
+            });
+            console.log('Old thumbnail deleted successfully');
+        } catch (error) {
+            console.error('Failed to delete old thumbnail:', error);
+        }
+    };
+
+    // Helper function to delete old audio from UploadThing
+    const deleteOldAudio = async (audioUrl: string) => {
+        const fileKey = extractFileKey(audioUrl);
+        if (!fileKey) return;
+
+        try {
+            await fetch('/api/chapter-audio/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileKey }),
+            });
+            console.log('Old audio deleted successfully');
+        } catch (error) {
+            console.error('Failed to delete old audio:', error);
+        }
+    };
 
     const {
         register,
@@ -80,6 +133,7 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
             description: '',
             content: '',
             audioUrl: initialData?.audioUrl || initialData?.r2AudioUrl || '',
+            thumbnailUrl: initialData?.thumbnailUrl || '',
             youtubeVideoId: '',
             audioDuration: 0,
             accessType: 'free' as any,
@@ -174,7 +228,10 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit((data) => {
+            console.log('Form data being submitted:', data);
+            return onSubmit(data);
+        })} className="space-y-6">
             {/* Story Selection */}
             <div className="space-y-2">
                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
@@ -284,6 +341,108 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                 </p>
             </div>
 
+            <div className="space-y-4">
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <Image className="w-5 h-5 text-indigo-500" />
+                    Ảnh Thumbnail Audio Player (Tùy chọn)
+                </label>
+                <div className="relative group">
+                    <UploadButton
+                        endpoint="imageUploader"
+                        onUploadBegin={() => {
+                            setIsUploadingThumbnail(true);
+                            // Delete old thumbnail before uploading new one
+                            const currentThumbnail = watch('thumbnailUrl');
+                            if (currentThumbnail) {
+                                void deleteOldThumbnail(currentThumbnail);
+                            }
+                        }}
+                        onClientUploadComplete={async (res) => {
+                            setIsUploadingThumbnail(false);
+                            if (res && res[0]) {
+                                const uploadedUrl = (res[0] as any).ufsUrl || (res[0] as any).url;
+                                console.log('Thumbnail uploaded:', uploadedUrl);
+                                if (uploadedUrl) {
+                                    setValue('thumbnailUrl', uploadedUrl, { shouldDirty: true, shouldValidate: true });
+                                    console.log('Thumbnail URL set to form:', uploadedUrl);
+                                }
+                            }
+                        }}
+                        onUploadError={(error: Error) => {
+                            setIsUploadingThumbnail(false);
+                            alert(`Lỗi tải ảnh: ${error.message}`);
+                        }}
+                        appearance={{
+                            container: { width: "100%" },
+                            button({ isUploading }) {
+                                return {
+                                    width: "100%",
+                                    minHeight: "160px",
+                                    backgroundColor: "#f8fafc",
+                                    border: "2px dashed #e2e8f0",
+                                    borderRadius: "24px",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "12px",
+                                    color: "#334155",
+                                    transition: "all 0.2s",
+                                    cursor: "pointer",
+                                    fontSize: "0px",
+                                    ...(isUploading ? { opacity: 0.7, cursor: "not-allowed" } : {}),
+                                };
+                            },
+                            allowedContent: { display: "none" },
+                        }}
+                        content={{
+                            button({ isUploading }) {
+                                if (isUploading) return (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                                        <span className="text-sm font-bold">Đang tải ảnh...</span>
+                                    </div>
+                                );
+                                return (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
+                                            <Image className="w-6 h-6 text-indigo-600" />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-sm font-bold text-slate-700 uppercase tracking-tight">Click để chọn ảnh thumbnail</p>
+                                            <p className="text-xs font-medium text-slate-400 mt-1">Hỗ trợ JPG, PNG (Tối đa 4MB)</p>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        }}
+                    />
+                    <input {...register('thumbnailUrl')} type="hidden" />
+                </div>
+
+                {watch('thumbnailUrl') && (
+                    <div className="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-between gap-4">
+                        <img 
+                            src={watch('thumbnailUrl')} 
+                            alt="Chapter thumbnail" 
+                            className="w-24 h-24 object-cover rounded-xl"
+                        />
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                const currentThumbnail = watch('thumbnailUrl');
+                                if (currentThumbnail) {
+                                    await deleteOldThumbnail(currentThumbnail);
+                                }
+                                setValue('thumbnailUrl', '');
+                            }}
+                            className="p-2 bg-white text-red-500 hover:bg-red-50 border border-red-100 rounded-xl transition-all shadow-sm shrink-0"
+                            title="Xóa ảnh"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4 md:col-span-2">
                     <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
@@ -293,7 +452,14 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                     <div className="relative group">
                         <UploadButton
                             endpoint="audioUploader"
-                            onUploadProgress={() => setIsUploadingAudio(true)}
+                            onUploadBegin={() => {
+                                setIsUploadingAudio(true);
+                                // Delete old audio before uploading new one
+                                const currentAudio = watch('audioUrl');
+                                if (currentAudio) {
+                                    void deleteOldAudio(currentAudio);
+                                }
+                            }}
                             onClientUploadComplete={async (res) => {
                                 setIsUploadingAudio(false);
                                 if (res && res[0]) {
@@ -358,7 +524,13 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                             <audio controls src={watch('audioUrl')} className="w-full max-w-md h-10" />
                             <button
                                 type="button"
-                                onClick={() => setValue('audioUrl', '')}
+                                onClick={async () => {
+                                    const currentAudio = watch('audioUrl');
+                                    if (currentAudio) {
+                                        await deleteOldAudio(currentAudio);
+                                    }
+                                    setValue('audioUrl', '');
+                                }}
                                 className="p-2 bg-white text-red-500 hover:bg-red-50 border border-red-100 rounded-xl transition-all shadow-sm shrink-0"
                                 title="Xóa audio"
                             >
@@ -445,15 +617,15 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                 </button>
                 <button
                     type="submit"
-                    disabled={isLoading || isUploadingAudio}
+                    disabled={isLoading || isUploadingAudio || isUploadingThumbnail}
                     className="px-8 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-100 flex items-center gap-3 disabled:opacity-50"
                 >
-                    {isLoading || isUploadingAudio ? (
+                    {isLoading || isUploadingAudio || isUploadingThumbnail ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                         <Save className="w-4 h-4" />
                     )}
-                    {isUploadingAudio ? 'Đang tải audio...' : 'Lưu chương'}
+                    {isUploadingAudio ? 'Đang tải audio...' : isUploadingThumbnail ? 'Đang tải ảnh...' : 'Lưu chương'}
                 </button>
             </div>
         </form>

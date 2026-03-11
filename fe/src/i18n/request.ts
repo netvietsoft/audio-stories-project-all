@@ -13,7 +13,8 @@ export default getRequestConfig(async () => {
     en: () => import("../../messages/en.json"),
   };
 
-  const loader = messageLoaders[locale] ?? messageLoaders["vi"];
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const loader = (messageLoaders[locale] ?? messageLoaders["vi"])!;
 
   return {
     locale,

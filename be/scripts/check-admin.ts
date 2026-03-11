@@ -1,7 +1,12 @@
 import { PrismaClient } from '@prisma/client';
-import prismaConfig from '../prisma/prisma.config';
 
-const prisma = new PrismaClient(prismaConfig);
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+});
 
 async function main() {
   console.log('Checking admin user...\n');

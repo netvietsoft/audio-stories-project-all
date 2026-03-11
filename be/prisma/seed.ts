@@ -1,8 +1,13 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
-import prismaConfig from './prisma.config';
 
-const prisma = new PrismaClient(prismaConfig);
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+});
 
 async function main() {
   const slugify = (input: string) =>

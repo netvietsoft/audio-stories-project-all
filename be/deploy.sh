@@ -142,7 +142,7 @@ echo "✅ .env file prepared for build"
 
 # Create archive of source code
 echo "📦 Creating archive of source code..."
-TAR_FILES="src prisma package.json yarn.lock ecosystem.config.js nest-cli.json tsconfig.json tsconfig.build.json"
+TAR_FILES="src prisma package.json package-lock.json ecosystem.config.js nest-cli.json tsconfig.json tsconfig.build.json"
 # Add prisma.config.ts if exists (Prisma 7)
 [ -f "prisma/prisma.config.ts" ] && echo "  ✓ Including prisma.config.ts"
 tar -czf be-source.tar.gz $TAR_FILES
@@ -165,32 +165,23 @@ echo "🚀 Deploying on server..."
 ssh $SSH_USER@$HOST << EOF
 cd $SERVER_DIR
 
-# Check and install yarn if not available
-if ! command -v yarn >/dev/null 2>&1; then
-    echo "📦 Installing yarn globally..."
-    sudo npm install -g yarn || {
-        echo "❌ Failed to install yarn. Please install manually: sudo npm install -g yarn"
-        exit 1
-    }
-fi
-
 # Extract source
 if [ -f "be-source.tar.gz" ]; then
     echo "Extracting source..."
-    rm -rf src prisma package.json yarn.lock nest-cli.json tsconfig.json tsconfig.build.json
+    rm -rf src prisma package.json package-lock.json nest-cli.json tsconfig.json tsconfig.build.json
     tar -xzf be-source.tar.gz
     rm -f be-source.tar.gz
 fi
 
 # Install dependencies and build
 echo "📦 Installing dependencies..."
-yarn install
+npm install --legacy-peer-deps
 
 echo "📦 Generating Prisma client..."
 npx prisma generate
 
 echo "📦 Building application on server..."
-yarn build
+npm run build
 
 # Reload PM2
 if [ -f "ecosystem.config.js" ]; then

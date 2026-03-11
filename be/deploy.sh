@@ -45,13 +45,21 @@ restore_env() {
     echo "✅ Restored .env file from backup"
 }
 
-# Function to cleanup
+# Function to cleanup and switch back to original branch
 cleanup_and_restore() {
     local exit_code=$?
     echo ""
     
     # Cleanup build archives
     rm -f be-source.tar.gz 2>/dev/null || true
+    
+    # Switch back to original branch if not already there
+    local current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
+    if [ -n "$ORIGINAL_BRANCH" ] && [ "$current_branch" != "$ORIGINAL_BRANCH" ]; then
+        echo "🔄 Switching back to original branch: $ORIGINAL_BRANCH"
+        git checkout "$ORIGINAL_BRANCH" 2>/dev/null || true
+        echo "✅ Returned to branch: $ORIGINAL_BRANCH"
+    fi
     
     # Always restore .env file
     restore_env
@@ -94,18 +102,22 @@ SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 # Server path
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
 
-# Backup .env file
+# Save current branch
+ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+echo "🔄 Current branch: $ORIGINAL_BRANCH"
+
+# Backup .env file BEFORE switching branches
 backup_env
 
-# Auto Git Workflow
-echo "🔄 Preparing Git changes..."
-git add .
-# Only commit if there are changes
-if ! git diff-index --quiet HEAD --; then
-    echo "📝 Committing changes..."
-    git commit -m "Deploy BE: $(date '+%Y-%m-%d %H:%M:%S')"
+# Auto Git Workflow (only for current directory)
+echo "🔄 Preparing Git changes in current directory..."
+
+# Check if there are any changes in current directory
+if git diff --quiet . && git diff --cached --quiet .; then
+    echo "ℹ️  No changes to commit in current directory"
 else
-    echo "ℹ️  No changes to commit"
+    git add .
+    git commit -m "Deploy BE: $(date '+%Y-%m-%d %H:%M:%S')" . || echo "ℹ️  Nothing to commit"
 fi
 
 echo "� Syncing with remote master..."
@@ -116,8 +128,12 @@ git push origin HEAD:master
 echo "✅ Pushed to master"
 
 # Sync local branch with master to be safe
+echo "🔄 Fetching latest from origin/master..."
 git fetch origin master
+
+echo "🔄 Resetting to origin/master..."
 git reset --hard origin/master
+echo "✅ Local workspace is now synced with origin/master"
 
 # Prepare .env file for build
 echo "📝 Preparing .env file for build..."
@@ -129,7 +145,12 @@ echo "✅ .env file prepared for build"
 
 # Create archive of source code
 echo "📦 Creating archive of source code..."
-TAR_FILES="src prisma package.json yarn.lock ecosystem.config.js nest-cli.json tsconfig.json tsconfig.build.json"
+TAR_FILES="src prisma package.json ecosystem.config.js nest-cli.json tsconfig.json tsconfig.build.json"
+
+# Add optional files if they exist
+[ -f "package-lock.json" ] && TAR_FILES="$TAR_FILES package-lock.json" && echo "  ✓ Including package-lock.json"
+[ -f "yarn.lock" ] && TAR_FILES="$TAR_FILES yarn.lock" && echo "  ✓ Including yarn.lock"
+
 tar -czf be-source.tar.gz $TAR_FILES
 
 # Upload to server
@@ -153,28 +174,32 @@ cd $SERVER_DIR
 # Extract source
 if [ -f "be-source.tar.gz" ]; then
     echo "Extracting source..."
-    rm -rf src prisma package.json yarn.lock nest-cli.json tsconfig.json tsconfig.build.json
+    rm -rf src prisma package.json package-lock.json nest-cli.json tsconfig.json tsconfig.build.json
     tar -xzf be-source.tar.gz
     rm -f be-source.tar.gz
 fi
 
-# Install dependencies and build
-echo "📦 Installing dependencies..."
-if command -v yarn >/dev/null 2>&1; then
-    yarn install
-    npx prisma generate
-else
-    echo "  ⚠️  yarn not found, using npm..."
-    npm install
-    npx prisma generate
+# Ensure Prisma 6 is installed (remove Prisma 7 if exists)
+echo "📦 Ensuring Prisma 6..."
+if command -v prisma >/dev/null 2>&1; then
+    PRISMA_VERSION=\$(prisma --version 2>/dev/null | grep -oP 'prisma\\s+:\\s+\\K[0-9]+' | head -1)
+    if [ "\$PRISMA_VERSION" = "7" ]; then
+        echo "  Removing Prisma 7 global..."
+        sudo npm uninstall -g prisma 2>/dev/null || true
+        sudo npm install -g prisma@6.0.0
+        echo "  ✓ Installed Prisma 6 globally"
+    fi
 fi
 
+# Install dependencies and build
+echo "📦 Installing dependencies..."
+npm install --legacy-peer-deps
+
+echo "📦 Generating Prisma client..."
+npx prisma generate
+
 echo "📦 Building application on server..."
-if command -v yarn >/dev/null 2>&1; then
-    yarn build
-else
-    npm run build
-fi
+npm run build
 
 # Reload PM2
 if [ -f "ecosystem.config.js" ]; then

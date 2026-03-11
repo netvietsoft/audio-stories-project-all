@@ -45,13 +45,21 @@ restore_env() {
     echo "✅ Restored .env file from backup"
 }
 
-# Function to cleanup
+# Function to cleanup and switch back to original branch
 cleanup_and_restore() {
     local exit_code=$?
     echo ""
     
     # Cleanup build archives
     rm -f next-source.tar.gz 2>/dev/null || true
+    
+    # Switch back to original branch if not already there
+    local current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
+    if [ -n "$ORIGINAL_BRANCH" ] && [ "$current_branch" != "$ORIGINAL_BRANCH" ]; then
+        echo "🔄 Switching back to original branch: $ORIGINAL_BRANCH"
+        git checkout "$ORIGINAL_BRANCH" 2>/dev/null || true
+        echo "✅ Returned to branch: $ORIGINAL_BRANCH"
+    fi
     
     # Always restore .env file
     restore_env
@@ -94,18 +102,22 @@ SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 # Server path
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
 
-# Backup .env file
+# Save current branch
+ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+echo "🔄 Current branch: $ORIGINAL_BRANCH"
+
+# Backup .env file BEFORE switching branches
 backup_env
 
-# Auto Git Workflow
-echo "🔄 Preparing Git changes..."
-git add .
-# Only commit if there are changes
-if ! git diff-index --quiet HEAD --; then
-    echo "📝 Committing changes..."
-    git commit -m "Deploy FE: $(date '+%Y-%m-%d %H:%M:%S')"
+# Auto Git Workflow (only for current directory)
+echo "🔄 Preparing Git changes in current directory..."
+
+# Check if there are any changes in current directory
+if git diff --quiet . && git diff --cached --quiet .; then
+    echo "ℹ️  No changes to commit in current directory"
 else
-    echo "ℹ️  No changes to commit"
+    git add .
+    git commit -m "Deploy FE: $(date '+%Y-%m-%d %H:%M:%S')" . || echo "ℹ️  Nothing to commit"
 fi
 
 echo "📤 Pushing to master..."
@@ -113,8 +125,12 @@ git push origin HEAD:master
 echo "✅ Pushed to master"
 
 # Sync local branch with master to be safe
+echo "🔄 Fetching latest from origin/master..."
 git fetch origin master
+
+echo "🔄 Resetting to origin/master..."
 git reset --hard origin/master
+echo "✅ Local workspace is now synced with origin/master"
 
 # Prepare .env file for build
 echo "📝 Preparing .env file for build..."
@@ -124,14 +140,24 @@ if [ -f "$ENV_FILE" ]; then
 fi
 echo "✅ .env file prepared for build"
 
-# Clean old .next folder
-echo "🗑️  Cleaning old .next folder..."
-rm -rf .next
+# Clean old .next folder to avoid cache issues
+echo "🗑️  Cleaning old .next folder to avoid cache issues..."
+if [ -d ".next" ]; then
+    rm -rf .next
+    echo "  ✓ Removed .next folder"
+else
+    echo "  ℹ️  No .next folder found"
+fi
 echo "✅ .next folder cleaned"
 
 # Create archive of source code
 echo "📦 Creating archive of source code..."
-TAR_FILES="src public next.config.ts package.json yarn.lock ecosystem.config.js tsconfig.json tailwind.config.ts postcss.config.mjs"
+TAR_FILES="src public next.config.ts package.json tsconfig.json tailwind.config.ts postcss.config.mjs ecosystem.config.js"
+
+# Add optional files if they exist
+[ -f "yarn.lock" ] && TAR_FILES="$TAR_FILES yarn.lock" && echo "  ✓ Including yarn.lock"
+[ -f "package-lock.json" ] && TAR_FILES="$TAR_FILES package-lock.json" && echo "  ✓ Including package-lock.json"
+
 tar -czf next-source.tar.gz $TAR_FILES
 
 # Upload to server
@@ -155,7 +181,7 @@ cd $SERVER_DIR
 # Extract source
 if [ -f "next-source.tar.gz" ]; then
     echo "Extracting source..."
-    rm -rf src public next.config.ts package.json yarn.lock tsconfig.json tailwind.config.ts postcss.config.mjs
+    rm -rf src public next.config.ts package.json yarn.lock package-lock.json tsconfig.json tailwind.config.ts postcss.config.mjs
     tar -xzf next-source.tar.gz
     rm -f next-source.tar.gz
 fi

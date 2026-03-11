@@ -10,6 +10,14 @@ import { Prisma } from '@prisma/client';
 export class ChaptersService {
     constructor(private readonly prisma: PrismaService) { }
 
+    private normalizeAudioPayload<T extends { r2AudioUrl?: string; audioUrl?: string }>(data: T) {
+        const { audioUrl, ...rest } = data;
+        return {
+            ...rest,
+            ...(typeof audioUrl !== 'undefined' ? { r2AudioUrl: audioUrl } : {}),
+        };
+    }
+
     async findAllByStory(storyId: string) {
         return this.prisma.chapter.findMany({
             where: { storyId, deletedAt: null },
@@ -80,7 +88,7 @@ export class ChaptersService {
         const [chapter] = await this.prisma.$transaction([
             this.prisma.chapter.create({
                 data: {
-                    ...data,
+                    ...this.normalizeAudioPayload(data),
                     storyId,
                 },
             }),
@@ -98,7 +106,7 @@ export class ChaptersService {
 
         return this.prisma.chapter.create({
             data: {
-                ...chapterData,
+                ...this.normalizeAudioPayload(chapterData),
                 storyId,
             },
         });
@@ -109,7 +117,7 @@ export class ChaptersService {
 
         return this.prisma.chapter.update({
             where: { id },
-            data,
+            data: this.normalizeAudioPayload(data),
         });
     }
 

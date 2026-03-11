@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
@@ -42,6 +43,8 @@ type AuthorOption = {
 const LIMIT = 20;
 
 export default function FavoriteStoriesPage() {
+  const t = useTranslations("ProfileFavoritesPage");
+  const tCommon = useTranslations("Common");
   const router = useRouter();
   const accessToken = useUserStore((state) => state.accessToken);
 
@@ -111,7 +114,7 @@ export default function FavoriteStoriesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Truyện yêu thích</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t("title")}</h1>
 
       <StoryFilterBar
         categories={categories}
@@ -130,7 +133,7 @@ export default function FavoriteStoriesPage() {
         </div>
       ) : (
         <p className="rounded-xl border border-dashed border-gray-300 p-6 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-          Bạn chưa có truyện yêu thích nào.
+          {t("empty")}
         </p>
       )}
 
@@ -142,10 +145,10 @@ export default function FavoriteStoriesPage() {
               onClick={() => void fetchFavorites(page + 1)}
               className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-60 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
             >
-              {isLoading ? "Đang tải..." : "Xem thêm"}
+              {isLoading ? tCommon("loading") : tCommon("loadMore")}
             </button>
           ) : (
-            <p className="text-sm text-gray-500">Đã hiển thị hết dữ liệu.</p>
+            <p className="text-sm text-gray-500">{tCommon("allShown")}</p>
           )}
         </div>
       ) : null}

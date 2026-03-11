@@ -15,6 +15,7 @@ type StoryDetailResponse = {
   description?: string | null;
   thumbnailUrl?: string | null;
   status: "ongoing" | "completed";
+  language?: "vi" | "en";
   audioUrl?: string | null;
   isRecommended?: boolean;
   author?: {
@@ -53,6 +54,7 @@ export default function EditStoryPage() {
           description: story.description || "",
           thumbnailUrl: story.thumbnailUrl || "",
           status: story.status,
+          language: story.language || "vi",
           audioUrl: story.audioUrl || "",
           isRecommended: !!story.isRecommended,
           authorId: story.author?.id,

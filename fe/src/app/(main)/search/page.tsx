@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 
 import StoryCard from "@/components/shared/StoryCard";
@@ -31,14 +32,18 @@ type Author = { id: string; name: string };
 const LIMIT = 12;
 
 export default function SearchPage() {
+  const t = useTranslations("SearchPage");
+
   return (
-    <Suspense fallback={<div className="py-10 text-center text-sm text-slate-500">Đang tải tìm kiếm...</div>}>
+    <Suspense fallback={<div className="py-10 text-center text-sm text-slate-500">{t("loading")}</div>}>
       <SearchPageContent />
     </Suspense>
   );
 }
 
 function SearchPageContent() {
+  const t = useTranslations("SearchPage");
+  const tCommon = useTranslations("Common");
   const searchParams = useSearchParams();
   const keyword = searchParams.get("keyword") || "";
 
@@ -109,13 +114,16 @@ function SearchPageContent() {
     void loadStories();
   }, [appliedFilters, keyword, page]);
 
-  const title = useMemo(() => (keyword ? `Kết quả cho "${keyword}"` : "Tìm kiếm truyện"), [keyword]);
+  const title = useMemo(
+    () => (keyword ? t("titleWithKeyword", { keyword }) : t("titleDefault")),
+    [keyword, t],
+  );
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-black text-slate-900 dark:text-white">{title}</h1>
-        <p className="mt-1 text-sm text-slate-500">Bộ lọc tổng hợp + kết quả tìm kiếm, phân trang 12 truyện/trang.</p>
+        <p className="mt-1 text-sm text-slate-500">{t("subtitle")}</p>
       </div>
 
       <StoryFilterBar
@@ -141,15 +149,15 @@ function SearchPageContent() {
           onClick={() => setPage((prev) => Math.max(1, prev - 1))}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
         >
-          Trước
+          {tCommon("prev")}
         </button>
-        <span className="text-sm text-slate-500">Trang {page}/{lastPage}</span>
+        <span className="text-sm text-slate-500">{tCommon("page", { page, lastPage })}</span>
         <button
           disabled={page >= lastPage}
           onClick={() => setPage((prev) => Math.min(lastPage, prev + 1))}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
         >
-          Tiếp
+          {tCommon("next")}
         </button>
       </div>
     </div>

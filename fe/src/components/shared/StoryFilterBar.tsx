@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDown, Check, Search } from "lucide-react";
 
 type CategoryOption = {
@@ -37,6 +38,7 @@ export default function StoryFilterBar({
   onApply,
   isLoading = false,
 }: StoryFilterBarProps) {
+  const t = useTranslations("StoryFilterBar");
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isAuthorOpen, setIsAuthorOpen] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
@@ -83,17 +85,17 @@ export default function StoryFilterBar({
   );
 
   const statusOptions = [
-    { value: "", label: "Tất cả trạng thái" },
-    { value: "completed", label: "Đã hoàn thành" },
-    { value: "ongoing", label: "Đang ra" },
+    { value: "", label: t("allStatuses") },
+    { value: "completed", label: t("completed") },
+    { value: "ongoing", label: t("ongoing") },
   ];
 
   const sortOptions = [
-    { value: "latest", label: "Mới cập nhật" },
-    { value: "views", label: "Lượt xem" },
-    { value: "rating", label: "Đánh giá" },
-    { value: "title_asc", label: "Tên A-Z" },
-    { value: "chapters_desc", label: "Số chương" },
+    { value: "latest", label: t("sortLatest") },
+    { value: "views", label: t("sortViews") },
+    { value: "rating", label: t("sortRating") },
+    { value: "title_asc", label: t("sortTitle") },
+    { value: "chapters_desc", label: t("sortChapters") },
   ];
 
   const selectedStatus = statusOptions.find((s) => s.value === value.status);
@@ -102,7 +104,7 @@ export default function StoryFilterBar({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm">
       <h2 className="mb-4 text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-        Bộ lọc nhanh
+        {t("quickFilter")}
       </h2>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
@@ -114,7 +116,7 @@ export default function StoryFilterBar({
             className="w-full bg-slate-50 dark:bg-slate-800 text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700"
           >
             <span className={selectedCategory ? "text-slate-900 dark:text-white" : "text-slate-400"}>
-              {selectedCategory ? selectedCategory.name : "Tất cả thể loại"}
+              {selectedCategory ? selectedCategory.name : t("allCategories")}
             </span>
             <ChevronDown
               className={`w-4 h-4 text-slate-400 transition-transform ${isCategoryOpen ? "rotate-180" : ""}`}
@@ -129,7 +131,7 @@ export default function StoryFilterBar({
                   <input
                     type="text"
                     autoFocus
-                    placeholder="Tìm thể loại..."
+                    placeholder={t("searchCategories")}
                     className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-lg py-2 pl-10 pr-3 text-sm font-medium focus:ring-2 focus:ring-blue-500/20"
                     value={categorySearch}
                     onChange={(e) => setCategorySearch(e.target.value)}
@@ -146,7 +148,7 @@ export default function StoryFilterBar({
                   }}
                   className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors flex items-center justify-between"
                 >
-                  Tất cả thể loại
+                  {t("allCategories")}
                   {!value.categoryId && <Check className="w-4 h-4 text-blue-600" />}
                 </button>
                 {filteredCategories.map((c) => (
@@ -177,7 +179,7 @@ export default function StoryFilterBar({
             className="w-full bg-slate-50 dark:bg-slate-800 text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700"
           >
             <span className={selectedAuthor ? "text-slate-900 dark:text-white" : "text-slate-400"}>
-              {selectedAuthor ? selectedAuthor.name : "Tất cả tác giả"}
+              {selectedAuthor ? selectedAuthor.name : t("allAuthors")}
             </span>
             <ChevronDown
               className={`w-4 h-4 text-slate-400 transition-transform ${isAuthorOpen ? "rotate-180" : ""}`}
@@ -192,7 +194,7 @@ export default function StoryFilterBar({
                   <input
                     type="text"
                     autoFocus
-                    placeholder="Tìm tác giả..."
+                    placeholder={t("searchAuthors")}
                     className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-lg py-2 pl-10 pr-3 text-sm font-medium focus:ring-2 focus:ring-blue-500/20"
                     value={authorSearch}
                     onChange={(e) => setAuthorSearch(e.target.value)}
@@ -209,7 +211,7 @@ export default function StoryFilterBar({
                   }}
                   className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors flex items-center justify-between"
                 >
-                  Tất cả tác giả
+                  {t("allAuthors")}
                   {!value.authorId && <Check className="w-4 h-4 text-blue-600" />}
                 </button>
                 {filteredAuthors.map((a) => (
@@ -240,7 +242,7 @@ export default function StoryFilterBar({
             className="w-full bg-slate-50 dark:bg-slate-800 text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700"
           >
             <span className={selectedStatus?.value ? "text-slate-900 dark:text-white" : "text-slate-400"}>
-              {selectedStatus?.label || "Tất cả trạng thái"}
+              {selectedStatus?.label || t("allStatuses")}
             </span>
             <ChevronDown
               className={`w-4 h-4 text-slate-400 transition-transform ${isStatusOpen ? "rotate-180" : ""}`}
@@ -307,7 +309,7 @@ export default function StoryFilterBar({
           disabled={isLoading}
           className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60 transition-all shadow-sm hover:shadow-md"
         >
-          {isLoading ? "Đang lọc..." : "Lọc ngay"}
+          {isLoading ? t("applying") : t("apply")}
         </button>
       </div>
     </div>

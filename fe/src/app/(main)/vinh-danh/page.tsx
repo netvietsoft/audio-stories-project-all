@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { apiClient } from "@/lib/api/api-client";
 
@@ -14,6 +15,7 @@ type HallMember = {
 };
 
 export default function HallOfFamePage() {
+  const t = useTranslations("HallPage");
   const [members, setMembers] = useState<HallMember[]>([]);
 
   useEffect(() => {
@@ -30,14 +32,14 @@ export default function HallOfFamePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white">Trang Vinh danh hội viên</h1>
-        <p className="mt-1 text-sm text-slate-500">Top hội viên VIP nổi bật theo hạng VIP và mức độ đóng góp.</p>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white">{t("title")}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t("subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {members.slice(0, 3).map((member, idx) => (
           <div key={member.id} className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 dark:border-amber-800 dark:from-amber-900/20 dark:to-slate-900">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">Top {idx + 1}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">{t("top", { rank: idx + 1 })}</p>
             <div className="mt-3 flex items-center gap-3">
               <img
                 src={member.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.displayName}`}
@@ -54,7 +56,7 @@ export default function HallOfFamePage() {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Bảng xếp hạng đầy đủ</h2>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t("fullRanking")}</h2>
         <div className="mt-3 space-y-2">
           {members.map((member, idx) => (
             <div key={member.id} className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-700">
@@ -62,7 +64,7 @@ export default function HallOfFamePage() {
                 <span className="font-semibold text-slate-500">#{idx + 1}</span>
                 <span className="font-semibold text-slate-900 dark:text-slate-100">{member.displayName}</span>
               </div>
-              <span className="text-xs text-slate-500">VIP {member.vipTier} | {member.totalUnlockedStories} truyện mở</span>
+              <span className="text-xs text-slate-500">{t("vipUnlocked", { tier: member.vipTier, count: member.totalUnlockedStories })}</span>
             </div>
           ))}
         </div>

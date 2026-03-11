@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { History, PlayCircle, Trash2 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
@@ -43,6 +44,8 @@ const formatDuration = (seconds?: number | null) => {
 };
 
 export default function ProfileHistoryPage() {
+  const t = useTranslations("ProfileHistoryPage");
+  const locale = useLocale();
   const router = useRouter();
   const accessToken = useUserStore((state) => state.accessToken);
   const playTrack = useAudioStore((state) => state.playTrack);
@@ -112,25 +115,25 @@ export default function ProfileHistoryPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="inline-flex items-center gap-2 text-2xl font-bold text-gray-900 dark:text-gray-100">
-          <History className="h-6 w-6" /> Lịch sử nghe
+          <History className="h-6 w-6" /> {t("title")}
         </h1>
         {items.length > 0 ? (
           <button
             onClick={() => void handleClear()}
             className="inline-flex items-center gap-2 rounded-lg border border-red-300 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20"
           >
-            <Trash2 className="h-4 w-4" /> Xóa toàn bộ
+            <Trash2 className="h-4 w-4" /> {t("clearAll")}
           </button>
         ) : null}
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400">Đang tải lịch sử nghe...</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t("loading")}</p>
       ) : null}
 
       {!isLoading && items.length === 0 ? (
         <p className="rounded-xl border border-dashed border-gray-300 p-6 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-          Chưa có dữ liệu nghe gần đây.
+          {t("empty")}
         </p>
       ) : null}
 
@@ -154,14 +157,12 @@ export default function ProfileHistoryPage() {
 
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{item.story.title}</p>
-                  <p className="mt-1 line-clamp-1 text-sm text-gray-600 dark:text-gray-300">
-                    Chương {item.chapter.chapterNumber}: {item.chapter.title}
+                  <p className="mt-1 line-clamp-1 text-sm text-gray-600 dark:text-gray-300">{t("chapter", { number: item.chapter.chapterNumber, title: item.chapter.title })}</p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {t("progress", { progress: formatDuration(item.progressSeconds), duration: formatDuration(item.chapter.audioDuration) })}
                   </p>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Đã nghe {formatDuration(item.progressSeconds)} / {formatDuration(item.chapter.audioDuration)}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Cập nhật: {new Date(item.lastListenedAt).toLocaleString("vi-VN")}
+                    {t("updatedAt", { time: new Date(item.lastListenedAt).toLocaleString(locale === "en" ? "en-US" : "vi-VN") })}
                   </p>
 
                   <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
@@ -173,13 +174,13 @@ export default function ProfileHistoryPage() {
                       onClick={() => handleResume(item)}
                       className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
                     >
-                      <PlayCircle className="h-4 w-4" /> Nghe tiếp
+                      <PlayCircle className="h-4 w-4" /> {t("resume")}
                     </button>
                     <button
                       onClick={() => void handleDelete(item.id)}
                       className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
-                      <Trash2 className="h-4 w-4" /> Xóa
+                      <Trash2 className="h-4 w-4" /> {t("delete")}
                     </button>
                   </div>
                 </div>

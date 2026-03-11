@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { StoryStatus } from '@prisma/client';
 import { CreateChapterDto } from '@/chapters/dto/create-chapter.dto';
@@ -11,6 +11,10 @@ export class CreateStoryDto {
     @IsString()
     @IsNotEmpty()
     slug: string;
+
+    @IsOptional()
+    @IsIn(['vi', 'en'])
+    language?: 'vi' | 'en';
 
     @IsOptional()
     @IsString()

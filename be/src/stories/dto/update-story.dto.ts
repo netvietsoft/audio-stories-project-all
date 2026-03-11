@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID } from 'class-validator';
 import { StoryStatus } from '@prisma/client';
 
 export class UpdateStoryDto {
@@ -9,6 +9,10 @@ export class UpdateStoryDto {
   @IsOptional()
   @IsString()
   slug?: string;
+
+  @IsOptional()
+  @IsIn(['vi', 'en'])
+  language?: 'vi' | 'en';
 
   @IsOptional()
   @IsString()

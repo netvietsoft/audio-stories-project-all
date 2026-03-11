@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
@@ -30,6 +31,8 @@ type ExploreResponse = {
 const LIMIT = 12;
 
 export default function NewStoriesPage() {
+  const t = useTranslations("NewPage");
+  const tCommon = useTranslations("Common");
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [authors, setAuthors] = useState<Author[]>([]);
@@ -80,8 +83,8 @@ export default function NewStoriesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white">Trang Mới đăng</h1>
-        <p className="mt-1 text-sm text-slate-500">Sắp xếp theo ngày mới nhất, phân trang 12 truyện/trang.</p>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white">{t("title")}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t("subtitle")}</p>
       </div>
 
       <StoryFilterBar
@@ -104,15 +107,15 @@ export default function NewStoriesPage() {
           onClick={() => setPage((prev) => Math.max(1, prev - 1))}
           className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 text-sm disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-700"
         >
-          Trước
+          {tCommon("prev")}
         </button>
-        <span className="text-sm text-slate-500 dark:text-slate-400">Trang {page}/{lastPage}</span>
+        <span className="text-sm text-slate-500 dark:text-slate-400">{tCommon("page", { page, lastPage })}</span>
         <button
           disabled={page >= lastPage}
           onClick={() => setPage((prev) => Math.min(lastPage, prev + 1))}
           className="rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white px-3 py-2 text-sm disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-700"
         >
-          Tiếp
+          {tCommon("next")}
         </button>
       </div>
     </div>

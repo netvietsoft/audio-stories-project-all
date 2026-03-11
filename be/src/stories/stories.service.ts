@@ -146,6 +146,7 @@ export class StoriesService {
   async exploreStories(query: ExploreQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
+    const language = query.lang ?? 'vi';
     const now = new Date();
     const trendWindowStart =
       query.trendWindow === 'today'
@@ -158,6 +159,7 @@ export class StoriesService {
 
     const where: Prisma.StoryWhereInput = {
       deletedAt: null,
+      language,
       ...(query.status ? { status: query.status as StoryStatus } : {}),
       ...(query.search
         ? {
@@ -238,10 +240,16 @@ export class StoriesService {
     };
   }
 
-  async getTopCategories(limit = 5) {
+  async getTopCategories(limit = 5, lang: 'vi' | 'en' = 'vi') {
     const safeLimit = Math.min(Math.max(limit || 5, 1), 20);
     const grouped = await this.prisma.storyCategory.groupBy({
       by: ['categoryId'],
+      where: {
+        story: {
+          deletedAt: null,
+          language: lang,
+        },
+      },
       _count: {
         storyId: true,
       },
@@ -307,10 +315,12 @@ export class StoriesService {
   async findAllAdmin(query: ExploreQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
+    const language = query.lang ?? 'vi';
 
     const where: Prisma.StoryWhereInput = {
       // Admin sees everything (including soft deleted if needed, but let's stick to non-deleted for now)
       deletedAt: null,
+      language,
       ...(query.status ? { status: query.status as StoryStatus } : {}),
       ...(query.search
         ? {

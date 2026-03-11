@@ -49,4 +49,8 @@ export class ExploreQueryDto {
   @IsOptional()
   @IsIn(trendWindowOptions)
   trendWindow?: TrendWindowOption = 'all';
+
+  @IsOptional()
+  @IsIn(['vi', 'en'])
+  lang?: 'vi' | 'en';
 }

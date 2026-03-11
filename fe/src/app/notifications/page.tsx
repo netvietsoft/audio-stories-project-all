@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { BellRing } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
@@ -18,6 +19,8 @@ type NotificationsResponse = {
 };
 
 export default function NotificationsPage() {
+  const t = useTranslations("NotificationsPage");
+  const locale = useLocale();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,14 +51,14 @@ export default function NotificationsPage() {
           <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
             <BellRing className="h-7 w-7 text-blue-600 dark:text-blue-400" />
           </div>
-          Thông báo
+          {t("title")}
         </h1>
         {items.some(item => !item.isRead) && (
           <button
             onClick={() => void markAllRead()}
             className="px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
           >
-            Đánh dấu tất cả đã đọc
+            {t("markAllRead")}
           </button>
         )}
       </div>
@@ -72,8 +75,8 @@ export default function NotificationsPage() {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
               <BellRing className="h-10 w-10 text-gray-400 dark:text-gray-600" />
             </div>
-            <p className="text-lg font-semibold text-gray-600 dark:text-gray-400">Chưa có thông báo nào</p>
-            <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Các thông báo của bạn sẽ xuất hiện ở đây</p>
+            <p className="text-lg font-semibold text-gray-600 dark:text-gray-400">{t("empty")}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">{t("emptyHint")}</p>
           </div>
         ) : null}
         
@@ -106,7 +109,7 @@ export default function NotificationsPage() {
                 </div>
                 {!item.isRead && (
                   <span className="px-2.5 py-1 bg-blue-500 text-white text-xs font-bold rounded-full shrink-0">
-                    MỚI
+                    {t("new")}
                   </span>
                 )}
               </div>
@@ -115,7 +118,7 @@ export default function NotificationsPage() {
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  {new Date(item.createdAt).toLocaleString("vi-VN", {
+                  {new Date(item.createdAt).toLocaleString(locale === "en" ? "en-US" : "vi-VN", {
                     day: '2-digit',
                     month: '2-digit', 
                     year: 'numeric',
@@ -128,7 +131,7 @@ export default function NotificationsPage() {
                     <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
-                    Đã đọc
+                    {t("read")}
                   </span>
                 )}
               </div>

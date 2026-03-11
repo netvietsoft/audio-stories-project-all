@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 
 import StoryCard from "@/components/shared/StoryCard";
@@ -34,6 +35,8 @@ type ExploreResponse = {
 const LIMIT = 12;
 
 export default function CategoryStoriesPage() {
+  const t = useTranslations("CategoryStoriesPage");
+  const tCommon = useTranslations("Common");
   const params = useParams<{ slug: string }>();
   const slug = params?.slug;
 
@@ -79,8 +82,8 @@ export default function CategoryStoriesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white">Thể loại: {currentCategory?.name || slug}</h1>
-        <p className="mt-1 text-sm text-slate-500">Danh sách truyện theo thể loại, phân trang 12 truyện/trang.</p>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white">{t("title", { name: currentCategory?.name || slug || "" })}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t("subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-4 dark:border-slate-800 dark:bg-slate-900">
@@ -90,7 +93,7 @@ export default function CategoryStoriesPage() {
             setSearch(e.target.value);
             setPage(1);
           }}
-          placeholder="Tìm theo tên truyện..."
+          placeholder={t("searchPlaceholder")}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
         />
         <select
@@ -101,9 +104,9 @@ export default function CategoryStoriesPage() {
           }}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
         >
-          <option value="">Tất cả trạng thái</option>
-          <option value="ongoing">Đang ra</option>
-          <option value="completed">Hoàn thành</option>
+          <option value="">{t("allStatuses")}</option>
+          <option value="ongoing">{t("ongoing")}</option>
+          <option value="completed">{t("completed")}</option>
         </select>
         <select
           value={sort}
@@ -113,11 +116,11 @@ export default function CategoryStoriesPage() {
           }}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
         >
-          <option value="latest">Mới cập nhật</option>
-          <option value="views">Lượt nghe</option>
-          <option value="rating">Đánh giá cao</option>
-          <option value="title_asc">Tên A-Z</option>
-          <option value="chapters_desc">Nhiều chương</option>
+          <option value="latest">{t("sortLatest")}</option>
+          <option value="views">{t("sortViews")}</option>
+          <option value="rating">{t("sortRating")}</option>
+          <option value="title_asc">{t("sortTitle")}</option>
+          <option value="chapters_desc">{t("sortChapters")}</option>
         </select>
       </div>
 
@@ -133,15 +136,15 @@ export default function CategoryStoriesPage() {
           onClick={() => setPage((prev) => Math.max(1, prev - 1))}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
         >
-          Trước
+          {tCommon("prev")}
         </button>
-        <span className="text-sm text-slate-500">Trang {page}/{lastPage}</span>
+        <span className="text-sm text-slate-500">{tCommon("page", { page, lastPage })}</span>
         <button
           disabled={page >= lastPage}
           onClick={() => setPage((prev) => Math.min(lastPage, prev + 1))}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
         >
-          Tiếp
+          {tCommon("next")}
         </button>
       </div>
     </div>

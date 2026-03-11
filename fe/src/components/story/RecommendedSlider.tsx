@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import StoryCard from "@/components/shared/StoryCard";
@@ -22,6 +23,7 @@ type RecommendedSliderProps = {
 };
 
 export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
+  const t = useTranslations("RecommendedSlider");
   const trackRef = useRef<HTMLDivElement | null>(null);
 
   const scrollByAmount = (direction: "left" | "right") => {
@@ -42,13 +44,13 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Có thể bạn sẽ thích</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("title")}</h3>
         <div className="hidden items-center gap-2 md:flex">
           <button
             type="button"
             onClick={() => scrollByAmount("left")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-            aria-label="Cuộn trái"
+            aria-label={t("scrollLeft")}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -56,7 +58,7 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
             type="button"
             onClick={() => scrollByAmount("right")}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-            aria-label="Cuộn phải"
+            aria-label={t("scrollRight")}
           >
             <ChevronRight className="h-4 w-4" />
           </button>

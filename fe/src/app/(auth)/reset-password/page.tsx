@@ -1,12 +1,16 @@
 import ResetForm from "@/components/auth/ResetForm";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 
-export const metadata: Metadata = {
-  title: "Đặt lại mật khẩu | Netviet Audio",
-  description: "Đặt lại mật khẩu của bạn để tiếp tục trải nghiệm Netviet Audio với nhiều tính năng hấp dẫn.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("AuthMeta");
 
+    return {
+        title: t("resetTitle"),
+        description: t("resetDescription"),
+    };
+}
 
 export default function ResetPasswordPage() {
     return (

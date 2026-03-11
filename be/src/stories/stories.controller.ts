@@ -78,12 +78,14 @@ export class StoriesController {
   trending(
     @Query('limit') limit?: string,
     @Query('page') page?: string,
+    @Query('lang') lang: 'vi' | 'en' = 'vi',
     @Query('trendWindow') trendWindow: 'today' | 'week' | 'month' | 'all' = 'week',
   ) {
     return this.storiesService.exploreStories({
       page: Number(page) || 1,
       limit: Number(limit) || 12,
       sort: 'views',
+      lang,
       trendWindow,
     } as ExploreQueryDto);
   }
@@ -96,8 +98,8 @@ export class StoriesController {
   @Get('categories/top')
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(3600)
-  getTopCategories(@Query('limit') limit?: string) {
-    return this.storiesService.getTopCategories(Number(limit) || 5);
+  getTopCategories(@Query('limit') limit?: string, @Query('lang') lang: 'vi' | 'en' = 'vi') {
+    return this.storiesService.getTopCategories(Number(limit) || 5, lang);
   }
 
   @Get('hall-of-fame')

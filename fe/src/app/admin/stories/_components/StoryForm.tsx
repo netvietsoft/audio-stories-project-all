@@ -30,6 +30,7 @@ const storySchema = z.object({
     thumbnailUrl: z.string().optional(),
     authorId: z.string().uuid('Vui lòng chọn tác giả'),
     status: z.enum(['ongoing', 'completed']),
+    language: z.enum(['vi', 'en']),
     categoryIds: z.array(z.number()).min(1, 'Chọn ít nhất một thể loại'),
     audioUrl: z.string().optional(),
     isRecommended: z.boolean().optional(),
@@ -99,6 +100,7 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
             description: '',
             thumbnailUrl: '',
             status: 'ongoing',
+            language: 'vi',
             categoryIds: [],
             isRecommended: false,
             ...initialData,
@@ -240,8 +242,8 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                         {errors.title && <p className="text-xs font-bold text-red-500 ml-2">{errors.title.message}</p>}
                     </div>
 
-                    {/* Hàng 2: Input slug và chọn trạng thái */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Hàng 2: Input slug, trạng thái và ngôn ngữ */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="space-y-2">
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Slug (URL)</label>
                             <input
@@ -264,6 +266,21 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                                 </select>
                                 <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ngôn ngữ</label>
+                            <div className="relative">
+                                <select
+                                    {...register('language')}
+                                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                                >
+                                    <option value="vi">Tiếng Việt</option>
+                                    <option value="en">English</option>
+                                </select>
+                                <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                            </div>
+                            {errors.language && <p className="text-xs font-bold text-red-500 ml-2">{errors.language.message}</p>}
                         </div>
                     </div>
 

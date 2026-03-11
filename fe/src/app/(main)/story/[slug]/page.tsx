@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 import { JsonLd } from "@/components/seo/JsonLd";
 import StoryDetailClient from "./_components/StoryDetailClient";
@@ -29,14 +30,15 @@ async function fetchStoryMeta(slug: string): Promise<StoryMeta | null> {
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const t = await getTranslations("StoryPage");
   const { slug } = await params;
   const story = await fetchStoryMeta(slug);
-  if (!story) return { title: "Không tìm thấy truyện" };
+  if (!story) return { title: t("notFound") };
 
-  const title = `${story.title} – Truyện Audio`;
+  const title = `${story.title} – ${t("audioSuffix")}`;
   const description = story.description
     ? story.description.slice(0, 160)
-    : `Nghe truyện audio ${story.title} miễn phí tại WebTruyen.`;
+    : t("fallbackDescription", { title: story.title });
   const imageUrl = story.thumbnailUrl ?? `${SITE_URL}/og-default.jpg`;
 
   return {
@@ -59,6 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function StoryPage({ params }: Props) {
+  const t = await getTranslations("StoryPage");
   const { slug } = await params;
   const story = await fetchStoryMeta(slug);
 
@@ -80,8 +83,8 @@ export default async function StoryPage({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Trang chủ", item: SITE_URL },
-      { "@type": "ListItem", position: 2, name: "Khám phá", item: `${SITE_URL}/explore` },
+      { "@type": "ListItem", position: 1, name: t("home"), item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: t("explore"), item: `${SITE_URL}/explore` },
       ...(story
         ? [{ "@type": "ListItem", position: 3, name: story.title, item: `${SITE_URL}/story/${story.slug}` }]
         : []),

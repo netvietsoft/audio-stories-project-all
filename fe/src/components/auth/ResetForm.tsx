@@ -5,10 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { resetByCodeSchema } from "@/lib/validation/auth";
 import { apiClient } from "@/lib/api/api-client";
 
 export default function ResetForm() {
+  const t = useTranslations("ResetForm");
+  const tAuth = useTranslations("Auth");
   const searchParams = useSearchParams();
   const router = useRouter();
   const emailFromQuery = searchParams.get("email") || "";
@@ -44,7 +47,7 @@ export default function ResetForm() {
         "response" in error &&
         typeof (error as any).response?.data?.message === "string"
           ? (error as any).response.data.message
-          : "Đặt lại mật khẩu thất bại. Link có thể đã hết hạn.";
+          : t("submitFailed");
       setSubmitError(message);
     }
   };
@@ -60,7 +63,7 @@ export default function ResetForm() {
         redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
       });
 
-      setResendMessage("Đã gửi lại mã đặt lại mật khẩu. Vui lòng kiểm tra email.");
+      setResendMessage(t("resendSuccess"));
     } catch (error) {
       const message =
         typeof error === "object" &&
@@ -68,7 +71,7 @@ export default function ResetForm() {
         "response" in error &&
         typeof (error as any).response?.data?.message === "string"
           ? (error as any).response.data.message
-          : "Không thể gửi lại mã. Vui lòng thử lại.";
+          : t("resendFailed");
       setSubmitError(message);
     } finally {
       setIsResending(false);
@@ -80,7 +83,7 @@ export default function ResetForm() {
       {submitError && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{submitError}</p>}
       {resendMessage && <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{resendMessage}</p>}
       <div>
-        <label className="block text-sm font-medium mb-1">Email</label>
+        <label className="block text-sm font-medium mb-1">{t("email")}</label>
         <input
           {...register("email")}
           type="email"
@@ -90,7 +93,7 @@ export default function ResetForm() {
         {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Mã đặt lại 6 số</label>
+        <label className="block text-sm font-medium mb-1">{t("code")}</label>
         <input
           {...register("code")}
           type="text"
@@ -106,22 +109,22 @@ export default function ResetForm() {
         {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code.message}</p>}
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Mật khẩu mới</label>
+        <label className="block text-sm font-medium mb-1">{t("newPassword")}</label>
         <input
           {...register("password")}
           type="password"
           className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Nhập mật khẩu mới"
+          placeholder={t("newPasswordPlaceholder")}
         />
         {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Xác nhận mật khẩu mới</label>
+        <label className="block text-sm font-medium mb-1">{t("confirmNewPassword")}</label>
         <input
           {...register("confirmPassword")}
           type="password"
           className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Xác nhận mật khẩu mới"
+          placeholder={t("confirmNewPasswordPlaceholder")}
         />
         {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>}
       </div>
@@ -130,7 +133,7 @@ export default function ResetForm() {
         disabled={isSubmitting}
         className="w-full py-2 px-4 mt-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isSubmitting ? "Đang xử lý..." : "Đổi mật khẩu"}
+        {isSubmitting ? tAuth("processing") : t("submit")}
       </button>
 
       <button
@@ -139,7 +142,7 @@ export default function ResetForm() {
         disabled={isResending || !emailValue}
         className="w-full text-sm text-blue-600 hover:underline disabled:opacity-50"
       >
-        {isResending ? "Đang gửi lại mã..." : "Gửi lại mã"}
+        {isResending ? t("resending") : t("resend")}
       </button>
     </form>
   );

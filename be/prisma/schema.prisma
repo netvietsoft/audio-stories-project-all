@@ -165,6 +165,7 @@ model Story {
   id            String      @id @default(uuid()) @db.VarChar(36)
   title         String      @db.VarChar(300)
   slug          String      @unique @db.VarChar(350)
+  language      String      @default("vi") @db.VarChar(8)
   description   String?     @db.Text
   thumbnailUrl  String?     @map("thumbnail_url") @db.Text
   authorId      String      @map("author_id") @db.VarChar(36)

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, X } from "lucide-react";
 
@@ -17,6 +18,7 @@ const formatDuration = (seconds?: number | null) => {
 };
 
 export default function GlobalPlayer() {
+  const t = useTranslations("Player");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const lastSyncedProgressRef = useRef<Map<string, number>>(new Map());
@@ -232,8 +234,7 @@ export default function GlobalPlayer() {
 
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.title}</p>
-              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || "Netviet Audio"}</p>
-
+              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || t("defaultAuthor")}</p>
             </div>
           </Link>
         ) : (
@@ -253,8 +254,7 @@ export default function GlobalPlayer() {
 
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.title}</p>
-              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || "Netviet Audio"}</p>
-
+              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || t("defaultAuthor")}</p>
             </div>
           </div>
         )}
@@ -284,7 +284,7 @@ export default function GlobalPlayer() {
             value={Math.min(currentTime, duration || 0)}
             onChange={(event) => seekTo(Number(event.target.value))}
             className="w-full accent-blue-600"
-            aria-label="Audio progress"
+            aria-label={t("audioProgress")}
           />
           <span className="text-xs text-gray-500 dark:text-gray-400">{formatDuration(duration)}</span>
         </div>
@@ -293,7 +293,7 @@ export default function GlobalPlayer() {
           <button
             onClick={cycleSpeed}
             className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-            title="Chinh toc do phat"
+            title={t("speedTitle")}
           >
             {playbackRate}x
           </button>
@@ -311,7 +311,7 @@ export default function GlobalPlayer() {
             value={volume}
             onChange={(event) => setVolume(Number(event.target.value))}
             className="hidden w-20 accent-blue-600 md:block"
-            aria-label="Volume"
+            aria-label={t("volume")}
           />
           <button
             onClick={() => {

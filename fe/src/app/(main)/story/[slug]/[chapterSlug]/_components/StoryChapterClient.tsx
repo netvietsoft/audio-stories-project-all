@@ -33,13 +33,9 @@ import FavoriteButton from "@/components/shared/FavoriteButton";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 
-const StoryReader = dynamic(() => import("@/components/story/StoryReader"), {
-  loading: () => <p className="text-sm text-gray-500 dark:text-gray-400">Đang tải module đọc truyện...</p>,
-});
+const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
 
-const RecommendedSlider = dynamic(() => import("@/components/story/RecommendedSlider"), {
-  loading: () => <p className="text-sm text-gray-500 dark:text-gray-400">Đang tải gợi ý truyện...</p>,
-});
+const RecommendedSlider = dynamic(() => import("@/components/story/RecommendedSlider"));
 
 type ChapterItem = {
   id: string;
@@ -1327,7 +1323,7 @@ export default function StoryChapterClient() {
         </section>          
       </div>
 
-      <RecommendedSlider stories={recommendedStories} />
+          <RecommendedSlider stories={recommendedStories} />
 
       {isUnlockModalOpen ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4">

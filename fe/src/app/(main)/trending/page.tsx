@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
@@ -26,6 +27,10 @@ type ExploreResponse = {
 const LIMIT = 12;
 
 export default function TrendingPage() {
+  const t = useTranslations("TrendingPage");
+  const tCommon = useTranslations("Common");
+  const locale = useLocale();
+  const lang = locale === "en" ? "en" : "vi";
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
@@ -38,27 +43,28 @@ export default function TrendingPage() {
         limit: LIMIT,
         sort: "views",
         trendWindow,
+        lang,
       });
       setStories(res.data || []);
       setLastPage(res.meta?.lastPage || 1);
     };
 
     void loadStories();
-  }, [page, trendWindow]);
+  }, [page, trendWindow, lang]);
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-slate-900 dark:text-white">Trang Trending</h1>
-        <p className="mt-1 text-sm text-slate-500">Sắp xếp theo lượt nghe, lọc hôm nay/tuần/tháng/tất cả, phân trang 12 truyện/trang.</p>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white">{t("title")}</h1>
+        <p className="mt-1 text-sm text-slate-500">{t("subtitle")}</p>
       </div>
 
       <div className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         {[
-          { value: "today", label: "Hôm nay" },
-          { value: "week", label: "Tuần" },
-          { value: "month", label: "Tháng" },
-          { value: "all", label: "Tất cả" },
+          { value: "today", label: t("today") },
+          { value: "week", label: t("week") },
+          { value: "month", label: t("month") },
+          { value: "all", label: t("all") },
         ].map((item) => (
           <button
             key={item.value}
@@ -89,15 +95,15 @@ export default function TrendingPage() {
           onClick={() => setPage((prev) => Math.max(1, prev - 1))}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
         >
-          Trước
+          {tCommon("prev")}
         </button>
-        <span className="text-sm text-slate-500">Trang {page}/{lastPage}</span>
+        <span className="text-sm text-slate-500">{tCommon("page", { page, lastPage })}</span>
         <button
           disabled={page >= lastPage}
           onClick={() => setPage((prev) => Math.min(lastPage, prev + 1))}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
         >
-          Tiếp
+          {tCommon("next")}
         </button>
       </div>
     </div>

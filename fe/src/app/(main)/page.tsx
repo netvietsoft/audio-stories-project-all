@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
@@ -59,29 +60,21 @@ const SECTION_LIMIT = 8;
 const storySections = [
   {
     key: "newest",
-    title: "Truyện mới đăng",
-    subtitle: "Vừa cập nhật chương mới nhất.",
     params: { sort: "latest" as const },
     viewAllHref: "/new",
   },
   {
     key: "trending",
-    title: "Truyện Trending",
-    subtitle: "Đang được nghe nhiều nhất tuần qua.",
     params: { sort: "views" as const, trendWindow: "week" },
     viewAllHref: "/trending",
   },
   {
     key: "popular",
-    title: "Truyện phổ biến",
-    subtitle: "Top những truyện được đánh giá cao.",
     params: { sort: "rating" as const },
     viewAllHref: "/search?sort=rating",
   },
   {
     key: "completed",
-    title: "Truyện hoàn thành",
-    subtitle: "Đã ra đủ chương, cày ngay không cần chờ.",
     params: { sort: "latest" as const, status: "completed" },
     viewAllHref: "/search?status=completed",
   },
@@ -89,6 +82,9 @@ const storySections = [
 
 export default function HomePage() {
   const router = useRouter();
+  const t = useTranslations("Home");
+  const locale = useLocale();
+  const lang = locale === "en" ? "en" : "vi";
 
   const [sectionsData, setSectionsData] = useState<Record<string, StoryItem[]>>({});
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -126,6 +122,7 @@ export default function HomePage() {
         const sectionRequests = storySections.map((section) =>
           fetchExploreCached<ExploreResponse>({
             limit: SECTION_LIMIT,
+            lang,
             ...section.params,
           }),
         );
@@ -133,7 +130,7 @@ export default function HomePage() {
         const [sectionRes, catRes, fallbackCatRes, authorRes, hallRes] = await Promise.all([
           Promise.allSettled(sectionRequests),
           apiClient
-            .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 8 } })
+            .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 8, lang } })
             .then((res) => res.data?.data || [])
             .catch(() => []),
           apiClient
@@ -171,14 +168,14 @@ export default function HomePage() {
         setAuthors(authorRes || []);
         setHall(hallRes || []);
       } catch (error) {
-        console.error("Lỗi tải trang chủ:", error);
+        console.error(t("loadError"), error);
       } finally {
         setIsLoading(false);
       }
     };
 
     void loadHome();
-  }, []);
+  }, [lang, t]);
 
   const applyQuickFilter = () => {
     const query = new URLSearchParams();
@@ -217,20 +214,20 @@ export default function HomePage() {
         )}
 
         <div className="relative z-10 px-6 py-10 md:px-10 md:py-14">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Hero Section</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">{t("heroBadge")}</p>
           <h1 className="mt-3 text-3xl font-black leading-tight md:text-5xl">
-            Banner quảng cáo truyện hot,
-            <br className="hidden md:block" /> có slideshow tự động
+            {t("heroTitleLine1")}
+            <br className="hidden md:block" /> {t("heroTitleLine2")}
           </h1>
           <p className="mt-3 max-w-2xl text-sm text-slate-200 md:text-base">
-            {activeHero ? `Đề cử nổi bật: ${activeHero.title}` : "Khám phá những bộ truyện đang được nghe nhiều nhất."}
+            {activeHero ? t("heroFeatured", { title: activeHero.title }) : t("heroFallback")}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href={activeHero ? `/story/${activeHero.slug}` : "/explore"} className="rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-300">
-              Nghe ngay
+              {t("listenNow")}
             </Link>
             <Link href="/trending" className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold hover:bg-white/10">
-              Xem trending
+              {t("viewTrending")}
             </Link>
           </div>
           <div className="mt-6 flex gap-2">
@@ -258,11 +255,11 @@ export default function HomePage() {
         <section key={section.key} className="space-y-3">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{section.title}</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-300">{section.subtitle}</p>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t(`${section.key}Title`)}</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-300">{t(`${section.key}Subtitle`)}</p>
             </div>
             <Link href={section.viewAllHref} className="text-sm font-semibold text-blue-600 hover:underline">
-              Xem tất cả
+              {t("viewAll")}
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -271,7 +268,7 @@ export default function HomePage() {
             ))}
           </div>
           {!isLoading && !(sectionsData[section.key] || []).length ? (
-            <p className="text-sm text-slate-500">Chưa có dữ liệu cho mục này.</p>
+            <p className="text-sm text-slate-500">{t("noData")}</p>
           ) : null}
         </section>
       ))}
@@ -279,11 +276,11 @@ export default function HomePage() {
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Thể loại nổi bật</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-300">Lựa chọn thể loại yêu thích của bạn</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("featuredCategoriesTitle")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-300">{t("featuredCategoriesSubtitle")}</p>
           </div>
           <Link href="/categories" className="text-sm font-semibold text-blue-600 hover:underline">
-            Xem tất cả
+            {t("viewAll")}
           </Link>
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -294,7 +291,7 @@ export default function HomePage() {
               className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
             >
               <p className="font-semibold text-slate-900 dark:text-slate-100">{cat.name}</p>
-              <p className="mt-1 text-xs text-slate-500">{cat.storiesCount} truyện</p>
+              <p className="mt-1 text-xs text-slate-500">{t("storiesCount", { count: cat.storiesCount })}</p>
             </Link>
           ))}
           
@@ -304,8 +301,8 @@ export default function HomePage() {
                 onClick={() => setShowAllCategories(!showAllCategories)}
                 className="w-full h-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 flex flex-col items-center justify-center gap-2"
               >
-                <p className="font-semibold text-slate-900 dark:text-slate-100">Các thể loại khác</p>
-                <p className="text-xs text-slate-500">+{categories.length - 3} thể loại</p>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">{t("otherCategories")}</p>
+                <p className="text-xs text-slate-500">{t("moreCategories", { count: categories.length - 3 })}</p>
               </button>
 
               {showAllCategories && (
@@ -324,7 +321,7 @@ export default function HomePage() {
                           className="block px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-100 dark:border-slate-700 last:border-b-0"
                         >
                           <p className="font-semibold text-slate-900 dark:text-slate-100">{cat.name}</p>
-                          <p className="mt-1 text-xs text-slate-500">{cat.storiesCount} truyện</p>
+                          <p className="mt-1 text-xs text-slate-500">{t("storiesCount", { count: cat.storiesCount })}</p>
                         </Link>
                       ))}
                     </div>
@@ -339,18 +336,18 @@ export default function HomePage() {
       <section className="rounded-2xl border border-slate-200 bg-gradient-to-r from-amber-50 to-white p-5 dark:border-slate-700 dark:from-amber-900/20 dark:to-slate-900">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Vinh danh hội viên</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-300">Banner top 3 + nút xem bảng xếp hạng đầy đủ</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("hallTitle")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-300">{t("hallSubtitle")}</p>
           </div>
           <Link href="/vinh-danh" className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600">
-            Xem bảng xếp hạng đầy đủ
+            {t("viewFullRanking")}
           </Link>
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           {hall.map((member, idx) => (
             <div key={member.id} className="rounded-xl border border-amber-200 bg-white p-4 dark:border-amber-800 dark:bg-slate-800">
-              <p className="text-xs font-semibold text-amber-600">Top {idx + 1}</p>
+              <p className="text-xs font-semibold text-amber-600">{t("top", { rank: idx + 1 })}</p>
               <div className="mt-2 flex items-center gap-3">
                 <img
                   src={member.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.displayName}`}
@@ -359,7 +356,7 @@ export default function HomePage() {
                 />
                 <div>
                   <p className="font-semibold text-slate-900 dark:text-slate-100">{member.displayName}</p>
-                  <p className="text-xs text-slate-500">VIP {member.vipTier} | {member.totalUnlockedStories} truyện mở</p>
+                  <p className="text-xs text-slate-500">{t("vipUnlocked", { tier: member.vipTier, count: member.totalUnlockedStories })}</p>
                 </div>
               </div>
             </div>

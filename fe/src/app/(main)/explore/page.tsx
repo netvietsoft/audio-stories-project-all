@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
@@ -42,6 +43,9 @@ type AuthorOption = {
 const LIMIT = 20;
 
 export default function ExplorePage() {
+  const t = useTranslations("Common");
+  const locale = useLocale();
+  const lang = locale === "en" ? "en" : "vi";
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
@@ -69,6 +73,7 @@ export default function ExplorePage() {
       const response = await fetchExploreCached<ExploreResponse>({
         page: nextPage,
         limit: LIMIT,
+        lang,
         ...(appliedFilters.categoryId ? { categoryId: appliedFilters.categoryId } : {}),
         ...(appliedFilters.authorId ? { authorId: appliedFilters.authorId } : {}),
         ...(appliedFilters.status ? { status: appliedFilters.status } : {}),
@@ -100,7 +105,7 @@ export default function ExplorePage() {
   useEffect(() => {
     fetchStories(1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appliedFilters]);
+  }, [appliedFilters, lang]);
 
   return (
     <div className="space-y-6">
@@ -126,10 +131,10 @@ export default function ExplorePage() {
             onClick={() => fetchStories(page + 1)}
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-60 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
           >
-            {isLoading ? "Đang tải..." : "Xem thêm"}
+            {isLoading ? t("loading") : t("loadMore")}
           </button>
         ) : (
-          <p className="text-sm text-gray-500">Đã hiển thị hết dữ liệu.</p>
+          <p className="text-sm text-gray-500">{t("allShown")}</p>
         )}
       </div>
     </div>

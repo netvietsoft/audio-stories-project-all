@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 import { Eye } from "lucide-react";
 import FavoriteButton from "@/components/shared/FavoriteButton";
@@ -29,11 +30,12 @@ type StoryCardProps = {
 };
 
 export default function StoryCard({ story, className }: StoryCardProps) {
+  const t = useTranslations("StoryCard");
   const isNew = story.createdAt
     ? Date.now() - new Date(story.createdAt).getTime() <= 7 * 24 * 60 * 60 * 1000
     : false;
-  const statusLabel = story.status === "completed" ? "Full" : isNew ? "New" : "Đang ra";
-  const categoryLabel = story.categories?.[0]?.category?.name || "Đang cập nhật";
+  const statusLabel = story.status === "completed" ? "Full" : isNew ? "New" : t("ongoing");
+  const categoryLabel = story.categories?.[0]?.category?.name || t("updating");
   const rating = Number(story.averageRating || 0).toFixed(1);
 
   return (
@@ -64,7 +66,7 @@ export default function StoryCard({ story, className }: StoryCardProps) {
 
         <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/90 via-black/65 to-transparent p-3">
           <h3 className="line-clamp-2 text-sm font-semibold text-white drop-shadow-md">{story.title}</h3>
-          <p className="mt-1 truncate text-xs text-gray-200">{story.author?.name || "Đang cập nhật"}</p>
+          <p className="mt-1 truncate text-xs text-gray-200">{story.author?.name || t("updating")}</p>
           <div className="mt-1 flex items-center justify-between text-xs text-gray-200">
             <span>★ {rating}</span>
             <span className="inline-flex items-center gap-1">

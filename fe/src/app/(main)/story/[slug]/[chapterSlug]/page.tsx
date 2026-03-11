@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+
 import { JsonLd } from "@/components/seo/JsonLd";
 import StoryChapterClient from "./_components/StoryChapterClient";
 
@@ -16,7 +18,7 @@ type StoryMeta = {
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://netvietaudio.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://webtruyen.vn";
 
 async function fetchStoryMeta(slug: string): Promise<StoryMeta | null> {
   try {
@@ -38,9 +40,10 @@ const chapterNumberFromSlug = (input: string) => {
 type Props = { params: Promise<{ slug: string; chapterSlug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const t = await getTranslations("StoryPage");
   const { slug, chapterSlug } = await params;
   const story = await fetchStoryMeta(slug);
-  if (!story) return { title: "Không tìm thấy truyện" };
+  if (!story) return { title: t("notFound") };
 
   const chapterNum = chapterNumberFromSlug(chapterSlug);
   const chapter = chapterNum
@@ -48,14 +51,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : story.chapters?.[0];
 
   const chapterTitle = chapter
-    ? `Chương ${chapter.chapterNumber}: ${chapter.title}`
-    : "Đang tải chương";
-  
+    ? t("chapterTitle", { number: chapter.chapterNumber, title: chapter.title })
+    : t("chapterLoading");
   const title = `${chapterTitle} – ${story.title}`;
   const description =
     chapter?.description ||
-    `Nghe ${chapterTitle} của truyện ${story.title} miễn phí tại Netviet Audio.`;
-  const imageUrl = story.thumbnailUrl ?? `${SITE_URL}/og-image.png`;
+    t("chapterFallbackDescription", { chapterTitle, title: story.title });
+  const imageUrl = story.thumbnailUrl ?? `${SITE_URL}/og-default.jpg`;
 
   return {
     title,
@@ -77,6 +79,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function StoryChapterPage({ params }: Props) {
+  const t = await getTranslations("StoryPage");
   const { slug, chapterSlug } = await params;
   const story = await fetchStoryMeta(slug);
 
@@ -84,7 +87,7 @@ export default async function StoryChapterPage({ params }: Props) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Trang chủ", item: SITE_URL },
+      { "@type": "ListItem", position: 1, name: t("home"), item: SITE_URL },
       ...(story
         ? [
             {
@@ -96,7 +99,7 @@ export default async function StoryChapterPage({ params }: Props) {
             {
               "@type": "ListItem",
               position: 3,
-              name: `Chương ${chapterNumberFromSlug(chapterSlug) || chapterSlug}`,
+              name: chapterSlug,
               item: `${SITE_URL}/story/${story.slug}/${chapterSlug}`,
             },
           ]

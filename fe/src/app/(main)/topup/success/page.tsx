@@ -34,7 +34,7 @@ export default function TopupSuccessPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+        <div className="flex items-center justify-center p-4">
             <div className="max-w-2xl w-full">
                 {/* Success Card */}
                 <div className="bg-white dark:bg-gray-800 rounded-[40px] shadow-2xl shadow-emerald-200/40 dark:shadow-emerald-900/20 p-8 sm:p-12 text-center border-2 border-emerald-100 dark:border-emerald-900/30">

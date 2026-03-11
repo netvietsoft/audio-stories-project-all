@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
+import { MailModule } from '../mail/mail.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 // Controllers
 import { BillingController } from './controllers/billing.controller';
@@ -16,7 +18,7 @@ import { WebhookService } from './services/webhook.service';
 import { PackagesHelperService } from './services/packages-helper.service';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, MailModule, NotificationsModule],
   controllers: [
     BillingController,
     StripeWebhookController,

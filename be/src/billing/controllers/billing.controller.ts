@@ -4,6 +4,8 @@ import {
   Body,
   UseGuards,
   HttpCode,
+  Get,
+  Query,
 } from '@nestjs/common';
 import { JwtAccessGuard } from '../../auth/guards/jwt-access.guard';
 import { Account } from '../../auth/decorators/account.decorator';
@@ -31,5 +33,14 @@ export class BillingController {
       successUrl,
       cancelUrl,
     });
+  }
+
+  @Get('verify-payment')
+  @UseGuards(JwtAccessGuard)
+  async verifyPayment(
+    @Account() user: any,
+    @Query('session_id') sessionId: string,
+  ) {
+    return this.stripeService.verifyAndProcessPayment(user.sub, sessionId);
   }
 }

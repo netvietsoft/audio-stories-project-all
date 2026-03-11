@@ -67,4 +67,32 @@ export class NotificationsService {
 
     return { ok: true, count: result.count };
   }
+
+  async createPaymentNotification(
+    userId: string,
+    amount: number,
+    credits: number,
+    transactionId: string,
+    paymentMethod: string,
+  ) {
+    const formattedAmount = new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(amount);
+
+    return await this.prisma.notification.create({
+      data: {
+        userId,
+        type: 'transaction',
+        title: 'Thanh toán thành công',
+        body: `Bạn đã nạp thành công ${formattedAmount} và nhận được ${credits.toLocaleString()} credits qua ${paymentMethod}.`,
+        metadata: {
+          transactionId,
+          amount,
+          credits,
+          paymentMethod,
+        },
+      },
+    });
+  }
 }

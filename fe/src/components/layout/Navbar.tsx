@@ -197,21 +197,59 @@ export default function Navbar() {
 
                   {/* Dropdown Thông báo */}
                   {isNotifOpen && (
-                    <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-2 z-50">
-                      <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 font-medium">Thông báo mới</div>
-                      {notifs.length ? notifs.map((item) => (
-                        <button
-                          key={item.id}
-                          onClick={() => void markRead(item.id)}
-                          className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${item.isRead ? "text-gray-500 dark:text-gray-400" : "text-gray-800 dark:text-gray-200"}`}
-                        >
-                          <p className="font-medium">{item.title}</p>
-                          <p className="mt-1 line-clamp-2 text-xs opacity-80">{item.body}</p>
-                        </button>
-                      )) : (
-                        <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">Chưa có thông báo nào.</div>
-                      )}
-                      <Link href="/notifications" className="block px-4 py-2 text-center text-sm text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-50 dark:hover:bg-gray-700">Xem tất cả</Link>
+                    <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-50 max-h-[500px] overflow-hidden flex flex-col">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                        <h3 className="font-bold text-gray-900 dark:text-gray-100">Thông báo</h3>
+                        {unreadNotifs > 0 && (
+                          <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                            {unreadNotifs}
+                          </span>
+                        )}
+                      </div>
+                      <div className="overflow-y-auto flex-1">
+                        {notifs.length ? notifs.map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => void markRead(item.id)}
+                            className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors relative ${
+                              item.isRead 
+                                ? "bg-white dark:bg-gray-800" 
+                                : "bg-blue-50 dark:bg-blue-900/20"
+                            }`}
+                          >
+                            {!item.isRead && (
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 bg-blue-500 rounded-full"></span>
+                            )}
+                            <div className={item.isRead ? "ml-0" : "ml-4"}>
+                              <p className={`font-semibold ${item.isRead ? "text-gray-600 dark:text-gray-400" : "text-gray-900 dark:text-gray-100"}`}>
+                                {item.title}
+                              </p>
+                              <p className={`mt-1 line-clamp-2 text-xs ${item.isRead ? "text-gray-500 dark:text-gray-500" : "text-gray-700 dark:text-gray-300"}`}>
+                                {item.body}
+                              </p>
+                              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                                {new Date(item.createdAt).toLocaleDateString('vi-VN', { 
+                                  day: '2-digit', 
+                                  month: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          </button>
+                        )) : (
+                          <div className="px-4 py-8 text-center">
+                            <Bell className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có thông báo nào</p>
+                          </div>
+                        )}
+                      </div>
+                      <Link 
+                        href="/notifications" 
+                        className="block px-4 py-3 text-center text-sm text-blue-600 dark:text-blue-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
+                      >
+                        Xem tất cả thông báo
+                      </Link>
                     </div>
                   )}
                 </div>

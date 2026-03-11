@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+import prismaConfig from './prisma.config';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient(prismaConfig);
 
 async function main() {
   console.log('Seeding payment packages...');

@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+import prismaConfig from '../prisma/prisma.config';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient(prismaConfig);
 
 async function main() {
   console.log('Checking database columns...\n');

@@ -1,7 +1,8 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import * as argon2 from 'argon2';
+import prismaConfig from './prisma.config';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient(prismaConfig);
 
 async function main() {
   const slugify = (input: string) =>

@@ -8,8 +8,15 @@ export default getRequestConfig(async () => {
   const localeFromCookie = cookieStore.get(localeCookieName)?.value;
   const locale = isValidLocale(localeFromCookie) ? localeFromCookie : defaultLocale;
 
+  const messageLoaders: Record<string, () => Promise<{ default: Record<string, unknown> }>> = {
+    vi: () => import("../../messages/vi.json"),
+    en: () => import("../../messages/en.json"),
+  };
+
+  const loader = messageLoaders[locale] ?? messageLoaders["vi"];
+
   return {
     locale,
-    messages: (await import(`../../messages/${locale}.json`)).default,
+    messages: (await loader()).default,
   };
 });

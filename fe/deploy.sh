@@ -152,7 +152,7 @@ echo "✅ .next folder cleaned"
 
 # Create archive of source code
 echo "📦 Creating archive of source code..."
-TAR_FILES="src public next.config.ts package.json tsconfig.json tailwind.config.ts postcss.config.mjs ecosystem.config.js"
+TAR_FILES="src public messages next.config.ts package.json tsconfig.json tailwind.config.ts postcss.config.mjs ecosystem.config.js"
 
 # Add optional files if they exist
 [ -f "yarn.lock" ] && TAR_FILES="$TAR_FILES yarn.lock" && echo "  ✓ Including yarn.lock"
@@ -181,7 +181,7 @@ cd $SERVER_DIR
 # Extract source
 if [ -f "next-source.tar.gz" ]; then
     echo "Extracting source..."
-    rm -rf src public next.config.ts package.json yarn.lock package-lock.json tsconfig.json tailwind.config.ts postcss.config.mjs
+    rm -rf src public messages next.config.ts package.json yarn.lock package-lock.json tsconfig.json tailwind.config.ts postcss.config.mjs
     tar -xzf next-source.tar.gz
     rm -f next-source.tar.gz
 fi

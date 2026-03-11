@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { BookOpen, Clock3, ListMusic, Lock, PlayCircle } from "lucide-react";
 
@@ -94,9 +95,12 @@ export default function StoryDetailClient() {
       <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
         <div className="flex flex-col gap-4 sm:flex-row">
           <div className="h-36 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
-            <img
+            <Image
               src={story.thumbnailUrl || "https://placehold.co/300x450?text=No+Cover"}
               alt={story.title}
+              width={96}
+              height={144}
+              priority
               className="h-full w-full object-cover"
             />
           </div>

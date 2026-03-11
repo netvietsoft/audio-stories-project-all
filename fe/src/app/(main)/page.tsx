@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import StoryCard from "@/components/shared/StoryCard";
 import { apiClient } from "@/lib/api/api-client";
+import { fetchExploreCached } from "@/lib/api/public-story-cache";
 
 type StoryItem = {
   id: string;
@@ -121,11 +122,9 @@ export default function HomePage() {
       setIsLoading(true);
       try {
         const sectionRequests = storySections.map((section) =>
-          apiClient.get<ExploreResponse>("/stories/explore", {
-            params: {
-              limit: SECTION_LIMIT,
-              ...section.params,
-            },
+          fetchExploreCached<ExploreResponse>({
+            limit: SECTION_LIMIT,
+            ...section.params,
           }),
         );
 
@@ -156,7 +155,7 @@ export default function HomePage() {
             nextSections[section.key] = [];
             return;
           }
-          nextSections[section.key] = sectionItem.value.data?.data || [];
+          nextSections[section.key] = sectionItem.value.data || [];
         });
 
         const categoriesFromTop = catRes || [];

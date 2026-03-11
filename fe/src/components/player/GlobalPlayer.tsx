@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, X } from "lucide-react";
 
@@ -218,7 +219,14 @@ export default function GlobalPlayer() {
           <Link href={chapterHref} className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 transition hover:bg-gray-100/80 dark:hover:bg-gray-800/70">
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800">
               {currentTrack.coverUrl ? (
-                <img src={currentTrack.coverUrl} alt={currentTrack.title} className="h-full w-full object-cover" />
+                <Image
+                  src={currentTrack.coverUrl}
+                  alt={currentTrack.title}
+                  width={40}
+                  height={40}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
               ) : null}
             </div>
 
@@ -231,7 +239,14 @@ export default function GlobalPlayer() {
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800">
               {currentTrack.coverUrl ? (
-                <img src={currentTrack.coverUrl} alt={currentTrack.title} className="h-full w-full object-cover" />
+                <Image
+                  src={currentTrack.coverUrl}
+                  alt={currentTrack.title}
+                  width={40}
+                  height={40}
+                  loading="lazy"
+                  className="h-full w-full object-cover"
+                />
               ) : null}
             </div>
 

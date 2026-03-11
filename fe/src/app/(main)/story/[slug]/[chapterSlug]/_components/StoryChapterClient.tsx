@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isAxiosError } from "axios";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import {
   ChevronDown,
@@ -29,10 +30,16 @@ import {
 
 import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
-import RecommendedSlider from "@/components/story/RecommendedSlider";
-import StoryReader from "@/components/story/StoryReader";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
+
+const StoryReader = dynamic(() => import("@/components/story/StoryReader"), {
+  loading: () => <p className="text-sm text-gray-500 dark:text-gray-400">Đang tải module đọc truyện...</p>,
+});
+
+const RecommendedSlider = dynamic(() => import("@/components/story/RecommendedSlider"), {
+  loading: () => <p className="text-sm text-gray-500 dark:text-gray-400">Đang tải gợi ý truyện...</p>,
+});
 
 type ChapterItem = {
   id: string;

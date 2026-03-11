@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 
 import { ExploreQueryDto } from './dto/explore-query.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
@@ -47,6 +48,9 @@ export class StoriesController {
   }
 
   @Get('categories')
+  @UseInterceptors(CacheInterceptor)
+  @CacheKey('stories:categories')
+  @CacheTTL(3600)
   getCategories() {
     return this.storiesService.getAllCategories();
   }
@@ -62,8 +66,26 @@ export class StoriesController {
   }
 
   @Get('explore')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300)
   explore(@Query() query: ExploreQueryDto) {
     return this.storiesService.exploreStories(query);
+  }
+
+  @Get('trending')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(300)
+  trending(
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
+    @Query('trendWindow') trendWindow: 'today' | 'week' | 'month' | 'all' = 'week',
+  ) {
+    return this.storiesService.exploreStories({
+      page: Number(page) || 1,
+      limit: Number(limit) || 12,
+      sort: 'views',
+      trendWindow,
+    } as ExploreQueryDto);
   }
 
   @Get('recommended')
@@ -72,6 +94,8 @@ export class StoriesController {
   }
 
   @Get('categories/top')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(3600)
   getTopCategories(@Query('limit') limit?: string) {
     return this.storiesService.getTopCategories(Number(limit) || 5);
   }

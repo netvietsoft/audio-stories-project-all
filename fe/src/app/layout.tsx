@@ -9,11 +9,16 @@ const inter = Inter({ subsets: ["vietnamese"] });
 export const metadata: Metadata = {
   title: "Web Truyện Audio",
   description: "Nền tảng nghe truyện audio chất lượng cao.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" suppressHydrationWarning>
+      <head>
+        <meta name="theme-color" content="#2563eb" />
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className={`${inter.className} min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <AppProviders>{children}</AppProviders>

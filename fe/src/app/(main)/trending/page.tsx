@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import StoryCard from "@/components/shared/StoryCard";
-import { apiClient } from "@/lib/api/api-client";
+import { fetchExploreCached } from "@/lib/api/public-story-cache";
 
 type StoryItem = {
   id: string;
@@ -33,16 +33,14 @@ export default function TrendingPage() {
 
   useEffect(() => {
     const loadStories = async () => {
-      const res = await apiClient.get<ExploreResponse>("/stories/explore", {
-        params: {
-          page,
-          limit: LIMIT,
-          sort: "views",
-          trendWindow,
-        },
+      const res = await fetchExploreCached<ExploreResponse>({
+        page,
+        limit: LIMIT,
+        sort: "views",
+        trendWindow,
       });
-      setStories(res.data.data || []);
-      setLastPage(res.data.meta?.lastPage || 1);
+      setStories(res.data || []);
+      setLastPage(res.meta?.lastPage || 1);
     };
 
     void loadStories();

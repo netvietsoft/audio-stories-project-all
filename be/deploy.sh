@@ -163,6 +163,12 @@ echo "🚀 Deploying on server..."
 ssh $SSH_USER@$HOST << EOF
 cd $SERVER_DIR
 
+# Check and install yarn if not available
+if ! command -v yarn >/dev/null 2>&1; then
+    echo "📦 Installing yarn..."
+    npm install -g yarn
+fi
+
 # Extract source
 if [ -f "be-source.tar.gz" ]; then
     echo "Extracting source..."
@@ -173,21 +179,11 @@ fi
 
 # Install dependencies and build
 echo "📦 Installing dependencies..."
-if command -v yarn >/dev/null 2>&1; then
-    yarn install
-    npx prisma generate
-else
-    echo "  ⚠️  yarn not found, using npm..."
-    npm install
-    npx prisma generate
-fi
+yarn install
+npx prisma generate
 
 echo "📦 Building application on server..."
-if command -v yarn >/dev/null 2>&1; then
-    yarn build
-else
-    npm run build
-fi
+yarn build
 
 # Reload PM2
 if [ -f "ecosystem.config.js" ]; then

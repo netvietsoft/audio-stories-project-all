@@ -14,7 +14,7 @@ import {
     Eye,
     EyeOff,
 } from 'lucide-react';
-import { apiClient } from '@/lib/api/api-client';
+import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 
 interface PaymentPackage {
     code: string;

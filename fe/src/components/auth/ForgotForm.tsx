@@ -5,16 +5,17 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { forgotShema } from "@/lib/validation/auth"; 
+import { forgotShema } from "@/lib/validation/auth";
 import Link from "next/link";
 import { apiClient } from "@/lib/api/api-client";
+import { Mail, AlertCircle, CheckCircle2, Loader2, Headphones, ArrowLeft } from "lucide-react";
 
 type ForgotFormValues = z.infer<typeof forgotShema>;
 
 export default function ForgotForm() {
-  const router = useRouter();
+    const router = useRouter();
     const [isSuccess, setIsSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+    const [submitError, setSubmitError] = useState<string | null>(null);
 
     const {
         register,
@@ -28,89 +29,100 @@ export default function ForgotForm() {
         try {
             setSubmitError(null);
             await apiClient.post("/auth/forgot-password", {
-              email: data.email,
-              redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
+                email: data.email,
+                redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
             });
             setIsSuccess(true);
             setTimeout(() => {
-              router.push(`/reset-password?email=${encodeURIComponent(data.email)}`);
+                router.push(`/reset-password?email=${encodeURIComponent(data.email)}`);
             }, 1000);
         } catch (error) {
             const message =
-              typeof error === "object" &&
-              error !== null &&
-              "response" in error &&
-              typeof (error as any).response?.data?.message === "string"
-                ? (error as any).response.data.message
-                : "Không thể gửi yêu cầu. Vui lòng thử lại.";
+                typeof error === "object" &&
+                error !== null &&
+                "response" in error &&
+                typeof (error as any).response?.data?.message === "string"
+                    ? (error as any).response.data.message
+                    : "Không thể gửi yêu cầu. Vui lòng thử lại.";
             setSubmitError(message);
         }
     };
+
     return (
-        <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
-            <h2 className="text-2xl font-bold text-center mb-2">Quên mật khẩu</h2>
-            { /* trạng thái 1: gửi thành công -> hiện thông báo*/}
-            {isSuccess ? (
-                <div className="text-center mt-6">
-                    <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
+        <div className="w-full max-w-md mx-auto">
+            <div className="bg-white rounded-[32px] shadow-xl shadow-slate-200/50 border border-slate-200 p-8 md:p-10">
+                {/* Header */}
+                <div className="flex flex-col items-center mb-8">
+                    <div className="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center text-violet-600 mb-4">
+                        <Headphones className="w-8 h-8" />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Kiểm tra email của bạn</h3>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-                      Chúng tôi đã gửi mã đặt lại mật khẩu 6 số đến email bạn vừa nhập. Vui lòng nhập mã ở bước tiếp theo.
-                    </p>
-                    <Link 
-                        href="/login" 
-                        className="w-full inline-block py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600 rounded-md font-medium transition-colors"
-                    >
-                        Quay lại Đăng nhập
-                    </Link>
+                    <h1 className="text-2xl font-bold text-slate-900">Quên mật khẩu</h1>
+                    <p className="text-slate-500 text-sm mt-1 text-center">Đừng lo, chúng tôi sẽ gửi mã đặt lại về email của bạn</p>
                 </div>
-            ) : (
-                /* TRẠNG THÁI 2: Chưa gửi -> Hiển thị form nhập email */
-                <>
-          <p className="text-center text-gray-600 dark:text-gray-400 text-sm mb-6">
-            Đừng lo lắng! Hãy nhập email bạn đã đăng ký, chúng tôi sẽ gửi cho bạn mã 6 số để đặt lại mật khẩu.
-          </p>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {submitError && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{submitError}</p>}
-            <div>
-              <label className="block text-sm font-medium mb-1">Email của bạn</label>
-              <input
-                {...register("email")}
-                type="email"
-                className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="nhap@email.com"
-              />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+                {isSuccess ? (
+                    /* Success State */
+                    <div className="text-center">
+                        <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 mx-auto mb-4">
+                            <CheckCircle2 className="w-8 h-8" />
+                        </div>
+                        <h2 className="text-lg font-bold text-slate-900 mb-2">Kiểm tra email của bạn</h2>
+                        <p className="text-slate-500 text-sm mb-6">
+                            Chúng tôi đã gửi mã đặt lại mật khẩu 6 số đến email bạn vừa nhập. Vui lòng nhập mã ở bước tiếp theo.
+                        </p>
+                        <Link
+                            href="/login"
+                            className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-violet-600 font-medium transition-colors"
+                        >
+                            <ArrowLeft className="w-4 h-4" />
+                            Quay lại Đăng nhập
+                        </Link>
+                    </div>
+                ) : (
+                    /* Form State */
+                    <>
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                            {submitError && (
+                                <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl flex items-center gap-3 text-sm animate-in fade-in zoom-in duration-200">
+                                    <AlertCircle className="w-4 h-4 shrink-0" />
+                                    <p>{submitError}</p>
+                                </div>
+                            )}
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-semibold text-slate-700 ml-1">Email của bạn</label>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-violet-500 transition-colors">
+                                        <Mail className="w-5 h-5" />
+                                    </div>
+                                    <input
+                                        {...register("email")}
+                                        type="email"
+                                        className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all text-slate-900 placeholder:text-slate-400"
+                                        placeholder="nhap@email.com"
+                                    />
+                                </div>
+                                {errors.email && <p className="text-red-500 text-xs ml-1">{errors.email.message}</p>}
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="w-full py-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-2xl shadow-lg shadow-violet-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                            >
+                                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Gửi mã đặt lại mật khẩu"}
+                            </button>
+                        </form>
+
+                        <p className="mt-6 text-center text-sm text-slate-500">
+                            Nhớ ra mật khẩu rồi?{" "}
+                            <Link href="/login" className="text-violet-600 hover:text-violet-700 font-semibold transition-colors">
+                                Đăng nhập
+                            </Link>
+                        </p>
+                    </>
+                )}
             </div>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-2 px-4 mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
-            >
-              {isSubmitting ? (
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : null}
-              {isSubmitting ? "Đang gửi..." : "Gửi mã đặt lại mật khẩu"}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-            Nhớ ra mật khẩu rồi?{" "}
-            <Link href="/login" className="text-blue-600 hover:underline font-medium">
-              Đăng nhập
-            </Link>
-          </p>
-        </>
-            )}
         </div>
     );
 }

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Users, FileText, TrendingUp, Activity, Loader2 } from 'lucide-react';
-import { apiClient } from '@/lib/api/api-client';
+import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 
 interface DashboardStats {
     totalUsers: number;

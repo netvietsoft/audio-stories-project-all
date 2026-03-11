@@ -224,7 +224,8 @@ export default function GlobalPlayer() {
 
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.title}</p>
-              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || "AudioTruyen"}</p>
+              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || "Netviet Audio"}</p>
+
             </div>
           </Link>
         ) : (
@@ -237,7 +238,8 @@ export default function GlobalPlayer() {
 
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.title}</p>
-              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || "AudioTruyen"}</p>
+              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || "Netviet Audio"}</p>
+
             </div>
           </div>
         )}

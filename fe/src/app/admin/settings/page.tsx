@@ -13,7 +13,7 @@ import {
     Edit2,
     X,
 } from 'lucide-react';
-import { apiClient } from '@/lib/api/api-client';
+import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 
 interface SettingItem {
     value: any;

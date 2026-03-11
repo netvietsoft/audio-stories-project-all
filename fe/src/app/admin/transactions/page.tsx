@@ -11,8 +11,9 @@ import {
     XCircle,
     CheckCircle,
     Filter,
+    Trash2,
 } from 'lucide-react';
-import { apiClient } from '@/lib/api/api-client';
+import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 
 interface Payment {
     id: string;
@@ -47,6 +48,7 @@ export default function TransactionsPage() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const limit = 20;
 
     useEffect(() => {
@@ -80,6 +82,24 @@ export default function TransactionsPage() {
             setStats(res.data);
         } catch (error) {
             console.error('Failed to fetch stats:', error);
+        }
+    };
+
+    const handleDelete = async (paymentId: string) => {
+        if (!confirm('Bạn có chắc chắn muốn xóa giao dịch này?')) {
+            return;
+        }
+
+        setDeletingId(paymentId);
+        try {
+            await apiClient.delete(`/transactions/payments/${paymentId}`);
+            await fetchPayments();
+            await fetchStats();
+        } catch (error) {
+            console.error('Failed to delete payment:', error);
+            alert('Không thể xóa giao dịch. Vui lòng thử lại.');
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -248,13 +268,14 @@ export default function TransactionsPage() {
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Trạng thái</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Mã GD</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Thời gian</th>
+                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                             {isLoading ? (
                                 Array(5).fill(0).map((_, i) => (
                                     <tr key={i} className="animate-pulse">
-                                        <td colSpan={7} className="px-8 py-6">
+                                        <td colSpan={8} className="px-8 py-6">
                                             <div className="h-12 bg-slate-50 rounded-2xl" />
                                         </td>
                                     </tr>
@@ -290,11 +311,23 @@ export default function TransactionsPage() {
                                                 {formatDate(payment.paidAt || payment.createdAt)}
                                             </p>
                                         </td>
+                                        <td className="px-8 py-5">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => handleDelete(payment.id)}
+                                                    disabled={deletingId === payment.id}
+                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group/btn"
+                                                    title="Xóa giao dịch"
+                                                >
+                                                    <Trash2 className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={7} className="px-8 py-20 text-center">
+                                    <td colSpan={8} className="px-8 py-20 text-center">
                                         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
                                             <DollarSign className="w-6 h-6 text-slate-300" />
                                         </div>

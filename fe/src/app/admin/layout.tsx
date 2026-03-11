@@ -6,9 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package } from 'lucide-react';
 
 import { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api/api-client';
-import { useUserStore } from '@/stores/user-store';
-import { clearAuthCookies } from '@/lib/auth/cookies';
+import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { useAdminStore } from '@/stores/admin-store';
 
 export default function AdminLayout({
     children,
@@ -30,7 +29,7 @@ export default function AdminLayout({
         }
 
         const checkAdminAccess = () => {
-            const user = useUserStore.getState().user;
+            const user = useAdminStore.getState().user;
             const hasAdminRole = !!(user?.roles?.includes('ADMIN') || user?.roles?.includes('admin'));
 
             if (typeof window !== 'undefined') {
@@ -55,18 +54,19 @@ export default function AdminLayout({
             if (typeof window !== 'undefined') {
                 localStorage.removeItem('adminLoggedIn');
                 localStorage.removeItem('userEmail');
+                localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY);
+                localStorage.removeItem(ADMIN_REFRESH_TOKEN_KEY);
             }
 
             // 1. Call backend logout
             try {
-                await apiClient.post('/auth/logout');
+                await adminApiClient.post('/auth/logout');
             } catch (err) {
                 console.error('Backend logout failed:', err);
             }
 
-            // 2. Clear store and cookies
-            useUserStore.getState().clearAuth();
-            clearAuthCookies();
+            // 2. Clear admin store
+            useAdminStore.getState().clearAuth();
 
             router.push('/admin/login');
             router.refresh();

@@ -3,9 +3,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Shield, Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
-import { apiClient } from '@/lib/api/api-client';
-import { useUserStore } from '@/stores/user-store';
-import { setAuthCookies } from '@/lib/auth/cookies';
+import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { useAdminStore } from '@/stores/admin-store';
 
 function LoginForm() {
     const [email, setEmail] = useState('');
@@ -14,7 +13,7 @@ function LoginForm() {
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     const searchParams = useSearchParams();
-    const setAuth = useUserStore((state) => state.setAuth);
+    const setAuth = useAdminStore((state) => state.setAuth);
 
     useEffect(() => {
         const reason = searchParams.get('reason');
@@ -32,17 +31,13 @@ function LoginForm() {
 
         try {
             // 1. Call real login API
-            const loginRes = await apiClient.post('/auth/login', { email, password });
+            const loginRes = await adminApiClient.post('/auth/login', { email, password });
 
             if (loginRes.data.ok) {
                 const { access_token, refresh_token } = loginRes.data;
 
-                // Temporarily set tokens to fetch user info
-                // Note: setAuthCookies handles the document.cookie for the browser
-                setAuthCookies(access_token, refresh_token);
-
                 // 2. Fetch user info to verify role
-                const meRes = await apiClient.get('/auth/me', {
+                const meRes = await adminApiClient.get('/auth/me', {
                     headers: { Authorization: `Bearer ${access_token}` }
                 });
 
@@ -51,11 +46,13 @@ function LoginForm() {
                 // Check for ADMIN role
                 if (userData.role === 'ADMIN' || userData.roles?.includes('ADMIN')) {
                     if (typeof window !== 'undefined') {
+                        localStorage.setItem(ADMIN_ACCESS_TOKEN_KEY, access_token);
+                        localStorage.setItem(ADMIN_REFRESH_TOKEN_KEY, refresh_token);
                         localStorage.setItem('adminLoggedIn', 'true');
                         localStorage.setItem('userEmail', email);
                     }
 
-                    // Update user store
+                    // Update admin store
                     setAuth({
                         user: {
                             id: userData.sub,
@@ -80,7 +77,7 @@ function LoginForm() {
                     if (typeof window !== 'undefined') {
                         localStorage.removeItem('adminLoggedIn');
                     }
-                    useUserStore.getState().clearAuth();
+                    useAdminStore.getState().clearAuth();
                 }
             } else {
                 setError('Đăng nhập không thành công.');

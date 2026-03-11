@@ -3,9 +3,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Đặt lại mật khẩu | Web Truyện Audio",
-  description: "Đặt lại mật khẩu của bạn để tiếp tục trải nghiệm Web Truyện Audio với nhiều tính năng hấp dẫn.",
+  title: "Đặt lại mật khẩu | Netviet Audio",
+  description: "Đặt lại mật khẩu của bạn để tiếp tục trải nghiệm Netviet Audio với nhiều tính năng hấp dẫn.",
 };
+
 
 export default function ResetPasswordPage() {
     return (

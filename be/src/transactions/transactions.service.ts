@@ -153,4 +153,27 @@ export class TransactionsService {
             failedCount,
         };
     }
+
+    async deletePayment(id: string) {
+        // Check if payment exists
+        const payment = await this.prisma.payment.findUnique({
+            where: { id },
+        });
+
+        if (!payment) {
+            throw new Error('Payment not found');
+        }
+
+        // Delete related credit transactions first
+        await this.prisma.creditTransaction.deleteMany({
+            where: { referenceId: id },
+        });
+
+        // Delete the payment
+        await this.prisma.payment.delete({
+            where: { id },
+        });
+
+        return { success: true, message: 'Payment deleted successfully' };
+    }
 }

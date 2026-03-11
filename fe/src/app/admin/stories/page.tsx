@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 import Link from 'next/link';
-import { apiClient } from '@/lib/api/api-client';
+import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 
 interface Story {
     id: string;

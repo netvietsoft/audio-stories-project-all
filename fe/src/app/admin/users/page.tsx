@@ -17,7 +17,7 @@ import {
     Download
 } from 'lucide-react';
 import Link from 'next/link';
-import { apiClient } from '@/lib/api/api-client';
+import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 
 interface User {
     id: string;

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Loader2, CheckCircle, XCircle, Clock, Copy, Check, Download } from 'lucide-react';
+import { apiClient } from '@/lib/api/api-client';
 
 interface VietQRPaymentProps {
   orderId: string;
@@ -31,6 +32,35 @@ export default function VietQRPayment({
   const [status, setStatus] = useState<'pending' | 'checking' | 'success' | 'expired'>('pending');
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [copied, setCopied] = useState<string | null>(null);
+
+  // Auto-check payment status every 10 seconds
+  useEffect(() => {
+    if (status !== 'pending') return;
+
+    const checkPayment = async () => {
+      try {
+        const response = await apiClient.get(`/billing/vietqr/order/${orderId}/status`);
+        const data = response.data;
+        
+        if (data.status === 'SUCCESS') {
+          setStatus('success');
+          setTimeout(() => onSuccess(), 1500);
+        } else if (data.is_expired) {
+          setStatus('expired');
+        }
+      } catch (error) {
+        console.error('Auto-check payment failed:', error);
+      }
+    };
+
+    // Check immediately
+    checkPayment();
+
+    // Then check every 10 seconds
+    const interval = setInterval(checkPayment, 10000);
+
+    return () => clearInterval(interval);
+  }, [orderId, status, onSuccess]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -252,18 +282,32 @@ export default function VietQRPayment({
           Huỷ
         </button>
         <button
-          onClick={() => {
+          onClick={async () => {
             setStatus('checking');
-            // TODO: Check payment status
-            setTimeout(() => {
-              // Simulate success
-              setStatus('success');
-              onSuccess();
-            }, 2000);
+            try {
+              const response = await apiClient.get(`/billing/vietqr/order/${orderId}/status`);
+              const data = response.data;
+              
+              if (data.status === 'SUCCESS') {
+                setStatus('success');
+                setTimeout(() => onSuccess(), 1000);
+              } else if (data.is_expired) {
+                setStatus('expired');
+              } else {
+                // Still pending
+                setStatus('pending');
+                alert('Chưa nhận được thanh toán. Vui lòng kiểm tra lại hoặc đợi thêm ít phút.');
+              }
+            } catch (error) {
+              console.error('Failed to check payment status:', error);
+              setStatus('pending');
+              alert('Không thể kiểm tra trạng thái thanh toán. Vui lòng thử lại.');
+            }
           }}
-          className="flex-1 py-3 bg-slate-900 dark:bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-slate-600"
+          disabled={status === 'checking'}
+          className="flex-1 py-3 bg-slate-900 dark:bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Tôi đã chuyển khoản
+          {status === 'checking' ? 'Đang kiểm tra...' : 'Tôi đã chuyển khoản'}
         </button>
       </div>
 

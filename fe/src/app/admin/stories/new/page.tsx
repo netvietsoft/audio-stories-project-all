@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Newspaper, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { StoryForm } from '../_components/StoryForm';
-import { apiClient } from '@/lib/api/api-client';
+import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 
 export default function NewStoryPage() {
     const router = useRouter();

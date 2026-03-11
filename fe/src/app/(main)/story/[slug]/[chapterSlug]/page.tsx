@@ -587,7 +587,8 @@ export default function StoryChapterPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: story?.title || "AudioTruyen",
+          title: story?.title || "Netviet Audio",
+
           text: "Nghe truyện này cùng mình nhé",
           url,
         });

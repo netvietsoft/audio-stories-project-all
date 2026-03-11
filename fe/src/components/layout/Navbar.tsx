@@ -123,8 +123,9 @@ export default function Navbar() {
             {/* LOGO & MENU CHÍNH (Desktop) */}
             <div className="flex items-center gap-8">
               <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                AudioTruyen
+                Netviet Audio
               </Link>
+
 
               {/* Menu Desktop (Ẩn khi màn hình nhỏ hơn lg) */}
               <nav className="hidden lg:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">

@@ -54,8 +54,27 @@ export class StripeService {
       throw new BadRequestException('User not found');
     }
 
-    // Get or create Stripe customer
-    let customerId = (user as any).stripeCustomerId;
+    // Get or create Stripe customer, with fallback if stored ID is invalid
+    let customerId = (user as any).stripeCustomerId as string | null;
+
+    if (customerId) {
+      // Verify the customer still exists in Stripe
+      try {
+        await stripe.customers.retrieve(customerId);
+      } catch (err: any) {
+        if (err?.code === 'resource_missing') {
+          this.logger.warn(`Stripe customer ${customerId} not found, creating a new one`);
+          customerId = null; // Force re-creation below
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { stripeCustomerId: null } as any,
+          });
+        } else {
+          throw err;
+        }
+      }
+    }
+
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: user.email,
@@ -68,6 +87,7 @@ export class StripeService {
         data: { stripeCustomerId: customerId } as any,
       });
     }
+
 
     // Convert VND to USD (approximate rate)
     const exchangeRate = parseFloat(process.env.USD_TO_VND_RATE || '25000');

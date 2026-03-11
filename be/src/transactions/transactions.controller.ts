@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Delete, Param } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { TransactionQueryDto } from './dto/transaction-query.dto';
 import { Account } from '@/auth/decorators/account.decorator';
@@ -36,5 +36,12 @@ export class TransactionsController {
     @Roles('ADMIN')
     getStats() {
         return this.transactionsService.getPaymentStats();
+    }
+
+    @Delete('payments/:id')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    deletePayment(@Param('id') id: string) {
+        return this.transactionsService.deletePayment(id);
     }
 }

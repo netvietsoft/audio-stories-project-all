@@ -147,7 +147,6 @@ TAR_FILES="src prisma package.json ecosystem.config.js nest-cli.json tsconfig.js
 # Add optional files if they exist
 [ -f "package-lock.json" ] && TAR_FILES="$TAR_FILES package-lock.json" && echo "  ✓ Including package-lock.json"
 [ -f "yarn.lock" ] && TAR_FILES="$TAR_FILES yarn.lock" && echo "  ✓ Including yarn.lock"
-[ -f "prisma/prisma.config.ts" ] && echo "  ✓ Including prisma.config.ts"
 
 tar -czf be-source.tar.gz $TAR_FILES
 
@@ -175,6 +174,18 @@ if [ -f "be-source.tar.gz" ]; then
     rm -rf src prisma package.json package-lock.json nest-cli.json tsconfig.json tsconfig.build.json
     tar -xzf be-source.tar.gz
     rm -f be-source.tar.gz
+fi
+
+# Ensure Prisma 6 is installed (remove Prisma 7 if exists)
+echo "📦 Ensuring Prisma 6..."
+if command -v prisma >/dev/null 2>&1; then
+    PRISMA_VERSION=\$(prisma --version 2>/dev/null | grep -oP 'prisma\\s+:\\s+\\K[0-9]+' | head -1)
+    if [ "\$PRISMA_VERSION" = "7" ]; then
+        echo "  Removing Prisma 7 global..."
+        sudo npm uninstall -g prisma 2>/dev/null || true
+        sudo npm install -g prisma@6.0.0
+        echo "  ✓ Installed Prisma 6 globally"
+    fi
 fi
 
 # Install dependencies and build

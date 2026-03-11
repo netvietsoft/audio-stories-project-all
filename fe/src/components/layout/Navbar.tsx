@@ -122,8 +122,11 @@ export default function Navbar() {
 
             {/* LOGO & MENU CHÍNH (Desktop) */}
             <div className="flex items-center gap-8">
-              <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
-                Netviet Audio
+              <Link href="/" className="text-2xl font-bold whitespace-nowrap flex items-center gap-2">
+                <span className="sm:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-white text-xl shadow-md">
+                  N
+                </span>
+                <span className="hidden sm:inline text-blue-600 dark:text-blue-400">Netviet Audio</span>
               </Link>
 
 
@@ -151,7 +154,7 @@ export default function Navbar() {
                 </div>
                 <Link href="/new" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Mới đăng</Link>
                 <Link href="/trending" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Trending</Link>
-                <Link href="/vinh-danh" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">BXH Hội Viên</Link>
+                <Link href="/vinh-danh" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">BXH Hội viên</Link>
               </nav>
             </div>
 
@@ -212,11 +215,10 @@ export default function Navbar() {
                           <button
                             key={item.id}
                             onClick={() => void markRead(item.id)}
-                            className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors relative ${
-                              item.isRead 
-                                ? "bg-white dark:bg-gray-800" 
+                            className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors relative ${item.isRead
+                                ? "bg-white dark:bg-gray-800"
                                 : "bg-blue-50 dark:bg-blue-900/20"
-                            }`}
+                              }`}
                           >
                             {!item.isRead && (
                               <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 bg-blue-500 rounded-full"></span>
@@ -229,8 +231,8 @@ export default function Navbar() {
                                 {item.body}
                               </p>
                               <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                                {new Date(item.createdAt).toLocaleDateString('vi-VN', { 
-                                  day: '2-digit', 
+                                {new Date(item.createdAt).toLocaleDateString('vi-VN', {
+                                  day: '2-digit',
                                   month: '2-digit',
                                   hour: '2-digit',
                                   minute: '2-digit'
@@ -245,8 +247,8 @@ export default function Navbar() {
                           </div>
                         )}
                       </div>
-                      <Link 
-                        href="/notifications" 
+                      <Link
+                        href="/notifications"
                         className="block px-4 py-3 text-center text-sm text-blue-600 dark:text-blue-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
                       >
                         Xem tất cả thông báo
@@ -255,12 +257,12 @@ export default function Navbar() {
                   )}
                 </div>
 
-                {/* Avatar */}
+                {/* Avatar Desktoop Only */}
                 {!user ? (
-                  <div className="flex items-center gap-2">
-                    <Link href="/login" className="px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm font-medium">Đăng nhập</Link>
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Link href="/login" className="px-5 py-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm font-semibold">Đăng nhập</Link>
                   </div>
-                ) : (<div className="relative">
+                ) : (<div className="relative hidden sm:block">
                   <button
                     onClick={
                       () => {
@@ -308,14 +310,14 @@ export default function Navbar() {
                 {/* Nút Hamburger cho mobile/tablet, nằm cạnh avatar */}
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
-                  className="md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 ml-1"
+                  className="sm:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 ml-1"
                   aria-label="Mở menu"
                 >
                   <Menu className="h-6 w-6" />
                 </button>
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
-                  className="hidden md:block lg:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 ml-1"
+                  className="hidden sm:block lg:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 ml-1"
                   aria-label="Mở menu"
                 >
                   <Menu className="h-6 w-6" />
@@ -328,41 +330,130 @@ export default function Navbar() {
 
       {/* OVERLAY MENU (Dành cho Mobile & Tablet) */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[60] bg-white dark:bg-gray-950 flex flex-col pt-20 px-6 lg:hidden animate-in slide-in-from-bottom-5">
-
-          {/* NÚT TẮT (CLOSE) DÀNH CHO OVERLAY */}
-          <button
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-[60] bg-gray-900/40 backdrop-blur-sm lg:hidden transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="absolute top-5 right-5 p-2 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            aria-label="Đóng menu"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          ></div>
 
-          <div className="relative mb-6">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleSearch}
-              placeholder="Nhập tên truyện rồi ấn Enter..."
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-900 text-lg outline-none"
-            />
-            <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
+          {/* Side Sheet */}
+          <div className="fixed inset-y-0 right-0 z-[70] w-[85%] max-w-sm bg-white dark:bg-slate-900 shadow-2xl flex flex-col lg:hidden animate-in slide-in-from-right duration-300">
+            {/* Header: User Info / Login */}
+            <div className="p-5 border-b border-gray-100 dark:border-gray-800 relative bg-gradient-to-br from-violet-50/50 to-transparent dark:from-violet-900/10">
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="absolute top-4 right-4 p-2 rounded-full bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 shadow-sm border border-gray-100 dark:border-gray-700"
+                aria-label="Đóng menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              {user ? (
+                <div className="flex items-center gap-3 pr-10">
+                  <img src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} alt="Avatar" className="h-12 w-12 rounded-full border-2 border-violet-200 dark:border-violet-800 object-cover" />
+                  <div>
+                    <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1">{user.name || 'Người dùng'}</h3>
+                    <p className="text-xs text-violet-600 dark:text-violet-400 font-medium">{user.email}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="pr-10">
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Chào mừng đến với Netviet</h3>
+                  <Link 
+                    href="/login" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex justify-center w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-sm shadow-md active:scale-95 transition-all"
+                  >
+                    Đăng nhập / Đăng ký
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Menu Items */}
+            <div className="flex-1 overflow-y-auto p-5">
+              <div className="relative mb-6">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearch}
+                  placeholder="Tìm truyện..."
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm outline-none focus:ring-2 focus:ring-violet-200 transition-all"
+                />
+                <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-gray-400" />
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">Khám phá</p>
+                <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                  <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500"><Search className="w-4 h-4" /></span>
+                  Trang chủ
+                </Link>
+                <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                  <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500"><Search className="w-4 h-4" /></span>
+                  Thể loại
+                </Link>
+                <Link href="/new" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                  <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-green-500"><Search className="w-4 h-4" /></span>
+                  Mới đăng
+                </Link>
+                <Link href="/trending" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                  <span className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-500"><Search className="w-4 h-4" /></span>
+                  Thịnh hành
+                </Link>
+                <Link href="/vinh-danh" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                  <span className="w-8 h-8 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center text-yellow-500"><Search className="w-4 h-4" /></span>
+                  BXH Hội viên
+                </Link>
+              </div>
+
+              {user && (
+                <div className="mt-6 space-y-1">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">Cá nhân</p>
+                  <Link href="/topup" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-violet-700 dark:text-violet-400 font-semibold bg-violet-50 dark:bg-violet-900/20">
+                    <span className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center"><Coins className="w-4 h-4" /></span>
+                    Nạp Credits
+                  </Link>
+                  <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                    <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500"><UserCircle className="w-4 h-4" /></span>
+                    Hồ sơ
+                  </Link>
+                  <Link href="/profile/favorites" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                    <span className="w-8 h-8 rounded-lg bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center text-pink-500"><Heart className="w-4 h-4" /></span>
+                    Yêu thích
+                  </Link>
+                  <Link href="/profile/history" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                    <span className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500"><History className="w-4 h-4" /></span>
+                    Lịch sử nghe
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {user && (
+              <div className="p-5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-900/50">
+                <button
+                  onClick={() => {
+                    useUserStore.getState().clearAuth();
+                    clearAuthCookies();
+                    if (typeof window !== "undefined") {
+                      localStorage.removeItem(ACCESS_TOKEN_KEY);
+                      localStorage.removeItem(REFRESH_TOKEN_KEY);
+                    }
+                    setIsMobileMenuOpen(false);
+                    router.push("/login");
+                  }}
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/10 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" /> Đăng xuất
+                </button>
+              </div>
+            )}
           </div>
-
-          <nav className="flex flex-col space-y-4 text-xl font-medium text-gray-800 dark:text-gray-200">
-            <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>Trang chủ</Link>
-            <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)}>Thể loại</Link>
-            <Link href="/new" onClick={() => setIsMobileMenuOpen(false)}>Mới đăng</Link>
-            <Link href="/trending" onClick={() => setIsMobileMenuOpen(false)}>Thịnh hành</Link>
-            <Link href="/vinh-danh" onClick={() => setIsMobileMenuOpen(false)}>Vinh danh</Link>
-            <Link href="/topup" className="text-amber-600 dark:text-amber-500" onClick={() => setIsMobileMenuOpen(false)}>Nạp Credits</Link>
-          </nav>
-        </div>
+        </>
       )}
-
-
     </>
   );
 }

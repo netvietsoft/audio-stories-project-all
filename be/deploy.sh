@@ -142,9 +142,13 @@ echo "✅ .env file prepared for build"
 
 # Create archive of source code
 echo "📦 Creating archive of source code..."
-TAR_FILES="src prisma package.json package-lock.json ecosystem.config.js nest-cli.json tsconfig.json tsconfig.build.json"
-# Add prisma.config.ts if exists (Prisma 7)
+TAR_FILES="src prisma package.json ecosystem.config.js nest-cli.json tsconfig.json tsconfig.build.json"
+
+# Add optional files if they exist
+[ -f "package-lock.json" ] && TAR_FILES="$TAR_FILES package-lock.json" && echo "  ✓ Including package-lock.json"
+[ -f "yarn.lock" ] && TAR_FILES="$TAR_FILES yarn.lock" && echo "  ✓ Including yarn.lock"
 [ -f "prisma/prisma.config.ts" ] && echo "  ✓ Including prisma.config.ts"
+
 tar -czf be-source.tar.gz $TAR_FILES
 
 # Upload to server

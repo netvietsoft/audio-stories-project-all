@@ -85,7 +85,7 @@ env=$(echo "$env" | tr -d '\r')
 # Setup Host and Env File
 if [ "$env" == 'DEV' ]; then
     echo "Deploying DEV"
-    HOST=68.183.179.100
+    HOST=72.62.198.196
     ENV_FILE=.env.dev
 elif [ "$env" == 'PROD' ]; then
     echo "Deploying PROD"

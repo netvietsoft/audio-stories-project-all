@@ -1,0 +1,327 @@
+{
+  "LanguageSwitcher": {
+    "label": "Ngôn ngữ",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "Navbar": {
+    "home": "Trang chủ",
+    "categories": "Thể loại",
+    "viewAll": "Xem tất cả",
+    "new": "Mới đăng",
+    "trending": "Trending",
+    "memberRanking": "BXH Hội Viên",
+    "searchPlaceholder": "Tìm truyện...",
+    "topUp": "Nạp tiền",
+    "notifications": "Thông báo",
+    "emptyNotifications": "Chưa có thông báo nào",
+    "viewAllNotifications": "Xem tất cả thông báo",
+    "login": "Đăng nhập",
+    "hello": "Xin chào, {name}",
+    "profile": "Trang cá nhân",
+    "favorites": "Yêu thích",
+    "listeningHistory": "Lịch sử nghe",
+    "logout": "Đăng xuất",
+    "openMenu": "Mở menu",
+    "closeMenu": "Đóng menu",
+    "mobileSearchPlaceholder": "Nhập tên truyện rồi ấn Enter...",
+    "popular": "Thịnh hành",
+    "hallOfFame": "Vinh danh",
+    "topUpCredits": "Nạp Credits",
+    "quickSettings": "Tùy chọn nhanh",
+    "language": "Ngôn ngữ",
+    "darkMode": "Chế độ tối",
+    "lightMode": "Chế độ sáng",
+    "account": "Tài khoản",
+    "dateFormat": "vi-VN"
+  },
+  "Footer": {
+    "about": "Giới thiệu",
+    "terms": "Điều khoản",
+    "privacy": "Bảo mật",
+    "dmca": "DMCA",
+    "rightsReserved": "All rights reserved."
+  },
+  "Home": {
+    "loadError": "Lỗi tải trang chủ:",
+    "heroBadge": "Hero Section",
+    "heroTitleLine1": "Banner quảng cáo truyện hot,",
+    "heroTitleLine2": "có slideshow tự động",
+    "heroFeatured": "Đề cử nổi bật: {title}",
+    "heroFallback": "Khám phá những bộ truyện đang được nghe nhiều nhất.",
+    "listenNow": "Nghe ngay",
+    "viewTrending": "Xem trending",
+    "viewAll": "Xem tất cả",
+    "noData": "Chưa có dữ liệu cho mục này.",
+    "newestTitle": "Truyện mới đăng",
+    "newestSubtitle": "Vừa cập nhật chương mới nhất.",
+    "trendingTitle": "Truyện Trending",
+    "trendingSubtitle": "Đang được nghe nhiều nhất tuần qua.",
+    "popularTitle": "Truyện phổ biến",
+    "popularSubtitle": "Top những truyện được đánh giá cao.",
+    "completedTitle": "Truyện hoàn thành",
+    "completedSubtitle": "Đã ra đủ chương, cày ngay không cần chờ.",
+    "featuredCategoriesTitle": "Thể loại nổi bật",
+    "featuredCategoriesSubtitle": "Lựa chọn thể loại yêu thích của bạn",
+    "storiesCount": "{count} truyện",
+    "otherCategories": "Các thể loại khác",
+    "moreCategories": "+{count} thể loại",
+    "hallTitle": "Vinh danh hội viên",
+    "hallSubtitle": "Banner top 3 + nút xem bảng xếp hạng đầy đủ",
+    "viewFullRanking": "Xem bảng xếp hạng đầy đủ",
+    "top": "Top {rank}",
+    "vipUnlocked": "VIP {tier} | {count} truyện mở"
+  },
+  "StoryDetail": {
+    "loading": "Đang tải danh sách chương...",
+    "notFound": "Không tìm thấy truyện.",
+    "author": "Tác giả",
+    "authorUpdating": "Đang cập nhật",
+    "listens": "{count} lượt nghe",
+    "descriptionUpdating": "Truyện đang cập nhật giới thiệu.",
+    "listenFromFirst": "Nghe từ chương đầu",
+    "introTitle": "Giới thiệu truyện",
+    "introUpdating": "Truyện đang cập nhật phần giới thiệu.",
+    "chapterList": "Danh sách chương",
+    "totalChapters": "{count} chương",
+    "chapterTitle": "Chương {number}: {title}",
+    "readListen": "Đọc/Nghe",
+    "unlockVip": "VIP",
+    "unlockTimed": "Hẹn giờ",
+    "unlockOpened": "Đã mở khóa"
+  },
+  "StoryChapterClient": {
+    "loadingReader": "Đang tải module đọc truyện...",
+    "loadingRecommendations": "Đang tải gợi ý truyện..."
+  },
+  "StoryPage": {
+    "notFound": "Không tìm thấy truyện",
+    "audioSuffix": "Truyện Audio",
+    "fallbackDescription": "Nghe truyện audio {title} miễn phí tại WebTruyen.",
+    "home": "Trang chủ",
+    "explore": "Khám phá",
+    "chapterLoading": "Đang tải chương",
+    "chapterTitle": "Chương {number}: {title}",
+    "chapterFallbackDescription": "Nghe {chapterTitle} của truyện {title} miễn phí tại WebTruyen."
+  },
+  "Player": {
+    "defaultAuthor": "AudioTruyen",
+    "speedTitle": "Chỉnh tốc độ phát",
+    "audioProgress": "Tiến trình audio",
+    "volume": "Âm lượng"
+  },
+  "Common": {
+    "loading": "Đang tải...",
+    "loadMore": "Xem thêm",
+    "allShown": "Đã hiển thị hết dữ liệu.",
+    "prev": "Trước",
+    "next": "Tiếp",
+    "page": "Trang {page}/{lastPage}",
+    "dateFormat": "vi-VN"
+  },
+  "ExplorePage": {
+    "title": "Khám phá truyện"
+  },
+  "NewPage": {
+    "title": "Trang Mới đăng",
+    "subtitle": "Sắp xếp theo ngày mới nhất, phân trang 12 truyện/trang."
+  },
+  "TrendingPage": {
+    "title": "Trang Trending",
+    "subtitle": "Sắp xếp theo lượt nghe, lọc hôm nay/tuần/tháng/tất cả, phân trang 12 truyện/trang.",
+    "today": "Hôm nay",
+    "week": "Tuần",
+    "month": "Tháng",
+    "all": "Tất cả"
+  },
+  "CategoriesPage": {
+    "title": "Trang thể loại",
+    "subtitle": "Liệt kê tất cả thể loại, click để lọc truyện theo thể loại.",
+    "storiesCount": "{count} truyện"
+  },
+  "CategoryStoriesPage": {
+    "title": "Thể loại: {name}",
+    "subtitle": "Danh sách truyện theo thể loại, phân trang 12 truyện/trang.",
+    "searchPlaceholder": "Tìm theo tên truyện...",
+    "allStatuses": "Tất cả trạng thái",
+    "ongoing": "Đang ra",
+    "completed": "Hoàn thành",
+    "sortLatest": "Mới cập nhật",
+    "sortViews": "Lượt nghe",
+    "sortRating": "Đánh giá cao",
+    "sortTitle": "Tên A-Z",
+    "sortChapters": "Nhiều chương"
+  },
+  "SearchPage": {
+    "loading": "Đang tải tìm kiếm...",
+    "titleDefault": "Tìm kiếm truyện",
+    "titleWithKeyword": "Kết quả cho \"{keyword}\"",
+    "subtitle": "Bộ lọc tổng hợp + kết quả tìm kiếm, phân trang 12 truyện/trang."
+  },
+  "HallPage": {
+    "title": "Trang Vinh danh hội viên",
+    "subtitle": "Top hội viên VIP nổi bật theo hạng VIP và mức độ đóng góp.",
+    "top": "Top {rank}",
+    "fullRanking": "Bảng xếp hạng đầy đủ",
+    "vipUnlocked": "VIP {tier} | {count} truyện mở"
+  },
+  "NotificationsPage": {
+    "title": "Thông báo",
+    "markAllRead": "Đánh dấu tất cả đã đọc",
+    "empty": "Chưa có thông báo nào",
+    "emptyHint": "Các thông báo của bạn sẽ xuất hiện ở đây",
+    "new": "MỚI",
+    "read": "Đã đọc"
+  },
+  "StoryCard": {
+    "ongoing": "Đang ra",
+    "updating": "Đang cập nhật"
+  },
+  "StoryFilterBar": {
+    "quickFilter": "Bộ lọc nhanh",
+    "allCategories": "Tất cả thể loại",
+    "allAuthors": "Tất cả tác giả",
+    "allStatuses": "Tất cả trạng thái",
+    "completed": "Đã hoàn thành",
+    "ongoing": "Đang ra",
+    "sortLatest": "Mới cập nhật",
+    "sortViews": "Lượt xem",
+    "sortRating": "Đánh giá",
+    "sortTitle": "Tên A-Z",
+    "sortChapters": "Số chương",
+    "searchCategories": "Tìm thể loại...",
+    "searchAuthors": "Tìm tác giả...",
+    "applying": "Đang lọc...",
+    "apply": "Lọc ngay"
+  },
+  "RecommendedSlider": {
+    "title": "Có thể bạn sẽ thích",
+    "scrollLeft": "Cuộn trái",
+    "scrollRight": "Cuộn phải"
+  },
+  "ProfileFavoritesPage": {
+    "title": "Truyện yêu thích",
+    "empty": "Bạn chưa có truyện yêu thích nào."
+  },
+  "ProfileHistoryPage": {
+    "title": "Lịch sử nghe",
+    "clearAll": "Xóa toàn bộ",
+    "loading": "Đang tải lịch sử nghe...",
+    "empty": "Chưa có dữ liệu nghe gần đây.",
+    "chapter": "Chương {number}: {title}",
+    "progress": "Đã nghe {progress} / {duration}",
+    "updatedAt": "Cập nhật: {time}",
+    "resume": "Nghe tiếp",
+    "delete": "Xóa"
+  },
+  "ProfileSettingsPage": {
+    "title": "Cài đặt thông báo",
+    "emailTitle": "Nhận email thông báo",
+    "emailDesc": "Nhận nhắc nhở hết hạn hội viên và thông tin quan trọng.",
+    "bellTitle": "Thông báo trong ứng dụng",
+    "bellDesc": "Hiển thị thông báo chương mới, giao dịch và cập nhật hệ thống.",
+    "save": "Lưu cài đặt"
+  },
+  "ProfileTransactionsPage": {
+    "title": "Lịch sử giao dịch",
+    "date": "Ngày",
+    "content": "Nội dung",
+    "amount": "Số tiền / Credits",
+    "status": "Trạng thái",
+    "loading": "Đang tải dữ liệu...",
+    "empty": "Chưa có giao dịch nào."
+  },
+  "Auth": {
+    "processing": "Đang xử lý...",
+    "or": "Hoặc",
+    "googleContinue": "Tiếp tục với Google"
+  },
+  "LoginForm": {
+    "submitFailed": "Đăng nhập thất bại. Vui lòng kiểm tra lại email/mật khẩu.",
+    "title": "Đăng nhập",
+    "email": "Email",
+    "emailPlaceholder": "Nhập email của bạn",
+    "password": "Mật khẩu",
+    "rememberMe": "Ghi nhớ đăng nhập",
+    "forgotPassword": "Quên mật khẩu?",
+    "submit": "Đăng nhập",
+    "noAccount": "Chưa có tài khoản?",
+    "registerNow": "Đăng ký ngay"
+  },
+  "RegisterForm": {
+    "success": "Đăng ký thành công. Vui lòng nhập mã xác thực đã gửi về email.",
+    "submitFailed": "Đăng ký thất bại. Vui lòng thử lại.",
+    "title": "Đăng ký tài khoản",
+    "displayName": "Tên hiển thị",
+    "displayNamePlaceholder": "Ví dụ: TieuDaoTu",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "passwordPlaceholder": "Ít nhất 6 ký tự",
+    "confirmPassword": "Xác nhận mật khẩu",
+    "confirmPasswordPlaceholder": "Nhập lại mật khẩu",
+    "acceptTerms": "Tôi đồng ý với {terms} và Chính sách bảo mật.",
+    "terms": "Điều khoản dịch vụ",
+    "submit": "Đăng ký",
+    "hasAccount": "Đã có tài khoản?",
+    "loginNow": "Đăng nhập ngay"
+  },
+  "ForgotForm": {
+    "submitFailed": "Không thể gửi yêu cầu. Vui lòng thử lại.",
+    "title": "Quên mật khẩu",
+    "successTitle": "Kiểm tra email của bạn",
+    "successMessage": "Chúng tôi đã gửi mã đặt lại mật khẩu 6 số đến email bạn vừa nhập. Vui lòng nhập mã ở bước tiếp theo.",
+    "backToLogin": "Quay lại Đăng nhập",
+    "intro": "Đừng lo lắng! Hãy nhập email bạn đã đăng ký, chúng tôi sẽ gửi cho bạn mã 6 số để đặt lại mật khẩu.",
+    "email": "Email của bạn",
+    "sending": "Đang gửi...",
+    "sendCode": "Gửi mã đặt lại mật khẩu",
+    "remembered": "Nhớ ra mật khẩu rồi?",
+    "login": "Đăng nhập"
+  },
+  "ResetForm": {
+    "submitFailed": "Đặt lại mật khẩu thất bại. Link có thể đã hết hạn.",
+    "resendSuccess": "Đã gửi lại mã đặt lại mật khẩu. Vui lòng kiểm tra email.",
+    "resendFailed": "Không thể gửi lại mã. Vui lòng thử lại.",
+    "email": "Email",
+    "code": "Mã đặt lại 6 số",
+    "newPassword": "Mật khẩu mới",
+    "newPasswordPlaceholder": "Nhập mật khẩu mới",
+    "confirmNewPassword": "Xác nhận mật khẩu mới",
+    "confirmNewPasswordPlaceholder": "Xác nhận mật khẩu mới",
+    "submit": "Đổi mật khẩu",
+    "resending": "Đang gửi lại mã...",
+    "resend": "Gửi lại mã"
+  },
+  "VerifyEmailForm": {
+    "success": "Xác minh email thành công. Đang chuyển trang...",
+    "submitFailed": "Xác minh thất bại. Vui lòng kiểm tra lại mã và thử lại.",
+    "resendSuccess": "Đã gửi lại mã xác thực. Vui lòng kiểm tra email.",
+    "resendFailed": "Không thể gửi lại mã. Vui lòng thử lại.",
+    "title": "Xác minh email",
+    "intro": "Nhập mã xác thực 6 số đã được gửi về email của bạn.",
+    "email": "Email",
+    "code": "Mã xác thực 6 số",
+    "codeDigits": "{count}/6 chữ số",
+    "verifying": "Đang xác minh...",
+    "submit": "Xác minh email",
+    "resending": "Đang gửi lại mã...",
+    "resend": "Gửi lại mã",
+    "backTo": "Quay lại",
+    "login": "Đăng nhập"
+  },
+  "AuthMeta": {
+    "loginTitle": "Đăng nhập | Web Truyện Audio",
+    "loginDescription": "Đăng nhập vào tài khoản của bạn để trải nghiệm Web Truyện Audio với nhiều tính năng hấp dẫn.",
+    "registerTitle": "Đăng ký tài khoản | Web Truyện Audio",
+    "registerDescription": "Tạo tài khoản mới để trải nghiệm Web Truyện Audio với nhiều tính năng hấp dẫn.",
+    "forgotTitle": "Quên mật khẩu | Web Truyện Audio",
+    "forgotDescription": "Khôi phục mật khẩu của bạn để tiếp tục trải nghiệm Web Truyện Audio với nhiều tính năng hấp dẫn.",
+    "resetTitle": "Đặt lại mật khẩu | Web Truyện Audio",
+    "resetDescription": "Đặt lại mật khẩu của bạn để tiếp tục trải nghiệm Web Truyện Audio với nhiều tính năng hấp dẫn.",
+    "verifyTitle": "Xác minh email | Web Truyện Audio",
+    "verifyDescription": "Nhập mã xác thực 6 số để kích hoạt tài khoản."
+  },
+  "GoogleCallbackPage": {
+    "processing": "Đang xử lý..."
+  }
+}

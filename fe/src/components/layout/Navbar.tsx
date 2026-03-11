@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import {
-  Search, Moon, Sun, Bell, User,
+  Search, Moon, Sun, Bell,
   ChevronDown, LogOut, Coins, Menu, X,
   UserCircle, History, Heart
 } from "lucide-react";
@@ -13,6 +14,8 @@ import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/auth";
 import { clearAuthCookies } from "@/lib/auth/cookies";
 import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
+
+const localeCookieName = "NEXT_LOCALE";
 
 type NotificationItem = {
   id: string;
@@ -38,6 +41,8 @@ type TopCategoryItem = {
 
 export default function Navbar() {
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("Navbar");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -110,8 +115,28 @@ export default function Navbar() {
     if (e.key === "Enter" && searchQuery.trim()) {
       router.push(`/search?keyword=${encodeURIComponent(searchQuery)}`);
       setSearchQuery("");
-      setIsMobileMenuOpen(false); // Đóng menu nếu đang mở trên mobile
+      closeMobileMenu();
     }
+  };
+
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
+  const switchLocale = (nextLocale: "vi" | "en") => {
+    if (nextLocale === locale) return;
+    document.cookie = `${localeCookieName}=${nextLocale}; path=/; max-age=31536000`;
+    closeMobileMenu();
+    router.refresh();
+  };
+
+  const handleLogout = () => {
+    useUserStore.getState().clearAuth();
+    clearAuthCookies();
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+    }
+    closeMobileMenu();
+    router.push("/login");
   };
 
   return (
@@ -132,14 +157,14 @@ export default function Navbar() {
 
               {/* Menu Desktop (Ẩn khi màn hình nhỏ hơn lg) */}
               <nav className="hidden lg:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">
-                <Link href="/" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Trang chủ</Link>
+                <Link href="/" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("home")}</Link>
                 <div
                   className="relative"
                   onMouseEnter={() => setIsCategoryOpen(true)}
                   onMouseLeave={() => setIsCategoryOpen(false)}
                 >
                   <button className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">
-                    Thể loại <ChevronDown className="ml-1 h-4 w-4" />
+                    {t("categories")} <ChevronDown className="ml-1 h-4 w-4" />
                   </button>
                   {isCategoryOpen && (
                     <div className="absolute top-full left-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 mt-1">
@@ -148,13 +173,13 @@ export default function Navbar() {
                           {item.name}
                         </Link>
                       ))}
-                      <Link href="/categories" className="block px-4 py-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700">Xem tất cả &rarr;</Link>
+                      <Link href="/categories" className="block px-4 py-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700">{t("viewAll")} &rarr;</Link>
                     </div>
                   )}
                 </div>
-                <Link href="/new" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Mới đăng</Link>
-                <Link href="/trending" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">Trending</Link>
-                <Link href="/vinh-danh" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">BXH Hội viên</Link>
+                <Link href="/new" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("new")}</Link>
+                <Link href="/trending" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("trending")}</Link>
+                <Link href="/vinh-danh" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("memberRanking")}</Link>
               </nav>
             </div>
 
@@ -166,7 +191,7 @@ export default function Navbar() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearch}
-                  placeholder="Tìm truyện..."
+                  placeholder={t("searchPlaceholder")}
                   className="w-44 lg:w-56 xl:w-64 pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
@@ -179,9 +204,35 @@ export default function Navbar() {
                 {mounted && theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
 
+              <div className="hidden items-center gap-1 rounded-full border border-gray-200 bg-white px-1 py-1 dark:border-gray-700 dark:bg-gray-900 sm:flex">
+                <span className="px-2 text-xs font-medium text-gray-500 dark:text-gray-400">{t("language")}</span>
+                <button
+                  onClick={() => switchLocale("vi")}
+                  className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
+                    locale === "vi"
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                  }`}
+                  type="button"
+                >
+                  VI
+                </button>
+                <button
+                  onClick={() => switchLocale("en")}
+                  className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
+                    locale === "en"
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                  }`}
+                  type="button"
+                >
+                  EN
+                </button>
+              </div>
+
               <div className="flex items-center gap-1 sm:gap-3">
                 <Link href="/topup" className="hidden sm:flex items-center gap-1.5 whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors">
-                  <Coins className="h-4 w-4" /> <span>Nạp tiền</span>
+                  <Coins className="h-4 w-4" /> <span>{t("topUp")}</span>
                 </Link>
 
                 {/* Chuông thông báo */}
@@ -203,7 +254,7 @@ export default function Navbar() {
                   {isNotifOpen && (
                     <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-50 max-h-[500px] overflow-hidden flex flex-col">
                       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                        <h3 className="font-bold text-gray-900 dark:text-gray-100">Thông báo</h3>
+                        <h3 className="font-bold text-gray-900 dark:text-gray-100">{t("notifications")}</h3>
                         {unreadNotifs > 0 && (
                           <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
                             {unreadNotifs}
@@ -231,7 +282,7 @@ export default function Navbar() {
                                 {item.body}
                               </p>
                               <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                                {new Date(item.createdAt).toLocaleDateString('vi-VN', {
+                                {new Date(item.createdAt).toLocaleDateString(locale === "en" ? "en-US" : "vi-VN", {
                                   day: '2-digit',
                                   month: '2-digit',
                                   hour: '2-digit',
@@ -243,7 +294,7 @@ export default function Navbar() {
                         )) : (
                           <div className="px-4 py-8 text-center">
                             <Bell className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có thông báo nào</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{t("emptyNotifications")}</p>
                           </div>
                         )}
                       </div>
@@ -251,7 +302,7 @@ export default function Navbar() {
                         href="/notifications"
                         className="block px-4 py-3 text-center text-sm text-blue-600 dark:text-blue-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
                       >
-                        Xem tất cả thông báo
+                        {t("viewAllNotifications")}
                       </Link>
                     </div>
                   )}
@@ -260,7 +311,7 @@ export default function Navbar() {
                 {/* Avatar Desktoop Only */}
                 {!user ? (
                   <div className="hidden sm:flex items-center gap-2">
-                    <Link href="/login" className="px-5 py-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm font-semibold">Đăng nhập</Link>
+                    <Link href="/login" className="px-5 py-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm font-semibold">{t("login")}</Link>
                   </div>
                 ) : (<div className="relative hidden sm:block">
                   <button
@@ -278,30 +329,24 @@ export default function Navbar() {
                   {/* Dropdown User */}
                   {isUserMenuOpen && (
                     <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 z-50">
-                      <p className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">Xin chào, {user.name || user.email}</p>
+                      <p className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{t("hello", { name: user.name || user.email })}</p>
                       <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <UserCircle className="h-4 w-4" /> Trang cá nhân
+                        <UserCircle className="h-4 w-4" /> {t("profile")}
                       </Link>
                       <Link href="/profile/favorites" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <Heart className="h-4 w-4" /> Yêu thích
+                        <Heart className="h-4 w-4" /> {t("favorites")}
                       </Link>
                       <Link href="/profile/history" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <History className="h-4 w-4" /> Lịch sử nghe
+                        <History className="h-4 w-4" /> {t("listeningHistory")}
                       </Link>
                       <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                       <button
                         onClick={() => {
-                          useUserStore.getState().clearAuth();
-                          clearAuthCookies();
-                          if (typeof window !== "undefined") {
-                            localStorage.removeItem(ACCESS_TOKEN_KEY);
-                            localStorage.removeItem(REFRESH_TOKEN_KEY);
-                          }
-                          router.push("/login");
+                          handleLogout();
                         }}
                         className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
-                        <LogOut className="h-4 w-4" /> Đăng xuất
+                        <LogOut className="h-4 w-4" /> {t("logout")}
                       </button>
                     </div>
                   )}
@@ -311,14 +356,14 @@ export default function Navbar() {
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
                   className="sm:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 ml-1"
-                  aria-label="Mở menu"
+                  aria-label={t("openMenu")}
                 >
                   <Menu className="h-6 w-6" />
                 </button>
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
                   className="hidden sm:block lg:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 ml-1"
-                  aria-label="Mở menu"
+                  aria-label={t("openMenu")}
                 >
                   <Menu className="h-6 w-6" />
                 </button>
@@ -334,7 +379,7 @@ export default function Navbar() {
           {/* Backdrop */}
           <div 
             className="fixed inset-0 z-[60] bg-gray-900/40 backdrop-blur-sm lg:hidden transition-opacity"
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={closeMobileMenu}
           ></div>
 
           {/* Side Sheet */}
@@ -342,9 +387,9 @@ export default function Navbar() {
             {/* Header: User Info / Login */}
             <div className="p-5 border-b border-gray-100 dark:border-gray-800 relative bg-gradient-to-br from-violet-50/50 to-transparent dark:from-violet-900/10">
               <button
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={closeMobileMenu}
                 className="absolute top-4 right-4 p-2 rounded-full bg-white dark:bg-gray-800 text-gray-500 hover:text-gray-700 shadow-sm border border-gray-100 dark:border-gray-700"
-                aria-label="Đóng menu"
+                aria-label={t("closeMenu")}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -353,19 +398,19 @@ export default function Navbar() {
                 <div className="flex items-center gap-3 pr-10">
                   <img src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} alt="Avatar" className="h-12 w-12 rounded-full border-2 border-violet-200 dark:border-violet-800 object-cover" />
                   <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1">{user.name || 'Người dùng'}</h3>
+                    <h3 className="font-bold text-gray-900 dark:text-white line-clamp-1">{user.name || user.email}</h3>
                     <p className="text-xs text-violet-600 dark:text-violet-400 font-medium">{user.email}</p>
                   </div>
                 </div>
               ) : (
                 <div className="pr-10">
-                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">Chào mừng đến với Netviet</h3>
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">{t("openMenu")}</h3>
                   <Link 
                     href="/login" 
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={closeMobileMenu}
                     className="flex justify-center w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-sm shadow-md active:scale-95 transition-all"
                   >
-                    Đăng nhập / Đăng ký
+                    {t("login")}
                   </Link>
                 </div>
               )}
@@ -379,54 +424,97 @@ export default function Navbar() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearch}
-                  placeholder="Tìm truyện..."
+                  placeholder={t("mobileSearchPlaceholder")}
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm outline-none focus:ring-2 focus:ring-violet-200 transition-all"
                 />
                 <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-gray-400" />
               </div>
 
+              <div className="mb-6 rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-900/60">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{t("quickSettings")}</p>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-1 py-1 dark:border-gray-700 dark:bg-gray-900">
+                    <span className="px-2 text-xs font-medium text-gray-500 dark:text-gray-400">{t("language")}</span>
+                    <button
+                      type="button"
+                      onClick={() => switchLocale("vi")}
+                      className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
+                        locale === "vi"
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                      }`}
+                    >
+                      VI
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => switchLocale("en")}
+                      className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
+                        locale === "en"
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                      }`}
+                    >
+                      EN
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                    className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800"
+                  >
+                    {mounted && theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    {mounted && theme === "dark" ? t("lightMode") : t("darkMode")}
+                  </button>
+                </div>
+              </div>
+
               <div className="space-y-1">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">Khám phá</p>
-                <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">{t("home")}</p>
+                <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
                   <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500"><Search className="w-4 h-4" /></span>
-                  Trang chủ
+                  {t("home")}
                 </Link>
-                <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                <Link href="/categories" onClick={closeMobileMenu} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
                   <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500"><Search className="w-4 h-4" /></span>
-                  Thể loại
+                  {t("categories")}
                 </Link>
-                <Link href="/new" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                <Link href="/new" onClick={closeMobileMenu} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
                   <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-green-500"><Search className="w-4 h-4" /></span>
-                  Mới đăng
+                  {t("new")}
                 </Link>
-                <Link href="/trending" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                <Link href="/trending" onClick={closeMobileMenu} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
                   <span className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-500"><Search className="w-4 h-4" /></span>
-                  Thịnh hành
+                  {t("popular")}
                 </Link>
-                <Link href="/vinh-danh" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                <Link href="/vinh-danh" onClick={closeMobileMenu} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
                   <span className="w-8 h-8 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center text-yellow-500"><Search className="w-4 h-4" /></span>
-                  BXH Hội viên
+                  {t("hallOfFame")}
                 </Link>
               </div>
 
               {user && (
                 <div className="mt-6 space-y-1">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">Cá nhân</p>
-                  <Link href="/topup" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-violet-700 dark:text-violet-400 font-semibold bg-violet-50 dark:bg-violet-900/20">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 mb-2">{t("account")}</p>
+                  <Link href="/topup" onClick={closeMobileMenu} className="flex items-center gap-3 px-3 py-3 rounded-xl text-violet-700 dark:text-violet-400 font-semibold bg-violet-50 dark:bg-violet-900/20">
                     <span className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center"><Coins className="w-4 h-4" /></span>
-                    Nạp Credits
+                    {t("topUpCredits")}
                   </Link>
-                  <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                  <Link href="/notifications" onClick={closeMobileMenu} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                    <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500"><Bell className="w-4 h-4" /></span>
+                    {t("notifications")}
+                  </Link>
+                  <Link href="/profile" onClick={closeMobileMenu} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
                     <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500"><UserCircle className="w-4 h-4" /></span>
-                    Hồ sơ
+                    {t("profile")}
                   </Link>
-                  <Link href="/profile/favorites" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                  <Link href="/profile/favorites" onClick={closeMobileMenu} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
                     <span className="w-8 h-8 rounded-lg bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center text-pink-500"><Heart className="w-4 h-4" /></span>
-                    Yêu thích
+                    {t("favorites")}
                   </Link>
-                  <Link href="/profile/history" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
+                  <Link href="/profile/history" onClick={closeMobileMenu} className="flex items-center gap-3 px-3 py-3 rounded-xl text-gray-700 dark:text-gray-200 font-medium hover:bg-violet-50 dark:hover:bg-violet-900/10">
                     <span className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-500"><History className="w-4 h-4" /></span>
-                    Lịch sử nghe
+                    {t("listeningHistory")}
                   </Link>
                 </div>
               )}
@@ -435,19 +523,10 @@ export default function Navbar() {
             {user && (
               <div className="p-5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-slate-900/50">
                 <button
-                  onClick={() => {
-                    useUserStore.getState().clearAuth();
-                    clearAuthCookies();
-                    if (typeof window !== "undefined") {
-                      localStorage.removeItem(ACCESS_TOKEN_KEY);
-                      localStorage.removeItem(REFRESH_TOKEN_KEY);
-                    }
-                    setIsMobileMenuOpen(false);
-                    router.push("/login");
-                  }}
+                  onClick={handleLogout}
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/10 transition-colors"
                 >
-                  <LogOut className="h-4 w-4" /> Đăng xuất
+                  <LogOut className="h-4 w-4" /> {t("logout")}
                 </button>
               </div>
             )}

@@ -511,9 +511,29 @@ export default function StoryReader({
                     {comments.length ? (
                       comments.map((comment) => (
                         <div key={comment.id} className="rounded-md bg-gray-50 px-3 py-2 text-xs dark:bg-gray-800">
-                          <p className="font-semibold text-gray-700 dark:text-gray-200">{comment.authorName}</p>
-                          <p className="mt-1 text-gray-600 dark:text-gray-300">{comment.content}</p>
-                          <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                          <div className="flex items-start gap-2">
+                            <img
+                              src={comment.authorAvatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.authorName}`}
+                              alt={comment.authorName}
+                              className="h-8 w-8 rounded-full flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="font-semibold text-gray-700 dark:text-gray-200">{comment.authorName}</p>
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                                  {new Date(comment.createdAt).toLocaleDateString('vi-VN', { 
+                                    day: '2-digit', 
+                                    month: '2-digit', 
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-gray-600 dark:text-gray-300">{comment.content}</p>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2 text-[11px] ml-10">
                             <button
                               onClick={() => void toggleReaction(comment.id, "helpful", paragraph.id)}
                               className="rounded-full border border-gray-300 px-2 py-0.5 hover:bg-white dark:border-gray-700 dark:hover:bg-gray-700"
@@ -546,11 +566,30 @@ export default function StoryReader({
                           </div>
 
                           {(comment.replies?.length || 0) > 0 ? (
-                            <div className="mt-2 space-y-1 border-l border-gray-300 pl-2 dark:border-gray-600">
+                            <div className="mt-2 space-y-1 border-l border-gray-300 pl-2 ml-10 dark:border-gray-600">
                               {(comment.replies || []).map((reply) => (
                                 <div key={reply.id} className="rounded bg-white/70 px-2 py-1 dark:bg-gray-700/40">
-                                  <p className="font-semibold text-gray-700 dark:text-gray-200">{reply.authorName}</p>
-                                  <p className="text-gray-600 dark:text-gray-300">{reply.content}</p>
+                                  <div className="flex items-start gap-2">
+                                    <img
+                                      src={reply.authorAvatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${reply.authorName}`}
+                                      alt={reply.authorName}
+                                      className="h-6 w-6 rounded-full flex-shrink-0"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <p className="font-semibold text-gray-700 dark:text-gray-200">{reply.authorName}</p>
+                                        <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                                          {new Date(reply.createdAt).toLocaleDateString('vi-VN', { 
+                                            day: '2-digit', 
+                                            month: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </span>
+                                      </div>
+                                      <p className="text-gray-600 dark:text-gray-300">{reply.content}</p>
+                                    </div>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -559,7 +598,7 @@ export default function StoryReader({
                           {(comment.repliesCount || 0) > (comment.replies?.length || 0) ? (
                             <button
                               onClick={() => void loadMoreReplies(comment.id, paragraph.id)}
-                              className="mt-2 text-[11px] font-semibold text-blue-600 hover:underline"
+                              className="mt-2 ml-10 text-[11px] font-semibold text-blue-600 hover:underline"
                             >
                               Xem thêm phản hồi
                             </button>

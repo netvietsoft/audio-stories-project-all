@@ -17,6 +17,20 @@ export const ourFileRouter = {
             console.log("File URL", file.url);
             return { uploadedBy: metadata.userId };
         }),
+    audioUploader: f({
+        audio: {
+            maxFileSize: "64MB",
+            maxFileCount: 1,
+        },
+    })
+        .middleware(async () => {
+            return { userId: "user_test" };
+        })
+        .onUploadComplete(async ({ metadata, file }) => {
+            console.log("Audio upload complete for userId:", metadata.userId);
+            console.log("Audio File URL", file.url);
+            return { uploadedBy: metadata.userId };
+        }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

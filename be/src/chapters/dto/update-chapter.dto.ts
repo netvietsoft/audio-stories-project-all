@@ -28,6 +28,11 @@ export class UpdateChapterDto {
     @IsString()
     @IsOptional()
     @MaxLength(500)
+    thumbnailUrl?: string;
+
+    @IsString()
+    @IsOptional()
+    @MaxLength(500)
     audioUrl?: string;
 
     @IsString()

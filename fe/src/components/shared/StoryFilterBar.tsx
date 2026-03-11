@@ -1,5 +1,8 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
+import { ChevronDown, Check, Search } from "lucide-react";
+
 type CategoryOption = {
   id: number;
   name: string;
@@ -34,66 +37,277 @@ export default function StoryFilterBar({
   onApply,
   isLoading = false,
 }: StoryFilterBarProps) {
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isAuthorOpen, setIsAuthorOpen] = useState(false);
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
+  const [isSortOpen, setIsSortOpen] = useState(false);
+
+  const [categorySearch, setCategorySearch] = useState("");
+  const [authorSearch, setAuthorSearch] = useState("");
+
+  const categoryRef = useRef<HTMLDivElement>(null);
+  const authorRef = useRef<HTMLDivElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const sortRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+      if (authorRef.current && !authorRef.current.contains(event.target as Node)) {
+        setIsAuthorOpen(false);
+      }
+      if (statusRef.current && !statusRef.current.contains(event.target as Node)) {
+        setIsStatusOpen(false);
+      }
+      if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
+        setIsSortOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedCategory = categories.find((c) => String(c.id) === value.categoryId);
+  const selectedAuthor = authors.find((a) => a.id === value.authorId);
+
+  const filteredCategories = categories.filter((c) =>
+    c.name.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const filteredAuthors = authors.filter((a) =>
+    a.name.toLowerCase().includes(authorSearch.toLowerCase())
+  );
+
+  const statusOptions = [
+    { value: "", label: "Tất cả trạng thái" },
+    { value: "completed", label: "Đã hoàn thành" },
+    { value: "ongoing", label: "Đang ra" },
+  ];
+
+  const sortOptions = [
+    { value: "latest", label: "Mới cập nhật" },
+    { value: "views", label: "Lượt xem" },
+    { value: "rating", label: "Đánh giá" },
+    { value: "title_asc", label: "Tên A-Z" },
+    { value: "chapters_desc", label: "Số chương" },
+  ];
+
+  const selectedStatus = statusOptions.find((s) => s.value === value.status);
+  const selectedSort = sortOptions.find((s) => s.value === value.sort);
+
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-      <h2 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Bộ lọc truyện</h2>
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-sm">
+      <h2 className="mb-4 text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+        Bộ lọc nhanh
+      </h2>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
-        <select
-          value={value.categoryId}
-          onChange={(e) => onChange({ ...value, categoryId: e.target.value })}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
-        >
-          <option value="">Tất cả thể loại</option>
-          {categories.map((category) => (
-            <option key={category.id} value={String(category.id)}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+        {/* Category Dropdown */}
+        <div className="relative" ref={categoryRef}>
+          <button
+            type="button"
+            onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+            className="w-full bg-slate-50 dark:bg-slate-800 text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            <span className={selectedCategory ? "text-slate-900 dark:text-white" : "text-slate-400"}>
+              {selectedCategory ? selectedCategory.name : "Tất cả thể loại"}
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-slate-400 transition-transform ${isCategoryOpen ? "rotate-180" : ""}`}
+            />
+          </button>
 
-        <select
-          value={value.authorId}
-          onChange={(e) => onChange({ ...value, authorId: e.target.value })}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
-        >
-          <option value="">Tất cả tác giả</option>
-          {authors.map((author) => (
-            <option key={author.id} value={author.id}>
-              {author.name}
-            </option>
-          ))}
-        </select>
+          {isCategoryOpen && (
+            <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="p-3 border-b border-slate-100 dark:border-slate-700">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Tìm thể loại..."
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-lg py-2 pl-10 pr-3 text-sm font-medium focus:ring-2 focus:ring-blue-500/20"
+                    value={categorySearch}
+                    onChange={(e) => setCategorySearch(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="max-h-60 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...value, categoryId: "" });
+                    setIsCategoryOpen(false);
+                    setCategorySearch("");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors flex items-center justify-between"
+                >
+                  Tất cả thể loại
+                  {!value.categoryId && <Check className="w-4 h-4 text-blue-600" />}
+                </button>
+                {filteredCategories.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      onChange({ ...value, categoryId: String(c.id) });
+                      setIsCategoryOpen(false);
+                      setCategorySearch("");
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors flex items-center justify-between"
+                  >
+                    {c.name}
+                    {String(c.id) === value.categoryId && <Check className="w-4 h-4 text-blue-600" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
-        <select
-          value={value.status}
-          onChange={(e) => onChange({ ...value, status: e.target.value as StoryFilterValue["status"] })}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
-        >
-          <option value="">Tất cả trạng thái</option>
-          <option value="completed">Đã hoàn thành (Full)</option>
-          <option value="ongoing">Còn tiếp</option>
-        </select>
+        {/* Author Dropdown */}
+        <div className="relative" ref={authorRef}>
+          <button
+            type="button"
+            onClick={() => setIsAuthorOpen(!isAuthorOpen)}
+            className="w-full bg-slate-50 dark:bg-slate-800 text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            <span className={selectedAuthor ? "text-slate-900 dark:text-white" : "text-slate-400"}>
+              {selectedAuthor ? selectedAuthor.name : "Tất cả tác giả"}
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-slate-400 transition-transform ${isAuthorOpen ? "rotate-180" : ""}`}
+            />
+          </button>
 
-        <select
-          value={value.sort}
-          onChange={(e) => onChange({ ...value, sort: e.target.value as StoryFilterValue["sort"] })}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
-        >
-          <option value="latest">Mới cập nhật</option>
-          <option value="views">Lượt xem nhiều nhất</option>
-          <option value="rating">Đánh giá cao nhất</option>
-          <option value="title_asc">Tên A-Z</option>
-          <option value="chapters_desc">Số chương nhiều nhất</option>
-        </select>
+          {isAuthorOpen && (
+            <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="p-3 border-b border-slate-100 dark:border-slate-700">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Tìm tác giả..."
+                    className="w-full bg-slate-50 dark:bg-slate-900 border-none rounded-lg py-2 pl-10 pr-3 text-sm font-medium focus:ring-2 focus:ring-blue-500/20"
+                    value={authorSearch}
+                    onChange={(e) => setAuthorSearch(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="max-h-60 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...value, authorId: "" });
+                    setIsAuthorOpen(false);
+                    setAuthorSearch("");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors flex items-center justify-between"
+                >
+                  Tất cả tác giả
+                  {!value.authorId && <Check className="w-4 h-4 text-blue-600" />}
+                </button>
+                {filteredAuthors.map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => {
+                      onChange({ ...value, authorId: a.id });
+                      setIsAuthorOpen(false);
+                      setAuthorSearch("");
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors flex items-center justify-between"
+                  >
+                    {a.name}
+                    {a.id === value.authorId && <Check className="w-4 h-4 text-blue-600" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
+        {/* Status Dropdown */}
+        <div className="relative" ref={statusRef}>
+          <button
+            type="button"
+            onClick={() => setIsStatusOpen(!isStatusOpen)}
+            className="w-full bg-slate-50 dark:bg-slate-800 text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            <span className={selectedStatus?.value ? "text-slate-900 dark:text-white" : "text-slate-400"}>
+              {selectedStatus?.label || "Tất cả trạng thái"}
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-slate-400 transition-transform ${isStatusOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {isStatusOpen && (
+            <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              {statusOptions.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...value, status: s.value as StoryFilterValue["status"] });
+                    setIsStatusOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors flex items-center justify-between"
+                >
+                  {s.label}
+                  {s.value === value.status && <Check className="w-4 h-4 text-blue-600" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Sort Dropdown */}
+        <div className="relative" ref={sortRef}>
+          <button
+            type="button"
+            onClick={() => setIsSortOpen(!isSortOpen)}
+            className="w-full bg-slate-50 dark:bg-slate-800 text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            <span className="text-slate-900 dark:text-white">{selectedSort?.label}</span>
+            <ChevronDown
+              className={`w-4 h-4 text-slate-400 transition-transform ${isSortOpen ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          {isSortOpen && (
+            <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              {sortOptions.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => {
+                    onChange({ ...value, sort: s.value as StoryFilterValue["sort"] });
+                    setIsSortOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors flex items-center justify-between"
+                >
+                  {s.label}
+                  {s.value === value.sort && <Check className="w-4 h-4 text-blue-600" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Apply Button */}
         <button
           type="button"
           onClick={onApply}
           disabled={isLoading}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-60 transition-all shadow-sm hover:shadow-md"
         >
-          {isLoading ? "Đang lọc..." : "Lọc truyện"}
+          {isLoading ? "Đang lọc..." : "Lọc ngay"}
         </button>
       </div>
     </div>

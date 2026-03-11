@@ -2,6 +2,8 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import Stripe from 'stripe';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PackagesHelperService } from './packages-helper.service';
+import { MailService } from '../../mail/mail.service';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 @Injectable()
 export class StripeService {
@@ -11,6 +13,8 @@ export class StripeService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly packagesHelper: PackagesHelperService,
+    private readonly mailService: MailService,
+    private readonly notificationsService: NotificationsService,
   ) {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     if (secretKey) {
@@ -128,5 +132,155 @@ export class StripeService {
     });
 
     return event;
+  }
+
+  async verifyAndProcessPayment(userId: string, sessionId: string) {
+    const stripe = this.ensureStripe();
+
+    this.logger.log(`Verifying payment for user ${userId}, session ${sessionId}`);
+
+    try {
+      // Retrieve the session from Stripe
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      this.logger.log(`Session status: ${session.payment_status}, User from metadata: ${session.metadata?.user_id}`);
+
+      // Verify the session belongs to this user
+      if (session.metadata?.user_id !== userId) {
+        throw new BadRequestException('Session does not belong to this user');
+      }
+
+      // Check if payment was successful
+      if (session.payment_status !== 'paid') {
+        return {
+          success: false,
+          message: 'Payment not completed',
+          status: session.payment_status,
+        };
+      }
+
+      const packageCode = session.metadata?.package_code;
+      if (!packageCode) {
+        throw new BadRequestException('Package code not found in session metadata');
+      }
+
+      // Check if payment already processed
+      const existingPayment = await this.prisma.payment.findFirst({
+        where: {
+          userId: userId,
+          providerPaymentId: session.payment_intent as string || session.id,
+        },
+      });
+
+      if (existingPayment) {
+        this.logger.log(`Payment already processed: ${existingPayment.id}`);
+        return {
+          success: true,
+          message: 'Payment already processed',
+          alreadyProcessed: true,
+          payment: existingPayment,
+        };
+      }
+
+      // Get package details
+      const pkg = await this.packagesHelper.findByCode(packageCode);
+      if (!pkg) {
+        throw new BadRequestException('Package not found');
+      }
+
+      // Get user info for email
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, allowEmailNoti: true, credits: true },
+      });
+
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      const now = new Date();
+      const exchangeRate = parseFloat(process.env.USD_TO_VND_RATE || '25000');
+      const amountUsd = session.amount_total ? session.amount_total / 100 : pkg.priceVnd / exchangeRate;
+
+      this.logger.log(`Processing payment: ${pkg.credits} credits for user ${userId}`);
+
+      // Process the payment
+      await this.prisma.$transaction([
+        this.prisma.payment.create({
+          data: {
+            userId: userId,
+            packageCode: packageCode,
+            providerPaymentId: session.payment_intent as string || session.id,
+            providerCustomerId: session.customer as string,
+            status: 'SUCCESS',
+            currency: session.currency?.toUpperCase() || 'USD',
+            amountVnd: pkg.priceVnd,
+            amountUsd: amountUsd,
+            creditsAdded: pkg.credits,
+            paidAt: now,
+            expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
+          },
+        }),
+        this.prisma.user.update({
+          where: { id: userId },
+          data: {
+            credits: { increment: pkg.credits },
+          },
+        }),
+        this.prisma.creditTransaction.create({
+          data: {
+            userId: userId,
+            type: 'topup',
+            amount: pkg.credits,
+            balanceBefore: user.credits,
+            balanceAfter: user.credits + pkg.credits,
+            referenceId: session.payment_intent as string || session.id,
+            description: `Nạp ${pkg.credits} credits qua Stripe`,
+          },
+        }),
+      ]);
+
+      this.logger.log(`Payment processed successfully`);
+
+      // Create notification
+      try {
+        await this.notificationsService.createPaymentNotification(
+          userId,
+          pkg.priceVnd,
+          pkg.credits,
+          session.payment_intent as string || session.id,
+          'Stripe',
+        );
+        this.logger.log(`Notification created`);
+      } catch (error) {
+        this.logger.error(`Failed to create notification:`, error);
+      }
+
+      // Send email if user allows
+      if (user.allowEmailNoti) {
+        try {
+          await this.mailService.sendPaymentSuccessEmail(
+            user.email,
+            pkg.priceVnd,
+            pkg.credits,
+            session.payment_intent as string || session.id,
+            'Stripe',
+          );
+          this.logger.log(`Email sent to ${user.email}`);
+        } catch (error) {
+          this.logger.error(`Failed to send email:`, error);
+        }
+      }
+
+      return {
+        success: true,
+        message: 'Payment processed successfully',
+        creditsAdded: pkg.credits,
+        newBalance: user.credits + pkg.credits,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to verify payment:`, error);
+      throw error;
+    }
   }
 }

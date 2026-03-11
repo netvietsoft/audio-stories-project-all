@@ -186,4 +186,80 @@ export class MailService {
       this.logger.error(`Failed to send merge request notification email to ${to}:`, error);
     }
   }
+
+  async sendPaymentSuccessEmail(
+    to: string,
+    amount: number,
+    credits: number,
+    transactionId: string,
+    paymentMethod: string,
+  ) {
+    try {
+      const formattedAmount = new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+      }).format(amount);
+
+      await this.transport.sendMail({
+        from: this.from,
+        to,
+        subject: 'Thanh toán thành công - NetViet Audio',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+            <div style="background-color: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <div style="display: inline-block; background-color: #10b981; border-radius: 50%; padding: 15px; margin-bottom: 15px;">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+                <h2 style="color: #10b981; margin: 0;">Thanh toán thành công!</h2>
+              </div>
+
+              <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                <p style="margin: 0; color: #166534; font-weight: bold;">Credits đã được cộng vào tài khoản của bạn</p>
+              </div>
+
+              <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3 style="color: #374151; margin-top: 0;">Thông tin giao dịch</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Số tiền thanh toán:</td>
+                    <td style="padding: 10px 0; text-align: right; font-weight: bold; color: #111827; border-bottom: 1px solid #e5e7eb;">${formattedAmount}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Credits nhận được:</td>
+                    <td style="padding: 10px 0; text-align: right; font-weight: bold; color: #10b981; border-bottom: 1px solid #e5e7eb;">+${credits.toLocaleString()} Credits</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Phương thức:</td>
+                    <td style="padding: 10px 0; text-align: right; font-weight: bold; color: #111827; border-bottom: 1px solid #e5e7eb;">${paymentMethod}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px 0; color: #6b7280;">Mã giao dịch:</td>
+                    <td style="padding: 10px 0; text-align: right; font-family: monospace; color: #6b7280;">${transactionId}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <div style="text-align: center; margin-top: 30px;">
+                <a href="${this.cfg.get('FRONTEND_URL') || 'http://localhost:3001'}" 
+                   style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+                  Về trang chủ
+                </a>
+              </div>
+
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+                <p style="color: #9ca3af; font-size: 14px; margin: 5px 0;">Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</p>
+                <p style="color: #9ca3af; font-size: 12px; margin: 5px 0;">NetViet Audio - Nghe truyện audio chất lượng cao</p>
+              </div>
+            </div>
+          </div>
+        `,
+      });
+      this.logger.log(`Payment success email sent to ${to}`);
+    } catch (error) {
+      this.logger.error(`Failed to send payment success email to ${to}:`, error);
+    }
+  }
 }

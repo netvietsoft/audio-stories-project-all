@@ -27,6 +27,7 @@ interface Chapter {
     description: string | null;
     content: string | null;
     r2AudioUrl: string | null;
+    thumbnailUrl?: string | null;
     youtubeVideoId: string | null;
     audioDuration: number | null;
     accessType: 'free' | 'timed' | 'vip';
@@ -112,6 +113,7 @@ export default function ChaptersPage() {
                     description: data.description || undefined,
                     content: data.content || undefined,
                     audioUrl: data.audioUrl || undefined,
+                    thumbnailUrl: data.thumbnailUrl || undefined,
                     youtubeVideoId: data.youtubeVideoId || undefined,
                     audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
                     accessType: data.accessType,
@@ -124,6 +126,7 @@ export default function ChaptersPage() {
                     description: data.description || undefined,
                     content: data.content || undefined,
                     audioUrl: data.audioUrl || undefined,
+                    thumbnailUrl: data.thumbnailUrl || undefined,
                     youtubeVideoId: data.youtubeVideoId || undefined,
                     audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
                     accessType: data.accessType,
@@ -336,6 +339,7 @@ export default function ChaptersPage() {
                                     content: editingChapter.content ?? undefined,
                                     r2AudioUrl: editingChapter.r2AudioUrl ?? undefined,
                                     audioUrl: editingChapter.r2AudioUrl ?? undefined,
+                                    thumbnailUrl: editingChapter.thumbnailUrl ?? undefined,
                                     youtubeVideoId: editingChapter.youtubeVideoId ?? undefined,
                                     audioDuration: editingChapter.audioDuration ?? 0,
                                     accessType: editingChapter.accessType,

@@ -1,6 +1,8 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PackagesHelperService } from './packages-helper.service';
+import { MailService } from '../../mail/mail.service';
+import { NotificationsService } from '../../notifications/notifications.service';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -10,6 +12,8 @@ export class VietQRService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly packagesHelper: PackagesHelperService,
+    private readonly mailService: MailService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   private get isConfigured(): boolean {
@@ -154,6 +158,12 @@ export class VietQRService {
 
     const now = new Date();
 
+    // Get user info for email
+    const user = await this.prisma.user.findUnique({
+      where: { id: payment.userId },
+      select: { email: true, allowEmailNoti: true },
+    });
+
     await this.prisma.$transaction([
       // Update payment
       this.prisma.payment.update({
@@ -184,6 +194,26 @@ export class VietQRService {
         },
       }),
     ]);
+
+    // Create notification
+    await this.notificationsService.createPaymentNotification(
+      payment.userId,
+      payment.amountVnd,
+      payment.creditsAdded,
+      bankTransactionId,
+      'VietQR',
+    );
+
+    // Send email if user allows
+    if (user && user.allowEmailNoti) {
+      await this.mailService.sendPaymentSuccessEmail(
+        user.email,
+        payment.amountVnd,
+        payment.creditsAdded,
+        bankTransactionId,
+        'VietQR',
+      );
+    }
 
     this.logger.log(`VietQR payment processed for order ${payment.id}`);
     return payment;

@@ -393,37 +393,35 @@ export class StoriesService {
 
     const { categoryIds, ...storyData } = data;
 
-    const updated = await this.prisma.$transaction(async (tx) => {
-      if (categoryIds) {
-        await tx.storyCategory.deleteMany({ where: { storyId: id } });
-        if (categoryIds.length > 0) {
-          await tx.storyCategory.createMany({
-            data: categoryIds.map((categoryId) => ({
-              storyId: id,
-              categoryId,
-            })),
-            skipDuplicates: true,
-          });
-        }
+    if (categoryIds) {
+      await this.prisma.storyCategory.deleteMany({ where: { storyId: id } });
+      if (categoryIds.length > 0) {
+        await this.prisma.storyCategory.createMany({
+          data: categoryIds.map((categoryId) => ({
+            storyId: id,
+            categoryId,
+          })),
+          skipDuplicates: true,
+        });
       }
+    }
 
-      return tx.story.update({
-        where: { id },
-        data: storyData,
-        include: {
-          author: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          categories: {
-            include: {
-              category: { select: { id: true, name: true } },
-            },
+    const updated = await this.prisma.story.update({
+      where: { id },
+      data: storyData,
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
           },
         },
-      });
+        categories: {
+          include: {
+            category: { select: { id: true, name: true } },
+          },
+        },
+      },
     });
 
     return this.serializeStory(updated);

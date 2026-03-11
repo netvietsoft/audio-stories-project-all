@@ -21,7 +21,6 @@ import Link from 'next/link';
 
 import { apiClient } from '@/lib/api/api-client';
 import { UploadButton } from '@/lib/uploadthing';
-import { ChapterForm } from '../[id]/chapters/_components/ChapterForm';
 
 const storySchema = z.object({
 

@@ -75,8 +75,8 @@ export class ReviewsService {
     return story.id;
   }
 
-  private async syncStoryRating(storyId: string, tx: Prisma.TransactionClient) {
-    const aggregate = await tx.review.aggregate({
+  private async syncStoryRating(storyId: string) {
+    const aggregate = await this.prisma.review.aggregate({
       where: { storyId },
       _avg: { rating: true },
       _count: { _all: true },
@@ -85,7 +85,7 @@ export class ReviewsService {
     const average = aggregate._avg.rating || 0;
     const count = aggregate._count._all || 0;
 
-    await tx.story.update({
+    await this.prisma.story.update({
       where: { id: storyId },
       data: {
         averageRating: new Prisma.Decimal(average.toFixed(2)),
@@ -207,38 +207,35 @@ export class ReviewsService {
       throw new BadRequestException('Rating must be between 1 and 5');
     }
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      const review = await tx.review.upsert({
-        where: {
-          userId_storyId: {
-            userId,
-            storyId,
-          },
-        },
-        update: {
-          rating: dto.rating,
-          content: dto.content?.trim() || null,
-        },
-        create: {
+    const result = await this.prisma.review.upsert({
+      where: {
+        userId_storyId: {
           userId,
           storyId,
-          rating: dto.rating,
-          content: dto.content?.trim() || null,
         },
-        include: {
-          user: {
-            select: {
-              id: true,
-              displayName: true,
-              avatarUrl: true,
-            },
+      },
+      update: {
+        rating: dto.rating,
+        content: dto.content?.trim() || null,
+      },
+      create: {
+        userId,
+        storyId,
+        rating: dto.rating,
+        content: dto.content?.trim() || null,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            displayName: true,
+            avatarUrl: true,
           },
         },
-      });
-
-      await this.syncStoryRating(storyId, tx);
-      return review;
+      },
     });
+
+    await this.syncStoryRating(storyId);
 
     return {
       data: this.normalizeReview(result, userId),

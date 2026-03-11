@@ -79,7 +79,7 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
             // Old: https://utfs.io/f/{fileKey}
             // New: https://hszdh7zpqp.ufs.sh/f/{fileKey}
             const match = url.match(/\/f\/([^/?]+)/);
-            return match ? match[1] : null;
+            return match && match[1] ? match[1] : null;
         } catch {
             return null;
         }

@@ -27,6 +27,7 @@ interface Chapter {
     description: string | null;
     content: string | null;
     r2AudioUrl: string | null;
+    thumbnailUrl?: string | null;
     youtubeVideoId: string | null;
     audioDuration: number | null;
     accessType: 'free' | 'timed' | 'vip';

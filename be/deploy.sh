@@ -45,13 +45,21 @@ restore_env() {
     echo "✅ Restored .env file from backup"
 }
 
-# Function to cleanup
+# Function to cleanup and switch back to original branch
 cleanup_and_restore() {
     local exit_code=$?
     echo ""
     
     # Cleanup build archives
     rm -f be-source.tar.gz 2>/dev/null || true
+    
+    # Switch back to original branch if not already there
+    local current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
+    if [ -n "$ORIGINAL_BRANCH" ] && [ "$current_branch" != "$ORIGINAL_BRANCH" ]; then
+        echo "🔄 Switching back to original branch: $ORIGINAL_BRANCH"
+        git checkout "$ORIGINAL_BRANCH" 2>/dev/null || true
+        echo "✅ Returned to branch: $ORIGINAL_BRANCH"
+    fi
     
     # Always restore .env file
     restore_env
@@ -94,7 +102,11 @@ SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 # Server path
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
 
-# Backup .env file
+# Save current branch
+ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+echo "🔄 Current branch: $ORIGINAL_BRANCH"
+
+# Backup .env file BEFORE switching branches
 backup_env
 
 # Auto Git Workflow
@@ -113,8 +125,12 @@ git push origin HEAD:master
 echo "✅ Pushed to master"
 
 # Sync local branch with master to be safe
+echo "🔄 Fetching latest from origin/master..."
 git fetch origin master
+
+echo "🔄 Resetting to origin/master..."
 git reset --hard origin/master
+echo "✅ Local workspace is now synced with origin/master"
 
 # Prepare .env file for build
 echo "📝 Preparing .env file for build..."

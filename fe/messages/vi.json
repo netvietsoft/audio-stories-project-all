@@ -36,11 +36,23 @@
     "dateFormat": "vi-VN"
   },
   "Footer": {
-    "about": "Giới thiệu",
-    "terms": "Điều khoản",
-    "privacy": "Bảo mật",
+    "description": "Điểm đến của những câu chuyện audio chất lượng. Nghe mọi lúc, mọi nơi với hàng ngàn truyện hấp dẫn.",
+    "explore": "Khám phá",
+    "allStories": "Tất cả truyện",
+    "categories": "Thể loại",
+    "authors": "Tác giả",
+    "hallOfFame": "Vinh danh",
+    "support": "Hỗ trợ",
+    "about": "Về chúng tôi",
+    "contact": "Liên hệ",
+    "faq": "Câu hỏi thường gặp",
+    "help": "Trung tâm trợ giúp",
+    "legal": "Pháp lý",
+    "terms": "Điều khoản dịch vụ",
+    "privacy": "Chính sách bảo mật",
     "dmca": "DMCA",
-    "rightsReserved": "All rights reserved."
+    "rightsReserved": "Bản quyền thuộc về AudioTruyen.",
+    "location": "Thành phố Hồ Chí Minh, Việt Nam"
   },
   "Home": {
     "loadError": "Lỗi tải trang chủ:",

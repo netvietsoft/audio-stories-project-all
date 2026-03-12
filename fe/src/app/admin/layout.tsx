@@ -106,6 +106,7 @@ export default function AdminLayout({
         { href: '/admin/memberships', label: 'Quản lý Hội viên', icon: Crown },
         { href: '/admin/packages', label: 'Quản lý Gói thanh toán', icon: Package },
         { href: '/admin/comments', label: 'Quản lý Bình luận', icon: MessageSquare },
+        { href: '/admin/comment-reports', label: 'Báo cáo Bình luận', icon: Bell },
         { href: '/admin/transactions', label: 'Quản lý Giao dịch', icon: DollarSign },
         { href: '/admin/settings', label: 'Cài đặt', icon: Settings },
     ];

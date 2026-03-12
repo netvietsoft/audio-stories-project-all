@@ -1,357 +1,426 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import {
-    ChevronLeft,
-    Plus,
-    Search,
-    Edit2,
-    Trash2,
-    Loader2,
-    X,
-    Music,
-    Youtube,
-    Lock,
-    Clock,
-    BookOpen,
-} from 'lucide-react';
-import Link from 'next/link';
-import { apiClient } from '@/lib/api/api-client';
-import { ChapterForm } from './_components/ChapterForm';
+import React, { useEffect, useState, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { 
+  ChevronLeft, 
+  Loader2, 
+  Plus,
+  Music,
+  Pencil,
+  Trash2,
+  Clock,
+  Search,
+  X
+} from "lucide-react";
+
+import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
 
 interface Chapter {
-    id: string;
-    chapterNumber: number;
-    title: string;
-    description: string | null;
-    content: string | null;
-    r2AudioUrl: string | null;
-    thumbnailUrl?: string | null;
-    youtubeVideoId: string | null;
-    audioDuration: number | null;
-    accessType: 'free' | 'timed' | 'vip';
-    createdAt: string;
+  id: string;
+  chapterNumber: number;
+  title: string;
+  description?: string;
+  audioUrl?: string;
+  audioDuration?: number;
+  createdAt: string;
+  storyId?: string;
 }
 
-interface Story {
-    id: string;
-    title: string;
-}
+export default function StoryChaptersPage() {
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const storyId = params?.id;
 
-export default function ChaptersPage() {
-    const params = useParams();
-    const router = useRouter();
-    const storyId = params.id as string;
+  const [isLoading, setIsLoading] = useState(true);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
+  const [storyTitle, setStoryTitle] = useState("");
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [unassignedChapters, setUnassignedChapters] = useState<Chapter[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
-    const [chapters, setChapters] = useState<Chapter[]>([]);
-    const [story, setStory] = useState<Story | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+  useEffect(() => {
+    if (!storyId) return;
+    fetchData();
+  }, [storyId]);
 
-    useEffect(() => {
-        fetchStory();
-        fetchChapters();
-    }, [storyId]);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-    const fetchStory = async () => {
-        try {
-            const res = await apiClient.get(`/stories/admin?search=${storyId}`);
-            // Assuming we can find the story in the list or have a direct endpoint
-            // For now, let's try to get detail by ID if exists, or use stories list
-            const stories = res.data.data;
-            const currentStory = stories.find((s: any) => s.id === storyId);
-            if (currentStory) setStory(currentStory);
-        } catch (error) {
-            console.error('Failed to fetch story:', error);
+  useEffect(() => {
+    if (searchQuery.length > 0) {
+      searchUnassignedChapters();
+    } else {
+      setUnassignedChapters([]);
+    }
+  }, [searchQuery]);
+
+  const fetchData = async () => {
+    try {
+      const [storyRes, chaptersRes] = await Promise.all([
+        apiClient.get(`/stories/admin/${storyId}`),
+        apiClient.get(`/stories/${storyId}/chapters`),
+      ]);
+      
+      setStoryTitle(storyRes.data.title);
+      setChapters(chaptersRes.data);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const searchUnassignedChapters = async () => {
+    setIsSearching(true);
+    try {
+      const res = await apiClient.get('/chapters', {
+        params: {
+          storyId: 'null',
+          search: searchQuery,
+          limit: 20,
         }
-    };
+      });
+      setUnassignedChapters(res.data.data || []);
+    } catch (error) {
+      console.error("Failed to search chapters:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
-    const fetchChapters = async () => {
-        setIsLoading(true);
-        try {
-            const res = await apiClient.get(`/stories/${storyId}/chapters`);
-            setChapters(res.data);
-        } catch (error) {
-            console.error('Failed to fetch chapters:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const assignChapterToStory = async (chapterId: string) => {
+    try {
+      await apiClient.patch(`/chapters/${chapterId}`, {
+        storyId: storyId,
+      });
+      
+      // Refresh chapters list
+      await fetchData();
+      
+      // Clear search
+      setSearchQuery("");
+      setUnassignedChapters([]);
+      setIsSearchOpen(false);
+    } catch (error) {
+      console.error("Failed to assign chapter:", error);
+      alert("Không thể gắn chương vào truyện. Vui lòng thử lại.");
+    }
+  };
 
-    const handleCreate = () => {
-        setEditingChapter(null);
-        setIsModalOpen(true);
-    };
+  const handleUnassign = async (chapterId: string) => {
+    if (!confirm("Bạn có chắc muốn bỏ gán chương này khỏi truyện?")) return;
+    
+    try {
+      await apiClient.patch(`/chapters/${chapterId}`, {
+        storyId: null,
+      });
+      setChapters(chapters.filter(c => c.id !== chapterId));
+    } catch (error) {
+      console.error("Failed to unassign chapter:", error);
+      alert("Không thể bỏ gán chương. Vui lòng thử lại.");
+    }
+  };
 
-    const handleEdit = (chapter: Chapter) => {
-        setEditingChapter(chapter);
-        setIsModalOpen(true);
-    };
+  const handleEdit = (chapterId: string) => {
+    const chapter = chapters.find(c => c.id === chapterId);
+    if (!chapter) return;
+    
+    setEditingChapter(chapter);
+    setIsEditModalOpen(true);
+  };
 
-    const handleDelete = async (id: string) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa chương này?')) return;
+  const handleUpdateChapter = async (data: Partial<Chapter>) => {
+    if (!editingChapter) return;
+    
+    try {
+      await apiClient.patch(`/chapters/${editingChapter.id}`, data);
+      
+      // Update local state
+      setChapters(chapters.map(c => 
+        c.id === editingChapter.id ? { ...c, ...data } : c
+      ));
+      
+      setIsEditModalOpen(false);
+      setEditingChapter(null);
+    } catch (error) {
+      console.error("Failed to update chapter:", error);
+      alert("Không thể cập nhật chương. Vui lòng thử lại.");
+    }
+  };
 
-        try {
-            await apiClient.delete(`/chapters/${id}`);
-            setChapters(chapters.filter(c => c.id !== id));
-        } catch (error) {
-            console.error('Failed to delete chapter:', error);
-        }
-    };
+  const handleDelete = async (chapterId: string) => {
+    if (!confirm("Bạn có chắc muốn xóa chương này?")) return;
+    
+    try {
+      await apiClient.delete(`/chapters/${chapterId}`);
+      setChapters(chapters.filter(c => c.id !== chapterId));
+    } catch (error) {
+      console.error("Failed to delete chapter:", error);
+      alert("Không thể xóa chương. Vui lòng thử lại.");
+    }
+  };
 
-    const handleSubmit = async (data: any) => {
-        setIsSubmitting(true);
-        try {
-            if (editingChapter) {
-                const updatePayload = {
-                    chapterNumber: data.chapterNumber,
-                    title: data.title,
-                    description: data.description || undefined,
-                    content: data.content || undefined,
-                    audioUrl: data.audioUrl || undefined,
-                    thumbnailUrl: data.thumbnailUrl || undefined,
-                    youtubeVideoId: data.youtubeVideoId || undefined,
-                    audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
-                    accessType: data.accessType,
-                };
-                await apiClient.patch(`/chapters/${editingChapter.id}`, updatePayload);
-            } else {
-                const createPayload = {
-                    chapterNumber: data.chapterNumber,
-                    title: data.title,
-                    description: data.description || undefined,
-                    content: data.content || undefined,
-                    audioUrl: data.audioUrl || undefined,
-                    thumbnailUrl: data.thumbnailUrl || undefined,
-                    youtubeVideoId: data.youtubeVideoId || undefined,
-                    audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
-                    accessType: data.accessType,
-                };
-                await apiClient.post(`/stories/${storyId}/chapters`, createPayload);
-            }
+  const formatDuration = (seconds?: number) => {
+    if (!seconds) return "N/A";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
-            await fetchChapters();
-            setIsModalOpen(false);
-        } catch (error) {
-            console.error('Failed to save chapter:', error);
-            alert('Không thể lưu chương. Vui lòng kiểm tra dữ liệu (đặc biệt URL audio) và thử lại.');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const filteredChapters = chapters.filter(c =>
-        c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.chapterNumber.toString().includes(searchTerm)
-    );
-
-    const formatDuration = (seconds: number | null) => {
-        if (!seconds) return '--:--';
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    };
-
+  if (isLoading) {
     return (
-        <div className="space-y-8 animate-in fade-in duration-700">
-            {/* Header Area */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                    <Link
-                        href="/admin/stories"
-                        className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:bg-indigo-50 transition-all shadow-sm"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </Link>
-                    <div>
-                        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                            Danh sách chương
-                        </h1>
-                        <p className="text-indigo-600 font-bold text-sm tracking-wide uppercase mt-1">
-                            {story?.title || 'Đang tải...'}
-                        </p>
-                    </div>
-                </div>
-                <button
-                    onClick={handleCreate}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200"
-                >
-                    <Plus className="w-4 h-4" />
-                    Thêm chương mới
-                </button>
-            </div>
-
-            {/* Search */}
-            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
-                <div className="relative group flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                    <input
-                        type="text"
-                        placeholder="Tìm theo tiêu đề hoặc số chương..."
-                        className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-            </div>
-
-            {/* Chapters Table */}
-            <div className="bg-white rounded-[40px] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-100">
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-24">#</th>
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Tiêu đề chương</th>
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Audio / Thống kê</th>
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Loại</th>
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {isLoading ? (
-                                Array(5).fill(0).map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        <td colSpan={5} className="px-8 py-6">
-                                            <div className="h-12 bg-slate-50 rounded-2xl" />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : filteredChapters.length > 0 ? (
-                                filteredChapters.map((chapter) => (
-                                    <tr key={chapter.id} className="group hover:bg-slate-50/50 transition-all duration-300">
-                                        <td className="px-8 py-5 text-center">
-                                            <span className="text-sm font-black text-slate-900 bg-slate-100 px-3 py-1 rounded-lg">
-                                                {chapter.chapterNumber}
-                                            </span>
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            <p className="text-sm font-black text-slate-900">{chapter.title}</p>
-                                            <div className="flex items-center gap-3 mt-1.5">
-                                                {chapter.r2AudioUrl ? (
-                                                    <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                                                        <Music className="w-3 h-3" /> R2 Audio
-                                                    </span>
-                                                ) : chapter.youtubeVideoId ? (
-                                                    <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
-                                                        <Youtube className="w-3 h-3" /> YouTube
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[10px] font-black uppercase tracking-tighter text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                                                        No Audio
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            <div className="flex flex-col gap-1.5">
-                                                <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                                                    <Clock className="w-3.5 h-3.5" />
-                                                    {formatDuration(chapter.audioDuration)}
-                                                </div>
-                                                {chapter.content && (
-                                                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-500">
-                                                        <BookOpen className="w-3.5 h-3.5" />
-                                                        Có văn bản ({chapter.content.length} ký tự)
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            {chapter.accessType === 'vip' ? (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-100 text-[10px] font-black text-amber-600 uppercase tracking-widest">
-                                                    <Lock className="w-3 h-3" /> VIP
-                                                </span>
-                                            ) : chapter.accessType === 'timed' ? (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-[10px] font-black text-indigo-600 uppercase tracking-widest">
-                                                    <Clock className="w-3 h-3" /> Timed
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
-                                                    Free
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-8 py-5 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                                <button
-                                                    onClick={() => handleEdit(chapter)}
-                                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(chapter.id)}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={5} className="px-8 py-20 text-center">
-                                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                                            <Music className="w-6 h-6 text-slate-300" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-slate-900">Chưa có chương nào</h3>
-                                        <p className="text-slate-500 mt-1">Bắt đầu bằng cách thêm chương đầu tiên cho truyện này.</p>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Modal for Create/Edit */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-3xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
-                        <div className="p-8 border-b border-slate-100 flex items-center justify-between shrink-0">
-                            <div>
-                                <h2 className="text-2xl font-black text-slate-900">
-                                    {editingChapter ? 'Chỉnh sửa Chương' : 'Thêm Chương Mới'}
-                                </h2>
-                                <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mt-1">
-                                    {story?.title}
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="p-8 overflow-y-auto custom-scrollbar">
-                            <ChapterForm
-                                initialData={editingChapter ? {
-                                    chapterNumber: editingChapter.chapterNumber,
-                                    title: editingChapter.title,
-                                    description: editingChapter.description ?? undefined,
-                                    content: editingChapter.content ?? undefined,
-                                    r2AudioUrl: editingChapter.r2AudioUrl ?? undefined,
-                                    audioUrl: editingChapter.r2AudioUrl ?? undefined,
-                                    thumbnailUrl: editingChapter.thumbnailUrl ?? undefined,
-                                    youtubeVideoId: editingChapter.youtubeVideoId ?? undefined,
-                                    audioDuration: editingChapter.audioDuration ?? 0,
-                                    accessType: editingChapter.accessType,
-                                } : {}}
-                                onSubmit={handleSubmit}
-                                onCancel={() => setIsModalOpen(false)}
-                                isLoading={isSubmitting}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
     );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link
+                href={`/admin/stories/${storyId}`}
+                className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </Link>
+              <div>
+                <h1 className="text-xl font-black text-black">Quay lại</h1>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Chapters List */}
+      <div className="max-w-7xl mx-auto px-8 py-8">
+        {/* Search Box */}
+        <div className="mb-6 relative" ref={searchRef}>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Tìm chương chưa gắn truyện..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchOpen(true)}
+              className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pl-12 pr-12 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 shadow-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setUnassignedChapters([]);
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4 text-slate-400" />
+              </button>
+            )}
+          </div>
+
+          {/* Search Results Dropdown */}
+          {isSearchOpen && searchQuery && (
+            <div className="absolute top-full left-0 w-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden z-20">
+              {isSearching ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-5 h-5 animate-spin text-indigo-600" />
+                </div>
+              ) : unassignedChapters.length > 0 ? (
+                <div className="max-h-80 overflow-y-auto">
+                  {unassignedChapters.map((chapter) => (
+                    <button
+                      key={chapter.id}
+                      onClick={() => assignChapterToStory(chapter.id)}
+                      className="w-full text-left px-5 py-4 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                          <Music className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-slate-900 truncate">
+                            {chapter.title}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Chương {chapter.chapterNumber}
+                          </p>
+                        </div>
+                        <Plus className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 px-4">
+                  <p className="text-sm text-slate-500">Không tìm thấy chương nào</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-[32px] border border-slate-200 overflow-hidden">
+          {chapters.length > 0 ? (
+            <div className="divide-y divide-slate-100">
+              {chapters.map((chapter) => (
+                <div
+                  key={chapter.id}
+                  className="flex items-center gap-6 p-6 hover:bg-slate-50 transition-colors group"
+                >
+                  {/* Chapter Icon */}
+                  <div className="flex-shrink-0 w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+                    <Music className="w-6 h-6 text-indigo-600" />
+                  </div>
+
+                  {/* Chapter Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-1">
+                      <span className="text-xs font-black text-indigo-600 uppercase tracking-wider">
+                        Chương {chapter.chapterNumber}
+                      </span>
+                      {chapter.audioDuration && (
+                        <span className="flex items-center gap-1 text-xs text-slate-500">
+                          <Clock className="w-3 h-3" />
+                          {formatDuration(chapter.audioDuration)}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 truncate">
+                      {chapter.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {new Date(chapter.createdAt).toLocaleDateString('vi-VN')}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleEdit(chapter.id)}
+                      className="p-2 hover:bg-indigo-50 text-indigo-600 rounded-lg transition-colors"
+                      title="Chỉnh sửa"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleUnassign(chapter.id)}
+                      className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+                      title="Bỏ gán"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-100 rounded-2xl mb-4">
+                <Music className="w-8 h-8 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Chưa có chương nào</h3>
+              <p className="text-sm text-slate-500">
+                Sử dụng ô tìm kiếm ở trên để gắn chương vào truyện
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Edit Modal */}
+      {isEditModalOpen && editingChapter && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[32px] max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-slate-200 px-8 py-6 rounded-t-[32px]">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-black text-slate-900">Chỉnh sửa Chương</h2>
+                <button
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setEditingChapter(null);
+                  }}
+                  className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-600 uppercase">Số chương</label>
+                <input
+                  type="number"
+                  defaultValue={editingChapter.chapterNumber}
+                  onChange={(e) => setEditingChapter({ ...editingChapter, chapterNumber: parseInt(e.target.value) })}
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-600 uppercase">Tiêu đề</label>
+                <input
+                  type="text"
+                  defaultValue={editingChapter.title}
+                  onChange={(e) => setEditingChapter({ ...editingChapter, title: e.target.value })}
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-600 uppercase">Mô tả</label>
+                <textarea
+                  defaultValue={editingChapter.description || ''}
+                  onChange={(e) => setEditingChapter({ ...editingChapter, description: e.target.value })}
+                  rows={4}
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 resize-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setEditingChapter(null);
+                  }}
+                  className="flex-1 px-6 py-3 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={() => handleUpdateChapter({
+                    chapterNumber: editingChapter.chapterNumber,
+                    title: editingChapter.title,
+                    description: editingChapter.description,
+                  })}
+                  className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200"
+                >
+                  Lưu thay đổi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

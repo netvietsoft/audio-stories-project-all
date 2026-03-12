@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
 import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 
 import { ExploreQueryDto } from './dto/explore-query.dto';
@@ -121,6 +121,14 @@ export class StoriesController {
     return this.storiesService.updateStory(id, dto);
   }
 
+  @Delete(':id')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  deleteStory(@Param('id') id: string) {
+    return this.storiesService.deleteStory(id);
+  }
+
+  // IMPORTANT: This must be LAST because it's a catch-all route
   @Get(':slug')
   getBySlug(@Param('slug') slug: string) {
     return this.storiesService.getStoryDetail(slug);

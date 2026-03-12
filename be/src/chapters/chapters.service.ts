@@ -39,7 +39,11 @@ export class ChaptersService {
                 }
                 : {}),
             ...(accessType ? { accessType } : {}),
-            ...(storyId ? { storyId } : {}),
+            ...(storyId 
+                ? storyId === 'null' 
+                    ? { storyId: null } 
+                    : { storyId }
+                : {}),
         };
 
         const [chapters, total] = await Promise.all([
@@ -117,9 +121,89 @@ export class ChaptersService {
     }
 
     async update(id: string, data: UpdateChapterDto) {
-        await this.findOne(id);
+        const chapter = await this.findOne(id);
 
         console.log('Updating chapter with data:', data);
+
+        // If storyId is being changed, update totalChapters for both old and new stories
+        if (data.storyId !== undefined && data.storyId !== chapter.storyId) {
+            // Validate new story exists if storyId is not null
+            if (data.storyId) {
+                const story = await this.prisma.story.findUnique({ 
+                    where: { id: data.storyId } 
+                });
+                if (!story) {
+                    throw new NotFoundException(`Story with ID ${data.storyId} not found`);
+                }
+
+                // Find the highest chapter number for the new story (including deleted ones to avoid conflicts)
+                const lastChapter = await this.prisma.chapter.findFirst({
+                    where: { storyId: data.storyId },
+                    orderBy: { chapterNumber: 'desc' },
+                });
+                
+                // Use Math.floor to ensure we get an integer, then add 1
+                const nextChapterNumber = lastChapter 
+                    ? Math.floor(lastChapter.chapterNumber) + 1 
+                    : 1;
+                
+                console.log('Last chapter found:', lastChapter?.chapterNumber);
+                console.log('Auto-assigning chapter number:', nextChapterNumber);
+                
+                // Update chapter number to avoid unique constraint violation
+                data.chapterNumber = nextChapterNumber;
+            }
+
+            // Separate storyId and chapterNumber from other fields for normalization
+            const { storyId, chapterNumber, ...otherData } = data;
+            const normalizedData = Object.keys(otherData).length > 0 
+                ? this.normalizeAudioPayload(otherData)
+                : {};
+
+            const updateData: any = {
+                ...normalizedData,
+                storyId,
+            };
+
+            // Add chapterNumber if it was set
+            if (chapterNumber !== undefined) {
+                updateData.chapterNumber = chapterNumber;
+            }
+
+            console.log('Final update data:', updateData);
+
+            const updates: any[] = [
+                this.prisma.chapter.update({
+                    where: { id },
+                    data: updateData,
+                })
+            ];
+
+            // Decrement old story's totalChapters
+            if (chapter.storyId) {
+                updates.push(
+                    this.prisma.story.update({
+                        where: { id: chapter.storyId },
+                        data: { totalChapters: { decrement: 1 } },
+                    })
+                );
+            }
+
+            // Increment new story's totalChapters
+            if (storyId) {
+                updates.push(
+                    this.prisma.story.update({
+                        where: { id: storyId },
+                        data: { totalChapters: { increment: 1 } },
+                    })
+                );
+            }
+
+            const [updatedChapter] = await this.prisma.$transaction(updates);
+            return updatedChapter;
+        }
+
+        // Normal update without storyId change
         const normalizedData = this.normalizeAudioPayload(data);
         console.log('Normalized data:', normalizedData);
 

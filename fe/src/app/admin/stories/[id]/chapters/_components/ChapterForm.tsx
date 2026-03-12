@@ -37,7 +37,7 @@ const chapterSchema = z.object({
     accessType: z.enum(['free', 'timed', 'vip']),
     storyId: z.preprocess(
         (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : value),
-        z.string().uuid('Vui lòng chọn truyện').optional(),
+        z.string().uuid('ID truyện không hợp lệ').optional(),
     ),
 });
 
@@ -237,8 +237,11 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
             <div className="space-y-2">
                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
                     <BookOpen className="w-4 h-4 text-indigo-500" />
-                    Chọn Truyện
+                    Chọn Truyện (Tùy chọn)
                 </label>
+                <p className="text-xs font-medium text-slate-500 ml-1 mb-2">
+                    Bỏ trống nếu muốn tạo chương độc lập
+                </p>
                 <div className="relative" ref={storyRef}>
                     <button
                         type="button"
@@ -291,7 +294,6 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                     )}
                     <input type="hidden" {...register('storyId')} />
                 </div>
-                {errors.storyId && <p className="text-xs font-bold text-red-500 ml-2">{errors.storyId.message}</p>}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

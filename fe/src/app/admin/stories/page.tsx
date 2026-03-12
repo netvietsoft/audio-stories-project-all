@@ -129,6 +129,21 @@ export default function StoriesPage() {
         }
     };
 
+    const handleDelete = async (storyId: string, storyTitle: string) => {
+        if (!confirm(`Bạn có chắc muốn xóa truyện "${storyTitle}"? Hành động này không thể hoàn tác.`)) {
+            return;
+        }
+
+        try {
+            await apiClient.delete(`/stories/${storyId}`);
+            setStories((prev) => prev.filter((s) => s.id !== storyId));
+            setTotal((prev) => prev - 1);
+        } catch (error) {
+            console.error('Failed to delete story:', error);
+            alert('Không thể xóa truyện. Vui lòng thử lại.');
+        }
+    };
+
     const formatDate = (dateString: string) => {
         try {
             return new Intl.DateTimeFormat('vi-VN', {
@@ -336,7 +351,10 @@ export default function StoriesPage() {
                                                 >
                                                     <Edit2 className="w-4 h-4" />
                                                 </Link>
-                                                <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                                                <button 
+                                                    onClick={() => handleDelete(story.id, story.title)}
+                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                                >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>

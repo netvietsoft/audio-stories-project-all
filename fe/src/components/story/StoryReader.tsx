@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { MessageSquare, Send, X } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { useUserStore } from "@/stores/user-store";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
 
 type InlineComment = {
   id: string;
@@ -169,14 +171,37 @@ export default function StoryReader({
   const [paragraphDrafts, setParagraphDrafts] = useState<Record<string, string>>({});
   const [replyTargetByParagraph, setReplyTargetByParagraph] = useState<Record<string, string | null>>({});
   const [paragraphComments, setParagraphComments] = useState<Record<string, InlineComment[]>>({});
+  const [paragraphCommentCounts, setParagraphCommentCounts] = useState<Record<number, number>>({});
   const [loadedParagraphs, setLoadedParagraphs] = useState<Record<string, boolean>>({});
   const [isSubmittingParagraph, setIsSubmittingParagraph] = useState(false);
   const [commentSort, setCommentSort] = useState<CommentSort>("newest");
+  const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  
+  const user = useUserStore((state) => state.user);
+  const openLogin = useAuthModalStore((state) => state.openLogin);
 
   const paragraphs = useMemo(() => {
     if (!chapterId) return [];
     return splitParagraphs(chapterId, content);
   }, [chapterId, content]);
+
+  // Load comment counts for all paragraphs on mount
+  useEffect(() => {
+    if (!chapterId || paragraphs.length === 0) return;
+
+    const loadCommentCounts = async () => {
+      try {
+        const response = await apiClient.get(`/chapters/${chapterId}/comments/counts`);
+        const counts = response.data?.data || {};
+        setParagraphCommentCounts(counts);
+      } catch (error) {
+        console.error('Failed to load comment counts:', error);
+      }
+    };
+
+    void loadCommentCounts();
+  }, [chapterId, paragraphs.length]);
 
   const previewParagraphs = useMemo(() => {
     if (!chapterId || !content) return [];
@@ -364,6 +389,12 @@ export default function StoryReader({
     });
 
   const submitParagraphComment = async (paragraph: ParagraphItem) => {
+    // Check if user is logged in
+    if (!user) {
+      openLogin();
+      return;
+    }
+    
     if (!chapterId) return;
     const contentValue = (paragraphDrafts[paragraph.id] || "").trim();
     if (!contentValue) return;
@@ -402,10 +433,30 @@ export default function StoryReader({
       }));
       setParagraphDrafts((prev) => ({ ...prev, [paragraph.id]: "" }));
       setReplyTargetByParagraph((prev) => ({ ...prev, [paragraph.id]: null }));
-    } catch {
-      // silent fail to avoid breaking reading flow
+    } catch (error) {
+      console.error("Failed to submit comment:", error);
     } finally {
       setIsSubmittingParagraph(false);
+    }
+  };
+
+  const handleReportComment = async (commentId: string) => {
+    setReportingCommentId(commentId);
+  };
+
+  const submitReport = async () => {
+    if (!reportingCommentId || !reportReason.trim()) return;
+
+    try {
+      await apiClient.post(`/comments/${reportingCommentId}/report`, {
+        reason: reportReason.trim(),
+      });
+      alert("Đã gửi báo cáo. Cảm ơn bạn đã góp ý!");
+      setReportingCommentId(null);
+      setReportReason("");
+    } catch (error) {
+      console.error("Failed to report comment:", error);
+      alert("Không thể gửi báo cáo. Vui lòng thử lại.");
     }
   };
 
@@ -463,20 +514,20 @@ export default function StoryReader({
           const isOpen = openParagraphId === paragraph.id;
 
           return (
-            <div key={paragraph.id} className="group relative mb-6 overflow-visible">
+            <div key={paragraph.id} className="group relative mb-6 overflow-visible rounded-lg px-4 py-2 -mx-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
               <p className="text-lg leading-loose text-gray-800 dark:text-gray-100">{paragraph.content}</p>
 
               <button
                 onClick={() => openCommentPopup(paragraph.id, paragraph.index)}
                 className={`absolute bottom-0 right-0 inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white/90 px-2 py-1 text-xs text-slate-600 transition-all duration-200 hover:bg-white dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-300 sm:bottom-auto sm:top-1/2 sm:-right-12 sm:-translate-y-1/2 ${
-                  comments.length > 0
+                  (paragraphCommentCounts[paragraph.index] || 0) > 0
                     ? "opacity-40 group-hover:opacity-100"
                     : "opacity-0 group-hover:opacity-100"
                 }`}
                 aria-label={`Bình luận đoạn ${paragraph.index + 1}`}
               >
                 <MessageSquare className="h-3.5 w-3.5" />
-                <span>{comments.length}</span>
+                <span>{paragraphCommentCounts[paragraph.index] || 0}</span>
               </button>
 
               {isOpen && (
@@ -563,6 +614,12 @@ export default function StoryReader({
                             >
                               Trả lời
                             </button>
+                            <button
+                              onClick={() => void handleReportComment(comment.id)}
+                              className="rounded-full border border-red-300 px-2 py-0.5 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/20"
+                            >
+                              Báo xấu
+                            </button>
                           </div>
 
                           {(comment.replies?.length || 0) > 0 ? (
@@ -635,7 +692,18 @@ export default function StoryReader({
                           [paragraph.id]: event.target.value,
                         }))
                       }
-                      placeholder="Viết bình luận cho đoạn này..."
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                          event.preventDefault();
+                          void submitParagraphComment(paragraph);
+                        }
+                      }}
+                      onFocus={() => {
+                        if (!user) {
+                          openLogin();
+                        }
+                      }}
+                      placeholder={user ? "Viết bình luận cho đoạn này..." : "Đăng nhập để bình luận..."}
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
                     />
                     <button
@@ -669,6 +737,51 @@ export default function StoryReader({
           </div>
         );
       })}
+
+      {/* Report Modal */}
+      {reportingCommentId && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setReportingCommentId(null);
+              setReportReason("");
+            }
+          }}
+        >
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-xl">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Báo cáo bình luận</h3>
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="Vui lòng mô tả lý do báo cáo..."
+                rows={4}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white resize-none"
+              />
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => {
+                    setReportingCommentId(null);
+                    setReportReason("");
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={submitReport}
+                  disabled={!reportReason.trim()}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Gửi báo cáo
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

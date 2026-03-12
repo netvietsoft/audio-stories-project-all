@@ -1,40 +1,206 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
 
-export default async function Footer () {
-    const t = await getTranslations("Footer");
+export default async function Footer() {
+  const t = await getTranslations("Footer");
 
-    return (
-        <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Cột 1: Logo và giới thiệu */}
-                <div className="mb-6 md:mb-0">
-                    <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        AudioTruyen
-                    </Link>
-                </div>
-                {/* Cột 2: Các liên kết */}
-                <div className="flex space-x-6 text-sm text-gray-500 dark:text-gray-400">
-                    <Link href="/about" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-                        {t("about")}
-                    </Link>
-                    <Link href="/terms" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-                        {t("terms")}
-                    </Link>
-                    <Link href="/privacy" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-                        {t("privacy")}
-                    </Link>
-                    <Link href="/dmca" className="hover:text-gray-900 dark:hover:text-white transition-colors">
-                        {t("dmca")}
-                    </Link>
-                </div>
-                {/* Dòng bản quyền */}
-                <div className="mt-8 border-t border-gray-200 dark:border-gray-800 pt-8 flex justify-center">
-                    <p className="text-sm text-gray-400">
-                        &copy; {new Date().getFullYear()} AudioTruyen. {t("rightsReserved")}
-                    </p>
-                </div>
+  return (
+    <footer className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 border-t border-gray-200 dark:border-gray-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+          {/* Cột 1: Logo và giới thiệu */}
+          <div className="space-y-4">
+            <Link href="/" className="inline-block">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                Netviet Audio
+              </h2>
+            </Link>
+            <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              {t("description")}
+            </p>
+            {/* Mạng xã hội */}
+            <div className="flex space-x-4 pt-2">
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+                aria-label="Facebook"
+              >
+                <Facebook className="w-5 h-5" />
+              </a>
+              <a
+                href="https://twitter.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-blue-400 dark:text-gray-400 dark:hover:text-blue-300 transition-colors"
+                aria-label="Twitter"
+              >
+                <Twitter className="w-5 h-5" />
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-pink-600 dark:text-gray-400 dark:hover:text-pink-400 transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram className="w-5 h-5" />
+              </a>
+              <a
+                href="https://youtube.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+                aria-label="Youtube"
+              >
+                <Youtube className="w-5 h-5" />
+              </a>
             </div>
-        </footer>
-    )
+          </div>
+
+          {/* Cột 2: Khám phá */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+              {t("explore")}
+            </h3>
+            <ul className="space-y-3">
+              <li>
+                <Link
+                  href="/stories"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t("allStories")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/categories"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t("categories")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/authors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t("authors")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/hall-of-fame"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t("hallOfFame")}
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Cột 3: Hỗ trợ */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+              {t("support")}
+            </h3>
+            <ul className="space-y-3">
+              <li>
+                <Link
+                  href="/about"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t("about")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/contact"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t("contact")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/faq"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t("faq")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/help"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t("help")}
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Cột 4: Pháp lý & Liên hệ */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4">
+              {t("legal")}
+            </h3>
+            <ul className="space-y-3 mb-6">
+              <li>
+                <Link
+                  href="/terms"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t("terms")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/privacy"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t("privacy")}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/dmca"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                >
+                  {t("dmca")}
+                </Link>
+              </li>
+            </ul>
+            
+            {/* Thông tin liên hệ */}
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                <Mail className="w-4 h-4" />
+                <span>support@audiotruyen.com</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                <Phone className="w-4 h-4" />
+                <span>+84 123 456 789</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dòng bản quyền */}
+        <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center md:text-left">
+              &copy; {new Date().getFullYear()} AudioTruyen. {t("rightsReserved")}
+            </p>
+            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+              <MapPin className="w-4 h-4" />
+              <span>{t("location")}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
 }

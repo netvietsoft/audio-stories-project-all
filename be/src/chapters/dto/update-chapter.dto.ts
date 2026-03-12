@@ -2,6 +2,10 @@ import { IsEnum, IsNumber, IsOptional, IsString, MaxLength } from 'class-validat
 import { ChapterAccessType } from '@prisma/client';
 
 export class UpdateChapterDto {
+    @IsString()
+    @IsOptional()
+    storyId?: string;
+
     @IsNumber()
     @IsOptional()
     chapterNumber?: number;

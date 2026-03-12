@@ -562,4 +562,23 @@ export class StoriesService {
 
     return this.serializeStory(updated);
   }
+
+  async deleteStory(id: string) {
+    const existing = await this.prisma.story.findUnique({
+      where: { id },
+      select: { id: true, deletedAt: true },
+    });
+
+    if (!existing || existing.deletedAt) {
+      throw new NotFoundException('Story not found');
+    }
+
+    // Soft delete the story
+    await this.prisma.story.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+
+    return { message: 'Story deleted successfully' };
+  }
 }

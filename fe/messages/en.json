@@ -36,11 +36,23 @@
     "dateFormat": "en-US"
   },
   "Footer": {
-    "about": "About",
-    "terms": "Terms",
-    "privacy": "Privacy",
+    "description": "Your destination for premium audio stories. Listen anytime, anywhere with thousands of captivating stories.",
+    "explore": "Explore",
+    "allStories": "All Stories",
+    "categories": "Categories",
+    "authors": "Authors",
+    "hallOfFame": "Hall of Fame",
+    "support": "Support",
+    "about": "About Us",
+    "contact": "Contact",
+    "faq": "FAQ",
+    "help": "Help Center",
+    "legal": "Legal",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
     "dmca": "DMCA",
-    "rightsReserved": "All rights reserved."
+    "rightsReserved": "All rights reserved.",
+    "location": "Ho Chi Minh City, Vietnam"
   },
   "Home": {
     "loadError": "Failed to load homepage:",

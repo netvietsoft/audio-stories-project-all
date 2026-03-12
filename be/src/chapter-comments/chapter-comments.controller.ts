@@ -1,11 +1,16 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 
 import { Account } from '@/auth/decorators/account.decorator';
+import { Roles } from '@/auth/decorators/roles.decorator';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
+import { RolesGuard } from '@/auth/guards/roles.guard';
 import { CreateChapterCommentDto } from './dto/create-chapter-comment.dto';
 import { ListRepliesDto } from './dto/list-replies.dto';
 import { ListChapterCommentsDto } from './dto/list-chapter-comments.dto';
 import { ToggleCommentReactionDto } from './dto/toggle-comment-reaction.dto';
+import { CreateCommentReportDto } from './dto/create-comment-report.dto';
+import { ListCommentReportsDto } from './dto/list-comment-reports.dto';
+import { UpdateCommentReportDto } from './dto/update-comment-report.dto';
 import { ChapterCommentsService } from './chapter-comments.service';
 
 @Controller()
@@ -14,6 +19,11 @@ export class ChapterCommentsController {
 
   private userIdFromAccount(account: any) {
     return account?.id || account?.sub;
+  }
+
+  @Get('chapters/:chapterId/comments/counts')
+  getCounts(@Param('chapterId') chapterId: string) {
+    return this.chapterCommentsService.getCommentCounts(chapterId);
   }
 
   @Get('chapters/:chapterId/comments')
@@ -45,4 +55,40 @@ export class ChapterCommentsController {
   ) {
     return this.chapterCommentsService.toggleReaction(this.userIdFromAccount(account), commentId, dto.type);
   }
+
+  @Post('comments/:commentId/report')
+  @UseGuards(JwtAccessGuard)
+  reportComment(
+    @Param('commentId') commentId: string,
+    @Account() account: any,
+    @Body() dto: CreateCommentReportDto,
+  ) {
+    return this.chapterCommentsService.reportComment(
+      this.userIdFromAccount(account),
+      commentId,
+      dto.reason,
+    );
+  }
+
+  @Get('comments/reports')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  listReports(@Query() query: ListCommentReportsDto) {
+    return this.chapterCommentsService.listReports(query);
+  }
+
+  @Get('comments/reports/stats')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  getReportStats() {
+    return this.chapterCommentsService.getReportStats();
+  }
+
+  @Patch('comments/reports/:reportId')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  updateReport(@Param('reportId') reportId: string, @Body() dto: UpdateCommentReportDto) {
+    return this.chapterCommentsService.updateReport(reportId, dto);
+  }
 }
+

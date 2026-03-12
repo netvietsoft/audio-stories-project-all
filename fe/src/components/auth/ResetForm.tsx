@@ -8,8 +8,15 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { resetByCodeSchema } from "@/lib/validation/auth";
 import { apiClient } from "@/lib/api/api-client";
+import { Mail, Lock, Loader2, AlertCircle, CheckCircle2, KeyRound } from "lucide-react";
+import CodeInput from "./CodeInput";
 
-export default function ResetForm() {
+interface ResetFormProps {
+  token?: string;
+  onSuccess?: () => void;
+}
+
+export default function ResetForm({ token, onSuccess }: ResetFormProps = {}) {
   const t = useTranslations("ResetForm");
   const tAuth = useTranslations("Auth");
   const searchParams = useSearchParams();
@@ -19,7 +26,7 @@ export default function ResetForm() {
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [isResending, setIsResending] = useState(false);
 
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<z.infer<typeof resetByCodeSchema>>({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<z.infer<typeof resetByCodeSchema>>({
     resolver: zodResolver(resetByCodeSchema),
     defaultValues: {
       email: emailFromQuery,
@@ -30,6 +37,7 @@ export default function ResetForm() {
   });
 
   const emailValue = watch("email");
+  const codeValue = watch("code");
 
   const onSubmit = async (data: z.infer<typeof resetByCodeSchema>) => {
     try {
@@ -79,71 +87,110 @@ export default function ResetForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {submitError && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{submitError}</p>}
-      {resendMessage && <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">{resendMessage}</p>}
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("email")}</label>
-        <input
-          {...register("email")}
-          type="email"
-          className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="nhap@email.com"
-        />
-        {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("code")}</label>
-        <input
-          {...register("code")}
-          type="text"
-          inputMode="numeric"
-          maxLength={6}
-          className="w-full px-3 py-2 border rounded-md text-center text-2xl tracking-[0.5em] font-semibold dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="000000"
-          onInput={(event) => {
-            const target = event.target as HTMLInputElement;
-            target.value = target.value.replace(/\D/g, "").slice(0, 6);
-          }}
-        />
-        {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code.message}</p>}
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("newPassword")}</label>
-        <input
-          {...register("password")}
-          type="password"
-          className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder={t("newPasswordPlaceholder")}
-        />
-        {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
-      </div>
-      <div>
-        <label className="block text-sm font-medium mb-1">{t("confirmNewPassword")}</label>
-        <input
-          {...register("confirmPassword")}
-          type="password"
-          className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder={t("confirmNewPasswordPlaceholder")}
-        />
-        {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword.message}</p>}
-      </div>
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full py-2 px-4 mt-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? tAuth("processing") : t("submit")}
-      </button>
+    <div className="w-full max-w-md mx-auto">
+      <div className="">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-950 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4">
+            <KeyRound className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Đặt lại mật khẩu</h1>
+          <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Nhập mã và mật khẩu mới</p>
+        </div>
 
-      <button
-        type="button"
-        onClick={onResendCode}
-        disabled={isResending || !emailValue}
-        className="w-full text-sm text-blue-600 hover:underline disabled:opacity-50"
-      >
-        {isResending ? t("resending") : t("resend")}
-      </button>
-    </form>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {submitError && (
+            <div className="bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl flex items-center gap-3 text-sm animate-in fade-in zoom-in duration-200">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <p>{submitError}</p>
+            </div>
+          )}
+          {resendMessage && (
+            <div className="bg-green-50 dark:bg-green-950/30 border border-green-100 dark:border-green-900 text-green-700 dark:text-green-400 px-4 py-3 rounded-xl flex items-center gap-3 text-sm animate-in fade-in zoom-in duration-200">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <p>{resendMessage}</p>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700 dark:text-gray-300 ml-1">{t("email")}</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-gray-500 group-focus-within:text-indigo-500 transition-colors">
+                <Mail className="w-5 h-5" />
+              </div>
+              <input
+                {...register("email")}
+                type="email"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500"
+                placeholder="nhap@email.com"
+              />
+            </div>
+            {errors.email && <p className="text-red-500 text-sm mt-1 ml-1">{errors.email.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700 dark:text-gray-300 ml-1">{t("code")}</label>
+            <CodeInput
+              value={codeValue || ""}
+              onChange={(value) => setValue("code", value)}
+              disabled={isSubmitting}
+            />
+            {errors.code && <p className="text-red-500 text-sm mt-1 text-center">{errors.code.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700 dark:text-gray-300 ml-1">{t("newPassword")}</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-gray-500 group-focus-within:text-indigo-500 transition-colors">
+                <Lock className="w-5 h-5" />
+              </div>
+              <input
+                {...register("password")}
+                type="password"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500"
+                placeholder={t("newPasswordPlaceholder")}
+              />
+            </div>
+            {errors.password && <p className="text-red-500 text-sm mt-1 ml-1">{errors.password.message}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700 dark:text-gray-300 ml-1">{t("confirmNewPassword")}</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 dark:text-gray-500 group-focus-within:text-indigo-500 transition-colors">
+                <Lock className="w-5 h-5" />
+              </div>
+              <input
+                {...register("confirmPassword")}
+                type="password"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500"
+                placeholder={t("confirmNewPasswordPlaceholder")}
+              />
+            </div>
+            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1 ml-1">{errors.confirmPassword.message}</p>}
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 dark:shadow-indigo-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              t("submit")
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={onResendCode}
+            disabled={isResending || !emailValue}
+            className="w-full text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isResending ? t("resending") : t("resend")}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }

@@ -14,6 +14,7 @@ import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/auth";
 import { clearAuthCookies } from "@/lib/auth/cookies";
 import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
 
 const localeCookieName = "NEXT_LOCALE";
 
@@ -54,6 +55,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const user = useUserStore((state) => state.user);
+  const openLogin = useAuthModalStore((state) => state.openLogin);
   const [notifs, setNotifs] = useState<NotificationItem[]>([]);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [topCategories, setTopCategories] = useState<TopCategoryItem[]>([]);
@@ -311,7 +313,12 @@ export default function Navbar() {
                 {/* Avatar Desktoop Only */}
                 {!user ? (
                   <div className="hidden sm:flex items-center gap-2">
-                    <Link href="/login" className="px-5 py-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm font-semibold">{t("login")}</Link>
+                    <button 
+                      onClick={openLogin}
+                      className="px-5 py-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm font-semibold"
+                    >
+                      {t("login")}
+                    </button>
                   </div>
                 ) : (<div className="relative hidden sm:block">
                   <button
@@ -405,13 +412,15 @@ export default function Navbar() {
               ) : (
                 <div className="pr-10">
                   <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">{t("openMenu")}</h3>
-                  <Link 
-                    href="/login" 
-                    onClick={closeMobileMenu}
+                  <button 
+                    onClick={() => {
+                      openLogin();
+                      closeMobileMenu();
+                    }}
                     className="flex justify-center w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-sm shadow-md active:scale-95 transition-all"
                   >
                     {t("login")}
-                  </Link>
+                  </button>
                 </div>
               )}
             </div>

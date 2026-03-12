@@ -51,6 +51,7 @@ model User {
   playlists           Playlist[]
   chapterComments     ChapterComment[]
   commentReactions    CommentReaction[]
+  commentReports      CommentReport[]
 
   @@index([roleId])
   @@index([isActive])
@@ -661,6 +662,7 @@ model ChapterComment {
   parent  ChapterComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies ChapterComment[] @relation("CommentReplies")
   reactions CommentReaction[]
+  reports CommentReport[]
 
   @@index([userId])
   @@index([chapterId])
@@ -692,4 +694,31 @@ model CommentReaction {
   @@index([userId])
   @@index([commentId, type])
   @@map("comment_reactions")
+}
+
+enum CommentReportStatus {
+  pending
+  reviewed
+  resolved
+  dismissed
+}
+
+model CommentReport {
+  id        String              @id @default(uuid()) @db.VarChar(36)
+  userId    String?             @map("user_id") @db.VarChar(36)
+  commentId String              @map("comment_id") @db.VarChar(36)
+  reason    String              @db.Text
+  status    CommentReportStatus @default(pending)
+  adminNote String?             @map("admin_note") @db.Text
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+
+  user    User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  comment ChapterComment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([commentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("comment_reports")
 }

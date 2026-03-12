@@ -237,7 +237,11 @@ export default function ChaptersGlobalPage() {
                             className="w-full h-full bg-slate-50 border-none rounded-2xl py-3 pl-6 pr-10 text-sm font-bold text-slate-700 flex items-center justify-between hover:ring-2 hover:ring-indigo-500/10 transition-all cursor-pointer"
                         >
                             <span className="truncate">
-                                {filterStoryId === 'all' ? 'Tất cả truyện' : stories.find(s => s.id === filterStoryId)?.title || 'Lọc theo truyện'}
+                                {filterStoryId === 'all' 
+                                    ? 'Tất cả truyện' 
+                                    : filterStoryId === 'null'
+                                    ? 'Chưa gán truyện'
+                                    : stories.find(s => s.id === filterStoryId)?.title || 'Lọc theo truyện'}
                             </span>
                             <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isStoryFilterOpen ? 'rotate-180' : ''}`} />
                         </button>
@@ -266,6 +270,17 @@ export default function ChaptersGlobalPage() {
                                     >
                                         Tất cả truyện
                                         {filterStoryId === 'all' && <Check className="w-4 h-4" />}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setFilterStoryId('null');
+                                            setIsStoryFilterOpen(false);
+                                            setPage(1);
+                                        }}
+                                        className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${filterStoryId === 'null' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
+                                    >
+                                        Chưa gán truyện
+                                        {filterStoryId === 'null' && <Check className="w-4 h-4" />}
                                     </button>
                                     <div className="h-px bg-slate-100 my-1 mx-2" />
                                     {stories.filter(s => (s.title || '').toLowerCase().includes(storySearch.toLowerCase())).length > 0 ? (

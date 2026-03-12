@@ -1,14 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CommentReactionType, Prisma } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
 import { ChapterCommentScope, CreateChapterCommentDto } from './dto/create-chapter-comment.dto';
 import { ChapterCommentSortType, ListChapterCommentsDto } from './dto/list-chapter-comments.dto';
 import { ListRepliesDto } from './dto/list-replies.dto';
+import { ListCommentReportsDto } from './dto/list-comment-reports.dto';
+import { UpdateCommentReportDto } from './dto/update-comment-report.dto';
 
 @Injectable()
 export class ChapterCommentsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private async getReactionMap(commentIds: string[]) {
     if (!commentIds.length) {
@@ -343,4 +345,276 @@ export class ChapterCommentsService {
       },
     };
   }
+
+  async reportComment(userId: string, commentId: string, reason: string) {
+    const comment = await this.prisma.chapterComment.findUnique({
+      where: { id: commentId },
+      select: { id: true, userId: true, isHidden: true },
+    });
+
+    if (!comment || comment.isHidden) {
+      throw new NotFoundException('Comment not found');
+    }
+
+    if (comment.userId === userId) {
+      throw new BadRequestException('You cannot report your own comment');
+    }
+
+    const normalizedReason = reason.trim();
+    const existing = await this.prisma.commentReport.findFirst({
+      where: {
+        userId,
+        commentId,
+        status: { in: ['pending', 'reviewed'] },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    if (existing) {
+      return {
+        ok: true,
+        alreadyReported: true,
+        data: existing,
+      };
+    }
+
+    const report = await this.prisma.commentReport.create({
+      data: {
+        userId,
+        commentId,
+        reason: normalizedReason,
+      },
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      ok: true,
+      data: report,
+    };
+  }
+
+  async listReports(query: ListCommentReportsDto) {
+    const page = query.page ?? 1;
+    const limit = Math.min(Math.max(query.limit ?? 20, 1), 100);
+    const skip = (page - 1) * limit;
+
+    const search = query.search?.trim();
+
+    const where: Prisma.CommentReportWhereInput = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(search
+        ? {
+            OR: [
+              { reason: { contains: search } },
+              { adminNote: { contains: search } },
+              { comment: { content: { contains: search } } },
+              { comment: { user: { displayName: { contains: search } } } },
+              { comment: { user: { email: { contains: search } } } },
+              { comment: { story: { title: { contains: search } } } },
+              { comment: { chapter: { title: { contains: search } } } },
+              { user: { displayName: { contains: search } } },
+              { user: { email: { contains: search } } },
+            ],
+          }
+        : {}),
+    };
+
+    const [rows, total] = await Promise.all([
+      this.prisma.commentReport.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              displayName: true,
+              avatarUrl: true,
+            },
+          },
+          comment: {
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              isHidden: true,
+              timestampSeconds: true,
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  displayName: true,
+                  avatarUrl: true,
+                },
+              },
+              story: {
+                select: {
+                  id: true,
+                  title: true,
+                  slug: true,
+                },
+              },
+              chapter: {
+                select: {
+                  id: true,
+                  title: true,
+                  chapterNumber: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.commentReport.count({ where }),
+    ]);
+
+    return {
+      data: rows,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    };
+  }
+
+  async getReportStats() {
+    const [totalReports, pendingReports, reviewedReports, resolvedReports, dismissedReports] =
+      await Promise.all([
+        this.prisma.commentReport.count(),
+        this.prisma.commentReport.count({ where: { status: 'pending' } }),
+        this.prisma.commentReport.count({ where: { status: 'reviewed' } }),
+        this.prisma.commentReport.count({ where: { status: 'resolved' } }),
+        this.prisma.commentReport.count({ where: { status: 'dismissed' } }),
+      ]);
+
+    return {
+      totalReports,
+      pendingReports,
+      reviewedReports,
+      resolvedReports,
+      dismissedReports,
+    };
+  }
+
+  async updateReport(reportId: string, dto: UpdateCommentReportDto) {
+    if (dto.status === undefined && dto.adminNote === undefined && dto.hideComment === undefined) {
+      throw new BadRequestException('Nothing to update');
+    }
+
+    const report = await this.prisma.commentReport.findUnique({
+      where: { id: reportId },
+      select: {
+        id: true,
+        commentId: true,
+      },
+    });
+
+    if (!report) {
+      throw new NotFoundException('Report not found');
+    }
+
+    const tx: Prisma.PrismaPromise<any>[] = [];
+
+    if (dto.hideComment !== undefined) {
+      tx.push(
+        this.prisma.chapterComment.update({
+          where: { id: report.commentId },
+          data: { isHidden: dto.hideComment },
+        }),
+      );
+    }
+
+    tx.push(
+      this.prisma.commentReport.update({
+        where: { id: report.id },
+        data: {
+          ...(dto.status !== undefined ? { status: dto.status } : {}),
+          ...(dto.adminNote !== undefined ? { adminNote: dto.adminNote.trim() || null } : {}),
+        },
+      }),
+    );
+
+    await this.prisma.$transaction(tx);
+
+    return this.prisma.commentReport.findUnique({
+      where: { id: reportId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            displayName: true,
+            avatarUrl: true,
+          },
+        },
+        comment: {
+          select: {
+            id: true,
+            content: true,
+            isHidden: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                displayName: true,
+              },
+            },
+            story: {
+              select: {
+                id: true,
+                title: true,
+              },
+            },
+            chapter: {
+              select: {
+                id: true,
+                title: true,
+                chapterNumber: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getCommentCounts(chapterId: string) {
+    const grouped = await this.prisma.chapterComment.groupBy({
+      by: ['timestampSeconds'],
+      where: {
+        chapterId,
+        parentId: null,
+        isHidden: false,
+        timestampSeconds: { not: null },
+      },
+      _count: {
+        _all: true,
+      },
+    });
+
+    const counts: Record<number, number> = {};
+    for (const row of grouped) {
+      if (row.timestampSeconds !== null) {
+        counts[row.timestampSeconds] = row._count._all;
+      }
+    }
+
+    return {
+      data: counts,
+    };
+  }
 }
+

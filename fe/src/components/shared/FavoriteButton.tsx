@@ -12,6 +12,8 @@ type FavoriteButtonProps = {
   className?: string;
   label?: string;
   icon?: "heart" | "bookmark";
+  activeClassName?: string;
+  inactiveClassName?: string;
 };
 
 export default function FavoriteButton({
@@ -20,6 +22,8 @@ export default function FavoriteButton({
   className = "",
   label,
   icon = "heart",
+  activeClassName,
+  inactiveClassName,
 }: FavoriteButtonProps) {
   const user = useUserStore((state) => state.user);
   const hydrate = useFavoriteStore((state) => state.hydrate);
@@ -35,6 +39,9 @@ export default function FavoriteButton({
 
   const padding = useMemo(() => (size === "md" ? "p-2.5" : "p-2"), [size]);
   const iconSize = useMemo(() => (size === "md" ? "h-5 w-5" : "h-4 w-4"), [size]);
+  const stateClassName = isFavorite
+    ? activeClassName || "bg-red-500/90 text-white"
+    : inactiveClassName || "bg-black/35 text-white hover:bg-white/30 disabled:bg-black/20";
 
   return (
     <button
@@ -52,11 +59,7 @@ export default function FavoriteButton({
           setIsSubmitting(false);
         }
       }}
-      className={`${padding} rounded-full backdrop-blur-sm transition inline-flex items-center gap-2 ${
-        isFavorite
-          ? "bg-red-500/90 text-white"
-          : "bg-black/35 text-white hover:bg-white/30 disabled:bg-black/20"
-      } ${className}`}
+      className={`${padding} rounded-full backdrop-blur-sm transition inline-flex items-center gap-2 ${className} ${stateClassName}`}
       aria-label="Them vao yeu thich"
       title={user ? "Them vao yeu thich" : "Dang nhap de luu yeu thich"}
     >

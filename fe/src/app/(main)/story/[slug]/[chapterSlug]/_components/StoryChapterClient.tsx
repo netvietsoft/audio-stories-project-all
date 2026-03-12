@@ -821,10 +821,14 @@ export default function StoryChapterClient() {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-2 py-1.5 dark:border-gray-700">
-              <FavoriteButton storyId={story.id} size="sm" className="bg-transparent text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20" />
-              <span className="pr-2 text-sm font-medium text-gray-700 dark:text-gray-200">Thêm vào mục yêu thích</span>
-            </div>
+            <FavoriteButton
+              storyId={story.id}
+              size="sm"
+              label="Thêm vào mục yêu thích"
+              className="px-4 py-2 text-sm font-medium border shadow-sm"
+              activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
+              inactiveClassName="border-gray-300 bg-white text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+            />
 
             <button
               onClick={onShare}

@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
+import ResponsiveStoryList from "@/components/shared/ResponsiveStoryList";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
 
@@ -224,21 +225,12 @@ export default function HomePage() {
             {t("viewAll")}
           </Link>
         </div>
-        {isLoading ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-            {Array.from({ length: NEW_LIMIT }).map((_, i) => (
-              <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
-            ))}
-          </div>
-        ) : newestStories.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-            {newestStories.map((story) => (
-              <StoryCard key={story.id} story={story} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">{t("noData")}</p>
-        )}
+        <ResponsiveStoryList 
+          stories={newestStories} 
+          isLoading={isLoading} 
+          colsDesktop="5" 
+          limit={NEW_LIMIT}
+        />
       </section>
 
       {/* ─── Truyện phổ biến (8 truyện, 2/3/4 cols = 2 hàng x 4) ─ */}
@@ -252,21 +244,12 @@ export default function HomePage() {
             {t("viewAll")}
           </Link>
         </div>
-        {isLoading ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {Array.from({ length: POPULAR_LIMIT }).map((_, i) => (
-              <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
-            ))}
-          </div>
-        ) : popularStories.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {popularStories.slice(0, POPULAR_LIMIT).map((story) => (
-              <StoryCard key={story.id} story={story} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">{t("noData")}</p>
-        )}
+        <ResponsiveStoryList 
+          stories={popularStories} 
+          isLoading={isLoading} 
+          colsDesktop="4" 
+          limit={POPULAR_LIMIT}
+        />
       </section>
 
       {/* ─── Bảng Xếp Hạng (3 cols trên desktop) ───────────────── */}
@@ -392,6 +375,7 @@ function RankingColumn({
                       alt={item.name}
                       fill
                       sizes="40px"
+                      unoptimized={isUserRanking || item.avatarUrl?.includes("dicebear")}
                       className={`object-cover ${isUserRanking ? "rounded-full" : "rounded-md"}`}
                     />
                   </div>

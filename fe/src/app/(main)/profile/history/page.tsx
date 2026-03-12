@@ -71,7 +71,7 @@ export default function ProfileHistoryPage() {
 
   useEffect(() => {
     if (!accessToken) {
-      router.push("/login");
+      router.push("/");
       return;
     }
     void fetchHistory();

@@ -236,7 +236,7 @@ export default function VerifyEmailForm({ token, onSuccess }: VerifyEmailFormPro
 
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
           {t("backTo")}{" "}
-          <Link href="/login" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold transition-colors">
+          <Link href="/" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold transition-colors">
             {t("login")}
           </Link>
         </p>

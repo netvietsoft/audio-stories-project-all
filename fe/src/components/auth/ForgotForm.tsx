@@ -82,7 +82,13 @@ export default function ForgotForm({ onSuccess, onSwitchToLogin }: ForgotFormPro
               {t("successMessage")}
             </p>
             <Link 
-              href="/login" 
+              href="/" 
+              onClick={(e) => {
+                if (onSwitchToLogin) {
+                  e.preventDefault();
+                  onSwitchToLogin();
+                }
+              }}
               className="w-full inline-block py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-slate-900 dark:text-white rounded-2xl font-semibold transition-all active:scale-[0.98]"
             >
               {t("backToLogin")}
@@ -131,7 +137,7 @@ export default function ForgotForm({ onSuccess, onSwitchToLogin }: ForgotFormPro
             <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
               {t("remembered")}{" "}
               <Link 
-                href={onSwitchToLogin ? "#" : "/login"}
+                href={onSwitchToLogin ? "#" : "/"}
                 onClick={(e) => {
                   if (onSwitchToLogin) {
                     e.preventDefault();

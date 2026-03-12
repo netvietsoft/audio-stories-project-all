@@ -153,7 +153,7 @@ export default function Navbar() {
       localStorage.removeItem(REFRESH_TOKEN_KEY);
     }
     closeMobileMenu();
-    router.push("/login");
+    router.push("/");
   };
 
   return (

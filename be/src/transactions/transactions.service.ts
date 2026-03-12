@@ -176,4 +176,39 @@ export class TransactionsService {
 
         return { success: true, message: 'Payment deleted successfully' };
     }
+
+    async donateCredits(userId: string, amount: number, description: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { credits: true },
+        });
+
+        if (!user) throw new Error('User not found');
+        if (user.credits < amount) throw new Error('Insufficient credits');
+
+        return this.prisma.$transaction(async (tx) => {
+            const updatedUser = await tx.user.update({
+                where: { id: userId },
+                data: { credits: { decrement: amount } },
+                select: { credits: true },
+            });
+
+            const transaction = await tx.creditTransaction.create({
+                data: {
+                    userId,
+                    amount: -amount, // Negative for spending
+                    type: 'spend',
+                    balanceBefore: user.credits,
+                    balanceAfter: updatedUser.credits,
+                    description,
+                },
+            });
+
+            return {
+                success: true,
+                newBalance: updatedUser.credits,
+                transactionId: transaction.id,
+            };
+        });
+    }
 }

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package } from 'lucide-react';
+import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X } from 'lucide-react';
 
 import { useState, useEffect } from 'react';
 import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
@@ -20,6 +20,7 @@ export default function AdminLayout({
     const [hasAccess, setHasAccess] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         if (pathname === '/admin/login') {
@@ -206,10 +207,18 @@ export default function AdminLayout({
             <main className="flex-1 h-screen overflow-y-auto w-full transition-all duration-300">
                 {/* Mobile Header */}
                 <div className="md:hidden h-20 bg-white border-b border-slate-200 flex items-center justify-between px-6">
-                    <span className="font-bold text-xl text-indigo-600 flex items-center gap-2">
-                        <Shield className="w-6 h-6" />
-                        Admin
-                    </span>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setIsMobileMenuOpen(true)}
+                            className="p-2 text-slate-600 hover:bg-slate-50 rounded-xl"
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
+                        <span className="font-bold text-xl text-indigo-600 flex items-center gap-2">
+                            <Shield className="w-6 h-6" />
+                            Admin
+                        </span>
+                    </div>
                     <button
                         onClick={handleLogout}
                         className="p-2 text-red-600 bg-red-50 rounded-xl"
@@ -217,6 +226,94 @@ export default function AdminLayout({
                         <LogOut className="w-5 h-5" />
                     </button>
                 </div>
+
+                {/* Mobile Menu Sheet */}
+                {isMobileMenuOpen && (
+                    <div className="fixed inset-0 z-[100] md:hidden">
+                        {/* Backdrop */}
+                        <div
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        ></div>
+
+                        {/* Sheet */}
+                        <aside className="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
+                            <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100">
+                                <span className="font-bold text-xl text-indigo-600 flex items-center gap-2">
+                                    <Shield className="w-6 h-6" />
+                                    Admin Panel
+                                </span>
+                                <button
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5">
+                                {navItems.map((item) => {
+                                    const Icon = item.icon;
+                                    const isActive = pathname === item.href;
+
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all group relative overflow-hidden ${isActive
+                                                ? 'bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-600/5'
+                                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                                }`}
+                                        >
+                                            <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                                            <span className="whitespace-nowrap">{item.label}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </nav>
+
+                            <div className="p-6 border-t border-slate-100 space-y-4">
+                                <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-10 h-10 shrink-0 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
+                                            A
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-800">Admin</p>
+                                            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Quản trị viên</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <button
+                                            onClick={handleLogout}
+                                            disabled={isLoggingOut}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50"
+                                        >
+                                            {isLoggingOut ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <LogOut className="w-4 h-4" />
+                                                    <span>Đăng xuất</span>
+                                                </>
+                                            )}
+                                        </button>
+                                        <div className="h-px bg-slate-200"></div>
+                                        <Link
+                                            href="/"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-xl transition-all active:scale-[0.98]"
+                                        >
+                                            <Home className="w-4 h-4" />
+                                            <span>Về trang chủ</span>
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        </aside>
+                    </div>
+                )}
 
                 <div className="p-6 md:p-10">
                     {children}

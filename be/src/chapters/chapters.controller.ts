@@ -17,6 +17,7 @@ import { ChapterQueryDto } from './dto/chapter-query.dto';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { Roles } from '@/auth/decorators/roles.decorator';
+import { Public } from '@/auth/decorators/public.decorator';
 
 @Controller()
 export class ChaptersController {
@@ -44,6 +45,12 @@ export class ChaptersController {
     @Roles('ADMIN')
     createStandalone(@Body() createChapterDto: CreateStandaloneChapterDto) {
         return this.chaptersService.createStandalone(createChapterDto);
+    }
+
+    @Public()
+    @Get('chapters/latest')
+    getLatest(@Query('limit') limit?: string) {
+        return this.chaptersService.findLatest(Number(limit) || 12);
     }
 
     @Get('chapters')

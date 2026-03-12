@@ -504,6 +504,7 @@ export class StoriesService {
         id: true,
         name: true,
         slug: true,
+        description: true,
         _count: {
           select: {
             stories: true,
@@ -520,6 +521,7 @@ export class StoriesService {
         id: item.id,
         name: item.name,
         slug: item.slug,
+        description: item.description,
         storiesCount: item._count.stories,
       })),
     };

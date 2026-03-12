@@ -56,19 +56,30 @@ export class AuthController {
       const user = await this.auth.upsertGoogleUser(req.user as GoogleUser, clientIp);
       const { access, refresh } = await this.auth.issueTokens(user.id);
 
-      let redirectUri: string | undefined;
+      // We ALWAYS want to go back to the default callback page on the frontend (e.g. /auth/google/callback)
+      // because that page is responsible for handling query params (access_token, refresh_token) 
+      // and saving them to the user's state.
+      const redirectUri = getDefaultRedirectUri();
+      let returnTo: string | undefined;
+
       if (state) {
         const stateData = parseOAuthState(state);
-        if (stateData?.redirect_uri && isAllowedRedirectUri(stateData.redirect_uri)) {
-          redirectUri = stateData.redirect_uri;
+        // We capture the target destination from the state
+        if (stateData?.redirect_uri) {
+          returnTo = stateData.redirect_uri;
         }
       }
-      if (!redirectUri) redirectUri = getDefaultRedirectUri();
 
       const redirectUrl = new URL(redirectUri);
       redirectUrl.searchParams.set('access_token', access);
       redirectUrl.searchParams.set('refresh_token', refresh);
       redirectUrl.searchParams.set('verified', 'true');
+      
+      // If we have a returnTo target, pass it as 'redirect'
+      if (returnTo) {
+        redirectUrl.searchParams.set('redirect', returnTo);
+      }
+      
       res.redirect(redirectUrl.toString());
     } catch (error) {
       console.error('[Google OAuth] Error:', error);

@@ -25,6 +25,26 @@ export class ChaptersService {
         });
     }
 
+    async findLatest(limit = 10) {
+        return this.prisma.chapter.findMany({
+            where: { deletedAt: null },
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                story: {
+                    select: {
+                        title: true,
+                        slug: true,
+                        thumbnailUrl: true,
+                        author: {
+                            select: { name: true },
+                        },
+                    },
+                },
+            },
+        });
+    }
+
     async findAllGlobal(query: ChapterQueryDto) {
         const { page = 1, limit = 20, search, accessType, storyId } = query;
         const skip = (page - 1) * limit;

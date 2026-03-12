@@ -47,7 +47,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
       });
 
       setSubmitSuccess(t("success"));
-      
+
       if (onSuccess) {
         setTimeout(() => onSuccess(), 1000);
       } else {
@@ -58,9 +58,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
     } catch (error) {
       const message =
         typeof error === "object" &&
-        error !== null &&
-        "response" in error &&
-        typeof (error as any).response?.data?.message === "string"
+          error !== null &&
+          "response" in error &&
+          typeof (error as any).response?.data?.message === "string"
           ? (error as any).response.data.message
           : t("submitFailed");
       setSubmitError(message);
@@ -69,16 +69,18 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="">
-        <div className="flex flex-col items-center mb-8">
+      <div>
+        <div className="flex justify-center gap-5">
           <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-950 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4">
             <UserPlus className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("title")}</h1>
-          <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Tạo tài khoản mới</p>
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("title")}</h1>
+            <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Tạo tài khoản mới</p>
+          </div>
         </div>
-        
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           {submitError && (
             <div className="bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl flex items-center gap-3 text-sm animate-in fade-in zoom-in duration-200">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -91,7 +93,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
               <p>{submitSuccess}</p>
             </div>
           )}
-          
+
           {/* Trường Tên hiển thị */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700 dark:text-gray-300 ml-1">{t("displayName")}</label>
@@ -160,26 +162,6 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
             {errors.confirmPassword && <p className="text-red-500 text-sm mt-1 ml-1">{errors.confirmPassword.message}</p>}
           </div>
 
-          {/* Checkbox điều khoản */}
-          <div className="flex items-start pt-2">
-            <div className="flex items-center h-5">
-              <input 
-                id="terms" 
-                type="checkbox" 
-                {...register("acceptTerms")} 
-                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 cursor-pointer" 
-              />
-            </div>
-            <div className="ml-3 text-sm">
-              <label htmlFor="terms" className="text-gray-600 dark:text-gray-400 cursor-pointer">
-                {t.rich("acceptTerms", {
-                  terms: (chunks) => <Link href="/terms" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition-colors">{chunks}</Link>,
-                })}
-              </label>
-              {errors.acceptTerms && <p className="text-red-500 text-sm mt-1">{errors.acceptTerms.message}</p>}
-            </div>
-          </div>
-
           {/* Nút Đăng ký */}
           <button
             type="submit"
@@ -212,7 +194,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
         {/* Chuyển sang đăng nhập */}
         <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
           {t("hasAccount")}{" "}
-          <Link 
+          <Link
             href={onSwitchToLogin ? "#" : "/login"}
             onClick={(e) => {
               if (onSwitchToLogin) {

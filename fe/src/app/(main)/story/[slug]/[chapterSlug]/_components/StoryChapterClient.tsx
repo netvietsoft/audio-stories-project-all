@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isAxiosError } from "axios";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import DonateModal from "@/components/story/DonateModal";
 import { useParams, useRouter } from "next/navigation";
 import {
   ChevronDown,
@@ -26,12 +27,14 @@ import {
   Volume2,
   VolumeX,
   Smile,
+  Gift,
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
 
 const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
 
@@ -221,9 +224,11 @@ export default function StoryChapterClient() {
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
   const [unlockError, setUnlockError] = useState("");
   const [showTopupAction, setShowTopupAction] = useState(false);
+  const [isDonateModalOpen, setIsDonateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const user = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
+  const openLogin = useAuthModalStore((state) => state.openLogin);
 
   const currentTrack = useAudioStore((state) => state.currentTrack);
   const isPlaying = useAudioStore((state) => state.isPlaying);
@@ -631,7 +636,7 @@ export default function StoryChapterClient() {
 
   const handleBuyVip = () => {
     if (!user) {
-      router.push("/login");
+      openLogin();
       return;
     }
 
@@ -659,7 +664,7 @@ export default function StoryChapterClient() {
   const submitReview = async () => {
     if (!story) return;
     if (!user) {
-      router.push("/login");
+      openLogin();
       return;
     }
 
@@ -681,7 +686,7 @@ export default function StoryChapterClient() {
   const toggleReviewLike = async (reviewId: string) => {
     if (!story) return;
     if (!user) {
-      router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+      openLogin();
       return;
     }
 
@@ -690,7 +695,7 @@ export default function StoryChapterClient() {
       await loadReviews(story.id, reviewSort, 1, false);
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {
-        router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+        openLogin();
       }
     }
   };
@@ -698,7 +703,7 @@ export default function StoryChapterClient() {
   const toggleReviewHelpful = async (reviewId: string) => {
     if (!story) return;
     if (!user) {
-      router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+      openLogin();
       return;
     }
 
@@ -707,7 +712,7 @@ export default function StoryChapterClient() {
       await loadReviews(story.id, reviewSort, 1, false);
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {
-        router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+        openLogin();
       }
     }
   };
@@ -715,7 +720,7 @@ export default function StoryChapterClient() {
   const submitReviewReply = async (reviewId: string) => {
     if (!story) return;
     if (!user) {
-      router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+      openLogin();
       return;
     }
 
@@ -735,7 +740,7 @@ export default function StoryChapterClient() {
       await loadReviews(story.id, reviewSort, 1, false);
     } catch (error) {
       if (isAxiosError(error) && error.response?.status === 401) {
-        router.push(`/login?redirect=${encodeURIComponent(`/story/${slug}/${chapterSlug}`)}`);
+        openLogin();
       }
     }
   };
@@ -1082,8 +1087,33 @@ export default function StoryChapterClient() {
           </div>
         </section>
 
+        {/* Donation Section */}
+        <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 order-7 lg:order-none lg:col-start-1 lg:col-end-2 lg:row-start-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 italic">Bạn thích chương này?</h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Hãy tặng quà để ủng hộ nhóm dịch nhé!</p>
+            </div>
+            <button
+              onClick={() => {
+                if (!user) {
+                  openLogin();
+                  return;
+                }
+                setIsDonateModalOpen(true);
+              }}
+              className="group relative flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-50 text-pink-500 transition-all hover:bg-pink-500 hover:text-white dark:bg-pink-900/20 shadow-inner"
+            >
+              <Gift className="h-7 w-7 transition-all group-hover:scale-110 group-active:scale-95" />
+              <div className="absolute -top-1 -right-1 flex h-5 w-5 animate-bounce items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm">
+                !
+              </div>
+            </button>
+          </div>
+        </section>
+
         {/* Reviews */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 order-7 lg:order-none lg:col-start-1 lg:col-end-2 lg:row-start-4">
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 order-8 lg:order-none lg:col-start-1 lg:col-end-2 lg:row-start-5">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Đánh giá từ độc giả</h2>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr]">
@@ -1365,6 +1395,18 @@ export default function StoryChapterClient() {
           </div>
         </div>
       ) : null}
+
+      {isDonateModalOpen && user && (
+        <DonateModal
+          storyTitle={story.title}
+          chapterNumber={selectedChapter.chapterNumber}
+          currentCredits={user.credits || 0}
+          onClose={() => setIsDonateModalOpen(false)}
+          onSuccess={(newBalance) => {
+            setUser({ ...user, credits: newBalance });
+          }}
+        />
+      )}
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -35,6 +36,19 @@ type AuthorItem = {
   name: string;
 };
 
+type ChapterItem = {
+  id: string;
+  title: string;
+  chapterNumber: number;
+  createdAt: string;
+  story: {
+    title: string;
+    slug: string;
+    thumbnailUrl: string | null;
+    author: { name: string };
+  };
+};
+
 type HallMember = {
   id: string;
   displayName: string;
@@ -58,11 +72,6 @@ type OptionFilters = {
 const SECTION_LIMIT = 8;
 
 const storySections = [
-  {
-    key: "newest",
-    params: { sort: "latest" as const },
-    viewAllHref: "/new",
-  },
   {
     key: "trending",
     params: { sort: "views" as const, trendWindow: "week" },
@@ -89,6 +98,7 @@ export default function HomePage() {
   const [sectionsData, setSectionsData] = useState<Record<string, StoryItem[]>>({});
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [authors, setAuthors] = useState<AuthorItem[]>([]);
+  const [latestChapters, setLatestChapters] = useState<ChapterItem[]>([]);
   const [hall, setHall] = useState<HallMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -127,7 +137,7 @@ export default function HomePage() {
           }),
         );
 
-        const [sectionRes, catRes, fallbackCatRes, authorRes, hallRes] = await Promise.all([
+        const [sectionRes, catRes, fallbackCatRes, authorRes, chapterRes, hallRes] = await Promise.all([
           Promise.allSettled(sectionRequests),
           apiClient
             .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 8, lang } })
@@ -139,6 +149,10 @@ export default function HomePage() {
             .catch(() => []),
           apiClient
             .get<AuthorItem[]>("/stories/authors")
+            .then((res) => res.data || [])
+            .catch(() => []),
+          apiClient
+            .get<ChapterItem[]>("/chapters/latest", { params: { limit: 10 } })
             .then((res) => res.data || [])
             .catch(() => []),
           apiClient
@@ -166,6 +180,7 @@ export default function HomePage() {
         setSectionsData(nextSections);
         setCategories((categoriesFromTop.length ? categoriesFromTop : categoriesFromFallback).slice(0, 8));
         setAuthors(authorRes || []);
+        setLatestChapters(chapterRes || []);
         setHall(hallRes || []);
       } catch (error) {
         console.error(t("loadError"), error);
@@ -199,7 +214,7 @@ export default function HomePage() {
           />
         ) : null}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-800/40" />
-        
+
         {/* Next Button */}
         {heroStories.length > 1 && (
           <button
@@ -251,6 +266,65 @@ export default function HomePage() {
         onApply={applyQuickFilter}
       />
 
+      {/* Most Recently Updated Section */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-2">
+          <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">
+            Chương mới cập nhật
+          </h3>
+          <Link href="/explore?sort=latest" className="text-sm font-bold text-blue-600 hover:text-blue-700">
+            {t("viewAll")}
+          </Link>
+        </div>
+
+        <div className="divide-y divide-gray-50 dark:divide-gray-800">
+          {latestChapters.map((chapter) => (
+            <div key={chapter.id} className="group flex items-center gap-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 transition-colors">
+              <div className="relative h-14 w-10 flex-shrink-0 overflow-hidden rounded shadow-sm border border-gray-100 dark:border-gray-800">
+                <Image
+                  src={chapter.story.thumbnailUrl || "/images/placeholder-story.png"}
+                  alt={chapter.story.title}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="flex-grow min-w-0 grid grid-cols-1 md:grid-cols-12 items-center gap-2 md:gap-4">
+                <div className="md:col-span-4">
+                  <Link href={`/story/${chapter.story.slug}`} className="font-bold text-slate-800 dark:text-slate-200 truncate block hover:text-blue-600 transition-colors">
+                    {chapter.story.title}
+                  </Link>
+                </div>
+                <div className="md:col-span-4">
+                  <Link href={`/story/${chapter.story.slug}/chuong-${chapter.chapterNumber}`} className="text-sm text-slate-600 dark:text-slate-400 truncate block hover:text-blue-600 transition-colors">
+                    Chương {chapter.chapterNumber}: {chapter.title}
+                  </Link>
+                </div>
+                <div className="md:col-span-2">
+                  <span className="text-sm text-slate-500 truncate block">
+                    {chapter.story.author.name}
+                  </span>
+                </div>
+                <div className="md:col-span-2 md:text-right">
+                  <span className="text-xs text-slate-400 font-medium">
+                    {timeAgo(chapter.createdAt)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {latestChapters.length === 0 && Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 py-3 animate-pulse">
+              <div className="h-14 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
+              <div className="flex-grow space-y-2">
+                <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
+                <div className="h-3 bg-slate-100 dark:bg-slate-900 rounded w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {storySections.map((section) => (
         <section key={section.key} className="space-y-3">
           <div className="flex items-end justify-between gap-4">
@@ -287,14 +361,14 @@ export default function HomePage() {
           {categories.slice(0, 3).map((cat) => (
             <Link
               key={cat.id}
-              href={`/categories/${cat.slug}`}
+              href={`/chuong-${cat.slug}`}
               className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
             >
               <p className="font-semibold text-slate-900 dark:text-slate-100">{cat.name}</p>
               <p className="mt-1 text-xs text-slate-500">{t("storiesCount", { count: cat.storiesCount })}</p>
             </Link>
           ))}
-          
+
           {categories.length > 3 && (
             <div className="relative">
               <button
@@ -307,8 +381,8 @@ export default function HomePage() {
 
               {showAllCategories && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-30" 
+                  <div
+                    className="fixed inset-0 z-30"
                     onClick={() => setShowAllCategories(false)}
                   />
                   <div className="absolute z-40 top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
@@ -365,4 +439,21 @@ export default function HomePage() {
       </section>
     </div>
   );
+}
+
+function timeAgo(date: string | Date | number) {
+  const now = new Date();
+  const past = new Date(date);
+  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return "vừa xong";
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} giờ trước`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 30) return `${diffInDays} ngày trước`;
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) return `${diffInMonths} tháng trước`;
+  return past.toLocaleDateString("vi-VN");
 }

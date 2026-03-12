@@ -7,7 +7,18 @@ export default function GoogleOAuthBtn() {
   const t = useTranslations("Auth");
   const handleGoogleOAuth = () => {
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
-    window.location.href = `${apiBaseUrl}/auth/google`;
+    
+    // Capture current URL to return after login
+    // If we're on a login/register page, we should check for an existing redirect param or default to home
+    const currentLoc = window.location;
+    const searchParams = new URLSearchParams(currentLoc.search);
+    const existingRedirect = searchParams.get("redirect");
+    const isAuthPage = currentLoc.pathname.includes("/login") || currentLoc.pathname.includes("/register");
+    
+    // Only capture the path part to keep things internal
+    const redirectUri = existingRedirect || (isAuthPage ? "/" : currentLoc.pathname + currentLoc.search);
+    
+    window.location.href = `${apiBaseUrl}/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}`;
   }
   return (
     <button

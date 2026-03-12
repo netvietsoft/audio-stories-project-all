@@ -1,6 +1,7 @@
-import { Controller, Get, Query, UseGuards, Delete, Param } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Delete, Param, Post, Body } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { TransactionQueryDto } from './dto/transaction-query.dto';
+import { DonateDto } from './dto/donate.dto';
 import { Account } from '@/auth/decorators/account.decorator';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
@@ -21,6 +22,15 @@ export class TransactionsController {
             this.userIdFromAccount(account),
             Number(page) || 1,
             Number(limit) || 20,
+        );
+    }
+
+    @Post('donate')
+    donate(@Account() account: any, @Body() dto: DonateDto) {
+        return this.transactionsService.donateCredits(
+            this.userIdFromAccount(account),
+            dto.amount,
+            dto.description,
         );
     }
 

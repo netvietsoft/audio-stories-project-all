@@ -59,7 +59,8 @@ export default function GoogleCallbackHandler() {
 
         setAuthCookies(accessToken, refreshToken);
 
-        router.replace("/");
+        const redirect = searchParams.get("redirect") || "/";
+        router.replace(redirect);
       } catch {
         setError("Đăng nhập Google thất bại. Vui lòng thử lại.");
       }

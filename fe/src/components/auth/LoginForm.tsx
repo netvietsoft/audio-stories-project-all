@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { loginSchenma } from "@/lib/validation/auth";
 import GoogleOAthButton from "./GoogleOAuthBtn";
@@ -38,16 +38,24 @@ interface LoginFormProps {
     onSwitchToForgot?: () => void;
 }
 
-export default function LoginForm({ 
-    onSuccess, 
-    onSwitchToRegister, 
-    onSwitchToForgot 
+export default function LoginForm({
+    onSuccess,
+    onSwitchToRegister,
+    onSwitchToForgot
 }: LoginFormProps = {}) {
     const t = useTranslations("LoginForm");
     const tAuth = useTranslations("Auth");
     const router = useRouter();
     const searchParams = useSearchParams();
     const setAuth = useUserStore((state) => state.setAuth);
+    const user = useUserStore((state) => state.user);
+
+    useEffect(() => {
+        if (user && !onSuccess) {
+            const redirect = searchParams.get("redirect") || "/";
+            router.replace(redirect);
+        }
+    }, [user, router, searchParams, onSuccess]);
 
     const {
         register,
@@ -102,9 +110,9 @@ export default function LoginForm({
         } catch (error) {
             const message: unknown =
                 typeof error === "object" &&
-                error !== null &&
-                "response" in error &&
-                ((typeof (error as any).response?.data?.message === "string") || Array.isArray((error as any).response?.data?.message))
+                    error !== null &&
+                    "response" in error &&
+                    ((typeof (error as any).response?.data?.message === "string") || Array.isArray((error as any).response?.data?.message))
                     ? (error as any).response.data.message
                     : t("submitFailed");
             setSubmitError(Array.isArray(message) ? String(message[0]) : String(message));
@@ -113,13 +121,16 @@ export default function LoginForm({
 
     return (
         <div className="w-full max-w-md mx-auto">
-            <div className=" rounded-[32px] p-8 md:p-10">
-                <div className="flex flex-col items-center mb-8">
+            <div>
+                <div className="flex justify-center gap-5">
                     <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-950 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4">
                         <LogIn className="w-8 h-8" />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("title")}</h1>
-                    <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Chào mừng bạn trở lại</p>
+
+                    <div className="flex flex-col">
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("title")}</h1>
+                        <p className="text-slate-500 dark:text-gray-400 text-sm mt-1">Chào mừng bạn trở lại</p>
+                    </div>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -164,15 +175,15 @@ export default function LoginForm({
 
                     <div className="flex items-center justify-between">
                         <label className="flex items-center cursor-pointer group">
-                            <input 
-                                type="checkbox" 
-                                {...register("rememberMe")} 
-                                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 cursor-pointer" 
+                            <input
+                                type="checkbox"
+                                {...register("rememberMe")}
+                                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 cursor-pointer"
                             />
                             <span className="ml-2 text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-gray-200 transition-colors">{t("rememberMe")}</span>
                         </label>
-                        <Link 
-                            href={onSwitchToForgot ? "#" : "/forgot-password"} 
+                        <Link
+                            href={onSwitchToForgot ? "#" : "/forgot-password"}
                             onClick={(e) => {
                                 if (onSwitchToForgot) {
                                     e.preventDefault();
@@ -213,8 +224,8 @@ export default function LoginForm({
 
                 <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
                     {t("noAccount")}{" "}
-                    <Link 
-                        href={onSwitchToRegister ? "#" : "/register"} 
+                    <Link
+                        href={onSwitchToRegister ? "#" : "/register"}
                         onClick={(e) => {
                             if (onSwitchToRegister) {
                                 e.preventDefault();

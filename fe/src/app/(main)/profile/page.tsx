@@ -131,7 +131,7 @@ export default function ProfilePage() {
 
     useEffect(() => {
         if (mounted && !user) {
-            router.push("/login");
+            router.push("/");
         }
     }, [mounted, user, router]);
 

@@ -31,6 +31,9 @@ export function getAllowedClientUrls(): string[] {
 export function isAllowedRedirectUri(redirectUri: string): boolean {
   if (!redirectUri) return false;
 
+  // Allow internal paths
+  if (redirectUri.startsWith('/')) return true;
+
   try {
     const parsed = new URL(redirectUri);
     const origin = parsed.origin;

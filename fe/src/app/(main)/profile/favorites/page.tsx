@@ -92,7 +92,7 @@ export default function FavoriteStoriesPage() {
 
   useEffect(() => {
     if (!accessToken) {
-      router.push("/login");
+      router.push("/");
       return;
     }
 

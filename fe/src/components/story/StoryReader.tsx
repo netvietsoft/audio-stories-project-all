@@ -148,7 +148,7 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
 
   const parts = content
     .split(/\n\s*\n/)
-    .map((part) => part.trim())
+    .map((part) => part.trim().replace(/^\[Paragraph\s*\d+\]\s*/i, "").trim())
     .filter(Boolean);
 
   return parts.map((part, index) => ({
@@ -180,6 +180,7 @@ export default function StoryReader({
   
   const user = useUserStore((state) => state.user);
   const openLogin = useAuthModalStore((state) => state.openLogin);
+  const isProd = process.env.NODE_ENV === "production";
 
   const paragraphs = useMemo(() => {
     if (!chapterId) return [];
@@ -475,7 +476,7 @@ export default function StoryReader({
 
   if (isLocked) {
     return (
-      <div className="relative overflow-hidden pr-0 sm:pr-10 lg:pr-14">
+      <div className={`relative overflow-hidden pr-0 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
         {previewParagraphs.length ? (
           previewParagraphs.map((paragraph) => (
             <div key={paragraph.id} className="mb-6">
@@ -506,7 +507,7 @@ export default function StoryReader({
   }
 
   return (
-    <div className="relative overflow-visible pr-0 sm:pr-10 lg:pr-14">
+    <div className={`relative overflow-visible pr-0 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
       {flowItems.map((item) => {
         if (item.type === "paragraph") {
           const { paragraph } = item;

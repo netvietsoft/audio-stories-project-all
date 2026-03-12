@@ -363,6 +363,51 @@ export default function StoryChapterClient() {
     return () => clearInterval(timer);
   }, [sleepMinutesLeft]);
 
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") return;
+
+    const handleContextMenu = (event: MouseEvent) => {
+      event.preventDefault();
+    };
+
+    const handleCopy = (event: ClipboardEvent) => {
+      event.preventDefault();
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "F12") {
+        event.preventDefault();
+        return;
+      }
+
+      if (event.ctrlKey && event.shiftKey && ["I", "i", "J", "j", "C", "c"].includes(event.key)) {
+        event.preventDefault();
+        return;
+      }
+
+      if (event.ctrlKey && ["U", "u"].includes(event.key)) {
+        event.preventDefault();
+      }
+    };
+
+    const antiDebug = window.setInterval(() => {
+      Function("debugger")();
+    }, 100);
+
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("copy", handleCopy);
+    document.addEventListener("cut", handleCopy);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.clearInterval(antiDebug);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("copy", handleCopy);
+      document.removeEventListener("cut", handleCopy);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const chapterCount = useMemo(() => story?.chapters?.length ?? 0, [story?.chapters]);
 
   const activeChapterIndex = useMemo(() => {

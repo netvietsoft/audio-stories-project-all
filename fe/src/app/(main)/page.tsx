@@ -5,9 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 
-import StoryCard from "@/components/shared/StoryCard";
-import ResponsiveStoryList from "@/components/shared/ResponsiveStoryList";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
+import HorizontalStorySlider from "@/components/shared/HorizontalStorySlider";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
 import { useRouter } from "next/navigation";
@@ -29,7 +28,7 @@ type CategoryItem = {
   id: number;
   name: string;
   slug: string;
-  storiesCount: number;
+  storiesCount?: number;
 };
 
 type AuthorItem = {
@@ -37,26 +36,13 @@ type AuthorItem = {
   name: string;
 };
 
-type ChapterItem = {
-  id: string;
-  title: string;
-  chapterNumber: number;
-  createdAt: string;
-  story: {
-    title: string;
-    slug: string;
-    thumbnailUrl: string | null;
-    author: { name: string };
-  };
-};
-
 type HallMember = {
   id: string;
   displayName: string;
   avatarUrl: string | null;
   vipTier: number;
-  credits: number;
   totalUnlockedStories: number;
+  credits: number;
 };
 
 type ExploreResponse = {
@@ -80,11 +66,9 @@ export default function HomePage() {
   const [topViewsStories, setTopViewsStories] = useState<StoryItem[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [authors, setAuthors] = useState<AuthorItem[]>([]);
-  const [latestChapters, setLatestChapters] = useState<ChapterItem[]>([]);
   const [hall, setHall] = useState<HallMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
-  const [showAllCategories, setShowAllCategories] = useState(false);
   const [filterValue, setFilterValue] = useState<StoryFilterValue>({
     categoryId: "",
     authorId: "",
@@ -118,7 +102,6 @@ export default function HomePage() {
           catFallbackRes,
           hallRes,
           authorRes,
-          chapterRes,
         ] = await Promise.allSettled([
           fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
@@ -141,10 +124,6 @@ export default function HomePage() {
             .get<AuthorItem[]>("/stories/authors")
             .then((r) => r.data || [])
             .catch(() => []),
-          apiClient
-            .get<ChapterItem[]>("/chapters/latest", { params: { limit: 10 } })
-            .then((res) => res.data || [])
-            .catch(() => []),
         ]);
 
         setNewestStories(newestRes.status === "fulfilled" ? (newestRes.value.data || []) : []);
@@ -161,7 +140,6 @@ export default function HomePage() {
 
         setHall(hallRes.status === "fulfilled" ? hallRes.value : []);
         setAuthors(authorRes.status === "fulfilled" ? authorRes.value : []);
-        setLatestChapters(chapterRes.status === "fulfilled" ? chapterRes.value : []);
       } catch (error) {
         console.error(t("loadError"), error);
       } finally {
@@ -273,66 +251,7 @@ export default function HomePage() {
         isLoading={isLoading}
       />
 
-      {/* ─── Chương mới cập nhật ─── */}
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-2">
-          <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">
-            Chương mới cập nhật
-          </h3>
-          <Link href="/explore?sort=latest" className="text-sm font-bold text-blue-600 hover:text-blue-700">
-            {t("viewAll")}
-          </Link>
-        </div>
-
-        <div className="divide-y divide-gray-50 dark:divide-gray-800">
-          {latestChapters.map((chapter) => (
-            <div key={chapter.id} className="group flex items-center gap-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg px-2 transition-colors">
-              <div className="relative h-14 w-10 flex-shrink-0 overflow-hidden rounded shadow-sm border border-gray-100 dark:border-gray-800">
-                <Image
-                  src={chapter.story.thumbnailUrl || "/images/placeholder-story.png"}
-                  alt={chapter.story.title}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="flex-grow min-w-0 grid grid-cols-1 md:grid-cols-12 items-center gap-2 md:gap-4">
-                <div className="md:col-span-4">
-                  <Link href={`/story/${chapter.story.slug}`} className="font-bold text-slate-800 dark:text-slate-200 truncate block hover:text-blue-600 transition-colors">
-                    {chapter.story.title}
-                  </Link>
-                </div>
-                <div className="md:col-span-4">
-                  <Link href={`/story/${chapter.story.slug}/chuong-${chapter.chapterNumber}`} className="text-sm text-slate-600 dark:text-slate-400 truncate block hover:text-blue-600 transition-colors">
-                    Chương {chapter.chapterNumber}: {chapter.title}
-                  </Link>
-                </div>
-                <div className="md:col-span-2">
-                  <span className="text-sm text-slate-500 truncate block">
-                    {chapter.story.author.name}
-                  </span>
-                </div>
-                <div className="md:col-span-2 md:text-right">
-                  <span className="text-xs text-slate-400 font-medium">
-                    {timeAgo(chapter.createdAt)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {latestChapters.length === 0 && isLoading && Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 py-3 animate-pulse">
-              <div className="h-14 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
-              <div className="flex-grow space-y-2">
-                <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
-                <div className="h-3 bg-slate-100 dark:bg-slate-900 rounded w-1/2" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─── Truyện mới đăng ─── */}
+      {/* ─── Truyện mới đăng (5 truyện, 2/3/5 cols) ─────────────── */}
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -343,73 +262,14 @@ export default function HomePage() {
             {t("viewAll")}
           </Link>
         </div>
-        <ResponsiveStoryList 
-          stories={newestStories} 
-          isLoading={isLoading} 
-          colsDesktop="5" 
-          limit={NEW_LIMIT}
-        />
-      </section>
-
-      {/* ─── Featured Categories (Horizontal Grid) ─── */}
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("featuredCategoriesTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t("featuredCategoriesSubtitle")}</p>
-          </div>
-          <Link href="/categories" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-            {t("viewAll")}
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {categories.slice(0, 3).map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/categories/${cat.slug}`}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
-            >
-              <p className="font-semibold text-slate-900 dark:text-slate-100">{cat.name}</p>
-              <p className="mt-1 text-xs text-slate-500">{t("storiesCount", { count: cat.storiesCount })}</p>
-            </Link>
-          ))}
-
-          {categories.length > 3 && (
-            <div className="relative">
-              <button
-                onClick={() => setShowAllCategories(!showAllCategories)}
-                className="w-full h-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 flex flex-col items-center justify-center gap-2"
-              >
-                <p className="font-semibold text-slate-900 dark:text-slate-100">{t("otherCategories")}</p>
-                <p className="text-xs text-slate-500">{t("moreCategories", { count: categories.length - 3 })}</p>
-              </button>
-
-              {showAllCategories && (
-                <>
-                  <div
-                    className="fixed inset-0 z-30"
-                    onClick={() => setShowAllCategories(false)}
-                  />
-                  <div className="absolute z-40 top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="max-h-80 overflow-y-auto">
-                      {categories.slice(3).map((cat) => (
-                        <Link
-                          key={cat.id}
-                          href={`/categories/${cat.slug}`}
-                          onClick={() => setShowAllCategories(false)}
-                          className="block px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-100 dark:border-slate-700 last:border-b-0"
-                        >
-                          <p className="font-semibold text-slate-900 dark:text-slate-100">{cat.name}</p>
-                          <p className="mt-1 text-xs text-slate-500">{t("storiesCount", { count: cat.storiesCount })}</p>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+          <HorizontalStorySlider
+            stories={newestStories}
+            isLoading={isLoading}
+            limit={NEW_LIMIT}
+            showArrows={false}
+            size="large"
+            fixedDesktopCols={5}
+          />
       </section>
 
       {/* ─── Truyện phổ biến (8 truyện: slider mobile, grid 8-col desktop) ─ */}
@@ -423,25 +283,7 @@ export default function HomePage() {
             {t("viewAll")}
           </Link>
         </div>
-        {isLoading ? (
-          <div className="flex flex-row gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide lg:grid lg:grid-cols-8 lg:overflow-visible lg:pb-0">
-            {Array.from({ length: POPULAR_LIMIT }).map((_, i) => (
-              <div key={i} className="w-[130px] sm:w-[150px] shrink-0 snap-start lg:w-full lg:shrink">
-                <div className="aspect-[3/4] animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
-              </div>
-            ))}
-          </div>
-        ) : popularStories.length > 0 ? (
-          <div className="flex flex-row gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide lg:grid lg:grid-cols-8 lg:overflow-visible lg:pb-0">
-            {popularStories.slice(0, POPULAR_LIMIT).map((story) => (
-              <div key={story.id} className="w-[130px] sm:w-[150px] shrink-0 snap-start lg:w-full lg:shrink">
-                <StoryCard story={story} />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">{t("noData")}</p>
-        )}
+        <HorizontalStorySlider stories={popularStories} isLoading={isLoading} limit={POPULAR_LIMIT} />
       </section>
 
       {/* ─── Bảng Xếp Hạng (3 cols trên desktop) ───────────────── */}
@@ -500,23 +342,6 @@ export default function HomePage() {
 
     </div>
   );
-}
-
-function timeAgo(date: string | Date | number) {
-  const now = new Date();
-  const past = new Date(date);
-  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return "vừa xong";
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours} giờ trước`;
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 30) return `${diffInDays} ngày trước`;
-  const diffInMonths = Math.floor(diffInDays / 30);
-  if (diffInMonths < 12) return `${diffInMonths} tháng trước`;
-  return past.toLocaleDateString("vi-VN");
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -604,3 +429,4 @@ function RankingColumn({
     </div>
   );
 }
+

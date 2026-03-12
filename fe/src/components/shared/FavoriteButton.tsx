@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Heart } from "lucide-react";
+import { Bookmark, Heart } from "lucide-react";
 
 import { useUserStore } from "@/stores/user-store";
 import { useFavoriteStore } from "@/stores/favorite-store";
@@ -10,9 +10,17 @@ type FavoriteButtonProps = {
   storyId: string;
   size?: "sm" | "md";
   className?: string;
+  label?: string;
+  icon?: "heart" | "bookmark";
 };
 
-export default function FavoriteButton({ storyId, size = "sm", className = "" }: FavoriteButtonProps) {
+export default function FavoriteButton({
+  storyId,
+  size = "sm",
+  className = "",
+  label,
+  icon = "heart",
+}: FavoriteButtonProps) {
   const user = useUserStore((state) => state.user);
   const hydrate = useFavoriteStore((state) => state.hydrate);
   const toggle = useFavoriteStore((state) => state.toggle);
@@ -44,7 +52,7 @@ export default function FavoriteButton({ storyId, size = "sm", className = "" }:
           setIsSubmitting(false);
         }
       }}
-      className={`${padding} rounded-full backdrop-blur-sm transition ${
+      className={`${padding} rounded-full backdrop-blur-sm transition inline-flex items-center gap-2 ${
         isFavorite
           ? "bg-red-500/90 text-white"
           : "bg-black/35 text-white hover:bg-white/30 disabled:bg-black/20"
@@ -52,7 +60,12 @@ export default function FavoriteButton({ storyId, size = "sm", className = "" }:
       aria-label="Them vao yeu thich"
       title={user ? "Them vao yeu thich" : "Dang nhap de luu yeu thich"}
     >
-      <Heart className={iconSize} fill={isFavorite ? "currentColor" : "none"} />
+      {icon === "bookmark" ? (
+        <Bookmark className={iconSize} fill={isFavorite ? "currentColor" : "none"} />
+      ) : (
+        <Heart className={iconSize} fill={isFavorite ? "currentColor" : "none"} />
+      )}
+      {label ? <span>{label}</span> : null}
     </button>
   );
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BookOpen, Clock3, ListMusic, Lock, PlayCircle } from "lucide-react";
+import { BookOpen, Clock3, ListMusic, Lock, Play, PlayCircle } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
@@ -94,36 +94,50 @@ export default function StoryDetailClient() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex flex-col gap-4 sm:flex-row">
-          <div className="h-36 w-24 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-800">
-            <Image
-              src={story.thumbnailUrl || "https://placehold.co/300x450?text=No+Cover"}
-              alt={story.title}
-              width={96}
-              height={144}
-              priority
-              className="h-full w-full object-cover"
-            />
+      <section className="flex flex-col md:flex-row gap-6 items-start w-full bg-gray-900/50 p-4 md:p-6 rounded-xl border border-gray-800">
+        <div className="relative w-full md:w-[280px] lg:w-[320px] shrink-0 aspect-square rounded-lg overflow-hidden shadow-xl">
+          <Image
+            src={story.thumbnailUrl || "https://placehold.co/600x600?text=No+Cover"}
+            alt={story.title}
+            fill
+            priority
+            className="object-cover w-full h-full"
+          />
+        </div>
+
+        <div className="flex flex-col flex-1 w-full gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">{story.title}</h1>
+
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-300">
+            <span>{t("author")}: <b className="text-white">{story.author?.name || t("authorUpdating")}</b></span>
+            <span className="text-gray-500">|</span>
+            <span>{story.status === "completed" ? "Hoàn thành" : "Đang cập nhật"}</span>
+            <span className="text-gray-500">|</span>
+            <span>{t("totalChapters", { count: story.chapters.length })}</span>
+            <span className="text-gray-500">|</span>
+            <span>{t("listens", { count: Number(story.totalViews || 0).toLocaleString() })}</span>
           </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-3">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
-              <FavoriteButton storyId={story.id} size="md" className="bg-gray-900/50 hover:bg-gray-900/70" />
-            </div>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{t("author")}: <b>{story.author?.name || t("authorUpdating")}</b></p>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{t("listens", { count: Number(story.totalViews || 0).toLocaleString() })}</p>
-            <p className="mt-3 line-clamp-3 text-sm text-gray-600 dark:text-gray-300">{story.description || t("descriptionUpdating")}</p>
+          <p className="text-gray-400 text-sm line-clamp-3">{story.description || t("descriptionUpdating")}</p>
 
+          <div className="flex flex-wrap items-center gap-3 mt-2 md:mt-4">
             {firstChapter ? (
               <Link
                 href={chapterHref(story.slug, firstChapter.chapterNumber)}
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-full font-semibold transition-colors flex-1 md:flex-none"
               >
-                <PlayCircle className="h-4 w-4" /> {t("listenFromFirst")}
+                <Play className="h-4 w-4" />
+                {t("listenFromFirst")}
               </Link>
             ) : null}
+
+            <FavoriteButton
+              storyId={story.id}
+              size="md"
+              icon="bookmark"
+              label="Thêm vào yêu thích"
+              className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white border border-gray-700 px-6 py-2.5 rounded-full font-semibold transition-colors flex-1 md:flex-none"
+            />
           </div>
         </div>
       </section>

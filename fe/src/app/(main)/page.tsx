@@ -3,13 +3,18 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+<<<<<<< HEAD
 import { useRouter } from "next/navigation";
+=======
+>>>>>>> master
 import { useLocale, useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
+import ResponsiveStoryList from "@/components/shared/ResponsiveStoryList";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
+import { useRouter } from "next/navigation";
 
 type StoryItem = {
   id: string;
@@ -31,6 +36,7 @@ type CategoryItem = {
   storiesCount: number;
 };
 
+<<<<<<< HEAD
 type AuthorItem = {
   id: string;
   name: string;
@@ -49,6 +55,8 @@ type ChapterItem = {
   };
 };
 
+=======
+>>>>>>> master
 type HallMember = {
   id: string;
   displayName: string;
@@ -58,10 +66,16 @@ type HallMember = {
   totalUnlockedStories: number;
 };
 
+type AuthorItem = {
+  id: string;
+  name: string;
+};
+
 type ExploreResponse = {
   data: StoryItem[];
 };
 
+<<<<<<< HEAD
 type OptionFilters = {
   categoryId: string;
   authorId: string;
@@ -88,23 +102,30 @@ const storySections = [
     viewAllHref: "/search?status=completed",
   },
 ] as const;
+=======
+const NEW_LIMIT = 5;
+const POPULAR_LIMIT = 8;
+const RANKING_LIMIT = 5;
+>>>>>>> master
 
 export default function HomePage() {
-  const router = useRouter();
   const t = useTranslations("Home");
   const locale = useLocale();
   const lang = locale === "en" ? "en" : "vi";
+  const router = useRouter();
 
-  const [sectionsData, setSectionsData] = useState<Record<string, StoryItem[]>>({});
+  const [newestStories, setNewestStories] = useState<StoryItem[]>([]);
+  const [popularStories, setPopularStories] = useState<StoryItem[]>([]);
+  const [trendingStories, setTrendingStories] = useState<StoryItem[]>([]);
+  const [topRatingStories, setTopRatingStories] = useState<StoryItem[]>([]);
+  const [topViewsStories, setTopViewsStories] = useState<StoryItem[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [authors, setAuthors] = useState<AuthorItem[]>([]);
   const [latestChapters, setLatestChapters] = useState<ChapterItem[]>([]);
   const [hall, setHall] = useState<HallMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
-  const [showAllCategories, setShowAllCategories] = useState(false);
-
-  const [quickFilter, setQuickFilter] = useState<OptionFilters>({
+  const [filterValue, setFilterValue] = useState<StoryFilterValue>({
     categoryId: "",
     authorId: "",
     status: "",
@@ -112,10 +133,8 @@ export default function HomePage() {
   });
 
   const heroStories = useMemo(() => {
-    const trending = sectionsData.trending || [];
-    const newest = sectionsData.newest || [];
-    return (trending.length ? trending : newest).slice(0, 5);
-  }, [sectionsData.newest, sectionsData.trending]);
+    return (trendingStories.length ? trendingStories : newestStories).slice(0, 5);
+  }, [trendingStories, newestStories]);
 
   useEffect(() => {
     if (!heroStories.length) return;
@@ -129,6 +148,7 @@ export default function HomePage() {
     const loadHome = async () => {
       setIsLoading(true);
       try {
+<<<<<<< HEAD
         const sectionRequests = storySections.map((section) =>
           fetchExploreCached<ExploreResponse>({
             limit: SECTION_LIMIT,
@@ -139,16 +159,39 @@ export default function HomePage() {
 
         const [sectionRes, catRes, fallbackCatRes, authorRes, chapterRes, hallRes] = await Promise.all([
           Promise.allSettled(sectionRequests),
+=======
+        const [
+          newestRes,
+          popularRes,
+          trendingRes,
+          topRatingRes,
+          topViewsRes,
+          catTopRes,
+          catFallbackRes,
+          hallRes,
+          authorRes,
+        ] = await Promise.allSettled([
+          fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
+          fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
+          fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "views", trendWindow: "week" }),
+          fetchExploreCached<ExploreResponse>({ limit: RANKING_LIMIT, lang, sort: "rating" }),
+          fetchExploreCached<ExploreResponse>({ limit: RANKING_LIMIT, lang, sort: "views" }),
+>>>>>>> master
           apiClient
-            .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 8, lang } })
-            .then((res) => res.data?.data || [])
+            .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 20, lang } })
+            .then((r) => r.data?.data || [])
             .catch(() => []),
           apiClient
             .get<Array<{ id: number; name: string; slug: string }>>("/stories/categories")
-            .then((res) => res.data || [])
+            .then((r) => r.data || [])
+            .catch(() => []),
+          apiClient
+            .get<{ data: HallMember[] }>("/stories/hall-of-fame", { params: { limit: 5 } })
+            .then((r) => r.data?.data || [])
             .catch(() => []),
           apiClient
             .get<AuthorItem[]>("/stories/authors")
+<<<<<<< HEAD
             .then((res) => res.data || [])
             .catch(() => []),
           apiClient
@@ -158,30 +201,34 @@ export default function HomePage() {
           apiClient
             .get<{ data: HallMember[] }>("/stories/hall-of-fame", { params: { limit: 3 } })
             .then((res) => res.data?.data || [])
+=======
+            .then((r) => r.data || [])
+>>>>>>> master
             .catch(() => []),
         ]);
 
-        const nextSections: Record<string, StoryItem[]> = {};
-        storySections.forEach((section, idx) => {
-          const sectionItem = sectionRes[idx];
-          if (!sectionItem || sectionItem.status !== "fulfilled") {
-            nextSections[section.key] = [];
-            return;
-          }
-          nextSections[section.key] = sectionItem.value.data || [];
-        });
+        setNewestStories(newestRes.status === "fulfilled" ? (newestRes.value.data || []) : []);
+        setPopularStories(popularRes.status === "fulfilled" ? (popularRes.value.data || []) : []);
+        setTrendingStories(trendingRes.status === "fulfilled" ? (trendingRes.value.data || []) : []);
+        setTopRatingStories(topRatingRes.status === "fulfilled" ? (topRatingRes.value.data || []) : []);
+        setTopViewsStories(topViewsRes.status === "fulfilled" ? (topViewsRes.value.data || []) : []);
 
-        const categoriesFromTop = catRes || [];
-        const categoriesFromFallback = (fallbackCatRes || []).map((item) => ({
-          ...item,
-          storiesCount: 0,
-        }));
+        const catTop = catTopRes.status === "fulfilled" ? catTopRes.value : [];
+        const catFb = catFallbackRes.status === "fulfilled"
+          ? (catFallbackRes.value as Array<{ id: number; name: string; slug: string }>).map((c) => ({ ...c, storiesCount: 0 }))
+          : [];
+        setCategories((catTop.length ? catTop : catFb));
 
+<<<<<<< HEAD
         setSectionsData(nextSections);
         setCategories((categoriesFromTop.length ? categoriesFromTop : categoriesFromFallback).slice(0, 8));
         setAuthors(authorRes || []);
         setLatestChapters(chapterRes || []);
         setHall(hallRes || []);
+=======
+        setHall(hallRes.status === "fulfilled" ? hallRes.value : []);
+        setAuthors(authorRes.status === "fulfilled" ? authorRes.value : []);
+>>>>>>> master
       } catch (error) {
         console.error(t("loadError"), error);
       } finally {
@@ -192,30 +239,31 @@ export default function HomePage() {
     void loadHome();
   }, [lang, t]);
 
-  const applyQuickFilter = () => {
-    const query = new URLSearchParams();
-    if (quickFilter.categoryId) query.set("categoryId", quickFilter.categoryId);
-    if (quickFilter.authorId) query.set("authorId", quickFilter.authorId);
-    if (quickFilter.status) query.set("status", quickFilter.status);
-    if (quickFilter.sort) query.set("sort", quickFilter.sort);
-    router.push(`/search?${query.toString()}`);
-  };
-
   const activeHero = heroStories[heroIndex];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
+
+      {/* ─── Hero Banner ─────────────────────────────────────────── */}
       <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 text-white">
         {activeHero ? (
-          <img
+          <Image
             src={activeHero.thumbnailUrl || "https://placehold.co/1600x500?text=Hot+Story"}
             alt={activeHero.title}
+            fill
+            sizes="100vw"
+            priority
             className="absolute inset-0 h-full w-full object-cover opacity-40"
           />
         ) : null}
+<<<<<<< HEAD
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-800/40" />
 
         {/* Next Button */}
+=======
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-800/40 pointer-events-none" />
+
+>>>>>>> master
         {heroStories.length > 1 && (
           <button
             onClick={() => setHeroIndex((prev) => (prev === heroStories.length - 1 ? 0 : prev + 1))}
@@ -238,10 +286,10 @@ export default function HomePage() {
             {activeHero ? t("heroFeatured", { title: activeHero.title }) : t("heroFallback")}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href={activeHero ? `/story/${activeHero.slug}` : "/explore"} className="rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-300">
+            <Link href={activeHero ? `/story/${activeHero.slug}` : "/explore"} className="rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-300 transition-colors">
               {t("listenNow")}
             </Link>
-            <Link href="/trending" className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold hover:bg-white/10">
+            <Link href="/trending" className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold hover:bg-white/10 transition-colors">
               {t("viewTrending")}
             </Link>
           </div>
@@ -258,6 +306,7 @@ export default function HomePage() {
         </div>
       </section>
 
+<<<<<<< HEAD
       <StoryFilterBar
         categories={categories}
         authors={authors}
@@ -333,30 +382,60 @@ export default function HomePage() {
               <p className="text-sm text-slate-500 dark:text-slate-300">{t(`${section.key}Subtitle`)}</p>
             </div>
             <Link href={section.viewAllHref} className="text-sm font-semibold text-blue-600 hover:underline">
+=======
+      {/* ─── Hashtag / Category Strip ────────────────────────────── */}
+      {categories.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
+            <Link href="/categories" className="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+>>>>>>> master
               {t("viewAll")}
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {(sectionsData[section.key] || []).map((story) => (
-              <StoryCard key={story.id} story={story} />
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/categories/${cat.slug}`}
+                className="flex-shrink-0 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-300"
+              >
+                #{cat.name}
+              </Link>
             ))}
           </div>
-          {!isLoading && !(sectionsData[section.key] || []).length ? (
-            <p className="text-sm text-slate-500">{t("noData")}</p>
-          ) : null}
         </section>
-      ))}
+      )}
 
-      <section className="space-y-3">
+      {/* ─── Quick Filter Bar ────────────────────────────────────── */}
+      <StoryFilterBar
+        categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+        authors={authors}
+        value={filterValue}
+        onChange={setFilterValue}
+        onApply={() => {
+          const params = new URLSearchParams();
+          if (filterValue.categoryId) params.append("categoryId", filterValue.categoryId);
+          if (filterValue.authorId) params.append("authorId", filterValue.authorId);
+          if (filterValue.status) params.append("status", filterValue.status);
+          if (filterValue.sort && filterValue.sort !== "latest") params.append("sort", filterValue.sort);
+          router.push(`/explore?${params.toString()}`);
+        }}
+        isLoading={isLoading}
+      />
+
+      {/* ─── Truyện mới đăng (5 truyện, 2/3/5 cols) ─────────────── */}
+      <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("featuredCategoriesTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-300">{t("featuredCategoriesSubtitle")}</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("newestTitle")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t("newestSubtitle")}</p>
           </div>
-          <Link href="/categories" className="text-sm font-semibold text-blue-600 hover:underline">
+          <Link href="/new" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
             {t("viewAll")}
           </Link>
         </div>
+<<<<<<< HEAD
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {categories.slice(0, 3).map((cat) => (
             <Link
@@ -405,42 +484,107 @@ export default function HomePage() {
             </div>
           )}
         </div>
+=======
+        <ResponsiveStoryList 
+          stories={newestStories} 
+          isLoading={isLoading} 
+          colsDesktop="5" 
+          limit={NEW_LIMIT}
+        />
+>>>>>>> master
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-gradient-to-r from-amber-50 to-white p-5 dark:border-slate-700 dark:from-amber-900/20 dark:to-slate-900">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      {/* ─── Truyện phổ biến (8 truyện: slider mobile, grid 8-col desktop) ─ */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("hallTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-300">{t("hallSubtitle")}</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("popularTitle")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t("popularSubtitle")}</p>
           </div>
-          <Link href="/vinh-danh" className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600">
-            {t("viewFullRanking")}
+          <Link href="/search?sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            {t("viewAll")}
           </Link>
         </div>
-
-        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-          {hall.map((member, idx) => (
-            <div key={member.id} className="rounded-xl border border-amber-200 bg-white p-4 dark:border-amber-800 dark:bg-slate-800">
-              <p className="text-xs font-semibold text-amber-600">{t("top", { rank: idx + 1 })}</p>
-              <div className="mt-2 flex items-center gap-3">
-                <img
-                  src={member.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.displayName}`}
-                  alt={member.displayName}
-                  className="h-12 w-12 rounded-full"
-                />
-                <div>
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">{member.displayName}</p>
-                  <p className="text-xs text-slate-500">{t("vipUnlocked", { tier: member.vipTier, count: member.totalUnlockedStories })}</p>
-                </div>
+        {isLoading ? (
+          <div className="flex flex-row gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide lg:grid lg:grid-cols-8 lg:overflow-visible lg:pb-0">
+            {Array.from({ length: POPULAR_LIMIT }).map((_, i) => (
+              <div key={i} className="w-[130px] sm:w-[150px] shrink-0 snap-start lg:w-full lg:shrink">
+                <div className="aspect-[3/4] animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        ) : popularStories.length > 0 ? (
+          <div className="flex flex-row gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide lg:grid lg:grid-cols-8 lg:overflow-visible lg:pb-0">
+            {popularStories.slice(0, POPULAR_LIMIT).map((story) => (
+              <div key={story.id} className="w-[130px] sm:w-[150px] shrink-0 snap-start lg:w-full lg:shrink">
+                <StoryCard story={story} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">{t("noData")}</p>
+        )}
+      </section>
+
+      {/* ─── Bảng Xếp Hạng (3 cols trên desktop) ───────────────── */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("rankingsTitle")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t("rankingsSubtitle")}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/* Bảng 1: Xếp hạng sức mạnh (Hall of Fame) */}
+          <RankingColumn
+            title={t("rankHallTitle")}
+            viewAllHref="/vinh-danh"
+            viewAllLabel={t("viewAll")}
+            items={hall.map((m) => ({
+              id: m.id,
+              name: m.displayName,
+              avatarUrl: m.avatarUrl,
+              meta: t("vipUnlocked", { tier: m.vipTier, count: m.totalUnlockedStories }),
+            }))}
+            isLoading={isLoading}
+            isUserRanking
+          />
+          {/* Bảng 2: Truyện mới nhất */}
+          <RankingColumn
+            title={t("rankNewestTitle")}
+            viewAllHref="/new"
+            viewAllLabel={t("viewAll")}
+            items={newestStories.map((s) => ({
+              id: s.id,
+              name: s.title,
+              avatarUrl: s.thumbnailUrl,
+              meta: s.author?.name || "",
+              href: `/story/${s.slug}`,
+            }))}
+            isLoading={isLoading}
+          />
+          {/* Bảng 3: Truyện được xem nhiều nhất */}
+          <RankingColumn
+            title={t("rankViewsTitle")}
+            viewAllHref="/trending"
+            viewAllLabel={t("viewAll")}
+            items={topViewsStories.map((s) => ({
+              id: s.id,
+              name: s.title,
+              avatarUrl: s.thumbnailUrl,
+              meta: t("totalViews", { count: Number(s.totalViews || 0).toLocaleString("vi-VN") }),
+              href: `/story/${s.slug}`,
+            }))}
+            isLoading={isLoading}
+          />
         </div>
       </section>
+
     </div>
   );
 }
 
+<<<<<<< HEAD
 function timeAgo(date: string | Date | number) {
   const now = new Date();
   const past = new Date(date);
@@ -457,3 +601,91 @@ function timeAgo(date: string | Date | number) {
   if (diffInMonths < 12) return `${diffInMonths} tháng trước`;
   return past.toLocaleDateString("vi-VN");
 }
+=======
+/* ──────────────────────────────────────────────────────────────
+   RankingColumn sub-component
+   ────────────────────────────────────────────────────────────── */
+type RankingItem = {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  meta: string;
+  href?: string;
+};
+
+function RankingColumn({
+  title,
+  viewAllHref,
+  viewAllLabel,
+  items,
+  isLoading,
+  isUserRanking = false,
+}: {
+  title: string;
+  viewAllHref: string;
+  viewAllLabel: string;
+  items: RankingItem[];
+  isLoading: boolean;
+  isUserRanking?: boolean;
+}) {
+  const rankColors = ["text-amber-500", "text-slate-400", "text-amber-700", "text-slate-500", "text-slate-500"];
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+        <h3 className="font-bold text-slate-900 dark:text-white">{title}</h3>
+        <Link href={viewAllHref} className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+          {viewAllLabel}
+        </Link>
+      </div>
+      <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+        {isLoading
+          ? Array.from({ length: RANKING_LIMIT }).map((_, i) => (
+              <li key={i} className="flex items-center gap-3 px-4 py-3 animate-pulse">
+                <div className="w-6 h-4 rounded bg-slate-200 dark:bg-slate-700" />
+                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+                  <div className="h-2.5 w-1/2 rounded bg-slate-200 dark:bg-slate-700" />
+                </div>
+              </li>
+            ))
+          : items.map((item, idx) => {
+              const content = (
+                <li key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                  <span className={`w-6 text-center text-sm font-black tabular-nums shrink-0 ${rankColors[idx] || "text-slate-400"}`}>
+                    {idx + 1}
+                  </span>
+                  <div className="w-10 h-10 shrink-0 relative">
+                    <Image
+                      src={
+                        item.avatarUrl ||
+                        (isUserRanking
+                          ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(item.name)}`
+                          : "https://placehold.co/80x80?text=?")
+                      }
+                      alt={item.name}
+                      fill
+                      sizes="40px"
+                      unoptimized={isUserRanking || item.avatarUrl?.includes("dicebear")}
+                      className={`object-cover ${isUserRanking ? "rounded-full" : "rounded-md"}`}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{item.name}</p>
+                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{item.meta}</p>
+                  </div>
+                </li>
+              );
+              return item.href ? (
+                <Link key={item.id} href={item.href} className="block">
+                  {content}
+                </Link>
+              ) : content;
+            })}
+      </ul>
+    </div>
+  );
+}
+
+>>>>>>> master

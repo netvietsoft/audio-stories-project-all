@@ -78,11 +78,18 @@
     "storiesCount": "{count} stories",
     "otherCategories": "Other categories",
     "moreCategories": "+{count} categories",
+    "hashtagsTitle": "Popular Categories",
     "hallTitle": "Member Hall of Fame",
-    "hallSubtitle": "Top 3 spotlight with a link to the full ranking",
+    "hallSubtitle": "Top 3 outstanding members",
     "viewFullRanking": "View Full Ranking",
     "top": "Top {rank}",
-    "vipUnlocked": "VIP {tier} | {count} stories unlocked"
+    "vipUnlocked": "VIP {tier} | {count} stories unlocked",
+    "rankingsTitle": "Rankings",
+    "rankingsSubtitle": "Top stories and outstanding members",
+    "rankHallTitle": "Top Members",
+    "rankNewestTitle": "Newest Stories",
+    "rankViewsTitle": "Most Viewed",
+    "totalViews": "{count} views"
   },
   "StoryDetail": {
     "loading": "Loading chapter list...",

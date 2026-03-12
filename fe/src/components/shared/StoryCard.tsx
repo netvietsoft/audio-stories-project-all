@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
-import { Eye } from "lucide-react";
+import { Eye, Star } from "lucide-react";
 import FavoriteButton from "@/components/shared/FavoriteButton";
 
 type StoryCardStory = {
@@ -41,38 +41,49 @@ export default function StoryCard({ story, className }: StoryCardProps) {
   return (
     <Link
       href={`/story/${story.slug}`}
-      className={`group block overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg dark:border-gray-800 dark:bg-gray-900 ${className || ""}`}
+      className={`block relative w-[130px] sm:w-[150px] md:w-full shrink-0 aspect-[3/4] rounded-lg overflow-hidden group cursor-pointer shadow-sm hover:shadow-md transition-shadow ${className || ""}`}
     >
-      <div className="relative aspect-[4/5] w-full overflow-hidden bg-gray-100 dark:bg-gray-800">
-        <Image
-          src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
-          alt={story.title}
-          fill
-          sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
-          loading="lazy"
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-        />
-        <span className="absolute left-2 top-2 rounded-md bg-blue-600 px-2 py-1 text-xs font-semibold text-white">
+      <Image
+        src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
+        alt={story.title}
+        fill
+        sizes="(max-width: 768px) 150px, 250px"
+        className="object-cover transition-transform duration-500 group-hover:scale-110"
+      />
+
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none z-0" />
+
+      <div className="absolute top-2 left-2 flex flex-col gap-1 z-10 pointer-events-none">
+        <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
           {statusLabel}
         </span>
-
-        <span className="absolute left-2 top-10 rounded-md bg-black/70 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
+        <span className="bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm">
           {categoryLabel}
         </span>
+      </div>
 
-        <div className="absolute right-2 top-2">
-          <FavoriteButton storyId={story.id} />
-        </div>
+      <FavoriteButton
+        storyId={story.id}
+        className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-black/40 text-white hover:bg-black/70 hover:text-red-400 transition-colors pointer-events-auto"
+      />
 
-        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/90 via-black/65 to-transparent p-3">
-          <h3 className="line-clamp-2 text-sm font-semibold text-white drop-shadow-md">{story.title}</h3>
-          <p className="mt-1 truncate text-xs text-gray-200">{story.author?.name || t("updating")}</p>
-          <div className="mt-1 flex items-center justify-between text-xs text-gray-200">
-            <span>★ {rating}</span>
-            <span className="inline-flex items-center gap-1">
-            <Eye className="h-3.5 w-3.5" />
-            {Number(story.totalViews || 0).toLocaleString("vi-VN")}
-            </span>
+      <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3 z-10 pointer-events-none flex flex-col">
+        <h3 className="text-white font-bold text-sm md:text-base leading-tight line-clamp-2 mb-1">
+          {story.title}
+        </h3>
+
+        <p className="text-gray-300 text-[10px] md:text-xs truncate mb-1.5 md:mb-2">
+          {story.author?.name || t("updating")}
+        </p>
+
+        <div className="flex justify-between items-center w-full">
+          <div className="flex items-center gap-1 text-[10px] md:text-xs text-yellow-400 font-medium">
+            <Star className="w-3 h-3 md:w-3.5 md:h-3.5" fill="currentColor" />
+            <span>{rating}</span>
+          </div>
+          <div className="flex items-center gap-1 text-[10px] md:text-xs text-gray-300">
+            <Eye className="w-3 h-3 md:w-3.5 md:h-3.5" />
+            <span>{Number(story.totalViews || 0).toLocaleString("vi-VN")}</span>
           </div>
         </div>
       </div>

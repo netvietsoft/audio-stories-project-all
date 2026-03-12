@@ -762,9 +762,9 @@ export default function StoryChapterClient() {
   return (
     <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-4 sm:px-6 lg:px-10 2xl:px-14">
       <div className="mx-auto w-full max-w-[1720px] space-y-8">
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_560px]">
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_560px] lg:items-start">
         {/* Story Info */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 order-1 lg:order-none lg:col-start-1 lg:col-end-2">
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
@@ -792,15 +792,18 @@ export default function StoryChapterClient() {
         </section>
 
         {/* Chapter Introduction */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 order-2 lg:order-none lg:col-start-1 lg:col-end-2 lg:row-start-2">
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-2">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Giới thiệu chương</h2>
           <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
             {selectedChapter.description || "Chương này chưa có phần giới thiệu."}
           </p>
         </section>
 
+        {/* RIGHT STICKY SIDEBAR */}
+        <div className="lg:col-start-2 lg:row-start-1 lg:row-end-5 sticky top-24 h-fit flex flex-col gap-4">
+
         {/* Side Panel 1: Chapter List */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900 order-3 lg:order-none lg:col-start-2 lg:col-end-3 lg:row-start-1">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
           <h2 className="mb-3 flex items-center justify-between text-base font-semibold text-gray-900 dark:text-gray-100">
             <span className="inline-flex items-center gap-2"><ListMusic className="h-4 w-4" /> Chương đang phát
             </span>
@@ -855,7 +858,7 @@ export default function StoryChapterClient() {
         </section>
 
         {/* Side Panel 2: Audio Player */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900 order-4 lg:order-none lg:col-start-2 lg:col-end-3 lg:row-start-2">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
           <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">Audio Player</h2>
 
           <div className="mt-4 grid gap-4 md:grid-cols-[160px_1fr]">
@@ -1036,7 +1039,7 @@ export default function StoryChapterClient() {
         </section>
 
         {/* Side Panel 3: YouTube Player */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900 order-5 lg:order-none lg:col-start-2 lg:col-end-3 lg:row-start-3">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
           <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">YouTube Player</h2>
           {chapterIsLocked ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
@@ -1066,8 +1069,10 @@ export default function StoryChapterClient() {
           )}
         </section>
 
+        </div>{/* END RIGHT STICKY SIDEBAR */}
+
         {/* Chapter Content / Text Reader */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 order-6 lg:order-none lg:col-start-1 lg:col-end-2 lg:row-start-3">
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Đọc truyện chữ</h2>
           <div className="mt-5">
             <StoryReader
@@ -1083,7 +1088,7 @@ export default function StoryChapterClient() {
         </section>
 
         {/* Reviews */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 order-7 lg:order-none lg:col-start-1 lg:col-end-2 lg:row-start-4">
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Đánh giá từ độc giả</h2>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr]">

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 import { UploadButton } from '@/lib/uploadthing';
-import { apiClient } from '@/lib/api/api-client';
+import { adminApiClient } from '@/lib/api/admin-api-client';
 
 const chapterSchema = z.object({
     chapterNumber: z.coerce.number().min(0, 'Số chương không được âm'),
@@ -145,7 +145,7 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
     useEffect(() => {
         const fetchStories = async () => {
             try {
-                const res = await apiClient.get('/stories?all=true');
+                const res = await adminApiClient.get('/stories?all=true');
                 setStories(Array.isArray(res.data) ? res.data : res.data.data || []);
             } catch (error) {
                 console.error('Failed to fetch stories:', error);

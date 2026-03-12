@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -54,6 +54,9 @@ export default function Navbar() {
   // State cho Mobile/Tablet Menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Refs
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
   const user = useUserStore((state) => state.user);
   const openLogin = useAuthModalStore((state) => state.openLogin);
   const [notifs, setNotifs] = useState<NotificationItem[]>([]);
@@ -101,6 +104,18 @@ export default function Navbar() {
     };
 
     void loadTopCategories();
+  }, []);
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const markRead = async (id: string) => {
@@ -320,7 +335,7 @@ export default function Navbar() {
                       {t("login")}
                     </button>
                   </div>
-                ) : (<div className="relative hidden sm:block">
+                ) : (<div className="relative hidden sm:block" ref={userMenuRef}>
                   <button
                     onClick={
                       () => {

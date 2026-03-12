@@ -124,7 +124,7 @@ export default function StoryFilterBar({
           </button>
 
           {isCategoryOpen && (
-            <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute z-50 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="p-3 border-b border-slate-100 dark:border-slate-700">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -187,7 +187,7 @@ export default function StoryFilterBar({
           </button>
 
           {isAuthorOpen && (
-            <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute z-50 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="p-3 border-b border-slate-100 dark:border-slate-700">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -250,7 +250,7 @@ export default function StoryFilterBar({
           </button>
 
           {isStatusOpen && (
-            <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute z-50 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
               {statusOptions.map((s) => (
                 <button
                   key={s.value}
@@ -283,7 +283,7 @@ export default function StoryFilterBar({
           </button>
 
           {isSortOpen && (
-            <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute z-50 top-full left-0 w-full mt-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
               {sortOptions.map((s) => (
                 <button
                   key={s.value}

@@ -39,21 +39,21 @@ export default function ResponsiveStoryList({
 
   if (isLoading) {
     const skeletons = Array.from({ length: limit }).map((_, i) => (
-      <div key={`skeleton-${i}`} className="w-[160px] min-w-[160px] flex-shrink-0 snap-start md:w-auto md:min-w-0 md:flex-shrink-0">
+      <div key={`skeleton-${i}`} className="w-[130px] sm:w-[150px] shrink-0 snap-start md:w-auto md:min-w-0">
         <div className="aspect-[4/5] animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
       </div>
     ));
     return (
-      <div className={`flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible scrollbar-hide ${gridClass}`}>
+      <div className={`flex flex-row gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 justify-start items-stretch scrollbar-hide md:grid md:grid-cols-4 md:overflow-visible ${gridClass}`}>
         {skeletons}
       </div>
     );
   }
 
   return (
-    <div className={`flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 md:grid md:grid-cols-3 md:gap-4 md:overflow-visible scrollbar-hide ${gridClass}`}>
+    <div className={`flex flex-row gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 justify-start items-stretch scrollbar-hide md:grid md:grid-cols-4 md:overflow-visible ${gridClass}`}>
       {displayStories.map((story) => (
-        <div key={story.id} className="w-[160px] min-w-[160px] flex-shrink-0 snap-start md:w-auto md:min-w-0 md:flex-shrink-0">
+        <div key={story.id} className="w-[130px] sm:w-[150px] shrink-0 snap-start md:w-auto md:min-w-0">
           <StoryCard story={story} />
         </div>
       ))}

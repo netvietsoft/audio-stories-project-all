@@ -7,8 +7,10 @@ import { useLocale, useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
 import ResponsiveStoryList from "@/components/shared/ResponsiveStoryList";
+import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
+import { useRouter } from "next/navigation";
 
 type StoryItem = {
   id: string;
@@ -39,6 +41,11 @@ type HallMember = {
   totalUnlockedStories: number;
 };
 
+type AuthorItem = {
+  id: string;
+  name: string;
+};
+
 type ExploreResponse = {
   data: StoryItem[];
 };
@@ -51,6 +58,7 @@ export default function HomePage() {
   const t = useTranslations("Home");
   const locale = useLocale();
   const lang = locale === "en" ? "en" : "vi";
+  const router = useRouter();
 
   const [newestStories, setNewestStories] = useState<StoryItem[]>([]);
   const [popularStories, setPopularStories] = useState<StoryItem[]>([]);
@@ -58,9 +66,16 @@ export default function HomePage() {
   const [topRatingStories, setTopRatingStories] = useState<StoryItem[]>([]);
   const [topViewsStories, setTopViewsStories] = useState<StoryItem[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [authors, setAuthors] = useState<AuthorItem[]>([]);
   const [hall, setHall] = useState<HallMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [filterValue, setFilterValue] = useState<StoryFilterValue>({
+    categoryId: "",
+    authorId: "",
+    status: "",
+    sort: "latest",
+  });
 
   const heroStories = useMemo(() => {
     return (trendingStories.length ? trendingStories : newestStories).slice(0, 5);
@@ -87,6 +102,7 @@ export default function HomePage() {
           catTopRes,
           catFallbackRes,
           hallRes,
+          authorRes,
         ] = await Promise.allSettled([
           fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
@@ -105,6 +121,10 @@ export default function HomePage() {
             .get<{ data: HallMember[] }>("/stories/hall-of-fame", { params: { limit: 5 } })
             .then((r) => r.data?.data || [])
             .catch(() => []),
+          apiClient
+            .get<AuthorItem[]>("/stories/authors")
+            .then((r) => r.data || [])
+            .catch(() => []),
         ]);
 
         setNewestStories(newestRes.status === "fulfilled" ? (newestRes.value.data || []) : []);
@@ -120,6 +140,7 @@ export default function HomePage() {
         setCategories((catTop.length ? catTop : catFb));
 
         setHall(hallRes.status === "fulfilled" ? hallRes.value : []);
+        setAuthors(authorRes.status === "fulfilled" ? authorRes.value : []);
       } catch (error) {
         console.error(t("loadError"), error);
       } finally {
@@ -214,6 +235,23 @@ export default function HomePage() {
         </section>
       )}
 
+      {/* ─── Quick Filter Bar ────────────────────────────────────── */}
+      <StoryFilterBar
+        categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+        authors={authors}
+        value={filterValue}
+        onChange={setFilterValue}
+        onApply={() => {
+          const params = new URLSearchParams();
+          if (filterValue.categoryId) params.append("categoryId", filterValue.categoryId);
+          if (filterValue.authorId) params.append("authorId", filterValue.authorId);
+          if (filterValue.status) params.append("status", filterValue.status);
+          if (filterValue.sort && filterValue.sort !== "latest") params.append("sort", filterValue.sort);
+          router.push(`/explore?${params.toString()}`);
+        }}
+        isLoading={isLoading}
+      />
+
       {/* ─── Truyện mới đăng (5 truyện, 2/3/5 cols) ─────────────── */}
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
@@ -233,7 +271,7 @@ export default function HomePage() {
         />
       </section>
 
-      {/* ─── Truyện phổ biến (8 truyện, 2/3/4 cols = 2 hàng x 4) ─ */}
+      {/* ─── Truyện phổ biến (8 truyện: slider mobile, grid 8-col desktop) ─ */}
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -244,12 +282,25 @@ export default function HomePage() {
             {t("viewAll")}
           </Link>
         </div>
-        <ResponsiveStoryList 
-          stories={popularStories} 
-          isLoading={isLoading} 
-          colsDesktop="4" 
-          limit={POPULAR_LIMIT}
-        />
+        {isLoading ? (
+          <div className="flex flex-row gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide lg:grid lg:grid-cols-8 lg:overflow-visible lg:pb-0">
+            {Array.from({ length: POPULAR_LIMIT }).map((_, i) => (
+              <div key={i} className="w-[130px] sm:w-[150px] shrink-0 snap-start lg:w-full lg:shrink">
+                <div className="aspect-[3/4] animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
+              </div>
+            ))}
+          </div>
+        ) : popularStories.length > 0 ? (
+          <div className="flex flex-row gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide lg:grid lg:grid-cols-8 lg:overflow-visible lg:pb-0">
+            {popularStories.slice(0, POPULAR_LIMIT).map((story) => (
+              <div key={story.id} className="w-[130px] sm:w-[150px] shrink-0 snap-start lg:w-full lg:shrink">
+                <StoryCard story={story} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">{t("noData")}</p>
+        )}
       </section>
 
       {/* ─── Bảng Xếp Hạng (3 cols trên desktop) ───────────────── */}

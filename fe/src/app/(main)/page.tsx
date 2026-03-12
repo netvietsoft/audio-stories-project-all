@@ -3,10 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-<<<<<<< HEAD
-import { useRouter } from "next/navigation";
-=======
->>>>>>> master
 import { useLocale, useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
@@ -36,7 +32,6 @@ type CategoryItem = {
   storiesCount: number;
 };
 
-<<<<<<< HEAD
 type AuthorItem = {
   id: string;
   name: string;
@@ -55,8 +50,6 @@ type ChapterItem = {
   };
 };
 
-=======
->>>>>>> master
 type HallMember = {
   id: string;
   displayName: string;
@@ -66,47 +59,13 @@ type HallMember = {
   totalUnlockedStories: number;
 };
 
-type AuthorItem = {
-  id: string;
-  name: string;
-};
-
 type ExploreResponse = {
   data: StoryItem[];
 };
 
-<<<<<<< HEAD
-type OptionFilters = {
-  categoryId: string;
-  authorId: string;
-  status: "" | "completed" | "ongoing";
-  sort: "latest" | "views" | "rating" | "title_asc" | "chapters_desc";
-};
-
-const SECTION_LIMIT = 8;
-
-const storySections = [
-  {
-    key: "trending",
-    params: { sort: "views" as const, trendWindow: "week" },
-    viewAllHref: "/trending",
-  },
-  {
-    key: "popular",
-    params: { sort: "rating" as const },
-    viewAllHref: "/search?sort=rating",
-  },
-  {
-    key: "completed",
-    params: { sort: "latest" as const, status: "completed" },
-    viewAllHref: "/search?status=completed",
-  },
-] as const;
-=======
 const NEW_LIMIT = 5;
 const POPULAR_LIMIT = 8;
 const RANKING_LIMIT = 5;
->>>>>>> master
 
 export default function HomePage() {
   const t = useTranslations("Home");
@@ -125,6 +84,7 @@ export default function HomePage() {
   const [hall, setHall] = useState<HallMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [filterValue, setFilterValue] = useState<StoryFilterValue>({
     categoryId: "",
     authorId: "",
@@ -148,18 +108,6 @@ export default function HomePage() {
     const loadHome = async () => {
       setIsLoading(true);
       try {
-<<<<<<< HEAD
-        const sectionRequests = storySections.map((section) =>
-          fetchExploreCached<ExploreResponse>({
-            limit: SECTION_LIMIT,
-            lang,
-            ...section.params,
-          }),
-        );
-
-        const [sectionRes, catRes, fallbackCatRes, authorRes, chapterRes, hallRes] = await Promise.all([
-          Promise.allSettled(sectionRequests),
-=======
         const [
           newestRes,
           popularRes,
@@ -170,13 +118,13 @@ export default function HomePage() {
           catFallbackRes,
           hallRes,
           authorRes,
+          chapterRes,
         ] = await Promise.allSettled([
           fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "views", trendWindow: "week" }),
           fetchExploreCached<ExploreResponse>({ limit: RANKING_LIMIT, lang, sort: "rating" }),
           fetchExploreCached<ExploreResponse>({ limit: RANKING_LIMIT, lang, sort: "views" }),
->>>>>>> master
           apiClient
             .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 20, lang } })
             .then((r) => r.data?.data || [])
@@ -191,19 +139,11 @@ export default function HomePage() {
             .catch(() => []),
           apiClient
             .get<AuthorItem[]>("/stories/authors")
-<<<<<<< HEAD
-            .then((res) => res.data || [])
+            .then((r) => r.data || [])
             .catch(() => []),
           apiClient
             .get<ChapterItem[]>("/chapters/latest", { params: { limit: 10 } })
             .then((res) => res.data || [])
-            .catch(() => []),
-          apiClient
-            .get<{ data: HallMember[] }>("/stories/hall-of-fame", { params: { limit: 3 } })
-            .then((res) => res.data?.data || [])
-=======
-            .then((r) => r.data || [])
->>>>>>> master
             .catch(() => []),
         ]);
 
@@ -219,16 +159,9 @@ export default function HomePage() {
           : [];
         setCategories((catTop.length ? catTop : catFb));
 
-<<<<<<< HEAD
-        setSectionsData(nextSections);
-        setCategories((categoriesFromTop.length ? categoriesFromTop : categoriesFromFallback).slice(0, 8));
-        setAuthors(authorRes || []);
-        setLatestChapters(chapterRes || []);
-        setHall(hallRes || []);
-=======
         setHall(hallRes.status === "fulfilled" ? hallRes.value : []);
         setAuthors(authorRes.status === "fulfilled" ? authorRes.value : []);
->>>>>>> master
+        setLatestChapters(chapterRes.status === "fulfilled" ? chapterRes.value : []);
       } catch (error) {
         console.error(t("loadError"), error);
       } finally {
@@ -256,14 +189,8 @@ export default function HomePage() {
             className="absolute inset-0 h-full w-full object-cover opacity-40"
           />
         ) : null}
-<<<<<<< HEAD
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-800/40" />
-
-        {/* Next Button */}
-=======
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-800/40 pointer-events-none" />
 
->>>>>>> master
         {heroStories.length > 1 && (
           <button
             onClick={() => setHeroIndex((prev) => (prev === heroStories.length - 1 ? 0 : prev + 1))}
@@ -306,16 +233,47 @@ export default function HomePage() {
         </div>
       </section>
 
-<<<<<<< HEAD
+      {/* ─── Hashtag / Category Strip ────────────────────────────── */}
+      {categories.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
+            <Link href="/categories" className="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              {t("viewAll")}
+            </Link>
+          </div>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/categories/${cat.slug}`}
+                className="flex-shrink-0 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-300"
+              >
+                #{cat.name}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ─── Quick Filter Bar ────────────────────────────────────── */}
       <StoryFilterBar
-        categories={categories}
+        categories={categories.map((c) => ({ id: c.id, name: c.name }))}
         authors={authors}
-        value={quickFilter}
-        onChange={setQuickFilter}
-        onApply={applyQuickFilter}
+        value={filterValue}
+        onChange={setFilterValue}
+        onApply={() => {
+          const params = new URLSearchParams();
+          if (filterValue.categoryId) params.append("categoryId", filterValue.categoryId);
+          if (filterValue.authorId) params.append("authorId", filterValue.authorId);
+          if (filterValue.status) params.append("status", filterValue.status);
+          if (filterValue.sort && filterValue.sort !== "latest") params.append("sort", filterValue.sort);
+          router.push(`/explore?${params.toString()}`);
+        }}
+        isLoading={isLoading}
       />
 
-      {/* Most Recently Updated Section */}
+      {/* ─── Chương mới cập nhật ─── */}
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-2">
           <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">
@@ -362,7 +320,7 @@ export default function HomePage() {
             </div>
           ))}
 
-          {latestChapters.length === 0 && Array.from({ length: 5 }).map((_, i) => (
+          {latestChapters.length === 0 && isLoading && Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 py-3 animate-pulse">
               <div className="h-14 w-10 bg-slate-200 dark:bg-slate-800 rounded" />
               <div className="flex-grow space-y-2">
@@ -374,57 +332,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {storySections.map((section) => (
-        <section key={section.key} className="space-y-3">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t(`${section.key}Title`)}</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-300">{t(`${section.key}Subtitle`)}</p>
-            </div>
-            <Link href={section.viewAllHref} className="text-sm font-semibold text-blue-600 hover:underline">
-=======
-      {/* ─── Hashtag / Category Strip ────────────────────────────── */}
-      {categories.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
-            <Link href="/categories" className="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
->>>>>>> master
-              {t("viewAll")}
-            </Link>
-          </div>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/categories/${cat.slug}`}
-                className="flex-shrink-0 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-300"
-              >
-                #{cat.name}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ─── Quick Filter Bar ────────────────────────────────────── */}
-      <StoryFilterBar
-        categories={categories.map((c) => ({ id: c.id, name: c.name }))}
-        authors={authors}
-        value={filterValue}
-        onChange={setFilterValue}
-        onApply={() => {
-          const params = new URLSearchParams();
-          if (filterValue.categoryId) params.append("categoryId", filterValue.categoryId);
-          if (filterValue.authorId) params.append("authorId", filterValue.authorId);
-          if (filterValue.status) params.append("status", filterValue.status);
-          if (filterValue.sort && filterValue.sort !== "latest") params.append("sort", filterValue.sort);
-          router.push(`/explore?${params.toString()}`);
-        }}
-        isLoading={isLoading}
-      />
-
-      {/* ─── Truyện mới đăng (5 truyện, 2/3/5 cols) ─────────────── */}
+      {/* ─── Truyện mới đăng ─── */}
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -435,12 +343,30 @@ export default function HomePage() {
             {t("viewAll")}
           </Link>
         </div>
-<<<<<<< HEAD
+        <ResponsiveStoryList 
+          stories={newestStories} 
+          isLoading={isLoading} 
+          colsDesktop="5" 
+          limit={NEW_LIMIT}
+        />
+      </section>
+
+      {/* ─── Featured Categories (Horizontal Grid) ─── */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("featuredCategoriesTitle")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t("featuredCategoriesSubtitle")}</p>
+          </div>
+          <Link href="/categories" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            {t("viewAll")}
+          </Link>
+        </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {categories.slice(0, 3).map((cat) => (
             <Link
               key={cat.id}
-              href={`/chuong-${cat.slug}`}
+              href={`/categories/${cat.slug}`}
               className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
             >
               <p className="font-semibold text-slate-900 dark:text-slate-100">{cat.name}</p>
@@ -484,14 +410,6 @@ export default function HomePage() {
             </div>
           )}
         </div>
-=======
-        <ResponsiveStoryList 
-          stories={newestStories} 
-          isLoading={isLoading} 
-          colsDesktop="5" 
-          limit={NEW_LIMIT}
-        />
->>>>>>> master
       </section>
 
       {/* ─── Truyện phổ biến (8 truyện: slider mobile, grid 8-col desktop) ─ */}
@@ -584,7 +502,6 @@ export default function HomePage() {
   );
 }
 
-<<<<<<< HEAD
 function timeAgo(date: string | Date | number) {
   const now = new Date();
   const past = new Date(date);
@@ -601,7 +518,7 @@ function timeAgo(date: string | Date | number) {
   if (diffInMonths < 12) return `${diffInMonths} tháng trước`;
   return past.toLocaleDateString("vi-VN");
 }
-=======
+
 /* ──────────────────────────────────────────────────────────────
    RankingColumn sub-component
    ────────────────────────────────────────────────────────────── */
@@ -687,5 +604,3 @@ function RankingColumn({
     </div>
   );
 }
-
->>>>>>> master

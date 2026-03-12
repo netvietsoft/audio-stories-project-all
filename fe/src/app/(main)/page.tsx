@@ -2,11 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
-import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
 
@@ -30,11 +29,6 @@ type CategoryItem = {
   storiesCount: number;
 };
 
-type AuthorItem = {
-  id: string;
-  name: string;
-};
-
 type HallMember = {
   id: string;
   displayName: string;
@@ -48,64 +42,28 @@ type ExploreResponse = {
   data: StoryItem[];
 };
 
-type OptionFilters = {
-  categoryId: string;
-  authorId: string;
-  status: "" | "completed" | "ongoing";
-  sort: "latest" | "views" | "rating" | "title_asc" | "chapters_desc";
-};
-
-const SECTION_LIMIT = 8;
-
-const storySections = [
-  {
-    key: "newest",
-    params: { sort: "latest" as const },
-    viewAllHref: "/new",
-  },
-  {
-    key: "trending",
-    params: { sort: "views" as const, trendWindow: "week" },
-    viewAllHref: "/trending",
-  },
-  {
-    key: "popular",
-    params: { sort: "rating" as const },
-    viewAllHref: "/search?sort=rating",
-  },
-  {
-    key: "completed",
-    params: { sort: "latest" as const, status: "completed" },
-    viewAllHref: "/search?status=completed",
-  },
-] as const;
+const NEW_LIMIT = 5;
+const POPULAR_LIMIT = 8;
+const RANKING_LIMIT = 5;
 
 export default function HomePage() {
-  const router = useRouter();
   const t = useTranslations("Home");
   const locale = useLocale();
   const lang = locale === "en" ? "en" : "vi";
 
-  const [sectionsData, setSectionsData] = useState<Record<string, StoryItem[]>>({});
+  const [newestStories, setNewestStories] = useState<StoryItem[]>([]);
+  const [popularStories, setPopularStories] = useState<StoryItem[]>([]);
+  const [trendingStories, setTrendingStories] = useState<StoryItem[]>([]);
+  const [topRatingStories, setTopRatingStories] = useState<StoryItem[]>([]);
+  const [topViewsStories, setTopViewsStories] = useState<StoryItem[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [authors, setAuthors] = useState<AuthorItem[]>([]);
   const [hall, setHall] = useState<HallMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
-  const [showAllCategories, setShowAllCategories] = useState(false);
-
-  const [quickFilter, setQuickFilter] = useState<OptionFilters>({
-    categoryId: "",
-    authorId: "",
-    status: "",
-    sort: "latest",
-  });
 
   const heroStories = useMemo(() => {
-    const trending = sectionsData.trending || [];
-    const newest = sectionsData.newest || [];
-    return (trending.length ? trending : newest).slice(0, 5);
-  }, [sectionsData.newest, sectionsData.trending]);
+    return (trendingStories.length ? trendingStories : newestStories).slice(0, 5);
+  }, [trendingStories, newestStories]);
 
   useEffect(() => {
     if (!heroStories.length) return;
@@ -119,54 +77,48 @@ export default function HomePage() {
     const loadHome = async () => {
       setIsLoading(true);
       try {
-        const sectionRequests = storySections.map((section) =>
-          fetchExploreCached<ExploreResponse>({
-            limit: SECTION_LIMIT,
-            lang,
-            ...section.params,
-          }),
-        );
-
-        const [sectionRes, catRes, fallbackCatRes, authorRes, hallRes] = await Promise.all([
-          Promise.allSettled(sectionRequests),
+        const [
+          newestRes,
+          popularRes,
+          trendingRes,
+          topRatingRes,
+          topViewsRes,
+          catTopRes,
+          catFallbackRes,
+          hallRes,
+        ] = await Promise.allSettled([
+          fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
+          fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
+          fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "views", trendWindow: "week" }),
+          fetchExploreCached<ExploreResponse>({ limit: RANKING_LIMIT, lang, sort: "rating" }),
+          fetchExploreCached<ExploreResponse>({ limit: RANKING_LIMIT, lang, sort: "views" }),
           apiClient
-            .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 8, lang } })
-            .then((res) => res.data?.data || [])
+            .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 20, lang } })
+            .then((r) => r.data?.data || [])
             .catch(() => []),
           apiClient
             .get<Array<{ id: number; name: string; slug: string }>>("/stories/categories")
-            .then((res) => res.data || [])
+            .then((r) => r.data || [])
             .catch(() => []),
           apiClient
-            .get<AuthorItem[]>("/stories/authors")
-            .then((res) => res.data || [])
-            .catch(() => []),
-          apiClient
-            .get<{ data: HallMember[] }>("/stories/hall-of-fame", { params: { limit: 3 } })
-            .then((res) => res.data?.data || [])
+            .get<{ data: HallMember[] }>("/stories/hall-of-fame", { params: { limit: 5 } })
+            .then((r) => r.data?.data || [])
             .catch(() => []),
         ]);
 
-        const nextSections: Record<string, StoryItem[]> = {};
-        storySections.forEach((section, idx) => {
-          const sectionItem = sectionRes[idx];
-          if (!sectionItem || sectionItem.status !== "fulfilled") {
-            nextSections[section.key] = [];
-            return;
-          }
-          nextSections[section.key] = sectionItem.value.data || [];
-        });
+        setNewestStories(newestRes.status === "fulfilled" ? (newestRes.value.data || []) : []);
+        setPopularStories(popularRes.status === "fulfilled" ? (popularRes.value.data || []) : []);
+        setTrendingStories(trendingRes.status === "fulfilled" ? (trendingRes.value.data || []) : []);
+        setTopRatingStories(topRatingRes.status === "fulfilled" ? (topRatingRes.value.data || []) : []);
+        setTopViewsStories(topViewsRes.status === "fulfilled" ? (topViewsRes.value.data || []) : []);
 
-        const categoriesFromTop = catRes || [];
-        const categoriesFromFallback = (fallbackCatRes || []).map((item) => ({
-          ...item,
-          storiesCount: 0,
-        }));
+        const catTop = catTopRes.status === "fulfilled" ? catTopRes.value : [];
+        const catFb = catFallbackRes.status === "fulfilled"
+          ? (catFallbackRes.value as Array<{ id: number; name: string; slug: string }>).map((c) => ({ ...c, storiesCount: 0 }))
+          : [];
+        setCategories((catTop.length ? catTop : catFb));
 
-        setSectionsData(nextSections);
-        setCategories((categoriesFromTop.length ? categoriesFromTop : categoriesFromFallback).slice(0, 8));
-        setAuthors(authorRes || []);
-        setHall(hallRes || []);
+        setHall(hallRes.status === "fulfilled" ? hallRes.value : []);
       } catch (error) {
         console.error(t("loadError"), error);
       } finally {
@@ -177,30 +129,25 @@ export default function HomePage() {
     void loadHome();
   }, [lang, t]);
 
-  const applyQuickFilter = () => {
-    const query = new URLSearchParams();
-    if (quickFilter.categoryId) query.set("categoryId", quickFilter.categoryId);
-    if (quickFilter.authorId) query.set("authorId", quickFilter.authorId);
-    if (quickFilter.status) query.set("status", quickFilter.status);
-    if (quickFilter.sort) query.set("sort", quickFilter.sort);
-    router.push(`/search?${query.toString()}`);
-  };
-
   const activeHero = heroStories[heroIndex];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
+
+      {/* ─── Hero Banner ─────────────────────────────────────────── */}
       <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 text-white">
         {activeHero ? (
-          <img
+          <Image
             src={activeHero.thumbnailUrl || "https://placehold.co/1600x500?text=Hot+Story"}
             alt={activeHero.title}
+            fill
+            sizes="100vw"
+            priority
             className="absolute inset-0 h-full w-full object-cover opacity-40"
           />
         ) : null}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-800/40" />
-        
-        {/* Next Button */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-800/40 pointer-events-none" />
+
         {heroStories.length > 1 && (
           <button
             onClick={() => setHeroIndex((prev) => (prev === heroStories.length - 1 ? 0 : prev + 1))}
@@ -223,10 +170,10 @@ export default function HomePage() {
             {activeHero ? t("heroFeatured", { title: activeHero.title }) : t("heroFallback")}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href={activeHero ? `/story/${activeHero.slug}` : "/explore"} className="rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-300">
+            <Link href={activeHero ? `/story/${activeHero.slug}` : "/explore"} className="rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-300 transition-colors">
               {t("listenNow")}
             </Link>
-            <Link href="/trending" className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold hover:bg-white/10">
+            <Link href="/trending" className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold hover:bg-white/10 transition-colors">
               {t("viewTrending")}
             </Link>
           </div>
@@ -243,126 +190,225 @@ export default function HomePage() {
         </div>
       </section>
 
-      <StoryFilterBar
-        categories={categories}
-        authors={authors}
-        value={quickFilter}
-        onChange={setQuickFilter}
-        onApply={applyQuickFilter}
-      />
-
-      {storySections.map((section) => (
-        <section key={section.key} className="space-y-3">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t(`${section.key}Title`)}</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-300">{t(`${section.key}Subtitle`)}</p>
-            </div>
-            <Link href={section.viewAllHref} className="text-sm font-semibold text-blue-600 hover:underline">
+      {/* ─── Hashtag / Category Strip ────────────────────────────── */}
+      {categories.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
+            <Link href="/categories" className="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
               {t("viewAll")}
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {(sectionsData[section.key] || []).map((story) => (
-              <StoryCard key={story.id} story={story} />
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/categories/${cat.slug}`}
+                className="flex-shrink-0 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-300"
+              >
+                #{cat.name}
+              </Link>
             ))}
           </div>
-          {!isLoading && !(sectionsData[section.key] || []).length ? (
-            <p className="text-sm text-slate-500">{t("noData")}</p>
-          ) : null}
         </section>
-      ))}
+      )}
 
-      <section className="space-y-3">
+      {/* ─── Truyện mới đăng (5 truyện, 2/3/5 cols) ─────────────── */}
+      <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("featuredCategoriesTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-300">{t("featuredCategoriesSubtitle")}</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("newestTitle")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t("newestSubtitle")}</p>
           </div>
-          <Link href="/categories" className="text-sm font-semibold text-blue-600 hover:underline">
+          <Link href="/new" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
             {t("viewAll")}
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {categories.slice(0, 3).map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/categories/${cat.slug}`}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
-            >
-              <p className="font-semibold text-slate-900 dark:text-slate-100">{cat.name}</p>
-              <p className="mt-1 text-xs text-slate-500">{t("storiesCount", { count: cat.storiesCount })}</p>
-            </Link>
-          ))}
-          
-          {categories.length > 3 && (
-            <div className="relative">
-              <button
-                onClick={() => setShowAllCategories(!showAllCategories)}
-                className="w-full h-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 flex flex-col items-center justify-center gap-2"
-              >
-                <p className="font-semibold text-slate-900 dark:text-slate-100">{t("otherCategories")}</p>
-                <p className="text-xs text-slate-500">{t("moreCategories", { count: categories.length - 3 })}</p>
-              </button>
-
-              {showAllCategories && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-30" 
-                    onClick={() => setShowAllCategories(false)}
-                  />
-                  <div className="absolute z-40 top-full left-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="max-h-80 overflow-y-auto">
-                      {categories.slice(3).map((cat) => (
-                        <Link
-                          key={cat.id}
-                          href={`/categories/${cat.slug}`}
-                          onClick={() => setShowAllCategories(false)}
-                          className="block px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 border-b border-slate-100 dark:border-slate-700 last:border-b-0"
-                        >
-                          <p className="font-semibold text-slate-900 dark:text-slate-100">{cat.name}</p>
-                          <p className="mt-1 text-xs text-slate-500">{t("storiesCount", { count: cat.storiesCount })}</p>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+            {Array.from({ length: NEW_LIMIT }).map((_, i) => (
+              <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
+            ))}
+          </div>
+        ) : newestStories.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+            {newestStories.map((story) => (
+              <StoryCard key={story.id} story={story} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">{t("noData")}</p>
+        )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-gradient-to-r from-amber-50 to-white p-5 dark:border-slate-700 dark:from-amber-900/20 dark:to-slate-900">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      {/* ─── Truyện phổ biến (8 truyện, 2/3/4 cols = 2 hàng x 4) ─ */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("hallTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-300">{t("hallSubtitle")}</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("popularTitle")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t("popularSubtitle")}</p>
           </div>
-          <Link href="/vinh-danh" className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600">
-            {t("viewFullRanking")}
+          <Link href="/search?sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            {t("viewAll")}
           </Link>
         </div>
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: POPULAR_LIMIT }).map((_, i) => (
+              <div key={i} className="aspect-[4/5] animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
+            ))}
+          </div>
+        ) : popularStories.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {popularStories.slice(0, POPULAR_LIMIT).map((story) => (
+              <StoryCard key={story.id} story={story} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">{t("noData")}</p>
+        )}
+      </section>
 
-        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-          {hall.map((member, idx) => (
-            <div key={member.id} className="rounded-xl border border-amber-200 bg-white p-4 dark:border-amber-800 dark:bg-slate-800">
-              <p className="text-xs font-semibold text-amber-600">{t("top", { rank: idx + 1 })}</p>
-              <div className="mt-2 flex items-center gap-3">
-                <img
-                  src={member.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.displayName}`}
-                  alt={member.displayName}
-                  className="h-12 w-12 rounded-full"
-                />
-                <div>
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">{member.displayName}</p>
-                  <p className="text-xs text-slate-500">{t("vipUnlocked", { tier: member.vipTier, count: member.totalUnlockedStories })}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+      {/* ─── Bảng Xếp Hạng (3 cols trên desktop) ───────────────── */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("rankingsTitle")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t("rankingsSubtitle")}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/* Bảng 1: Xếp hạng sức mạnh (Hall of Fame) */}
+          <RankingColumn
+            title={t("rankHallTitle")}
+            viewAllHref="/vinh-danh"
+            viewAllLabel={t("viewAll")}
+            items={hall.map((m) => ({
+              id: m.id,
+              name: m.displayName,
+              avatarUrl: m.avatarUrl,
+              meta: t("vipUnlocked", { tier: m.vipTier, count: m.totalUnlockedStories }),
+            }))}
+            isLoading={isLoading}
+            isUserRanking
+          />
+          {/* Bảng 2: Truyện mới nhất */}
+          <RankingColumn
+            title={t("rankNewestTitle")}
+            viewAllHref="/new"
+            viewAllLabel={t("viewAll")}
+            items={newestStories.map((s) => ({
+              id: s.id,
+              name: s.title,
+              avatarUrl: s.thumbnailUrl,
+              meta: s.author?.name || "",
+              href: `/story/${s.slug}`,
+            }))}
+            isLoading={isLoading}
+          />
+          {/* Bảng 3: Truyện được xem nhiều nhất */}
+          <RankingColumn
+            title={t("rankViewsTitle")}
+            viewAllHref="/trending"
+            viewAllLabel={t("viewAll")}
+            items={topViewsStories.map((s) => ({
+              id: s.id,
+              name: s.title,
+              avatarUrl: s.thumbnailUrl,
+              meta: t("totalViews", { count: Number(s.totalViews || 0).toLocaleString("vi-VN") }),
+              href: `/story/${s.slug}`,
+            }))}
+            isLoading={isLoading}
+          />
         </div>
       </section>
+
     </div>
   );
 }
+
+/* ──────────────────────────────────────────────────────────────
+   RankingColumn sub-component
+   ────────────────────────────────────────────────────────────── */
+type RankingItem = {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  meta: string;
+  href?: string;
+};
+
+function RankingColumn({
+  title,
+  viewAllHref,
+  viewAllLabel,
+  items,
+  isLoading,
+  isUserRanking = false,
+}: {
+  title: string;
+  viewAllHref: string;
+  viewAllLabel: string;
+  items: RankingItem[];
+  isLoading: boolean;
+  isUserRanking?: boolean;
+}) {
+  const rankColors = ["text-amber-500", "text-slate-400", "text-amber-700", "text-slate-500", "text-slate-500"];
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+        <h3 className="font-bold text-slate-900 dark:text-white">{title}</h3>
+        <Link href={viewAllHref} className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+          {viewAllLabel}
+        </Link>
+      </div>
+      <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+        {isLoading
+          ? Array.from({ length: RANKING_LIMIT }).map((_, i) => (
+              <li key={i} className="flex items-center gap-3 px-4 py-3 animate-pulse">
+                <div className="w-6 h-4 rounded bg-slate-200 dark:bg-slate-700" />
+                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+                  <div className="h-2.5 w-1/2 rounded bg-slate-200 dark:bg-slate-700" />
+                </div>
+              </li>
+            ))
+          : items.map((item, idx) => {
+              const content = (
+                <li key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                  <span className={`w-6 text-center text-sm font-black tabular-nums shrink-0 ${rankColors[idx] || "text-slate-400"}`}>
+                    {idx + 1}
+                  </span>
+                  <div className="w-10 h-10 shrink-0 relative">
+                    <Image
+                      src={
+                        item.avatarUrl ||
+                        (isUserRanking
+                          ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(item.name)}`
+                          : "https://placehold.co/80x80?text=?")
+                      }
+                      alt={item.name}
+                      fill
+                      sizes="40px"
+                      className={`object-cover ${isUserRanking ? "rounded-full" : "rounded-md"}`}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{item.name}</p>
+                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{item.meta}</p>
+                  </div>
+                </li>
+              );
+              return item.href ? (
+                <Link key={item.id} href={item.href} className="block">
+                  {content}
+                </Link>
+              ) : content;
+            })}
+      </ul>
+    </div>
+  );
+}
+

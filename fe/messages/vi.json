@@ -78,11 +78,18 @@
     "storiesCount": "{count} truyện",
     "otherCategories": "Các thể loại khác",
     "moreCategories": "+{count} thể loại",
+    "hashtagsTitle": "Thể loại phổ biến",
     "hallTitle": "Vinh danh hội viên",
-    "hallSubtitle": "Banner top 3 + nút xem bảng xếp hạng đầy đủ",
+    "hallSubtitle": "Top 3 hội viên xuất sắc nhất",
     "viewFullRanking": "Xem bảng xếp hạng đầy đủ",
     "top": "Top {rank}",
-    "vipUnlocked": "VIP {tier} | {count} truyện mở"
+    "vipUnlocked": "VIP {tier} | {count} truyện mở",
+    "rankingsTitle": "Bảng xếp hạng",
+    "rankingsSubtitle": "Top truyện và thành viên nổi bật nhất",
+    "rankHallTitle": "Hội viên xuất sắc",
+    "rankNewestTitle": "Truyện mới nhất",
+    "rankViewsTitle": "Truyện nhiều lượt xem",
+    "totalViews": "{count} lượt xem"
   },
   "StoryDetail": {
     "loading": "Đang tải danh sách chương...",

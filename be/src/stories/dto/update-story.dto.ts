@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUrl, IsUUID } from 'class-validator';
 import { StoryStatus } from '@prisma/client';
 
 export class UpdateStoryDto {
@@ -33,6 +33,10 @@ export class UpdateStoryDto {
   @IsOptional()
   @IsString()
   audioUrl?: string;
+
+  @IsOptional()
+  @IsUrl({}, { message: 'facebookGroupUrl must be a valid URL' })
+  facebookGroupUrl?: string;
 
   @IsOptional()
   @IsBoolean()

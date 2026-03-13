@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEnum, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { StoryStatus } from '@prisma/client';
 import { CreateChapterDto } from '@/chapters/dto/create-chapter.dto';
@@ -35,6 +35,10 @@ export class CreateStoryDto {
     @IsOptional()
     @IsString()
     audioUrl?: string;
+
+    @IsOptional()
+    @IsUrl({}, { message: 'facebookGroupUrl must be a valid URL' })
+    facebookGroupUrl?: string;
 
     @IsOptional()
     @IsBoolean()

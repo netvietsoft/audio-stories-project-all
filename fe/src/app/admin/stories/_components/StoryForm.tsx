@@ -16,6 +16,7 @@ import {
     Plus,
     Music,
     Trash2,
+    Facebook,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -33,6 +34,7 @@ const storySchema = z.object({
     language: z.enum(['vi', 'en']),
     categoryIds: z.array(z.number()).min(1, 'Chọn ít nhất một thể loại'),
     audioUrl: z.string().optional(),
+    facebookGroupUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
     isRecommended: z.boolean().optional(),
 });
 
@@ -103,6 +105,7 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
             language: 'vi',
             categoryIds: [],
             isRecommended: false,
+            facebookGroupUrl: '',
             ...initialData,
         },
     });
@@ -573,6 +576,21 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                             placeholder="Nhập giới thiệu về truyện..."
                             className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
                         />
+                    </div>
+
+                    {/* Facebook Group URL */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                            <Facebook className="w-4 h-4 text-blue-600" />
+                            Link cộng đồng Facebook
+                        </label>
+                        <input
+                            {...register('facebookGroupUrl')}
+                            type="url"
+                            placeholder="https://www.facebook.com/groups/..."
+                            className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                        />
+                        {errors.facebookGroupUrl && <p className="text-xs font-bold text-red-500 ml-2">{errors.facebookGroupUrl.message}</p>}
                     </div>
 
                     {/* Thumbnail Upload using UploadThing - Redesigned */}

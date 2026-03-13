@@ -179,8 +179,9 @@ model Story {
   isRecommended Boolean     @default(false) @map("is_recommended")
   featuredOrder Int?        @map("featured_order")
   publishedAt   DateTime?   @map("published_at")
-  audioUrl      String?     @map("audio_url") @db.Text
-  createdAt     DateTime    @default(now()) @map("created_at")
+  audioUrl          String?     @map("audio_url") @db.Text
+  facebookGroupUrl  String?     @map("facebook_group_url") @db.VarChar(500)
+  createdAt         DateTime    @default(now()) @map("created_at")
 
   updatedAt     DateTime    @updatedAt @map("updated_at")
   deletedAt     DateTime?   @map("deleted_at")

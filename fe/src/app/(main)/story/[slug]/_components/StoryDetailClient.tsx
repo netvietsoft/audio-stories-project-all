@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BookOpen, Clock3, ListMusic, Lock, Play, PlayCircle } from "lucide-react";
+import { BookOpen, Clock3, Headphones, ListMusic, Lock, Play, PlayCircle, Star } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
@@ -26,9 +26,14 @@ type StoryDetail = {
   description: string | null;
   thumbnailUrl: string | null;
   status: "ongoing" | "completed";
+  language: string;
+  facebookGroupUrl: string | null;
   totalViews: number;
+  averageRating: number;
+  ratingCount: number;
   updatedAt: string;
   author?: { name: string };
+  categories: { category: { id: number; name: string; slug: string } }[];
   chapters: ChapterItem[];
 };
 
@@ -60,6 +65,9 @@ export default function StoryDetailClient() {
   const t = useTranslations("StoryDetail");
   const params = useParams<{ slug: string }>();
   const slug = params?.slug;
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "numeric" });
 
   const [story, setStory] = useState<StoryDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,21 +114,74 @@ export default function StoryDetailClient() {
         </div>
 
         <div className="flex flex-col flex-1 w-full gap-4">
+          {/* Title */}
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">{story.title}</h1>
 
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
-            <span>{t("author")}: <b className="text-gray-900 dark:text-white">{story.author?.name || t("authorUpdating")}</b></span>
-            <span className="text-gray-400 dark:text-gray-500">|</span>
-            <span>{story.status === "completed" ? "Hoàn thành" : "Đang cập nhật"}</span>
-            <span className="text-gray-400 dark:text-gray-500">|</span>
-            <span>{t("totalChapters", { count: story.chapters.length })}</span>
-            <span className="text-gray-400 dark:text-gray-500">|</span>
-            <span>{t("listens", { count: Number(story.totalViews || 0).toLocaleString() })}</span>
+          {/* Metadata grid */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("genre")}</p>
+              <div className="flex flex-wrap gap-1">
+                {story.categories.length > 0
+                  ? story.categories.map(({ category }) => (
+                      <Link
+                        key={category.id}
+                        href={`/categories/${category.slug}`}
+                        className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                      >
+                        {category.name}
+                      </Link>
+                    ))
+                  : <span className="text-gray-700 dark:text-gray-300 font-medium">—</span>}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("lastUpdated")}</p>
+              <p className="font-medium text-gray-900 dark:text-white">{formatDate(story.updatedAt)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("author")}</p>
+              <p className="font-semibold text-gray-900 dark:text-white">{story.author?.name || t("authorUpdating")}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("status")}</p>
+              <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${
+                story.status === "completed"
+                  ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400"
+              }`}>
+                {story.status === "completed" ? t("statusCompleted") : t("statusOngoing")}
+              </span>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("language")}</p>
+              <p className="font-medium text-gray-900 dark:text-white">{t("languageCurrent")}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("ageRating")}</p>
+              <p className="font-medium text-gray-900 dark:text-white">{t("ageRatingAll")}</p>
+            </div>
           </div>
 
-          <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3">{story.description || t("descriptionUpdating")}</p>
+          {/* Stats row */}
+          <div className="flex items-center gap-5 py-3 border-t border-b border-gray-200 dark:border-gray-700 text-sm">
+            <span className="inline-flex items-center gap-1.5">
+              <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+              <span className="font-semibold text-gray-900 dark:text-white">{Number(story.averageRating).toFixed(1)}</span>
+              {story.ratingCount > 0 && <span className="text-gray-500 dark:text-gray-400">({story.ratingCount})</span>}
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+              <BookOpen className="h-4 w-4" />
+              {t("totalChapters", { count: story.chapters.length })}
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+              <Headphones className="h-4 w-4" />
+              {Number(story.totalViews || 0).toLocaleString("vi-VN")}
+            </span>
+          </div>
 
-          <div className="flex flex-wrap items-center gap-3 mt-2 md:mt-4">
+          {/* Action buttons */}
+          <div className="flex flex-wrap items-center gap-3">
             {firstChapter ? (
               <Link
                 href={chapterHref(story.slug, firstChapter.chapterNumber)}
@@ -140,6 +201,16 @@ export default function StoryDetailClient() {
               activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
               inactiveClassName="border-gray-300 bg-white text-black hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-300"
             />
+
+            <a
+              href={story.facebookGroupUrl || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-semibold border shadow-sm transition-colors flex-1 md:flex-none border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
+            >
+              <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              {t("joinFacebook")}
+            </a>
           </div>
         </div>
       </section>

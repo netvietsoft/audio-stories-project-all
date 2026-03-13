@@ -76,6 +76,7 @@ export default function Navbar() {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const notifMenuRef = useRef<HTMLDivElement>(null);
+  const langMenuRef = useRef<HTMLDivElement>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -147,6 +148,9 @@ export default function Navbar() {
       }
       if (notifMenuRef.current && !notifMenuRef.current.contains(event.target as Node)) {
         setIsNotifOpen(false);
+      }
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+        setIsLangOpen(false);
       }
     };
 
@@ -352,10 +356,12 @@ export default function Navbar() {
 
               <div
                 className="hidden sm:block relative"
-                onMouseEnter={() => setIsLangOpen(true)}
-                onMouseLeave={() => setIsLangOpen(false)}
+                ref={langMenuRef}
               >
-                <button className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 dark:border-gray-700 dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <button 
+                  onClick={() => setIsLangOpen(!isLangOpen)}
+                  className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 dark:border-gray-700 dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
                   <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase">
                     {locale}
                   </span>
@@ -365,7 +371,10 @@ export default function Navbar() {
                 {isLangOpen && (
                   <div className="absolute top-full right-0 mt-1 w-28 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50">
                     <button
-                      onClick={() => switchLocale("vi")}
+                      onClick={() => {
+                        switchLocale("vi");
+                        setIsLangOpen(false);
+                      }}
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                         locale === "vi" ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-700 dark:text-gray-200"
                       }`}
@@ -373,7 +382,10 @@ export default function Navbar() {
                       Tiếng Việt
                     </button>
                     <button
-                      onClick={() => switchLocale("en")}
+                      onClick={() => {
+                        switchLocale("en");
+                        setIsLangOpen(false);
+                      }}
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                         locale === "en" ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-700 dark:text-gray-200"
                       }`}

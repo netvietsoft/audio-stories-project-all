@@ -90,13 +90,6 @@ export default function TopupPage() {
                 if (res.data.url) {
                     window.location.href = res.data.url;
                 }
-            } else if (paymentMethod === 'paypal') {
-                const res = await apiClient.post('/billing/paypal/create-order', {
-                    package_code: selectedPackage.code,
-                });
-                if (res.data.approval_url) {
-                    window.location.href = res.data.approval_url;
-                }
             }
         } catch (error: any) {
             console.error('Payment error:', error);
@@ -179,7 +172,7 @@ export default function TopupPage() {
                                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-violet-100 dark:bg-violet-500/20' : 'bg-slate-100 dark:bg-slate-700 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/10'}`}>
                                                         <Coins className={`w-6 h-6 ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-violet-500'}`} />
                                                     </div>
-                                                    <h3 className={`text-xl font-black tracking-tight ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-slate-900 dark:text-white'}`}>
+                                                    <h3 className={`text-xs font-black tracking-tight ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-slate-900 dark:text-white'}`}>
                                                         {pkg.name}
                                                     </h3>
                                                 </div>
@@ -274,10 +267,6 @@ export default function TopupPage() {
                                                 Tuỳ chọn số dư
                                             </h3>
                                         </div>
-
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">
-                                            Nhập số tiền bạn muốn nạp (Tối thiểu 6.000đ)
-                                        </p>
 
                                         {selectedPackage?.code === 'CUSTOM' ? (
                                             <div className="mb-6 relative">

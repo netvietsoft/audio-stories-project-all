@@ -1,7 +1,6 @@
 export enum PaymentProvider {
   STRIPE = 'STRIPE',
   VIETQR = 'VIETQR',
-  PAYPAL = 'PAYPAL',
   MANUAL = 'MANUAL',
 }
 

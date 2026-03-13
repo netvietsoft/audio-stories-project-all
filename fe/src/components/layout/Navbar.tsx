@@ -135,7 +135,7 @@ export default function Navbar() {
     void loadTopCategories();
   }, []);
 
-  // Close user menu when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -380,13 +380,13 @@ export default function Navbar() {
                 )}
               </div>
 
-              <div className="flex items-center gap-1 sm:gap-3">
-                <Link href="/topup" className="hidden sm:flex items-center gap-1.5 whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors">
-                  <Coins className="h-4 w-4" /> <span>{t("topUp")}</span>
+              <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
+                <Link href="/topup" className="hidden sm:flex items-center gap-1.5 whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 md:px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors">
+                  <Coins className="h-4 w-4" /> <span className="hidden xl:inline">{t("topUp")}</span>
                 </Link>
 
                 {/* Chuông thông báo */}
-                <div className="relative">
+                <div className="relative" ref={notifMenuRef}>
                   <button
                     onClick={() => {
                       setIsNotifOpen(!isNotifOpen);
@@ -402,7 +402,7 @@ export default function Navbar() {
 
                   {/* Dropdown Thông báo */}
                   {isNotifOpen && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-50 max-h-[500px] overflow-hidden flex flex-col">
+                    <div className="fixed top-16 inset-x-2 mt-0 w-auto sm:absolute sm:top-auto sm:inset-x-auto sm:right-0 sm:mt-2 sm:w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-50 max-h-[70vh] sm:max-h-[500px] overflow-hidden flex flex-col">
                       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
                         <h3 className="font-bold text-gray-900 dark:text-gray-100">{t("notifications")}</h3>
                         {unreadNotifs > 0 && (
@@ -458,6 +458,28 @@ export default function Navbar() {
                   )}
                 </div>
 
+                {user ? (
+                  <>
+                    <Link
+                      href="/profile/favorites"
+                      className="flex items-center gap-1.5 p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      aria-label={t("favorites")}
+                    >
+                      <Heart className="w-5 h-5" />
+                      <span className="hidden xl:inline-block text-sm font-medium whitespace-nowrap">{t("favorites")}</span>
+                    </Link>
+
+                    <Link
+                      href="/profile/history"
+                      className="flex items-center gap-1.5 p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      aria-label={t("listeningHistory")}
+                    >
+                      <History className="w-5 h-5" />
+                      <span className="hidden xl:inline-block text-sm font-medium whitespace-nowrap">{t("listeningHistory")}</span>
+                    </Link>
+                  </>
+                ) : null}
+
                 {/* Avatar Desktoop Only */}
                 {!user ? (
                   <div className="hidden sm:flex items-center gap-2">
@@ -487,12 +509,6 @@ export default function Navbar() {
                       <p className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{t("hello", { name: user.name || user.email })}</p>
                       <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                         <UserCircle className="h-4 w-4" /> {t("profile")}
-                      </Link>
-                      <Link href="/profile/favorites" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <Heart className="h-4 w-4" /> {t("favorites")}
-                      </Link>
-                      <Link href="/profile/history" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        <History className="h-4 w-4" /> {t("listeningHistory")}
                       </Link>
                       <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
                       <button

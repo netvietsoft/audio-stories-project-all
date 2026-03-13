@@ -13,13 +13,15 @@ import {
   Check,
   Plus,
   Music,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Facebook,
 } from "lucide-react";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
+import { revalidateStoriesCache } from "@/app/admin/_actions/revalidate";
 import { UploadButton } from '@/lib/uploadthing';
 
 const storySchema = z.object({
@@ -32,6 +34,7 @@ const storySchema = z.object({
   language: z.enum(['vi', 'en']),
   categoryIds: z.array(z.number()).min(1, 'Chọn ít nhất một thể loại'),
   audioUrl: z.string().optional(),
+  facebookGroupUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
   isRecommended: z.boolean().optional(),
 });
 
@@ -74,8 +77,7 @@ export default function EditStoryPage() {
       status: 'ongoing',
       language: 'vi',
       categoryIds: [],
-      isRecommended: false,
-    },
+      isRecommended: false,      facebookGroupUrl: '',    },
   });
 
   const title = watch('title');
@@ -105,6 +107,7 @@ export default function EditStoryPage() {
         setValue('authorId', story.author?.id);
         setValue('categoryIds', (story.categories || []).map((item: any) => item.category.id));
         setValue('isRecommended', !!story.isRecommended);
+        setValue('facebookGroupUrl', story.facebookGroupUrl || '');
 
         setCategories(catsRes.data);
         setAuthors(authorsRes.data);
@@ -154,6 +157,7 @@ export default function EditStoryPage() {
     setIsSubmitting(true);
     try {
       await apiClient.patch(`/stories/${storyId}`, data);
+      await revalidateStoriesCache();
       router.push("/admin/stories");
     } catch (error) {
       console.error("Failed to update story:", error);
@@ -419,6 +423,20 @@ export default function EditStoryPage() {
                   placeholder="Nhập giới thiệu về truyện..."
                   className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 resize-none"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-600 uppercase flex items-center gap-2">
+                  <Facebook className="w-4 h-4 text-blue-600" />
+                  Link cộng đồng Facebook
+                </label>
+                <input
+                  {...register('facebookGroupUrl')}
+                  type="url"
+                  placeholder="https://www.facebook.com/groups/..."
+                  className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                />
+                {errors.facebookGroupUrl && <p className="text-xs text-red-500">{errors.facebookGroupUrl.message}</p>}
               </div>
             </div>
 

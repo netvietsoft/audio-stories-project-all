@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BookOpen, Clock3, ListMusic, Lock, Play, PlayCircle } from "lucide-react";
+import { BookOpen, Clock3, Headphones, ListMusic, Lock, Play, PlayCircle, Star } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
@@ -26,9 +26,14 @@ type StoryDetail = {
   description: string | null;
   thumbnailUrl: string | null;
   status: "ongoing" | "completed";
+  language: string;
+  facebookGroupUrl: string | null;
   totalViews: number;
+  averageRating: number;
+  ratingCount: number;
   updatedAt: string;
   author?: { name: string };
+  categories: { category: { id: number; name: string; slug: string } }[];
   chapters: ChapterItem[];
 };
 
@@ -60,6 +65,9 @@ export default function StoryDetailClient() {
   const t = useTranslations("StoryDetail");
   const params = useParams<{ slug: string }>();
   const slug = params?.slug;
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "numeric" });
 
   const [story, setStory] = useState<StoryDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -174,6 +182,16 @@ export default function StoryDetailClient() {
               label="Thêm vào thư viện"
               className="flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-900 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-700 px-6 py-2.5 rounded-full font-semibold transition-colors"
             />
+
+            <a
+              href={story.facebookGroupUrl || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-full font-semibold border shadow-sm transition-colors flex-1 md:flex-none border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
+            >
+              <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              {t("joinFacebook")}
+            </a>
           </div>
 
           {/* Share buttons */}

@@ -6,6 +6,7 @@ import { Newspaper, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { StoryForm } from '../_components/StoryForm';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { revalidateStoriesCache } from '@/app/admin/_actions/revalidate';
 
 export default function NewStoryPage() {
     const router = useRouter();
@@ -15,6 +16,7 @@ export default function NewStoryPage() {
         setIsLoading(true);
         try {
             await apiClient.post('/stories', data);
+            await revalidateStoriesCache();
             router.push('/admin/stories');
         } catch (error) {
             console.error('Failed to create story:', error);

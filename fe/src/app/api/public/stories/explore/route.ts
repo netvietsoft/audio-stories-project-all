@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const upstream = await fetch(endpoint, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 3600, tags: ["stories-explore"] },
     });
 
     const body = await upstream.json();

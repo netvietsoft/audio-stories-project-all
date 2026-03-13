@@ -24,3 +24,7 @@ export const getRequestedLocaleValue = (
 };
 
 export const getLocaleLabel = (locale: string) => (locale === "en" ? "English" : "tiếng Việt");
+
+export const getLocalizedCategoryName = (locale: string, category: { name: string; nameVi?: string | null; nameEn?: string | null }) => {
+  return getLocalizedValue(locale, category.nameVi, category.nameEn, category.name);
+};

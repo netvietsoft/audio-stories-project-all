@@ -15,5 +15,13 @@ export class CreateCategoryDto {
 
     @IsString()
     @IsOptional()
+    nameEn?: string;
+
+    @IsString()
+    @IsOptional()
+    nameVi?: string;
+
+    @IsString()
+    @IsOptional()
     iconUrl?: string;
 }

@@ -26,7 +26,7 @@ type ExploreResponse = {
   meta: { page: number; lastPage: number; total: number };
 };
 
-type Category = { id: number; name: string; slug: string };
+type Category = { id: number; name: string; nameVi?: string | null; nameEn?: string | null; slug: string };
 type Author = { id: string; name: string };
 
 const LIMIT = 12;

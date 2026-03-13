@@ -13,6 +13,8 @@ import { getLocalizedValue } from "@/lib/story-localization";
 type CategoryItem = {
   id: number;
   name: string;
+  nameVi?: string | null;
+  nameEn?: string | null;
   slug: string;
   description?: string;
   storiesCount: number;
@@ -35,7 +37,7 @@ type StoryItem = {
   averageRating?: number | string;
   createdAt?: string;
   author?: { name: string };
-  categories?: Array<{ category: { id: number; name: string; slug: string } }>;
+  categories?: Array<{ category: { id: number; name: string; nameVi?: string; nameEn?: string; slug: string } }>;
   description?: string;
 };
 
@@ -96,7 +98,9 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
   }, [t]);
 
   const currentCategory = useMemo(() => categories.find((item) => item.slug === activeSlug), [categories, activeSlug]);
-  const currentCategoryName = currentCategory?.name ?? t("allCategories");
+  const currentCategoryName = currentCategory 
+    ? getLocalizedValue(locale, currentCategory.nameVi, currentCategory.nameEn, currentCategory.name)
+    : t("allCategories");
   const selectedSortLabel =
     sort === "latest"
       ? t("sortLatest")
@@ -176,7 +180,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                   : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                   }`}
               >
-                {cat.name}
+                {getLocalizedValue(locale, cat.nameVi, cat.nameEn, cat.name)}
               </button>
             );
           })}
@@ -212,14 +216,14 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
       {/* MAIN CONTENT */}
       <div className="flex-1 min-w-0">
         <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-          {currentCategory?.name !== t("allCategories") ? currentCategoryName : t("allStoriesTitle")}
+          {currentCategory && currentCategory.id !== 0 ? currentCategoryName : t("allStoriesTitle")}
         </h1>
 
         {/* Description Box */}
         {currentCategory && currentCategory.name !== t("allCategories") && (
           <div className="bg-blue-50 dark:bg-blue-500/20 rounded-xl p-4 mb-6 flex items-center justify-between">
             <p className="text-sm text-black dark:text-white line-clamp-1">
-              {currentCategory.description || t("categoryFallbackDescription", { name: currentCategory.name.toLowerCase() })}
+              {currentCategory.description || t("categoryFallbackDescription", { name: currentCategoryName.toLowerCase() })}
             </p>
             <button className="text-blue-700 dark:text-blue-300 p-1">
               <ChevronDown className="h-5 w-5" />
@@ -459,7 +463,7 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
                   : "text-gray-500 bg-gray-100 dark:bg-gray-800"
                   }`}
               >
-                {catWrapper.category.name}
+                {getLocalizedValue(locale, catWrapper.category.nameVi, catWrapper.category.nameEn, catWrapper.category.name)}
               </span>
             ))}
           </div>

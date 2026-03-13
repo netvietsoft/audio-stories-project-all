@@ -148,6 +148,8 @@ model Role {
 model Category {
   id          Int      @id @default(autoincrement()) @db.UnsignedInt
   name        String   @unique @db.VarChar(100)
+  nameVi      String   @default("") @map("name_vi") @db.VarChar(100)
+  nameEn      String   @default("") @map("name_en") @db.VarChar(100)
   slug        String   @unique @db.VarChar(120)
   description String?  @db.Text
   iconUrl     String?  @map("icon_url") @db.VarChar(255)

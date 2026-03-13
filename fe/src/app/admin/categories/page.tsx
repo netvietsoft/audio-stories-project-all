@@ -17,6 +17,8 @@ import { CategoryForm } from './_components/CategoryForm';
 interface Category {
     id: number;
     name: string;
+    nameVi: string | null;
+    nameEn: string | null;
     slug: string;
     description: string | null;
     iconUrl: string | null;
@@ -235,6 +237,8 @@ export default function CategoriesPage() {
                             <CategoryForm
                                 initialData={editingCategory ? {
                                     name: editingCategory.name,
+                                    nameVi: editingCategory.nameVi ?? undefined,
+                                    nameEn: editingCategory.nameEn ?? undefined,
                                     slug: editingCategory.slug,
                                     description: editingCategory.description ?? undefined,
                                     iconUrl: editingCategory.iconUrl ?? undefined,

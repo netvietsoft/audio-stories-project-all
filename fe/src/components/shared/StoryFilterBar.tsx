@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ChevronDown, Check, Search } from "lucide-react";
+import { getLocalizedValue } from "@/lib/story-localization";
 
 type CategoryOption = {
   id: number;
   name: string;
+  nameVi?: string | null;
+  nameEn?: string | null;
 };
 
 type AuthorOption = {
@@ -39,6 +42,7 @@ export default function StoryFilterBar({
   isLoading = false,
 }: StoryFilterBarProps) {
   const t = useTranslations("StoryFilterBar");
+  const locale = useLocale();
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isAuthorOpen, setIsAuthorOpen] = useState(false);
   const [isStatusOpen, setIsStatusOpen] = useState(false);
@@ -116,7 +120,9 @@ export default function StoryFilterBar({
             className="w-full bg-slate-50 dark:bg-slate-800 text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700"
           >
             <span className={selectedCategory ? "text-slate-900 dark:text-white" : "text-slate-400"}>
-              {selectedCategory ? selectedCategory.name : t("allCategories")}
+              {selectedCategory 
+                ? getLocalizedValue(locale, selectedCategory.nameVi, selectedCategory.nameEn, selectedCategory.name) 
+                : t("allCategories")}
             </span>
             <ChevronDown
               className={`w-4 h-4 text-slate-400 transition-transform ${isCategoryOpen ? "rotate-180" : ""}`}
@@ -162,7 +168,7 @@ export default function StoryFilterBar({
                     }}
                     className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-blue-600 transition-colors flex items-center justify-between"
                   >
-                    {c.name}
+                    {getLocalizedValue(locale, c.nameVi, c.nameEn, c.name)}
                     {String(c.id) === value.categoryId && <Check className="w-4 h-4 text-blue-600" />}
                   </button>
                 ))}

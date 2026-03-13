@@ -41,7 +41,7 @@ type StoryDetail = {
   ratingCount: number;
   updatedAt: string;
   author?: { name: string };
-  categories: { category: { id: number; name: string; slug: string } }[];
+  categories: { category: { id: number; name: string; nameVi?: string; nameEn?: string; slug: string } }[];
   chapters: ChapterItem[];
 };
 
@@ -140,7 +140,7 @@ export default function StoryDetailClient() {
                         href={`/categories/${category.slug}`}
                         className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                       >
-                        {category.name}
+                        {getLocalizedValue(locale, category.nameVi, category.nameEn, category.name)}
                       </Link>
                     ))
                   : <span className="text-gray-700 dark:text-gray-300 font-medium">—</span>}

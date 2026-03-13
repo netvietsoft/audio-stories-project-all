@@ -37,6 +37,8 @@ type NotificationsResponse = {
 type TopCategoryItem = {
   id: number;
   name: string;
+  nameVi: string;
+  nameEn: string;
   slug: string;
   storiesCount: number;
 };
@@ -266,7 +268,7 @@ export default function Navbar() {
                     <div className="absolute top-full left-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 mt-1">
                       {topCategories.map((item) => (
                         <Link key={item.id} href={`/categories/${item.slug}`} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
-                          {item.name}
+                          {locale === "en" ? item.nameEn || item.name : item.nameVi || item.name}
                         </Link>
                       ))}
                       <Link href="/stories" className="block px-4 py-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700">{t("viewAll")} &rarr;</Link>

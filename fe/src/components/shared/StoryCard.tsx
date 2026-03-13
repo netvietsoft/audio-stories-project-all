@@ -23,6 +23,8 @@ type StoryCardStory = {
   categories?: Array<{
     category: {
       name: string;
+      nameVi?: string | null;
+      nameEn?: string | null;
     };
   }>;
 };
@@ -39,7 +41,10 @@ export default function StoryCard({ story, className }: StoryCardProps) {
     ? Date.now() - new Date(story.createdAt).getTime() <= 7 * 24 * 60 * 60 * 1000
     : false;
   const statusLabel = story.status === "completed" ? t("full") : isNew ? t("new") : t("ongoing");
-  const categoryLabel = story.categories?.[0]?.category?.name || t("updating");
+  const firstCategory = story.categories?.[0]?.category;
+  const categoryLabel = firstCategory 
+    ? getLocalizedValue(locale, firstCategory.nameVi, firstCategory.nameEn, firstCategory.name)
+    : t("updating");
   const rating = Number(story.averageRating || 0).toFixed(1);
   const localizedTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
 

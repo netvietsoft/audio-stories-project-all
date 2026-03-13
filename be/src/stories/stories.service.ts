@@ -99,8 +99,10 @@ export class StoriesService {
             select: {
               id: true,
               name: true,
+              nameVi: true,
+              nameEn: true,
               slug: true,
-            },
+            } as any,
           },
         },
       },
@@ -244,8 +246,10 @@ export class StoriesService {
                 select: {
                   id: true,
                   name: true,
+                  nameVi: true,
+                  nameEn: true,
                   slug: true,
-                },
+                } as any,
               },
             },
           },
@@ -290,14 +294,18 @@ export class StoriesService {
         select: {
           id: true,
           name: true,
+          nameVi: true,
+          nameEn: true,
           slug: true,
-        },
+        } as any,
       })
       : [];
 
-    const categoryMap = new Map(categories.map((item) => [item.id, item]));
+    const categoryMap = new Map<number, any>(
+      (categories as any[]).map((item) => [item.id, item]),
+    );
     return {
-      data: grouped
+      data: (grouped as any[])
         .map((item) => {
           const category = categoryMap.get(item.categoryId);
           if (!category) return null;
@@ -371,7 +379,7 @@ export class StoriesService {
           },
           categories: {
             include: {
-              category: { select: { name: true } },
+              category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
             },
           },
           _count: {
@@ -400,7 +408,7 @@ export class StoriesService {
         },
         categories: {
           include: {
-            category: { select: { id: true, name: true } },
+            category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } },
           },
         },
       },
@@ -451,7 +459,7 @@ export class StoriesService {
         },
         categories: {
           include: {
-            category: { select: { id: true, name: true } },
+            category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } },
           },
         },
       },
@@ -476,8 +484,10 @@ export class StoriesService {
               select: {
                 id: true,
                 name: true,
+                nameVi: true,
+                nameEn: true,
                 slug: true,
-              },
+              } as any,
             },
           },
         },
@@ -521,8 +531,10 @@ export class StoriesService {
       select: {
         id: true,
         name: true,
+        nameVi: true,
+        nameEn: true,
         slug: true,
-      },
+      } as any,
       orderBy: {
         name: 'asc',
       },
@@ -534,6 +546,8 @@ export class StoriesService {
       select: {
         id: true,
         name: true,
+        nameVi: true,
+        nameEn: true,
         slug: true,
         description: true,
         _count: {
@@ -548,12 +562,14 @@ export class StoriesService {
     });
 
     return {
-      data: categories.map((item) => ({
+      data: (categories as any[]).map((item) => ({
         id: item.id,
         name: item.name,
+        nameVi: item.nameVi,
+        nameEn: item.nameEn,
         slug: item.slug,
         description: item.description,
-        storiesCount: item._count.stories,
+        storiesCount: item._count ? item._count.stories : 0,
       })),
     };
   }

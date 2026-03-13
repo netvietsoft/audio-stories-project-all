@@ -10,7 +10,15 @@ export class CategoriesService {
     async findAll() {
         return this.prisma.category.findMany({
             orderBy: { name: 'asc' },
-            include: {
+            select: {
+                id: true,
+                name: true,
+                nameVi: true,
+                nameEn: true,
+                slug: true,
+                description: true,
+                iconUrl: true,
+                createdAt: true,
                 _count: {
                     select: { stories: true },
                 },
@@ -21,7 +29,15 @@ export class CategoriesService {
     async findOne(id: number) {
         const category = await this.prisma.category.findUnique({
             where: { id },
-            include: {
+            select: {
+                id: true,
+                name: true,
+                nameVi: true,
+                nameEn: true,
+                slug: true,
+                description: true,
+                iconUrl: true,
+                createdAt: true,
                 _count: {
                     select: { stories: true },
                 },

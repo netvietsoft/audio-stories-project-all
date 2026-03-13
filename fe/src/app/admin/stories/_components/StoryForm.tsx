@@ -400,7 +400,7 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                                                         type="button"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setSelectedCategoryIds(prev => prev.filter(cid => cid !== id));
+                                                            setValue('categoryIds', selectedCategoryIds.filter((cid: number) => cid !== id));
                                                         }}
                                                         className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-indigo-700 rounded p-0.5"
                                                     >

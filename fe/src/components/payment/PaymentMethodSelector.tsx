@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { CreditCard, Wallet, DollarSign } from 'lucide-react';
+import { CreditCard, Wallet } from 'lucide-react';
 
-export type PaymentMethod = 'vietqr' | 'stripe' | 'paypal';
+export type PaymentMethod = 'vietqr' | 'stripe';
 
 interface PaymentMethodSelectorProps {
   selected: PaymentMethod;
@@ -24,12 +24,6 @@ export default function PaymentMethodSelector({ selected, onSelect }: PaymentMet
       name: 'Thẻ quốc tế',
       description: 'Visa, Mastercard',
       icon: CreditCard,
-    },
-    {
-      id: 'paypal' as PaymentMethod,
-      name: 'PayPal',
-      description: 'Thanh toán PayPal',
-      icon: DollarSign,
     },
   ];
 

@@ -15,6 +15,7 @@ import { clearAuthCookies } from "@/lib/auth/cookies";
 import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
 import { useAuthModalStore } from "@/stores/auth-modal-store";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const localeCookieName = "NEXT_LOCALE";
 
@@ -40,6 +41,19 @@ type TopCategoryItem = {
   storiesCount: number;
 };
 
+type SearchResultItem = {
+  id: string;
+  title: string;
+  slug: string;
+  thumbnailUrl: string | null;
+  author?: { name: string };
+};
+
+type ExploreResponse = {
+  data: SearchResultItem[];
+  meta: { page: number; lastPage: number; total: number };
+};
+
 export default function Navbar() {
   const router = useRouter();
   const locale = useLocale();
@@ -50,19 +64,33 @@ export default function Navbar() {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isLangOpen, setIsLangOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
   // State cho Mobile/Tablet Menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Refs
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const notifMenuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const user = useUserStore((state) => state.user);
   const openLogin = useAuthModalStore((state) => state.openLogin);
   const [notifs, setNotifs] = useState<NotificationItem[]>([]);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [topCategories, setTopCategories] = useState<TopCategoryItem[]>([]);
+
+  // Debug log
+  useEffect(() => {
+    console.log("Search query:", searchQuery);
+    console.log("Debounced query:", debouncedSearchQuery);
+    console.log("Show dropdown:", showSearchDropdown);
+    console.log("Results:", searchResults);
+  }, [searchQuery, debouncedSearchQuery, showSearchDropdown, searchResults]);
 
   useEffect(() => setMounted(true), []);
 
@@ -113,14 +141,46 @@ export default function Navbar() {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
       }
-      if (notifMenuRef.current && !notifMenuRef.current.contains(event.target as Node)) {
-        setIsNotifOpen(false);
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Search with debounce
+  useEffect(() => {
+    if (!debouncedSearchQuery.trim()) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      return;
+    }
+
+    const searchStories = async () => {
+      setIsSearching(true);
+      try {
+        const response = await apiClient.get<ExploreResponse>("/stories/explore", {
+          params: {
+            search: debouncedSearchQuery,
+            page: 1,
+            limit: 5,
+          },
+        });
+        console.log("Search response:", response.data);
+        setSearchResults(response.data.data || []);
+        setShowSearchDropdown(true);
+      } catch (error) {
+        console.error("Search error:", error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    void searchStories();
+  }, [debouncedSearchQuery]);
 
   const markRead = async (id: string) => {
     try {
@@ -136,8 +196,15 @@ export default function Navbar() {
     if (e.key === "Enter" && searchQuery.trim()) {
       router.push(`/search?keyword=${encodeURIComponent(searchQuery)}`);
       setSearchQuery("");
+      setShowSearchDropdown(false);
       closeMobileMenu();
     }
+  };
+
+  const handleSearchResultClick = (slug: string) => {
+    setSearchQuery("");
+    setShowSearchDropdown(false);
+    router.push(`/story/${slug}`);
   };
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
@@ -194,7 +261,7 @@ export default function Navbar() {
                           {item.name}
                         </Link>
                       ))}
-                      <Link href="/categories" className="block px-4 py-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700">{t("viewAll")} &rarr;</Link>
+                      <Link href="/stories" className="block px-4 py-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700">{t("viewAll")} &rarr;</Link>
                     </div>
                   )}
                 </div>
@@ -206,16 +273,70 @@ export default function Navbar() {
 
             {/* RIGHT SECTION */}
             <div className="flex items-center gap-3">
-              <div className="hidden md:flex relative">
+              <div className="hidden md:flex relative" ref={searchRef}>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearch}
+                  onFocus={() => {
+                    if (searchResults.length > 0) setShowSearchDropdown(true);
+                  }}
                   placeholder={t("searchPlaceholder")}
-                  className="w-44 lg:w-56 xl:w-64 pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none"
+                  className="w-56 lg:w-72 xl:w-80 pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none transition-all"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+
+                {/* Search Results Dropdown */}
+                {showSearchDropdown && searchQuery.trim() && (
+                  <div className="absolute top-full left-0 w-full min-w-[400px] mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-[100] max-h-[500px] overflow-y-auto">
+                    {isSearching ? (
+                      <div className="px-4 py-8 text-center">
+                        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-blue-600 border-r-transparent"></div>
+                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Đang tìm kiếm...</p>
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <>
+                        {searchResults.map((story) => (
+                          <button
+                            key={story.id}
+                            onClick={() => handleSearchResultClick(story.slug)}
+                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
+                          >
+                            <img
+                              src={story.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
+                              alt={story.title}
+                              className="w-12 h-12 rounded-lg object-cover shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
+                                {story.title}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                                {story.author?.name || "Đang cập nhật"}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                        <Link
+                          href={`/search?keyword=${encodeURIComponent(searchQuery)}`}
+                          onClick={() => {
+                            setShowSearchDropdown(false);
+                            setSearchQuery("");
+                          }}
+                          className="block px-4 py-3 text-center text-sm text-blue-600 dark:text-blue-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
+                        >
+                          Xem tất cả kết quả
+                        </Link>
+                      </>
+                    ) : (
+                      <div className="px-4 py-8 text-center">
+                        <Search className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Không tìm thấy kết quả</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <button
@@ -225,30 +346,38 @@ export default function Navbar() {
                 {mounted && theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
 
-              <div className="hidden items-center gap-1 rounded-full border border-gray-200 bg-white px-1 py-1 dark:border-gray-700 dark:bg-gray-900 sm:flex">
-                <span className="hidden xl:inline px-2 text-xs font-medium text-gray-500 dark:text-gray-400">{t("language")}</span>
-                <button
-                  onClick={() => switchLocale("vi")}
-                  className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
-                    locale === "vi"
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                  }`}
-                  type="button"
-                >
-                  VI
+              <div
+                className="hidden sm:block relative"
+                onMouseEnter={() => setIsLangOpen(true)}
+                onMouseLeave={() => setIsLangOpen(false)}
+              >
+                <button className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 dark:border-gray-700 dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase">
+                    {locale}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 </button>
-                <button
-                  onClick={() => switchLocale("en")}
-                  className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
-                    locale === "en"
-                      ? "bg-blue-600 text-white"
-                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                  }`}
-                  type="button"
-                >
-                  EN
-                </button>
+
+                {isLangOpen && (
+                  <div className="absolute top-full right-0 mt-1 w-28 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50">
+                    <button
+                      onClick={() => switchLocale("vi")}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                        locale === "vi" ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-700 dark:text-gray-200"
+                      }`}
+                    >
+                      Tiếng Việt
+                    </button>
+                    <button
+                      onClick={() => switchLocale("en")}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                        locale === "en" ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-700 dark:text-gray-200"
+                      }`}
+                    >
+                      English
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
@@ -468,10 +597,68 @@ export default function Navbar() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearch}
+                  onFocus={() => {
+                    if (searchResults.length > 0) setShowSearchDropdown(true);
+                  }}
                   placeholder={t("mobileSearchPlaceholder")}
                   className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-sm outline-none focus:ring-2 focus:ring-violet-200 transition-all"
                 />
                 <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-gray-400" />
+
+                {/* Mobile Search Results */}
+                {showSearchDropdown && searchQuery.trim() && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-50 max-h-[300px] overflow-y-auto">
+                    {isSearching ? (
+                      <div className="px-4 py-6 text-center">
+                        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-violet-600 border-r-transparent"></div>
+                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Đang tìm kiếm...</p>
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <>
+                        {searchResults.map((story) => (
+                          <button
+                            key={story.id}
+                            onClick={() => {
+                              handleSearchResultClick(story.slug);
+                              closeMobileMenu();
+                            }}
+                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
+                          >
+                            <img
+                              src={story.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
+                              alt={story.title}
+                              className="w-12 h-12 rounded-lg object-cover shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
+                                {story.title}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                                {story.author?.name || "Đang cập nhật"}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                        <Link
+                          href={`/search?keyword=${encodeURIComponent(searchQuery)}`}
+                          onClick={() => {
+                            setShowSearchDropdown(false);
+                            setSearchQuery("");
+                            closeMobileMenu();
+                          }}
+                          className="block px-4 py-3 text-center text-sm text-violet-600 dark:text-violet-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
+                        >
+                          Xem tất cả kết quả
+                        </Link>
+                      </>
+                    ) : (
+                      <div className="px-4 py-6 text-center">
+                        <Search className="h-10 w-10 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Không tìm thấy kết quả</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="mb-6 rounded-2xl border border-gray-200 bg-gray-50/70 p-4 dark:border-gray-800 dark:bg-gray-900/60">

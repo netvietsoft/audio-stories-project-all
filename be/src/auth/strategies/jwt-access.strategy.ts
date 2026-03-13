@@ -2,11 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 
 @Injectable()
 export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt') {
   private readonly logger = new Logger(JwtAccessStrategy.name);
+  private dbUnavailableLogged = false;
 
   constructor(private readonly prisma: PrismaService) {
     super({
@@ -60,6 +62,15 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt') {
 
       return { ...user, sub: payload.sub, roles, permissions: payload.permissions };
     } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P1001') {
+        // Avoid flooding logs when DB is temporarily unreachable.
+        if (!this.dbUnavailableLogged) {
+          this.logger.error('Database unreachable during JWT validation (P1001). Returning unauthorized.');
+          this.dbUnavailableLogged = true;
+        }
+        return null;
+      }
+
       this.logger.error('Error during JWT validation:', error);
       return null;
     }

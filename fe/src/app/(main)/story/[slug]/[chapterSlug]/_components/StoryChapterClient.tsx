@@ -807,7 +807,7 @@ export default function StoryChapterClient() {
   return (
     <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-4 sm:px-6 lg:px-10 2xl:px-14">
       <div className="mx-auto w-full max-w-[1720px] space-y-8">
-      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_560px] lg:items-start">
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_560px] lg:items-start">
         {/* Story Info */}
         <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>

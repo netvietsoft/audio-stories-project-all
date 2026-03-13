@@ -54,13 +54,13 @@ export default function HorizontalStorySlider({
       : "flex flex-row gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth scrollbar-hide pb-4 w-full";
 
   return (
-    <div className="relative w-full group">
+    <div className="relative w-full">
       {/* Nút trượt trái */}
       {showArrows ? (
         <button
           onClick={() => slide("left")}
           aria-label="Trượt trái"
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center w-10 h-10 bg-black/60 hover:bg-black text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 -ml-4"
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center w-10 h-10 bg-black/60 hover:bg-black text-white rounded-full shadow-lg transition-all duration-200 -ml-4"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -70,12 +70,18 @@ export default function HorizontalStorySlider({
       <div ref={sliderRef} className={containerClass}>
         {isLoading
           ? Array.from({ length: limit }).map((_, i) => (
-              <div key={`skeleton-${i}`} className={`${itemClass} ${fixedDesktopCols === 5 ? "lg:w-auto" : ""}`}>
+              <div
+                key={`skeleton-${i}`}
+                className={`${itemClass} ${fixedDesktopCols === 5 ? "lg:w-auto" : ""} transition-transform duration-300 hover:scale-105 hover:-translate-y-1`}
+              >
                 <div className="aspect-[3/4] animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
               </div>
             ))
           : displayStories.map((story) => (
-              <div key={story.id} className={`${itemClass} ${fixedDesktopCols === 5 ? "lg:w-auto" : ""}`}>
+              <div
+                key={story.id}
+                className={`${itemClass} ${fixedDesktopCols === 5 ? "lg:w-auto" : ""} group transition-transform duration-300 hover:scale-105 hover:-translate-y-1`}
+              >
                 <StoryCard story={story} />
               </div>
             ))}
@@ -86,7 +92,7 @@ export default function HorizontalStorySlider({
         <button
           onClick={() => slide("right")}
           aria-label="Trượt phải"
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center w-10 h-10 bg-black/60 hover:bg-black text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 -mr-4"
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center w-10 h-10 bg-black/60 hover:bg-black text-white rounded-full shadow-lg transition-all duration-200 -mr-4"
         >
           <ChevronRight className="w-5 h-5" />
         </button>

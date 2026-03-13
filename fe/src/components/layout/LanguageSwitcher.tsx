@@ -1,19 +1,27 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { localeCookieName } from "@/i18n";
 
 export default function LanguageSwitcher() {
   const router = useRouter();
-  const locale = useLocale();
+  const params = useParams<{ lang?: string }>();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const t = useTranslations("LanguageSwitcher");
+  const currentLang = params?.lang === "en" ? "en" : "vi";
 
   const switchLocale = (nextLocale: "vi" | "en") => {
-    if (nextLocale === locale) return;
+    if (nextLocale === currentLang) return;
+
+    const normalizedPath = (pathname || "/").replace(/^\/(vi|en)(?=\/|$)/, "") || "/";
+    const queryString = searchParams.toString();
+    const nextPath = `/${nextLocale}${normalizedPath === "/" ? "" : normalizedPath}${queryString ? `?${queryString}` : ""}`;
 
     document.cookie = `${localeCookieName}=${nextLocale}; path=/; max-age=31536000`;
+    router.push(nextPath);
     router.refresh();
   };
 
@@ -23,7 +31,7 @@ export default function LanguageSwitcher() {
       <button
         onClick={() => switchLocale("vi")}
         className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
-          locale === "vi"
+          currentLang === "vi"
             ? "bg-blue-600 text-white"
             : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
         }`}
@@ -34,7 +42,7 @@ export default function LanguageSwitcher() {
       <button
         onClick={() => switchLocale("en")}
         className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
-          locale === "en"
+          currentLang === "en"
             ? "bg-blue-600 text-white"
             : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
         }`}

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/components/shared/LocalizedLink";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import {
@@ -56,7 +56,11 @@ type ExploreResponse = {
 
 export default function Navbar() {
   const router = useRouter();
+  const params = useParams<{ lang?: string }>();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const locale = useLocale();
+  const currentLang = params?.lang === "en" ? "en" : "vi";
   const t = useTranslations("Navbar");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -202,7 +206,7 @@ export default function Navbar() {
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && searchQuery.trim()) {
-      router.push(`/search?keyword=${encodeURIComponent(searchQuery)}`);
+      router.push(`/${currentLang}/search?keyword=${encodeURIComponent(searchQuery)}`);
       setSearchQuery("");
       setShowSearchDropdown(false);
       closeMobileMenu();
@@ -212,15 +216,21 @@ export default function Navbar() {
   const handleSearchResultClick = (slug: string) => {
     setSearchQuery("");
     setShowSearchDropdown(false);
-    router.push(`/story/${slug}`);
+    router.push(`/${currentLang}/story/${slug}`);
   };
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   const switchLocale = (nextLocale: "vi" | "en") => {
-    if (nextLocale === locale) return;
+    if (nextLocale === currentLang) return;
+
+    const normalizedPath = (pathname || "/").replace(/^\/(vi|en)(?=\/|$)/, "") || "/";
+    const queryString = searchParams.toString();
+    const nextPath = `/${nextLocale}${normalizedPath === "/" ? "" : normalizedPath}${queryString ? `?${queryString}` : ""}`;
+
     document.cookie = `${localeCookieName}=${nextLocale}; path=/; max-age=31536000`;
     closeMobileMenu();
+    router.push(nextPath);
     router.refresh();
   };
 
@@ -232,7 +242,7 @@ export default function Navbar() {
       localStorage.removeItem(REFRESH_TOKEN_KEY);
     }
     closeMobileMenu();
-    router.push("/");
+    router.push(`/${currentLang}`);
   };
 
   return (
@@ -363,7 +373,7 @@ export default function Navbar() {
                   className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 dark:border-gray-700 dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase">
-                    {locale}
+                    {currentLang}
                   </span>
                   <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 </button>
@@ -376,7 +386,7 @@ export default function Navbar() {
                         setIsLangOpen(false);
                       }}
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                        locale === "vi" ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-700 dark:text-gray-200"
+                        currentLang === "vi" ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-700 dark:text-gray-200"
                       }`}
                     >
                       Tiếng Việt
@@ -387,7 +397,7 @@ export default function Navbar() {
                         setIsLangOpen(false);
                       }}
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                        locale === "en" ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-700 dark:text-gray-200"
+                        currentLang === "en" ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-700 dark:text-gray-200"
                       }`}
                     >
                       English
@@ -686,7 +696,7 @@ export default function Navbar() {
                       type="button"
                       onClick={() => switchLocale("vi")}
                       className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
-                        locale === "vi"
+                        currentLang === "vi"
                           ? "bg-blue-600 text-white"
                           : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                       }`}
@@ -697,7 +707,7 @@ export default function Navbar() {
                       type="button"
                       onClick={() => switchLocale("en")}
                       className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
-                        locale === "en"
+                        currentLang === "en"
                           ? "bg-blue-600 text-white"
                           : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                       }`}

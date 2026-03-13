@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { Clock } from "lucide-react";
 import { useTranslations } from "next-intl";

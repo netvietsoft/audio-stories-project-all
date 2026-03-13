@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/shared/LocalizedLink";
 import { Search, Home, Headphones } from "lucide-react";
 
 export default function NotFound() {

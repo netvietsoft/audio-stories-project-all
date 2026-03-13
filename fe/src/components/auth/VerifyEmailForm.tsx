@@ -1,8 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import Link from "@/components/shared/LocalizedLink";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
@@ -53,6 +53,8 @@ interface VerifyEmailFormProps {
 export default function VerifyEmailForm({ token, onSuccess }: VerifyEmailFormProps = {}) {
   const t = useTranslations("VerifyEmailForm");
   const router = useRouter();
+  const params = useParams<{ lang?: string }>();
+  const currentLang = params?.lang === "en" ? "en" : "vi";
   const searchParams = useSearchParams();
   const emailFromQuery = useMemo(() => searchParams.get("email") || "", [searchParams]);
 
@@ -106,7 +108,7 @@ export default function VerifyEmailForm({ token, onSuccess }: VerifyEmailFormPro
       setAuthCookies(access_token, refresh_token);
 
       setSubmitSuccess(t("success"));
-      router.replace("/");
+      router.replace(`/${currentLang}`);
     } catch (error) {
       const message =
         typeof error === "object" &&

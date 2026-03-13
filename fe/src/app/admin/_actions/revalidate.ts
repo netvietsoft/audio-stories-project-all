@@ -3,5 +3,5 @@
 import { revalidateTag } from "next/cache";
 
 export async function revalidateStoriesCache() {
-  revalidateTag("stories-explore", "/");
+  revalidateTag("stories-explore", "max");
 }

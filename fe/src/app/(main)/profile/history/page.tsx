@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { History, PlayCircle, Trash2 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { getLocalizedValue } from "@/lib/story-localization";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 
@@ -18,6 +19,8 @@ type HistoryItem = {
     id: string;
     slug: string;
     title: string;
+    titleVi?: string | null;
+    titleEn?: string | null;
     thumbnailUrl: string | null;
     author?: {
       name: string;
@@ -27,6 +30,8 @@ type HistoryItem = {
     id: string;
     chapterNumber: number;
     title: string;
+    titleVi?: string | null;
+    titleEn?: string | null;
     audioDuration: number | null;
     r2AudioUrl: string | null;
   };
@@ -79,6 +84,8 @@ export default function ProfileHistoryPage() {
 
   const handleResume = (item: HistoryItem) => {
     const href = `/story/${item.story.slug}/chuong-${item.chapter.chapterNumber}`;
+    const localizedStoryTitle = getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title);
+    const localizedChapterTitle = getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title);
 
     if (item.chapter.r2AudioUrl) {
       playTrack(
@@ -88,7 +95,7 @@ export default function ProfileHistoryPage() {
           storyId: item.story.id,
           storySlug: item.story.slug,
           chapterNumber: item.chapter.chapterNumber,
-          title: `Chương ${item.chapter.chapterNumber}: ${item.chapter.title}`,
+          title: `Chương ${item.chapter.chapterNumber}: ${localizedChapterTitle}`,
           author: item.story.author?.name,
           audioUrl: item.chapter.r2AudioUrl,
           coverUrl: item.story.thumbnailUrl || undefined,
@@ -150,14 +157,14 @@ export default function ProfileHistoryPage() {
                 <Link href={`/story/${item.story.slug}`} className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800">
                   <img
                     src={item.story.thumbnailUrl || "https://placehold.co/140x200?text=No+Cover"}
-                    alt={item.story.title}
+                    alt={getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title)}
                     className="h-full w-full object-cover"
                   />
                 </Link>
 
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{item.story.title}</p>
-                  <p className="mt-1 line-clamp-1 text-sm text-gray-600 dark:text-gray-300">{t("chapter", { number: item.chapter.chapterNumber, title: item.chapter.title })}</p>
+                  <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title)}</p>
+                  <p className="mt-1 line-clamp-1 text-sm text-gray-600 dark:text-gray-300">{t("chapter", { number: item.chapter.chapterNumber, title: getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title) })}</p>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     {t("progress", { progress: formatDuration(item.progressSeconds), duration: formatDuration(item.chapter.audioDuration) })}
                   </p>

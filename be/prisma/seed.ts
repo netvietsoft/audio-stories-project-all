@@ -163,16 +163,16 @@ async function main() {
   }
 
   const storySeed = [
-    'Pham Nhan Tu Tien',
-    'Dau Pha Thuong Khung',
-    'Tien Nghich',
-    'Nhat Niem Vinh Hang',
-    'Tinh Than Bien',
-    'The Gioi Hoan My',
-    'Long Vuong Truyen Thuyet',
-    'Dai Chua Te',
-    'Vu Dong Can Khon',
-    'Ta Co Mot Toa Thanh',
+    { vi: 'Pham Nhan Tu Tien', en: 'A Record of a Mortal Journey to Immortality' },
+    { vi: 'Dau Pha Thuong Khung', en: 'Battle Through the Heavens' },
+    { vi: 'Tien Nghich', en: 'Renegade Immortal' },
+    { vi: 'Nhat Niem Vinh Hang', en: 'A Will Eternal' },
+    { vi: 'Tinh Than Bien', en: 'Stellar Transformations' },
+    { vi: 'The Gioi Hoan My', en: 'Perfect World' },
+    { vi: 'Long Vuong Truyen Thuyet', en: 'Legend of the Dragon King' },
+    { vi: 'Dai Chua Te', en: 'The Great Ruler' },
+    { vi: 'Vu Dong Can Khon', en: 'Martial Universe' },
+    { vi: 'Ta Co Mot Toa Thanh', en: 'I Own a Ruined City' },
   ];
 
   const stories = [] as Awaited<ReturnType<typeof prisma.story.upsert>>[];
@@ -186,11 +186,21 @@ async function main() {
   ];
 
   for (let i = 0; i < storySeed.length; i += 1) {
-    const title = storySeed[i]!;
+    const titleVi = storySeed[i]!.vi;
+    const titleEn = storySeed[i]!.en;
+    const title = titleVi;
+    const storyLang = 'multi';
+    const chapterTotal = i >= storySeed.length - 2 ? 0 : 18;
+    const storyDescriptionVi = `${titleVi} - truyện audio song ngữ dùng để kiểm tra giao diện theo locale và trạng thái cập nhật chương.`;
+    const storyDescriptionEn = `${titleEn} - bilingual audio story for locale-based browsing and chapter update testing.`;
+
     const story = await prisma.story.upsert({
       where: { slug: slugify(title) },
       update: {
         title,
+        titleVi,
+        titleEn,
+        language: storyLang,
         authorId: authors[i % authors.length].id,
         status: i % 3 === 0 ? 'completed' : 'ongoing',
         thumbnailUrl: `https://picsum.photos/seed/story-${i + 1}/600/900`,
@@ -198,11 +208,16 @@ async function main() {
         isFeatured: i < 5,
         isRecommended: i % 2 === 0,
         featuredOrder: i < 5 ? i + 1 : null,
-        description: `${title} - audio story sample`,
+        description: storyDescriptionVi,
+        descriptionVi: storyDescriptionVi,
+        descriptionEn: storyDescriptionEn,
       },
       create: {
         title,
+        titleVi,
+        titleEn,
         slug: slugify(title),
+        language: storyLang,
         authorId: authors[i % authors.length].id,
         status: i % 3 === 0 ? 'completed' : 'ongoing',
         thumbnailUrl: `https://picsum.photos/seed/story-${i + 1}/600/900`,
@@ -210,7 +225,9 @@ async function main() {
         isFeatured: i < 5,
         isRecommended: i % 2 === 0,
         featuredOrder: i < 5 ? i + 1 : null,
-        description: `${title} - audio story sample`,
+        description: storyDescriptionVi,
+        descriptionVi: storyDescriptionVi,
+        descriptionEn: storyDescriptionEn,
       },
     });
 
@@ -223,13 +240,24 @@ async function main() {
       skipDuplicates: true,
     });
 
-    for (let chapterNumber = 1; chapterNumber <= 18; chapterNumber += 1) {
+    for (let chapterNumber = 1; chapterNumber <= chapterTotal; chapterNumber += 1) {
       const chapterSeed = i * 20 + chapterNumber;
       const paragraphCount = 3 + (chapterNumber % 2);
-      const content = Array.from({ length: paragraphCount }, (_, idx) => {
+      const contentVi = Array.from({ length: paragraphCount }, (_, idx) => {
         const template = paragraphTemplates[(chapterNumber + idx) % paragraphTemplates.length]!;
         return `[Paragraph ${idx + 1}] ${template}`;
       }).join('\n\n');
+      const contentEn = Array.from({ length: paragraphCount }, (_, idx) => {
+        const template = paragraphTemplates[(chapterNumber + idx + 1) % paragraphTemplates.length]!;
+        return `[Paragraph ${idx + 1}] ${template}`;
+      }).join('\n\n');
+
+      const chapterTitleVi = `Chuong ${chapterNumber}: Chuyen dong linh luc`;
+      const chapterTitleEn = `Chapter ${chapterNumber}: Spirit Shift`;
+      const chapterDescriptionVi = `Gioi thieu chuong ${chapterNumber} cua ${titleVi}`;
+      const chapterDescriptionEn = `Chapter ${chapterNumber} introduction of ${titleEn}`;
+      const chapterAudio = `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(chapterSeed % 16) + 1}.mp3`;
+      const chapterThumb = `https://picsum.photos/seed/chapter-${i + 1}-${chapterNumber}/320/320`;
 
       const accessType = chapterNumber % 9 === 0 ? 'vip' : chapterNumber % 4 === 0 ? 'timed' : 'free';
       const unlocksAt = accessType === 'timed'
@@ -244,9 +272,19 @@ async function main() {
           },
         },
         update: {
-          title: `Chapter ${chapterNumber}: Spirit Shift`,
-          content,
-          r2AudioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(chapterSeed % 16) + 1}.mp3`,
+          title: chapterTitleVi,
+          titleVi: chapterTitleVi,
+          titleEn: chapterTitleEn,
+          description: chapterDescriptionVi,
+          descriptionVi: chapterDescriptionVi,
+          descriptionEn: chapterDescriptionEn,
+          thumbnailUrl: chapterThumb,
+          content: contentVi,
+          contentVi,
+          contentEn,
+          r2AudioUrl: chapterAudio,
+          audioUrlVi: chapterAudio,
+          audioUrlEn: chapterAudio,
           youtubeVideoId: chapterNumber % 3 === 0 ? 'dQw4w9WgXcQ' : null,
           audioDuration: 540 + chapterNumber * 12,
           accessType,
@@ -255,9 +293,19 @@ async function main() {
         create: {
           storyId: story.id,
           chapterNumber,
-          title: `Chapter ${chapterNumber}: Spirit Shift`,
-          content,
-          r2AudioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(chapterSeed % 16) + 1}.mp3`,
+          title: chapterTitleVi,
+          titleVi: chapterTitleVi,
+          titleEn: chapterTitleEn,
+          description: chapterDescriptionVi,
+          descriptionVi: chapterDescriptionVi,
+          descriptionEn: chapterDescriptionEn,
+          thumbnailUrl: chapterThumb,
+          content: contentVi,
+          contentVi,
+          contentEn,
+          r2AudioUrl: chapterAudio,
+          audioUrlVi: chapterAudio,
+          audioUrlEn: chapterAudio,
           youtubeVideoId: chapterNumber % 3 === 0 ? 'dQw4w9WgXcQ' : null,
           audioDuration: 540 + chapterNumber * 12,
           accessType,
@@ -272,7 +320,7 @@ async function main() {
 
     await prisma.story.update({
       where: { id: story.id },
-      data: { totalChapters: 18 },
+      data: { totalChapters: chapterTotal },
     });
 
     stories.push(story);
@@ -449,6 +497,7 @@ async function main() {
   });
 
   await prisma.membership.deleteMany({ where: { userId: { in: userIds } } });
+  await prisma.userStorySubscription.deleteMany({ where: { userId: { in: userIds } } });
   await prisma.notification.deleteMany({
     where: {
       userId: { in: userIds },
@@ -459,6 +508,21 @@ async function main() {
   for (let i = 0; i < seededUsers.length; i += 1) {
     const user = seededUsers[i]!;
     const author = authors[i % authors.length]!;
+    const subscribedStory = stories[i % stories.length]!;
+
+    await prisma.userStorySubscription.upsert({
+      where: {
+        userId_storyId: {
+          userId: user.id,
+          storyId: subscribedStory.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        storyId: subscribedStory.id,
+      },
+    });
 
     await prisma.payment.create({
       data: {
@@ -510,8 +574,8 @@ async function main() {
         {
           userId: user.id,
           type: 'new_chapter',
-          title: '[SEED] New chapter available',
-          body: `Story ${stories[i % stories.length]!.title} has a new chapter.`,
+          title: '[SEED] Story update subscription',
+          body: `Bạn đang nhận cập nhật cho truyện ${subscribedStory.title}. Khi có chương mới hoặc cập nhật nội dung, thông báo sẽ hiện ở đây.`,
           isRead: false,
         },
         {

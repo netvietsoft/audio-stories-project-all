@@ -95,4 +95,39 @@ export class NotificationsService {
       },
     });
   }
+
+  async createStoryUpdateNotification(
+    userId: string,
+    payload: {
+      storyId: string;
+      storySlug: string;
+      storyTitle: string;
+      chapterId: string;
+      chapterNumber: number;
+      chapterTitle: string;
+      updateType: 'new_chapter' | 'chapter_updated';
+    },
+  ) {
+    const isNewChapter = payload.updateType === 'new_chapter';
+
+    return await this.prisma.notification.create({
+      data: {
+        userId,
+        type: 'new_chapter',
+        title: isNewChapter
+          ? `Truyen ${payload.storyTitle} co chuong moi`
+          : `Truyen ${payload.storyTitle} vua cap nhat`,
+        body: isNewChapter
+          ? `Chuong ${payload.chapterNumber}: ${payload.chapterTitle} da san sang de nghe va doc.`
+          : `Chuong ${payload.chapterNumber}: ${payload.chapterTitle} vua duoc cap nhat noi dung moi.`,
+        metadata: {
+          storyId: payload.storyId,
+          storySlug: payload.storySlug,
+          chapterId: payload.chapterId,
+          chapterNumber: payload.chapterNumber,
+          updateType: payload.updateType,
+        },
+      },
+    });
+  }
 }

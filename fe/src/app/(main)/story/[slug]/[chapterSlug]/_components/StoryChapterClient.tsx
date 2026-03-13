@@ -5,6 +5,7 @@ import { isAxiosError } from "axios";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ChevronDown,
   CreditCard,
@@ -30,6 +31,8 @@ import {
 
 import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
+import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscriptionButton";
+import { getLocaleLabel, getLocalizedValue, getRequestedLocaleValue } from "@/lib/story-localization";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 
@@ -40,10 +43,19 @@ const RecommendedSlider = dynamic(() => import("@/components/story/RecommendedSl
 type ChapterItem = {
   id: string;
   title: string;
+  titleVi?: string | null;
+  titleEn?: string | null;
   chapterNumber: number;
+  thumbnailUrl?: string | null;
   description?: string | null;
+  descriptionVi?: string | null;
+  descriptionEn?: string | null;
   content: string | null;
+  contentVi?: string | null;
+  contentEn?: string | null;
   r2AudioUrl: string | null;
+  audioUrlVi?: string | null;
+  audioUrlEn?: string | null;
   youtubeVideoId?: string | null;
   audioDuration: number | null;
   accessType: "free" | "timed" | "vip";
@@ -54,6 +66,8 @@ type StoryListItem = {
   id: string;
   slug: string;
   title: string;
+  titleVi?: string | null;
+  titleEn?: string | null;
   thumbnailUrl: string | null;
   totalViews: number;
   status: "ongoing" | "completed";
@@ -65,8 +79,12 @@ type StoryListItem = {
 type StoryDetail = {
   id: string;
   title: string;
+  titleVi?: string | null;
+  titleEn?: string | null;
   slug: string;
   description: string | null;
+  descriptionVi?: string | null;
+  descriptionEn?: string | null;
   thumbnailUrl: string | null;
   status: "ongoing" | "completed";
   totalViews: number;
@@ -144,38 +162,52 @@ const formatDuration = (seconds?: number | null) => {
   return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
 };
 
-const formatDate = (value?: string | null) => {
-  if (!value) return "Đang cập nhật";
+const formatDate = (value: string | null | undefined, locale: string, fallbackLabel: string) => {
+  if (!value) return fallbackLabel;
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Đang cập nhật";
-  return date.toLocaleDateString("vi-VN", {
+  if (Number.isNaN(date.getTime())) return fallbackLabel;
+  return date.toLocaleDateString(locale === "en" ? "en-US" : "vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   });
 };
 
-const formatStatus = (status?: "ongoing" | "completed") => {
-  if (status === "completed") return "Hoàn thành";
-  if (status === "ongoing") return "Đang ra";
-  return "Đang cập nhậts";
+const formatStatus = (
+  status: "ongoing" | "completed" | undefined,
+  labels: {
+    completed: string;
+    ongoing: string;
+    updating: string;
+  },
+) => {
+  if (status === "completed") return labels.completed;
+  if (status === "ongoing") return labels.ongoing;
+  return labels.updating;
 };
 
-const getUnlockLabel = (chapter: ChapterItem) => {
+const getUnlockLabel = (
+  chapter: ChapterItem,
+  labels: {
+    vipOnly: string;
+    opensFreeLater: string;
+    freeUnlocked: string;
+  },
+) => {
   if (chapter.accessType === "free") return null;
-  if (chapter.accessType === "vip") return "Dành cho tài khoản VIP";
-  if (!chapter.unlocksAt) return "Mở miễn phí sau";
+  if (chapter.accessType === "vip") return labels.vipOnly;
+  if (!chapter.unlocksAt) return labels.opensFreeLater;
 
   const msLeft = new Date(chapter.unlocksAt).getTime() - Date.now();
-  if (msLeft <= 0) return "Đã mở miễn phí";
+  if (msLeft <= 0) return labels.freeUnlocked;
 
   const day = Math.floor(msLeft / (1000 * 60 * 60 * 24));
   const hour = Math.floor((msLeft / (1000 * 60 * 60)) % 24);
   const minute = Math.floor((msLeft / (1000 * 60)) % 60);
 
-  if (day > 0) return `Mở miễn phí sau: ${day}d ${hour}h`;
-  if (hour > 0) return `Mở miễn phí sau: ${hour}h ${minute}m`;
-  return `Mở miễn phí sau: ${minute}m`;
+  if (day > 0) return `${labels.opensFreeLater}: ${day}d ${hour}h`;
+  if (hour > 0) return `${labels.opensFreeLater}: ${hour}h ${minute}m`;
+  return `${labels.opensFreeLater}: ${minute}m`;
 };
 
 const chapterHref = (slug: string, chapterNumber: number) => `/story/${slug}/chuong-${chapterNumber}`;
@@ -192,6 +224,8 @@ const chapterNumberFromSlug = (input: string | undefined) => {
 export default function StoryChapterClient() {
   const params = useParams<{ slug: string; chapterSlug: string }>();
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("StoryChapterClient");
   const slug = params?.slug;
   const chapterSlug = params?.chapterSlug;
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -303,23 +337,41 @@ export default function StoryChapterClient() {
           reviewsResult.status === "fulfilled" ? reviewsResult.value.data?.meta : undefined;
 
         const detail = detailRes.data;
-        setStory(detail);
+        const normalizedDetail: StoryDetail = {
+          ...detail,
+          title: getLocalizedValue(locale, detail.titleVi, detail.titleEn, detail.title),
+          description: getLocalizedValue(locale, detail.descriptionVi, detail.descriptionEn, detail.description),
+          chapters: (detail.chapters || []).map((chapter) => ({
+            ...chapter,
+            title: getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title),
+            description: getLocalizedValue(locale, chapter.descriptionVi, chapter.descriptionEn, chapter.description || ""),
+            content: getLocalizedValue(locale, chapter.contentVi, chapter.contentEn, chapter.content || ""),
+            r2AudioUrl: getLocalizedValue(locale, chapter.audioUrlVi, chapter.audioUrlEn, chapter.r2AudioUrl || "") || null,
+          })),
+        };
+
+        const normalizedRecommended = recommendedData.map((item) => ({
+          ...item,
+          title: getLocalizedValue(locale, item.titleVi, item.titleEn, item.title),
+        }));
+
+        setStory(normalizedDetail);
 
         const fromSlug = chapterNumberFromSlug(chapterSlug);
         const pickedBySlug = fromSlug
-          ? detail.chapters.find((chapter) => chapter.chapterNumber === fromSlug)
+          ? normalizedDetail.chapters.find((chapter) => chapter.chapterNumber === fromSlug)
           : null;
-        const fallbackChapter = detail.chapters[0] || null;
+        const fallbackChapter = normalizedDetail.chapters[0] || null;
         const selected = pickedBySlug || fallbackChapter;
 
         if (selected) {
           setSelectedChapterId(selected.id);
           if (!pickedBySlug && fallbackChapter) {
-            router.replace(chapterHref(detail.slug, fallbackChapter.chapterNumber));
+            router.replace(chapterHref(normalizedDetail.slug, fallbackChapter.chapterNumber));
           }
         }
 
-        setRecommendedStories(recommendedData.filter((item) => item.slug !== detail.slug));
+        setRecommendedStories(normalizedRecommended.filter((item) => item.slug !== normalizedDetail.slug));
         setRatingStats(fetchedRatingStats);
         setReviews(fetchedReviews);
         setReviewPage(fetchedReviewsMeta?.page || 1);
@@ -333,7 +385,7 @@ export default function StoryChapterClient() {
     };
 
     fetchDetail();
-  }, [chapterSlug, router, slug]);
+  }, [chapterSlug, locale, router, slug]);
 
   useEffect(() => {
     if (!story) return;
@@ -439,15 +491,21 @@ export default function StoryChapterClient() {
   }, [isVipActive, selectedChapter]);
 
   const lockReasonLabel = useMemo(() => {
-    if (!selectedChapter) return "Chương nay đang bị khóa.";
+    if (!selectedChapter) return t("chapterLocked");
     if (selectedChapter.accessType === "vip") {
-      return "Chương này dành cho tài khoản VIP.";
+      return t("vipOnlyChapter");
     }
     if (selectedChapter.accessType === "timed") {
-      return getUnlockLabel(selectedChapter) || "Chương nay sẽ mở trong thời gian tới.";
+      return (
+        getUnlockLabel(selectedChapter, {
+          vipOnly: t("vipOnlyAccess"),
+          opensFreeLater: t("opensFreeLater"),
+          freeUnlocked: t("freeUnlocked"),
+        }) || t("chapterUnlockSoon")
+      );
     }
-    return "Chương nay đang bị khóa.";
-  }, [selectedChapter]);
+    return t("chapterLocked");
+  }, [selectedChapter, t]);
 
   const filteredChapters = useMemo(() => {
     if (!story) return [];
@@ -457,11 +515,44 @@ export default function StoryChapterClient() {
       (chapter) =>
         chapter.title.toLowerCase().includes(q) ||
         String(chapter.chapterNumber).includes(q) ||
-        `chương ${chapter.chapterNumber}`.includes(q),
+          `${t("chapterKeyword").toLowerCase()} ${chapter.chapterNumber}`.includes(q),
     );
-  }, [chapterQuery, story]);
+        }, [chapterQuery, story, t]);
 
-  const hasPlayableAudio = Boolean(selectedChapter?.r2AudioUrl);
+  const selectedChapterTitle = selectedChapter
+    ? getLocalizedValue(locale, selectedChapter.titleVi, selectedChapter.titleEn, selectedChapter.title)
+    : "";
+  const selectedChapterDescription = selectedChapter
+    ? getRequestedLocaleValue(
+        locale,
+        selectedChapter.descriptionVi,
+        selectedChapter.descriptionEn,
+        !selectedChapter.descriptionVi && !selectedChapter.descriptionEn ? selectedChapter.description : "",
+      )
+    : "";
+  const selectedChapterContent = selectedChapter
+    ? getRequestedLocaleValue(
+        locale,
+        selectedChapter.contentVi,
+        selectedChapter.contentEn,
+        !selectedChapter.contentVi && !selectedChapter.contentEn ? selectedChapter.content : "",
+      )
+    : "";
+  const selectedChapterAudioUrl = selectedChapter
+    ? getRequestedLocaleValue(
+        locale,
+        selectedChapter.audioUrlVi,
+        selectedChapter.audioUrlEn,
+        !selectedChapter.audioUrlVi && !selectedChapter.audioUrlEn ? selectedChapter.r2AudioUrl : "",
+      )
+    : "";
+  const localePendingLabel = getLocaleLabel(locale);
+  const translationPendingMessage = locale === "en"
+    ? `This story does not have an ${localePendingLabel} version for this chapter yet. We will update it as soon as possible.`
+    : `Hiện tại truyện này chưa có bản ${localePendingLabel} cho chương này. Chúng tôi sẽ cập nhật sớm nhất có thể.`;
+
+  const hasPlayableAudio = Boolean(selectedChapterAudioUrl);
+  const playerCoverUrl = selectedChapter?.thumbnailUrl || story?.thumbnailUrl || "https://placehold.co/300x300?text=No+Cover";
 
   useEffect(() => {
     if (!story || !currentTrack || currentTrack.storyId !== story.id) return;
@@ -470,31 +561,41 @@ export default function StoryChapterClient() {
       id: item.id,
       storyId: story.id,
       chapterId: item.id,
-      title: `Chương ${item.chapterNumber}: ${item.title}`,
+      title: t("chapterTitle", { number: item.chapterNumber, title: item.title }),
       storySlug: story.slug,
       chapterNumber: item.chapterNumber,
       author: story.author?.name,
-      audioUrl: item.r2AudioUrl || "",
-      coverUrl: story.thumbnailUrl || undefined,
+      audioUrl: getRequestedLocaleValue(
+        locale,
+        item.audioUrlVi,
+        item.audioUrlEn,
+        !item.audioUrlVi && !item.audioUrlEn ? item.r2AudioUrl : "",
+      ) || "",
+      coverUrl: item.thumbnailUrl || story.thumbnailUrl || undefined,
     }));
     setQueue(refreshedQueue);
 
     const latestChapter = story.chapters.find((chapter) => chapter.id === currentTrack.id);
     if (!latestChapter) return;
 
-    const latestAudioUrl = latestChapter.r2AudioUrl || "";
+    const latestAudioUrl = getRequestedLocaleValue(
+      locale,
+      latestChapter.audioUrlVi,
+      latestChapter.audioUrlEn,
+      !latestChapter.audioUrlVi && !latestChapter.audioUrlEn ? latestChapter.r2AudioUrl : "",
+    ) || "";
     if (currentTrack.audioUrl === latestAudioUrl) return;
 
     setTrack({
       ...currentTrack,
-      title: `Chương ${latestChapter.chapterNumber}: ${latestChapter.title}`,
+      title: t("chapterTitle", { number: latestChapter.chapterNumber, title: latestChapter.title }),
       storySlug: story.slug,
       chapterNumber: latestChapter.chapterNumber,
       author: story.author?.name,
       audioUrl: latestAudioUrl,
-      coverUrl: story.thumbnailUrl || undefined,
+      coverUrl: latestChapter.thumbnailUrl || story.thumbnailUrl || undefined,
     });
-  }, [currentTrack, setQueue, setTrack, story]);
+  }, [currentTrack, locale, setQueue, setTrack, story, t]);
 
   useEffect(() => {
     if (!currentTrack?.id || !story) return;
@@ -526,27 +627,39 @@ export default function StoryChapterClient() {
         id: item.id,
         storyId: selectedStory.id,
         chapterId: item.id,
-        title: `Chương ${item.chapterNumber}: ${item.title}`,
+        title: t("chapterTitle", { number: item.chapterNumber, title: item.title }),
         storySlug: selectedStory.slug,
         chapterNumber: item.chapterNumber,
         author: selectedStory.author?.name,
-        audioUrl: item.r2AudioUrl || "",
-        coverUrl: selectedStory.thumbnailUrl || undefined,
+        audioUrl: getRequestedLocaleValue(
+          locale,
+          item.audioUrlVi,
+          item.audioUrlEn,
+          !item.audioUrlVi && !item.audioUrlEn ? item.r2AudioUrl : "",
+        ) || "",
+        coverUrl: item.thumbnailUrl || selectedStory.thumbnailUrl || undefined,
       }));
+
+      const chapterAudioUrl = getRequestedLocaleValue(
+        locale,
+        chapter.audioUrlVi,
+        chapter.audioUrlEn,
+        !chapter.audioUrlVi && !chapter.audioUrlEn ? chapter.r2AudioUrl : "",
+      ) || "";
 
       const track = {
         id: chapter.id,
         storyId: selectedStory.id,
         chapterId: chapter.id,
-        title: `Chương ${chapter.chapterNumber}: ${chapter.title}`,
+        title: t("chapterTitle", { number: chapter.chapterNumber, title: chapter.title }),
         storySlug: selectedStory.slug,
         chapterNumber: chapter.chapterNumber,
         author: selectedStory.author?.name,
-        audioUrl: chapter.r2AudioUrl || "",
-        coverUrl: selectedStory.thumbnailUrl || undefined,
+        audioUrl: chapterAudioUrl,
+        coverUrl: chapter.thumbnailUrl || selectedStory.thumbnailUrl || undefined,
       };
 
-      if (!chapter.r2AudioUrl) {
+      if (!chapterAudioUrl) {
         setQueue(mappedQueue);
         setTrack(track);
         togglePlay(false);
@@ -561,7 +674,7 @@ export default function StoryChapterClient() {
         togglePlay(false);
       }
     },
-    [isVipActive, playTrack, setQueue, setTrack, togglePlay],
+    [isVipActive, locale, playTrack, setQueue, setTrack, t, togglePlay],
   );
 
   const goToChapter = useCallback(
@@ -635,7 +748,7 @@ export default function StoryChapterClient() {
       try {
         await navigator.share({
           title: story?.title || "AudioTruyen",
-          text: "Nghe truyện này cùng mình nhé",
+          text: t("sharePrompt"),
           url,
         });
         return;
@@ -646,7 +759,7 @@ export default function StoryChapterClient() {
 
     if (navigator.clipboard) {
       await navigator.clipboard.writeText(url);
-      alert("Đã sao chép liên kết truyện");
+      alert(t("copiedLink"));
     }
   };
 
@@ -797,11 +910,31 @@ export default function StoryChapterClient() {
   };
 
   if (isLoading) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">Truyện đang tải, bạn đợi xíu nhé!</p>;
+    return <p className="text-sm text-gray-500 dark:text-gray-400">{t("loadingStory")}</p>;
   }
 
-  if (!story || !selectedChapter) {
-    return <p className="text-sm text-red-600">Không tìm thấy truyện hoặc chương.</p>;
+  if (!story) {
+    return <p className="text-sm text-red-600">{t("notFound")}</p>;
+  }
+
+  if (!selectedChapter) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-10">
+        <div className="rounded-3xl border border-blue-200 bg-blue-50/80 p-6 text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/20 dark:text-blue-100">
+          <h1 className="text-2xl font-bold">{story.title}</h1>
+          <p className="mt-3 text-sm leading-7">{translationPendingMessage}</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <StoryUpdateSubscriptionButton storyId={story.id} />
+            <Link
+              href={`/story/${story.slug}`}
+              className="inline-flex items-center justify-center rounded-full border border-blue-300 px-5 py-2.5 text-sm font-semibold text-blue-800 hover:bg-blue-100 dark:border-blue-800 dark:text-blue-100 dark:hover:bg-blue-900/40"
+            >
+              {t("backToStory")}
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -813,10 +946,14 @@ export default function StoryChapterClient() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <span>Tác giả: <b>{story.author?.name || "Đang cập nhật"}</b></span>
-            <span>{formatStatus(story.status)}</span>
-            <span>Cập nhật: {formatDate(story.updatedAt)}</span>
-            <span>{Number(story.totalViews || 0).toLocaleString("vi-VN")} lượt nghe</span>
+            <span>{t("author")}: <b>{story.author?.name || t("updating")}</b></span>
+            <span>{formatStatus(story.status, {
+              completed: t("completed"),
+              ongoing: t("ongoing"),
+              updating: t("updating"),
+            })}</span>
+            <span>{t("updatedAt")}: {formatDate(story.updatedAt, locale, t("updating"))}</span>
+            <span>{t("listens", { count: Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN") })}</span>
             <span>{Number(story.averageRating || 0).toFixed(1)} ({story.ratingCount || 0})</span>
           </div>
 
@@ -824,27 +961,29 @@ export default function StoryChapterClient() {
             <FavoriteButton
               storyId={story.id}
               size="sm"
-              label="Thêm vào mục yêu thích"
+              label={t("favorite")}
               className="px-4 py-2 text-sm font-medium border shadow-sm"
               activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
               inactiveClassName="border-gray-300 bg-white text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-300"
             />
+
+            <StoryUpdateSubscriptionButton storyId={story.id} />
 
             <button
               onClick={onShare}
               className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               <Share2 className="h-4 w-4" />
-              Chia sẻ
+              {t("share")}
             </button>
           </div>
         </section>
 
         {/* Chapter Introduction */}
         <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-2">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Giới thiệu chương</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("chapterIntro")}</h2>
           <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
-            {selectedChapter.description || "Chương này chưa có phần giới thiệu."}
+            {selectedChapterDescription || translationPendingMessage}
           </p>
         </section>
 
@@ -854,9 +993,9 @@ export default function StoryChapterClient() {
         {/* Side Panel 1: Chapter List */}
         <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
           <h2 className="mb-3 flex items-center justify-between text-base font-semibold text-gray-900 dark:text-gray-100">
-            <span className="inline-flex items-center gap-2"><ListMusic className="h-4 w-4" /> Chương đang phát
+            <span className="inline-flex items-center gap-2"><ListMusic className="h-4 w-4" /> {t("currentChapter")}
             </span>
-            <span className="text-xs text-gray-500">{chapterCount} Chương</span>
+            <span className="text-xs text-gray-500">{t("chaptersCount", { count: chapterCount })}</span>
           </h2>
 
           <button
@@ -864,7 +1003,7 @@ export default function StoryChapterClient() {
             className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-3 py-2 text-left hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
           >
             <div className="min-w-0">
-              <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{selectedChapter.title}</p>
+              <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{selectedChapterTitle}</p>
               <p className="text-xs text-gray-500">{formatDuration(selectedChapter.audioDuration)}</p>
             </div>
             <ChevronDown className={`h-4 w-4 shrink-0 text-gray-500 transition ${isChapterMenuOpen ? "rotate-180" : ""}`} />
@@ -872,7 +1011,11 @@ export default function StoryChapterClient() {
 
           {selectedChapter.accessType !== "free" ? (
             <p className="mt-2 inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-300">
-              <Lock className="h-3 w-3" /> {getUnlockLabel(selectedChapter)}
+              <Lock className="h-3 w-3" /> {getUnlockLabel(selectedChapter, {
+                vipOnly: t("vipOnlyAccess"),
+                opensFreeLater: t("opensFreeLater"),
+                freeUnlocked: t("freeUnlocked"),
+              })}
             </p>
           ) : null}
 
@@ -881,7 +1024,7 @@ export default function StoryChapterClient() {
               <input
                 value={chapterQuery}
                 onChange={(event) => setChapterQuery(event.target.value)}
-                placeholder="Tìm số chương hoặc tên chương..."
+                placeholder={t("searchChapterPlaceholder")}
                 className="mb-2 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
               />
               <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
@@ -897,7 +1040,7 @@ export default function StoryChapterClient() {
                           : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
                       }`}
                     >
-                      <span className="line-clamp-1">{chapter.title}</span>
+                      <span className="line-clamp-1">{getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)}</span>
                     </button>
                   );
                 })}
@@ -908,25 +1051,25 @@ export default function StoryChapterClient() {
 
         {/* Side Panel 2: Audio Player */}
         <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-          <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">Audio Player</h2>
+          <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("audioPlayer")}</h2>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-[160px_1fr]">
+          <div className="mt-4 grid gap-3 md:grid-cols-[120px_minmax(0,1fr)] lg:grid-cols-[136px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
             <div className="flex flex-col items-center justify-center gap-3">
-              <div className={`relative h-28 w-28 overflow-hidden rounded-full border-4 border-blue-200 dark:border-blue-900 ${isPlaying ? "animate-spin [animation-duration:10s]" : ""}`}>
+              <div className={`relative h-24 w-24 overflow-hidden rounded-full border-4 border-blue-200 dark:border-blue-900 lg:h-28 lg:w-28 ${isPlaying ? "animate-spin [animation-duration:10s]" : ""}`}>
                 <img
-                  src={story.thumbnailUrl || "https://placehold.co/300x300?text=No+Cover"}
+                  src={playerCoverUrl}
                   alt={story.title}
                   className="h-full w-full object-cover"
                 />
               </div>
               <p className="line-clamp-2 text-center text-xs text-gray-500 dark:text-gray-400">
-                Chương {selectedChapter.chapterNumber}
+                {t("chapterLabel", { number: selectedChapter.chapterNumber })}
               </p>
             </div>
 
-            <div className="space-y-3">
+            <div className="min-w-0 space-y-2.5">
               <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                Chương {selectedChapter.chapterNumber}: {selectedChapter.title}
+                {t("chapterTitle", { number: selectedChapter.chapterNumber, title: selectedChapterTitle })}
               </p>
               
               <input
@@ -944,7 +1087,7 @@ export default function StoryChapterClient() {
                 <span>{formatDuration(duration)}</span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
                 <button onClick={playPrev} className="rounded-full border border-gray-300 p-2 text-gray-600">
                   <SkipBack className="h-4 w-4" />
                 </button>
@@ -981,7 +1124,7 @@ export default function StoryChapterClient() {
                 </button>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
                 <button onClick={() => toggleMute()} className="rounded-full border border-gray-300 p-2 text-gray-600">{isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button>
                 <input
                   type="range"
@@ -990,7 +1133,7 @@ export default function StoryChapterClient() {
                   step={0.01}
                   value={volume}
                   onChange={(event) => setVolume(Number(event.target.value))}
-                  className="w-24 accent-blue-600"
+                  className="w-16 sm:w-20 accent-blue-600"
                 />
 
                 <button
@@ -1026,7 +1169,7 @@ export default function StoryChapterClient() {
           <div className="mt-3 space-y-3">
             {showSettings ? (
               <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Toc do phat</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t("playbackSpeed")}</p>
                 <div className="mt-2 grid grid-cols-5 gap-2">
                   {[0.75, 1, 1.25, 1.5, 2].map((rate) => (
                     <button
@@ -1039,7 +1182,7 @@ export default function StoryChapterClient() {
                   ))}
                 </div>
 
-                <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">Hen gio tat</p>
+                <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">{t("sleepTimer")}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {[15, 30, 60].map((minute) => (
                     <button
@@ -1051,7 +1194,7 @@ export default function StoryChapterClient() {
                     </button>
                   ))}
                   <button onClick={() => setSleepTimer(null)} className="rounded-md border border-red-300 px-2 py-1 text-xs text-red-600 dark:border-red-800 dark:text-red-300">
-                    Tat hen gio
+                    {t("cancelSleepTimer")}
                   </button>
                 </div>
 
@@ -1062,7 +1205,7 @@ export default function StoryChapterClient() {
                     value={customMinutes}
                     onChange={(event) => setCustomMinutes(event.target.value)}
                     className="w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
-                    placeholder="Tu dat phut"
+                    placeholder={t("customMinutesPlaceholder")}
                   />
                   <button
                     onClick={() => {
@@ -1071,34 +1214,34 @@ export default function StoryChapterClient() {
                     }}
                     className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white"
                   >
-                    Dat
+                    {t("setTimer")}
                   </button>
                 </div>
 
                 {sleepMinutesLeft ? (
                   <p className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-300">
-                    <Timer className="h-3.5 w-3.5" /> Con khoang {sleepMinutesLeft} phut se tu tat
+                    <Timer className="h-3.5 w-3.5" /> {t("sleepTimerActive", { minutes: sleepMinutesLeft })}
                   </p>
                 ) : null}
               </div>
             ) : null}
 
-            {!hasPlayableAudio ? <p className="text-xs text-amber-600 dark:text-amber-300">Chương hiện tại chưa có file audio để phát.</p> : null}
+            {!hasPlayableAudio ? <p className="text-xs text-amber-600 dark:text-amber-300">{translationPendingMessage}</p> : null}
           </div>
         </section>
 
         {/* Side Panel 3: YouTube Player */}
         <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
-          <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">YouTube Player</h2>
+          <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("youtubePlayer")}</h2>
           {chapterIsLocked ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
-              <p className="inline-flex items-center gap-1 font-semibold"><Lock className="h-4 w-4" /> Chương này đang bị khóa</p>
+              <p className="inline-flex items-center gap-1 font-semibold"><Lock className="h-4 w-4" /> {t("chapterLocked")}</p>
               <p className="mt-1">{lockReasonLabel}</p>
               <button
                 onClick={openUnlockModal}
                 className="mt-3 rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
               >
-                Mở khóa để xem YouTube
+                {t("unlockYoutube")}
               </button>
             </div>
           ) : selectedChapter.youtubeVideoId ? (
@@ -1113,7 +1256,7 @@ export default function StoryChapterClient() {
             </div>
           ) : (
             <div className="rounded-xl bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-800/40 dark:text-gray-300">
-              Chưa có video Youtube cho chương này.
+              {t("noYoutubeVideo")}
             </div>
           )}
         </section>
@@ -1122,30 +1265,36 @@ export default function StoryChapterClient() {
 
         {/* Chapter Content / Text Reader */}
         <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Đọc truyện chữ</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readText")}</h2>
           <div className="mt-5">
-            <StoryReader
-              chapterId={selectedChapter.id}
-              content={selectedChapter.content}
-              adInterval={700}
-              isLocked={chapterIsLocked}
-              previewChars={500}
-              lockLabel={lockReasonLabel}
-              onUnlockRequest={openUnlockModal}
-            />
+            {selectedChapterContent ? (
+              <StoryReader
+                chapterId={selectedChapter.id}
+                content={selectedChapterContent}
+                adInterval={700}
+                isLocked={chapterIsLocked}
+                previewChars={500}
+                lockLabel={lockReasonLabel}
+                onUnlockRequest={openUnlockModal}
+              />
+            ) : (
+              <div className="rounded-2xl border border-dashed border-blue-200 bg-blue-50/70 px-4 py-5 text-sm leading-7 text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-200">
+                {translationPendingMessage}
+              </div>
+            )}
           </div>
         </section>
 
         {/* Reviews */}
         <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Đánh giá từ độc giả</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readerReviews")}</h2>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr]">
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
               <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                 {Number(ratingStats?.averageRating || 0).toFixed(1)}
               </p>
-              <p className="mt-1 text-xs text-gray-500">{ratingStats?.ratingCount || 0} lượt đánh giá</p>
+              <p className="mt-1 text-xs text-gray-500">{t("reviewCount", { count: ratingStats?.ratingCount || 0 })}</p>
 
               <div className="mt-3 space-y-2">
                 {(ratingStats?.distribution || [])
@@ -1156,7 +1305,7 @@ export default function StoryChapterClient() {
                     const width = Math.round((item.count / total) * 100);
                     return (
                       <div key={item.rating} className="flex items-center gap-2 text-xs">
-                        <span className="w-10 font-medium">{item.rating} sao</span>
+                        <span className="w-10 font-medium">{t("starLabel", { count: item.rating })}</span>
                         <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                           <div className="h-full rounded-full bg-amber-500" style={{ width: `${width}%` }} />
                         </div>
@@ -1169,7 +1318,7 @@ export default function StoryChapterClient() {
 
             <div className="space-y-3">
               <div className="rounded-xl border border-gray-200 p-3 dark:border-gray-700">
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">Viết đánh giá của bạn</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("writeReview")}</p>
                 <div className="mt-2 flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -1186,7 +1335,7 @@ export default function StoryChapterClient() {
                   <textarea
                     value={reviewDraft}
                     onChange={(event) => setReviewDraft(event.target.value)}
-                    placeholder="Chia sẻ cảm nhận của bạn..."
+                    placeholder={t("shareThoughts")}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
                     rows={3}
                   />
@@ -1220,7 +1369,7 @@ export default function StoryChapterClient() {
                   disabled={isSubmittingReview}
                   className="mt-2 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Gửi đánh giá
+                  {t("submitReview")}
                 </button>
               </div>
 
@@ -1233,7 +1382,7 @@ export default function StoryChapterClient() {
                       : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
                   }`}
                 >
-                  Mới nhất
+                  {t("sortNewest")}
                 </button>
                 <button
                   onClick={() => setReviewSort("helpful")}
@@ -1243,7 +1392,7 @@ export default function StoryChapterClient() {
                       : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
                   }`}
                 >
-                  Hữu ích
+                  {t("sortHelpful")}
                 </button>
                 <button
                   onClick={() => setReviewSort("highest")}
@@ -1253,7 +1402,7 @@ export default function StoryChapterClient() {
                       : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
                   }`}
                 >
-                  Nhiều sao
+                  {t("sortHighest")}
                 </button>
               </div>
 
@@ -1261,9 +1410,9 @@ export default function StoryChapterClient() {
                 {reviews.map((review) => (
                   <div key={review.id} className="rounded-xl border border-gray-200 p-3 text-sm dark:border-gray-700">
                     <p className="text-gray-800 dark:text-gray-100">
-                      <span className="font-semibold">{review.user?.displayName || "Độc giả"}</span>
+                      <span className="font-semibold">{review.user?.displayName || t("readerFallback")}</span>
                       <span className="mx-2 text-gray-400">|</span>
-                      <span>{review.content || "(Không có nội dung)"}</span>
+                      <span>{review.content || t("noReviewContent")}</span>
                     </p>
                     <p className="mt-1 text-xs text-amber-500">{"★".repeat(review.rating)}</p>
 
@@ -1288,7 +1437,7 @@ export default function StoryChapterClient() {
                         }`}
                       >
                         <ThumbsUp className="h-3.5 w-3.5" />
-                        Hữu ích {review.helpfulCount || 0}
+                        {t("helpfulCount", { count: review.helpfulCount || 0 })}
                       </button>
                       <button
                         onClick={() =>
@@ -1299,7 +1448,7 @@ export default function StoryChapterClient() {
                         }
                         className="rounded-full border border-gray-300 px-2 py-1 text-gray-600 dark:border-gray-700 dark:text-gray-300"
                       >
-                        Trả lời{review.repliesCount ? ` (${review.repliesCount})` : ""}
+                        {t("reply")}{review.repliesCount ? ` (${review.repliesCount})` : ""}
                       </button>
                     </div>
 
@@ -1307,7 +1456,7 @@ export default function StoryChapterClient() {
                       <div className="mt-2 space-y-1 rounded-md bg-gray-50 p-2 text-xs dark:bg-gray-800/50">
                         {(review.replies || []).map((reply) => (
                           <p key={reply.id} className="text-gray-700 dark:text-gray-200">
-                            <span className="font-semibold">{reply.user?.displayName || "Độc giả"}</span>: {reply.content}
+                            <span className="font-semibold">{reply.user?.displayName || t("readerFallback")}</span>: {reply.content}
                           </p>
                         ))}
                       </div>
@@ -1325,14 +1474,14 @@ export default function StoryChapterClient() {
                             }))
                           }
                           className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
-                          placeholder="Viết trả lời..."
+                          placeholder={t("reviewReplyPlaceholder")}
                         />
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => void submitReviewReply(review.id)}
                             className="rounded-md bg-blue-600 px-2.5 py-1 text-xs font-medium text-white"
                           >
-                            Gửi
+                            {t("send")}
                           </button>
                           <button
                             onClick={() =>
@@ -1343,7 +1492,7 @@ export default function StoryChapterClient() {
                             }
                             className="rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 dark:border-gray-700 dark:text-gray-300"
                           >
-                            Hủy
+                            {t("cancel")}
                           </button>
                         </div>
                       </div>
@@ -1351,7 +1500,7 @@ export default function StoryChapterClient() {
                   </div>
                 ))}
 
-                {isLoadingReviews ? <p className="text-xs text-gray-500">Đang tải đánh giá...</p> : null}
+                {isLoadingReviews ? <p className="text-xs text-gray-500">{t("loadingReviews")}</p> : null}
 
                 <div className="flex flex-wrap items-center gap-2">
                   {reviewPage < reviewLastPage ? (
@@ -1359,7 +1508,7 @@ export default function StoryChapterClient() {
                       onClick={() => void loadMoreReviews()}
                       className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
-                      Xem thêm 5 đánh giá
+                      {t("loadMoreReviews")}
                     </button>
                   ) : null}
                   {reviews.length > 5 ? (
@@ -1367,7 +1516,7 @@ export default function StoryChapterClient() {
                       onClick={() => void collapseReviews()}
                       className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
-                      Thu gọn còn 5 đánh giá
+                      {t("collapseReviews")}
                     </button>
                   ) : null}
                 </div>

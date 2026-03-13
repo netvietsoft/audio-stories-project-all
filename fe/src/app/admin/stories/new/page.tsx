@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Newspaper, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { StoryForm } from '../_components/StoryForm';
+import type { StoryFormValues } from '../_components/StoryForm';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { revalidateStoriesCache } from '@/app/admin/_actions/revalidate';
 
@@ -12,7 +13,7 @@ export default function NewStoryPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async (data: any) => {
+    const handleSubmit = async (data: StoryFormValues) => {
         setIsLoading(true);
         try {
             await apiClient.post('/stories', data);

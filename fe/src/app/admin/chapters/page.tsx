@@ -26,8 +26,16 @@ interface Chapter {
     id: string;
     chapterNumber: number;
     title: string;
+    titleVi?: string;
+    titleEn?: string;
     description: string | null;
+    descriptionVi?: string | null;
+    descriptionEn?: string | null;
     content: string | null;
+    contentVi?: string | null;
+    contentEn?: string | null;
+    audioUrlVi?: string | null;
+    audioUrlEn?: string | null;
     r2AudioUrl: string | null;
     thumbnailUrl?: string | null;
     youtubeVideoId: string | null;
@@ -37,10 +45,26 @@ interface Chapter {
     createdAt: string;
     story?: {
         title: string;
+        titleVi?: string;
+        titleEn?: string;
     };
 }
 
 export default function ChaptersGlobalPage() {
+    const getLocalizedText = (value: unknown): string => {
+        if (typeof value === 'string') return value;
+        if (value && typeof value === 'object') {
+            const record = value as Record<string, unknown>;
+            const titleVi = typeof record.titleVi === 'string' ? record.titleVi : '';
+            const titleEn = typeof record.titleEn === 'string' ? record.titleEn : '';
+            if (titleVi || titleEn) return titleVi || titleEn;
+            const vi = typeof record.vi === 'string' ? record.vi : '';
+            const en = typeof record.en === 'string' ? record.en : '';
+            return vi || en || '';
+        }
+        return '';
+    };
+
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -127,16 +151,36 @@ export default function ChaptersGlobalPage() {
         }
     };
 
-    const handleSubmit = async (data: any) => {
+    const handleSubmit = async (data: {
+        chapterNumber: number;
+        titleVi: string;
+        titleEn: string;
+        descriptionVi?: string;
+        descriptionEn?: string;
+        contentVi?: string;
+        contentEn?: string;
+        audioUrlVi?: string;
+        audioUrlEn?: string;
+        thumbnailUrl?: string;
+        youtubeVideoId?: string;
+        audioDuration?: number;
+        accessType: 'free' | 'timed' | 'vip';
+        storyId?: string;
+        unlocksAt?: string;
+    }) => {
         setIsSubmitting(true);
         try {
             if (editingChapter) {
                 const updatePayload = {
                     chapterNumber: data.chapterNumber,
-                    title: data.title,
-                    description: data.description || undefined,
-                    content: data.content || undefined,
-                    audioUrl: data.audioUrl || undefined,
+                    titleVi: data.titleVi,
+                    titleEn: data.titleEn,
+                    descriptionVi: data.descriptionVi || undefined,
+                    descriptionEn: data.descriptionEn || undefined,
+                    contentVi: data.contentVi || undefined,
+                    contentEn: data.contentEn || undefined,
+                    audioUrlVi: data.audioUrlVi || undefined,
+                    audioUrlEn: data.audioUrlEn || undefined,
                     thumbnailUrl: data.thumbnailUrl || undefined,
                     youtubeVideoId: data.youtubeVideoId || undefined,
                     audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
@@ -146,9 +190,12 @@ export default function ChaptersGlobalPage() {
             } else {
                 const createPayload = {
                     ...data,
-                    description: data.description || undefined,
-                    content: data.content || undefined,
-                    audioUrl: data.audioUrl || undefined,
+                    descriptionVi: data.descriptionVi || undefined,
+                    descriptionEn: data.descriptionEn || undefined,
+                    contentVi: data.contentVi || undefined,
+                    contentEn: data.contentEn || undefined,
+                    audioUrlVi: data.audioUrlVi || undefined,
+                    audioUrlEn: data.audioUrlEn || undefined,
                     thumbnailUrl: data.thumbnailUrl || undefined,
                     youtubeVideoId: data.youtubeVideoId || undefined,
                     audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
@@ -159,7 +206,9 @@ export default function ChaptersGlobalPage() {
             fetchChapters();
         } catch (error) {
             console.error('Failed to save chapter:', error);
-            alert('Không thể lưu chương. Vui lòng kiểm tra dữ liệu và thử lại.');
+            const apiMessage = (error as any)?.response?.data?.message;
+            const detail = Array.isArray(apiMessage) ? apiMessage.join(', ') : apiMessage;
+            alert(detail ? `Không thể lưu chương: ${detail}` : 'Không thể lưu chương. Vui lòng kiểm tra dữ liệu và thử lại.');
         } finally {
             setIsSubmitting(false);
         }
@@ -241,7 +290,7 @@ export default function ChaptersGlobalPage() {
                                     ? 'Tất cả truyện' 
                                     : filterStoryId === 'null'
                                     ? 'Chưa gán truyện'
-                                    : stories.find(s => s.id === filterStoryId)?.title || 'Lọc theo truyện'}
+                                    : getLocalizedText(stories.find(s => s.id === filterStoryId)?.title) || 'Lọc theo truyện'}
                             </span>
                             <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isStoryFilterOpen ? 'rotate-180' : ''}`} />
                         </button>
@@ -283,8 +332,8 @@ export default function ChaptersGlobalPage() {
                                         {filterStoryId === 'null' && <Check className="w-4 h-4" />}
                                     </button>
                                     <div className="h-px bg-slate-100 my-1 mx-2" />
-                                    {stories.filter(s => (s.title || '').toLowerCase().includes(storySearch.toLowerCase())).length > 0 ? (
-                                        stories.filter(s => (s.title || '').toLowerCase().includes(storySearch.toLowerCase())).map((story) => (
+                                    {stories.filter(s => getLocalizedText(s.title).toLowerCase().includes(storySearch.toLowerCase())).length > 0 ? (
+                                        stories.filter(s => getLocalizedText(s.title).toLowerCase().includes(storySearch.toLowerCase())).map((story) => (
                                             <button
                                                 key={story.id}
                                                 onClick={() => {
@@ -295,7 +344,7 @@ export default function ChaptersGlobalPage() {
                                                 }}
                                                 className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between group transition-all ${filterStoryId === story.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'}`}
                                             >
-                                                <span className="truncate">{story.title}</span>
+                                                <span className="truncate">{getLocalizedText(story.title)}</span>
                                                 {filterStoryId === story.id && <Check className="w-4 h-4 shrink-0" />}
                                             </button>
                                         ))
@@ -341,7 +390,7 @@ export default function ChaptersGlobalPage() {
                                             </span>
                                         </td>
                                         <td className="px-8 py-5">
-                                            <p className="text-sm font-black text-slate-900">{chapter.title}</p>
+                                            <p className="text-sm font-black text-slate-900">{getLocalizedText(chapter.title)}</p>
                                             <div className="flex items-center gap-3 mt-1.5">
                                                 {chapter.r2AudioUrl ? (
                                                     <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
@@ -361,7 +410,7 @@ export default function ChaptersGlobalPage() {
                                         <td className="px-8 py-5">
                                             {chapter.story ? (
                                                 <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">
-                                                    {chapter.story.title}
+                                                    {getLocalizedText(chapter.story.title)}
                                                 </span>
                                             ) : (
                                                 <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100">
@@ -460,14 +509,14 @@ export default function ChaptersGlobalPage() {
             {/* Modal for Create/Edit */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-3xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
+                    <div className="bg-white w-[90vw] max-w-7xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
                         <div className="p-8 border-b border-slate-100 flex items-center justify-between shrink-0">
                             <div>
                                 <h2 className="text-2xl font-black text-slate-900">
                                     {editingChapter ? 'Chỉnh sửa Chương' : 'Thêm Chương Mới'}
                                 </h2>
                                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
-                                    {editingChapter?.story?.title || 'Chương độc lập'}
+                                    {getLocalizedText(editingChapter?.story?.title) || 'Chương độc lập'}
                                 </p>
                             </div>
                             <button
@@ -481,9 +530,14 @@ export default function ChaptersGlobalPage() {
                             <ChapterForm
                                 initialData={editingChapter ? {
                                     chapterNumber: editingChapter.chapterNumber,
-                                    title: editingChapter.title,
-                                    description: editingChapter.description ?? undefined,
-                                    content: editingChapter.content ?? undefined,
+                                    titleVi: editingChapter.titleVi || editingChapter.title,
+                                    titleEn: editingChapter.titleEn || '',
+                                    descriptionVi: editingChapter.descriptionVi || editingChapter.description || '',
+                                    descriptionEn: editingChapter.descriptionEn || '',
+                                    contentVi: editingChapter.contentVi || editingChapter.content || '',
+                                    contentEn: editingChapter.contentEn || '',
+                                    audioUrlVi: editingChapter.audioUrlVi || editingChapter.r2AudioUrl || '',
+                                    audioUrlEn: editingChapter.audioUrlEn || '',
                                     r2AudioUrl: editingChapter.r2AudioUrl ?? undefined,
                                     thumbnailUrl: editingChapter.thumbnailUrl ?? undefined,
                                     youtubeVideoId: editingChapter.youtubeVideoId ?? undefined,

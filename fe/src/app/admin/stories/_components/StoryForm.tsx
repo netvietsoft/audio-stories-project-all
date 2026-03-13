@@ -24,14 +24,14 @@ import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { UploadButton } from '@/lib/uploadthing';
 
 const storySchema = z.object({
-
-    title: z.string().min(1, 'Tiêu đề không được để trống'),
+    titleVi: z.string().min(1, 'Tiêu đề tiếng Việt không được để trống'),
+    titleEn: z.string().min(1, 'Tiêu đề tiếng Anh không được để trống'),
     slug: z.string().min(1, 'Slug không được để trống'),
-    description: z.string().optional(),
+    descriptionVi: z.string().min(1, 'Mô tả tiếng Việt không được để trống'),
+    descriptionEn: z.string().min(1, 'Mô tả tiếng Anh không được để trống'),
     thumbnailUrl: z.string().optional(),
     authorId: z.string().uuid('Vui lòng chọn tác giả'),
     status: z.enum(['ongoing', 'completed']),
-    language: z.enum(['vi', 'en']),
     categoryIds: z.array(z.number()).min(1, 'Chọn ít nhất một thể loại'),
     audioUrl: z.string().optional(),
     facebookGroupUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
@@ -39,7 +39,7 @@ const storySchema = z.object({
 });
 
 
-type StoryFormValues = z.infer<typeof storySchema>;
+export type StoryFormValues = z.infer<typeof storySchema>;
 
 interface Category {
     id: number;
@@ -97,20 +97,36 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
     } = useForm<StoryFormValues>({
         resolver: zodResolver(storySchema),
         defaultValues: {
-            title: '',
+            titleVi: '',
+            titleEn: '',
             slug: '',
-            description: '',
+            descriptionVi: '',
+            descriptionEn: '',
             thumbnailUrl: '',
             status: 'ongoing',
-            language: 'vi',
             categoryIds: [],
             isRecommended: false,
             facebookGroupUrl: '',
-            ...initialData,
+            ...(initialData
+                ? {
+                    titleVi: initialData.titleVi,
+                    titleEn: initialData.titleEn,
+                    slug: initialData.slug,
+                    descriptionVi: initialData.descriptionVi,
+                    descriptionEn: initialData.descriptionEn,
+                    thumbnailUrl: initialData.thumbnailUrl,
+                    authorId: initialData.authorId,
+                    status: initialData.status,
+                    categoryIds: initialData.categoryIds,
+                    audioUrl: initialData.audioUrl,
+                    facebookGroupUrl: initialData.facebookGroupUrl,
+                    isRecommended: initialData.isRecommended,
+                }
+                : {}),
         },
     });
 
-    const title = watch('title');
+    const titleVi = watch('titleVi');
     const selectedAuthorId = watch('authorId');
     const selectedCategoryIds = watch('categoryIds') || [];
 
@@ -159,8 +175,8 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
 
     // Simple slugify for FE
     useEffect(() => {
-        if (!initialData?.slug && title) {
-            const generatedSlug = title
+        if (!initialData?.slug && titleVi) {
+            const generatedSlug = titleVi
                 .toLowerCase()
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
@@ -171,18 +187,31 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                 .replace(/-+/g, '-');
             setValue('slug', generatedSlug);
         }
-    }, [title, setValue, initialData]);
+    }, [titleVi, setValue, initialData]);
 
     const handleFormSubmit = async (values: StoryFormValues) => {
         try {
-            let finalData = { ...values };
+            let finalData: StoryFormValues & { chapterIds?: string[] } = {
+                titleVi: values.titleVi,
+                titleEn: values.titleEn,
+                slug: values.slug,
+                descriptionVi: values.descriptionVi,
+                descriptionEn: values.descriptionEn,
+                thumbnailUrl: values.thumbnailUrl || undefined,
+                authorId: values.authorId,
+                status: values.status,
+                categoryIds: values.categoryIds,
+                audioUrl: values.audioUrl || undefined,
+                facebookGroupUrl: values.facebookGroupUrl || undefined,
+                isRecommended: values.isRecommended,
+            };
 
             // Include selected chapter IDs for new stories
             if (!initialData?.id && selectedChapterIds.length > 0) {
-                (finalData as any).chapterIds = selectedChapterIds;
+                finalData.chapterIds = selectedChapterIds;
             }
 
-            await onSubmit(finalData);
+            await onSubmit(finalData as StoryFormValues);
         } catch (error) {
             console.error('Failed to submit story:', error);
             alert('Có lỗi xảy ra khi lưu truyện. Vui lòng thử lại.');
@@ -235,19 +264,29 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
 
             <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-8 space-y-8">
-                    {/* Hàng 1: Tên truyện nguyên 1 hàng */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tiêu đề truyện</label>
-                        <input
-                            {...register('title')}
-                            placeholder="Nhập tên truyện..."
-                            className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                        />
-                        {errors.title && <p className="text-xs font-bold text-red-500 ml-2">{errors.title.message}</p>}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tiêu đề truyện (Tiếng Việt)</label>
+                            <input
+                                {...register('titleVi')}
+                                placeholder="Nhập tên truyện tiếng Việt"
+                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                            />
+                            {errors.titleVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleVi.message}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Story Title (English)</label>
+                            <input
+                                {...register('titleEn')}
+                                placeholder="Enter story title in English"
+                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                            />
+                            {errors.titleEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleEn.message}</p>}
+                        </div>
                     </div>
 
-                    {/* Hàng 2: Input slug, trạng thái và ngôn ngữ */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* Hàng 2: Input slug và trạng thái */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-2">
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Slug (URL)</label>
                             <input
@@ -272,20 +311,6 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ngôn ngữ</label>
-                            <div className="relative">
-                                <select
-                                    {...register('language')}
-                                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
-                                >
-                                    <option value="vi">Tiếng Việt</option>
-                                    <option value="en">English</option>
-                                </select>
-                                <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                            </div>
-                            {errors.language && <p className="text-xs font-bold text-red-500 ml-2">{errors.language.message}</p>}
-                        </div>
                     </div>
 
                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
@@ -583,15 +608,27 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                         )}
                     </div>
 
-                    {/* Story Introduction */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Giới thiệu truyện</label>
-                        <textarea
-                            {...register('description')}
-                            rows={5}
-                            placeholder="Nhập giới thiệu về truyện..."
-                            className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Giới thiệu truyện (Tiếng Việt)</label>
+                            <textarea
+                                {...register('descriptionVi')}
+                                rows={5}
+                                placeholder="Nhập giới thiệu tiếng Việt..."
+                                className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                            />
+                            {errors.descriptionVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionVi.message}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Story Description (English)</label>
+                            <textarea
+                                {...register('descriptionEn')}
+                                rows={5}
+                                placeholder="Enter English description..."
+                                className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                            />
+                            {errors.descriptionEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionEn.message}</p>}
+                        </div>
                     </div>
 
                     {/* Facebook Group URL */}
@@ -633,7 +670,7 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                                     onClientUploadComplete={async (res) => {
                                         setIsUploadingThumbnail(false);
                                         if (res && res[0]) {
-                                            const newUrl = res[0].url;
+                                            const newUrl = (res[0] as any).ufsUrl || (res[0] as any).url;
                                             setValue('thumbnailUrl', newUrl);
                                         }
                                     }}

@@ -4,6 +4,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma, StoryStatus } from '@prisma/client';
 import Redis from 'ioredis';
 
+import { MailService } from '@/mail/mail.service';
+import { NotificationsService } from '@/notifications/notifications.service';
 import { ExploreQueryDto } from '@/stories/dto/explore-query.dto';
 import { PrismaService } from '@/prisma/prisma.service';
 import { SyncHistoryDto } from './dto/sync-history.dto';
@@ -29,6 +31,8 @@ type HistoryListItem = {
     id: string;
     chapterNumber: number;
     title: string;
+    titleVi?: string | null;
+    titleEn?: string | null;
     audioDuration: number | null;
     r2AudioUrl: string | null;
   };
@@ -46,6 +50,8 @@ export class UserFeaturesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
+    private readonly notificationsService: NotificationsService,
+    private readonly mailService: MailService,
   ) {
     const redisUrl = this.configService.get<string>('REDIS_URL');
     if (!redisUrl) {
@@ -179,6 +185,142 @@ export class UserFeaturesService {
     return { isFavorite: true };
   }
 
+  async getStorySubscriptionStatus(userId: string, storyId: string) {
+    const subscription = await this.prisma.userStorySubscription.findUnique({
+      where: {
+        userId_storyId: {
+          userId,
+          storyId,
+        },
+      },
+      select: { userId: true },
+    });
+
+    return { isSubscribed: Boolean(subscription) };
+  }
+
+  async toggleStorySubscription(userId: string, storyId: string) {
+    const story = await this.prisma.story.findUnique({
+      where: { id: storyId },
+      select: { id: true, deletedAt: true },
+    });
+
+    if (!story || story.deletedAt) {
+      throw new NotFoundException('Story not found');
+    }
+
+    const existing = await this.prisma.userStorySubscription.findUnique({
+      where: {
+        userId_storyId: {
+          userId,
+          storyId,
+        },
+      },
+    });
+
+    if (existing) {
+      await this.prisma.userStorySubscription.delete({
+        where: {
+          userId_storyId: {
+            userId,
+            storyId,
+          },
+        },
+      });
+
+      return { isSubscribed: false };
+    }
+
+    await this.prisma.userStorySubscription.create({
+      data: {
+        userId,
+        storyId,
+      },
+    });
+
+    return { isSubscribed: true };
+  }
+
+  async notifyStoryUpdated(
+    storyId: string,
+    chapterId: string,
+    updateType: 'new_chapter' | 'chapter_updated',
+  ) {
+    const story = await this.prisma.story.findUnique({
+      where: { id: storyId },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        titleVi: true,
+        titleEn: true,
+        userStorySubscriptions: {
+          select: {
+            userId: true,
+            user: {
+              select: {
+                email: true,
+                allowBellNoti: true,
+                allowEmailNoti: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!story || story.userStorySubscriptions.length === 0) {
+      return;
+    }
+
+    const chapter = await this.prisma.chapter.findUnique({
+      where: { id: chapterId },
+      select: {
+        id: true,
+        storyId: true,
+        chapterNumber: true,
+        title: true,
+        titleVi: true,
+        titleEn: true,
+      },
+    });
+
+    if (!chapter || chapter.storyId !== storyId) {
+      return;
+    }
+
+    const storyTitle = story.titleVi || story.titleEn || story.title;
+    const chapterTitle = chapter.titleVi || chapter.titleEn || chapter.title;
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const storyUrl = `${frontendUrl}/story/${story.slug}/chuong-${chapter.chapterNumber}`;
+
+    await Promise.all(
+      story.userStorySubscriptions.map(async (subscription) => {
+        if (subscription.user.allowBellNoti) {
+          await this.notificationsService.createStoryUpdateNotification(subscription.userId, {
+            storyId: story.id,
+            storySlug: story.slug,
+            storyTitle,
+            chapterId: chapter.id,
+            chapterNumber: chapter.chapterNumber,
+            chapterTitle,
+            updateType,
+          });
+        }
+
+        if (subscription.user.allowEmailNoti) {
+          await this.mailService.sendStoryUpdateEmail(subscription.user.email, {
+            storyTitle,
+            chapterNumber: chapter.chapterNumber,
+            chapterTitle,
+            storyUrl,
+            updateType,
+          });
+        }
+      }),
+    );
+  }
+
   async getFavorites(userId: string, query: ExploreQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
@@ -205,6 +347,8 @@ export class UserFeaturesService {
         ? {
           OR: [
             { title: { contains: query.search } },
+            { titleVi: { contains: query.search } },
+            { titleEn: { contains: query.search } },
             { author: { name: { contains: query.search } } },
           ],
         }
@@ -227,7 +371,17 @@ export class UserFeaturesService {
         skip: (page - 1) * limit,
         take: limit,
         orderBy,
-        include: {
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          titleVi: true,
+          titleEn: true,
+          thumbnailUrl: true,
+          totalViews: true,
+          status: true,
+          createdAt: true,
+          totalChapters: true,
           author: {
             select: {
               id: true,
@@ -333,6 +487,8 @@ export class UserFeaturesService {
               id: true,
               slug: true,
               title: true,
+              titleVi: true,
+              titleEn: true,
               thumbnailUrl: true,
               totalViews: true,
               status: true,
@@ -349,6 +505,8 @@ export class UserFeaturesService {
               id: true,
               chapterNumber: true,
               title: true,
+              titleVi: true,
+              titleEn: true,
               audioDuration: true,
               r2AudioUrl: true,
             },
@@ -394,6 +552,8 @@ export class UserFeaturesService {
             storyId: true,
             chapterNumber: true,
             title: true,
+            titleVi: true,
+            titleEn: true,
             audioDuration: true,
             r2AudioUrl: true,
             story: {
@@ -401,6 +561,8 @@ export class UserFeaturesService {
                 id: true,
                 slug: true,
                 title: true,
+                titleVi: true,
+                titleEn: true,
                 thumbnailUrl: true,
                 totalViews: true,
                 status: true,
@@ -430,6 +592,8 @@ export class UserFeaturesService {
             id: chapter.id,
             chapterNumber: chapter.chapterNumber,
             title: chapter.title,
+            titleVi: chapter.titleVi,
+            titleEn: chapter.titleEn,
             audioDuration: chapter.audioDuration,
             r2AudioUrl: chapter.r2AudioUrl,
           },

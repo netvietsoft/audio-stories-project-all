@@ -262,4 +262,56 @@ export class MailService {
       this.logger.error(`Failed to send payment success email to ${to}:`, error);
     }
   }
+
+  async sendStoryUpdateEmail(
+    to: string,
+    payload: {
+      storyTitle: string;
+      chapterNumber: number;
+      chapterTitle: string;
+      storyUrl: string;
+      updateType: 'new_chapter' | 'chapter_updated';
+    },
+  ) {
+    try {
+      const subject = payload.updateType === 'new_chapter'
+        ? `Truyện ${payload.storyTitle} có chương mới`
+        : `Truyện ${payload.storyTitle} vừa được cập nhật`;
+
+      const headline = payload.updateType === 'new_chapter'
+        ? 'Có chương mới đang chờ bạn'
+        : 'Nội dung truyện vừa được cập nhật';
+
+      const summary = payload.updateType === 'new_chapter'
+        ? `Chương ${payload.chapterNumber}: ${payload.chapterTitle} đã sẵn sàng để đọc và nghe.`
+        : `Chương ${payload.chapterNumber}: ${payload.chapterTitle} vừa có nội dung mới. Bạn có thể quay lại để tiếp tục theo dõi.`;
+
+      await this.transport.sendMail({
+        from: this.from,
+        to,
+        subject,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 24px; background: #f8fafc;">
+            <div style="background: #ffffff; border-radius: 16px; padding: 32px; border: 1px solid #e2e8f0;">
+              <p style="margin: 0 0 8px; font-size: 12px; letter-spacing: 1.6px; text-transform: uppercase; color: #6366f1; font-weight: 700;">NetViet Audio</p>
+              <h2 style="margin: 0 0 12px; color: #0f172a;">${headline}</h2>
+              <p style="margin: 0 0 20px; color: #334155; line-height: 1.6;">
+                Truyện <strong>${payload.storyTitle}</strong> vừa có cập nhật mới.<br />
+                ${summary}
+              </p>
+              <a href="${payload.storyUrl}" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 10px; font-weight: 700;">
+                Mở truyện ngay
+              </a>
+              <p style="margin: 24px 0 0; color: #94a3b8; font-size: 12px; line-height: 1.6;">
+                Bạn nhận được email này vì đã đăng ký nhận cập nhật của truyện và đang bật thông báo email trong cài đặt tài khoản.
+              </p>
+            </div>
+          </div>
+        `,
+      });
+      this.logger.log(`Story update email sent to ${to}`);
+    } catch (error) {
+      this.logger.error(`Failed to send story update email to ${to}:`, error);
+    }
+  }
 }

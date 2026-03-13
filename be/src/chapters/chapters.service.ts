@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
+import { UserFeaturesService } from '@/user-features/user-features.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { CreateStandaloneChapterDto } from './dto/create-standalone-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
@@ -8,14 +9,20 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ChaptersService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly userFeaturesService: UserFeaturesService,
+    ) { }
 
-    private normalizeAudioPayload<T extends { r2AudioUrl?: string; audioUrl?: string; thumbnailUrl?: string }>(data: T) {
-        const { audioUrl, ...rest } = data;
-        return {
-            ...rest,
-            ...(typeof audioUrl !== 'undefined' ? { r2AudioUrl: audioUrl } : {}),
-        };
+    private normalizeChapterFlatPayload(data: Record<string, any>) {
+        const next: Record<string, any> = { ...data };
+
+        next.title = next.titleVi || next.titleEn || next.title || '';
+        next.description = next.descriptionVi || next.descriptionEn || next.description || null;
+        next.content = next.contentVi || next.contentEn || next.content || null;
+        next.r2AudioUrl = next.audioUrlVi || next.audioUrlEn || next.r2AudioUrl || null;
+
+        return next;
     }
 
     async findAllByStory(storyId: string) {
@@ -110,15 +117,16 @@ export class ChaptersService {
         if (!story) throw new NotFoundException('Story not found');
 
         console.log('Creating chapter with data:', data);
-        const normalizedData = this.normalizeAudioPayload(data);
+        const normalizedData = this.normalizeChapterFlatPayload(data as any);
+        const createData: Prisma.ChapterUncheckedCreateInput = {
+            ...(normalizedData as Prisma.ChapterUncheckedCreateInput),
+            storyId,
+        };
         console.log('Normalized data:', normalizedData);
 
         const [chapter] = await this.prisma.$transaction([
             this.prisma.chapter.create({
-                data: {
-                    ...normalizedData,
-                    storyId,
-                },
+                data: createData,
             }),
             this.prisma.story.update({
                 where: { id: storyId },
@@ -126,22 +134,45 @@ export class ChaptersService {
             }),
         ]);
 
+        await this.userFeaturesService.notifyStoryUpdated(storyId, chapter.id, 'new_chapter');
+
         return chapter;
     }
 
     async createStandalone(data: CreateStandaloneChapterDto) {
         const { storyId, ...chapterData } = data;
 
-        return this.prisma.chapter.create({
-            data: {
-                ...this.normalizeAudioPayload(chapterData),
-                storyId,
-            },
+        const normalizedData = this.normalizeChapterFlatPayload(chapterData as any);
+        const createData: Prisma.ChapterUncheckedCreateInput = {
+            ...(normalizedData as Prisma.ChapterUncheckedCreateInput),
+            ...(storyId ? { storyId } : {}),
+        };
+
+        const chapter = await this.prisma.chapter.create({
+            data: createData,
         });
+
+        if (chapter.storyId) {
+            await this.userFeaturesService.notifyStoryUpdated(chapter.storyId, chapter.id, 'new_chapter');
+        }
+
+        return chapter;
     }
 
     async update(id: string, data: UpdateChapterDto) {
         const chapter = await this.findOne(id);
+        const shouldNotifyUpdate =
+            data.storyId !== undefined ||
+            data.titleVi !== undefined ||
+            data.titleEn !== undefined ||
+            data.descriptionVi !== undefined ||
+            data.descriptionEn !== undefined ||
+            data.contentVi !== undefined ||
+            data.contentEn !== undefined ||
+            data.r2AudioUrl !== undefined ||
+            data.audioUrlVi !== undefined ||
+            data.audioUrlEn !== undefined ||
+            data.thumbnailUrl !== undefined;
 
         console.log('Updating chapter with data:', data);
 
@@ -177,7 +208,7 @@ export class ChaptersService {
             // Separate storyId and chapterNumber from other fields for normalization
             const { storyId, chapterNumber, ...otherData } = data;
             const normalizedData = Object.keys(otherData).length > 0 
-                ? this.normalizeAudioPayload(otherData)
+                ? this.normalizeChapterFlatPayload(otherData as any)
                 : {};
 
             const updateData: any = {
@@ -220,17 +251,31 @@ export class ChaptersService {
             }
 
             const [updatedChapter] = await this.prisma.$transaction(updates);
+
+            if (updatedChapter.storyId && shouldNotifyUpdate) {
+                const updateType = chapter.storyId && chapter.storyId === updatedChapter.storyId
+                    ? 'chapter_updated'
+                    : 'new_chapter';
+                await this.userFeaturesService.notifyStoryUpdated(updatedChapter.storyId, updatedChapter.id, updateType);
+            }
+
             return updatedChapter;
         }
 
         // Normal update without storyId change
-        const normalizedData = this.normalizeAudioPayload(data);
+        const normalizedData = this.normalizeChapterFlatPayload(data as any);
         console.log('Normalized data:', normalizedData);
 
-        return this.prisma.chapter.update({
+        const updatedChapter = await this.prisma.chapter.update({
             where: { id },
             data: normalizedData,
         });
+
+        if (updatedChapter.storyId && shouldNotifyUpdate) {
+            await this.userFeaturesService.notifyStoryUpdated(updatedChapter.storyId, updatedChapter.id, 'chapter_updated');
+        }
+
+        return updatedChapter;
     }
 
     async remove(id: string) {

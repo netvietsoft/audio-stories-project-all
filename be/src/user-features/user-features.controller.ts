@@ -27,6 +27,16 @@ export class UserFeaturesController {
     return this.userFeaturesService.getFavorites(this.userIdFromAccount(account), query);
   }
 
+  @Get('story-subscriptions/:storyId/status')
+  getStorySubscriptionStatus(@Account() account: any, @Param('storyId') storyId: string) {
+    return this.userFeaturesService.getStorySubscriptionStatus(this.userIdFromAccount(account), storyId);
+  }
+
+  @Post('story-subscriptions/:storyId/toggle')
+  toggleStorySubscription(@Account() account: any, @Param('storyId') storyId: string) {
+    return this.userFeaturesService.toggleStorySubscription(this.userIdFromAccount(account), storyId);
+  }
+
   @Post('history/sync')
   syncHistory(@Account() account: any, @Body() dto: SyncHistoryDto) {
     return this.userFeaturesService.syncHistory(this.userIdFromAccount(account), dto);

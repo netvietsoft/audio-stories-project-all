@@ -10,12 +10,31 @@ import { UpdateStoryDto } from './dto/update-story.dto';
 export class StoriesService {
   constructor(private readonly prisma: PrismaService) { }
 
+  private normalizeNestedChapterPayload(chapter: any) {
+    return {
+      ...chapter,
+      title: chapter.titleVi || chapter.titleEn || '',
+      description: chapter.descriptionVi || chapter.descriptionEn || null,
+      content: chapter.contentVi || chapter.contentEn || null,
+      r2AudioUrl: chapter.audioUrlVi || chapter.audioUrlEn || chapter.r2AudioUrl || null,
+    };
+  }
+
+  private normalizeStoryFlatPayload(data: any) {
+    return {
+      ...data,
+      title: data.titleVi || data.titleEn || data.title || '',
+      description: data.descriptionVi || data.descriptionEn || data.description || null,
+    };
+  }
+
   async create(data: CreateStoryDto) {
     const { categoryIds, chapters, chapterIds, ...storyData } = data;
+    const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
 
     const story = await this.prisma.story.create({
       data: {
-        ...storyData,
+        ...normalizedStoryData,
         categories: categoryIds
           ? {
             create: categoryIds.map((id) => ({
@@ -26,7 +45,7 @@ export class StoriesService {
         totalChapters: (chapters?.length || 0) + (chapterIds?.length || 0),
         chapters: chapters?.length
           ? {
-            create: chapters,
+            create: chapters.map((chapter) => this.normalizeNestedChapterPayload(chapter)),
           }
           : undefined,
       },
@@ -126,6 +145,8 @@ export class StoriesService {
         id: true,
         slug: true,
         title: true,
+        titleVi: true,
+        titleEn: true,
         thumbnailUrl: true,
         status: true,
         totalViews: true,
@@ -146,7 +167,6 @@ export class StoriesService {
   async exploreStories(query: ExploreQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-    const language = query.lang ?? 'vi';
     const now = new Date();
     const trendWindowStart =
       query.trendWindow === 'today'
@@ -159,12 +179,13 @@ export class StoriesService {
 
     const where: Prisma.StoryWhereInput = {
       deletedAt: null,
-      language,
       ...(query.status ? { status: query.status as StoryStatus } : {}),
       ...(query.search
         ? {
           OR: [
             { title: { contains: query.search } },
+            { titleVi: { contains: query.search } },
+            { titleEn: { contains: query.search } },
             { author: { name: { contains: query.search } } },
           ],
         }
@@ -204,6 +225,8 @@ export class StoriesService {
           id: true,
           slug: true,
           title: true,
+          titleVi: true,
+          titleEn: true,
           thumbnailUrl: true,
           status: true,
           totalViews: true,
@@ -240,14 +263,13 @@ export class StoriesService {
     };
   }
 
-  async getTopCategories(limit = 5, lang: 'vi' | 'en' = 'vi') {
+  async getTopCategories(limit = 5, _lang: 'vi' | 'en' = 'vi') {
     const safeLimit = Math.min(Math.max(limit || 5, 1), 20);
     const grouped = await this.prisma.storyCategory.groupBy({
       by: ['categoryId'],
       where: {
         story: {
           deletedAt: null,
-          language: lang,
         },
       },
       _count: {
@@ -315,17 +337,17 @@ export class StoriesService {
   async findAllAdmin(query: ExploreQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-    const language = query.lang ?? 'vi';
 
     const where: Prisma.StoryWhereInput = {
       // Admin sees everything (including soft deleted if needed, but let's stick to non-deleted for now)
       deletedAt: null,
-      language,
       ...(query.status ? { status: query.status as StoryStatus } : {}),
       ...(query.search
         ? {
           OR: [
             { title: { contains: query.search } },
+            { titleVi: { contains: query.search } },
+            { titleEn: { contains: query.search } },
             { author: { name: { contains: query.search } } },
           ],
         }
@@ -402,6 +424,7 @@ export class StoriesService {
     }
 
     const { categoryIds, ...storyData } = data;
+    const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
 
     if (categoryIds) {
       await this.prisma.storyCategory.deleteMany({ where: { storyId: id } });
@@ -418,7 +441,7 @@ export class StoriesService {
 
     const updated = await this.prisma.story.update({
       where: { id },
-      data: storyData,
+      data: normalizedStoryData,
       include: {
         author: {
           select: {
@@ -464,11 +487,19 @@ export class StoriesService {
           select: {
             id: true,
             title: true,
+            titleVi: true,
+            titleEn: true,
             chapterNumber: true,
             description: true,
+            descriptionVi: true,
+            descriptionEn: true,
             thumbnailUrl: true,
             content: true,
+            contentVi: true,
+            contentEn: true,
             r2AudioUrl: true,
+            audioUrlVi: true,
+            audioUrlEn: true,
             youtubeVideoId: true,
             audioDuration: true,
             accessType: true,

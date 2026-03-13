@@ -37,6 +37,7 @@ model User {
   refreshTokens       RefreshToken[]
   authTokens          AuthToken[]
   userFavorites       UserFavorite[]
+  userStorySubscriptions UserStorySubscription[]
   listeningHistory    ListeningHistory[]
   userFollowAuthors   UserFollowAuthor[]
   reviews             Review[]
@@ -165,9 +166,13 @@ enum StoryStatus {
 model Story {
   id            String      @id @default(uuid()) @db.VarChar(36)
   title         String      @db.VarChar(300)
+  titleVi       String      @default("") @map("title_vi") @db.VarChar(300)
+  titleEn       String      @default("") @map("title_en") @db.VarChar(300)
   slug          String      @unique @db.VarChar(350)
   language      String      @default("vi") @db.VarChar(8)
   description   String?     @db.Text
+  descriptionVi String?     @map("description_vi") @db.Text
+  descriptionEn String?     @map("description_en") @db.Text
   thumbnailUrl  String?     @map("thumbnail_url") @db.Text
   authorId      String      @map("author_id") @db.VarChar(36)
   status        StoryStatus @default(ongoing)
@@ -190,6 +195,7 @@ model Story {
   categories       StoryCategory[]
   chapters         Chapter[]
   userFavorites    UserFavorite[]
+  userStorySubscriptions UserStorySubscription[]
   listeningHistory ListeningHistory[]
   reviews          Review[]
   audioReports     AudioReport[]
@@ -230,10 +236,18 @@ model Chapter {
   storyId        String?           @map("story_id") @db.VarChar(36)
   chapterNumber  Float             @map("chapter_number") @db.Float
   title          String            @db.VarChar(300)
+  titleVi        String            @default("") @map("title_vi") @db.VarChar(300)
+  titleEn        String            @default("") @map("title_en") @db.VarChar(300)
   description    String?           @db.Text
+  descriptionVi  String?           @map("description_vi") @db.Text
+  descriptionEn  String?           @map("description_en") @db.Text
   thumbnailUrl   String?           @map("thumbnail_url") @db.Text
   content        String?           @db.LongText
+  contentVi      String?           @map("content_vi") @db.LongText
+  contentEn      String?           @map("content_en") @db.LongText
   r2AudioUrl     String?           @map("r2_audio_url") @db.VarChar(500)
+  audioUrlVi     String?           @map("audio_url_vi") @db.VarChar(500)
+  audioUrlEn     String?           @map("audio_url_en") @db.VarChar(500)
   youtubeVideoId String?           @map("youtube_video_id") @db.VarChar(20)
   audioDuration  Int?              @map("audio_duration") @db.UnsignedInt
   accessType     ChapterAccessType @default(free) @map("access_type")
@@ -269,6 +283,21 @@ model UserFavorite {
   @@index([storyId])
   @@index([userId, createdAt])
   @@map("user_favorites")
+}
+
+model UserStorySubscription {
+  userId    String   @map("user_id") @db.VarChar(36)
+  storyId   String   @map("story_id") @db.VarChar(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@id([userId, storyId])
+  @@index([userId])
+  @@index([storyId])
+  @@index([userId, createdAt])
+  @@map("user_story_subscriptions")
 }
 
 model ListeningHistory {

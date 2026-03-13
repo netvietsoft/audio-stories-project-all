@@ -1,20 +1,33 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import { JsonLd } from "@/components/seo/JsonLd";
 import StoryChapterClient from "./_components/StoryChapterClient";
 
 type StoryMeta = {
   title: string;
+  titleVi?: string;
+  titleEn?: string;
   slug: string;
   description: string | null;
+  descriptionVi?: string | null;
+  descriptionEn?: string | null;
   thumbnailUrl: string | null;
   author?: { name: string };
   chapters: Array<{
     chapterNumber: number;
     title: string;
+    titleVi?: string;
+    titleEn?: string;
     description?: string | null;
+    descriptionVi?: string | null;
+    descriptionEn?: string | null;
   }>;
+};
+
+const localizedValue = (locale: string, vi?: string | null, en?: string | null, fallback?: string | null) => {
+  if (locale === "en") return en || vi || fallback || "";
+  return vi || en || fallback || "";
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
@@ -41,22 +54,31 @@ type Props = { params: Promise<{ slug: string; chapterSlug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await getTranslations("StoryPage");
+  const locale = await getLocale();
   const { slug, chapterSlug } = await params;
   const story = await fetchStoryMeta(slug);
   if (!story) return { title: t("notFound") };
+
+  const storyTitle = localizedValue(locale, story.titleVi, story.titleEn, story.title);
 
   const chapterNum = chapterNumberFromSlug(chapterSlug);
   const chapter = chapterNum
     ? story.chapters?.find((c) => c.chapterNumber === chapterNum)
     : story.chapters?.[0];
+  const chapterTitleValue = chapter
+    ? localizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)
+    : "";
+  const chapterDescription = chapter
+    ? localizedValue(locale, chapter.descriptionVi, chapter.descriptionEn, chapter.description || "")
+    : "";
 
   const chapterTitle = chapter
-    ? t("chapterTitle", { number: chapter.chapterNumber, title: chapter.title })
+    ? t("chapterTitle", { number: chapter.chapterNumber, title: chapterTitleValue })
     : t("chapterLoading");
-  const title = `${chapterTitle} – ${story.title}`;
+  const title = `${chapterTitle} – ${storyTitle}`;
   const description =
-    chapter?.description ||
-    t("chapterFallbackDescription", { chapterTitle, title: story.title });
+    chapterDescription ||
+    t("chapterFallbackDescription", { chapterTitle, title: storyTitle });
   const imageUrl = story.thumbnailUrl ?? `${SITE_URL}/og-default.jpg`;
 
   return {
@@ -80,8 +102,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function StoryChapterPage({ params }: Props) {
   const t = await getTranslations("StoryPage");
+  const locale = await getLocale();
   const { slug, chapterSlug } = await params;
   const story = await fetchStoryMeta(slug);
+  const storyTitle = story ? localizedValue(locale, story.titleVi, story.titleEn, story.title) : "";
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -93,7 +117,7 @@ export default async function StoryChapterPage({ params }: Props) {
             {
               "@type": "ListItem",
               position: 2,
-              name: story.title,
+              name: storyTitle,
               item: `${SITE_URL}/story/${story.slug}`,
             },
             {

@@ -10,34 +10,53 @@ export class UpdateChapterDto {
     @IsOptional()
     chapterNumber?: number;
 
-    @IsString()
     @IsOptional()
+    @IsString()
     @MaxLength(300)
-    title?: string;
+    titleVi?: string;
 
-    @IsString()
     @IsOptional()
+    @IsString()
+    @MaxLength(300)
+    titleEn?: string;
+
+    @IsOptional()
+    @IsString()
     @MaxLength(2000)
-    description?: string;
+    descriptionVi?: string;
 
-    @IsString()
     @IsOptional()
-    content?: string;
+    @IsString()
+    @MaxLength(2000)
+    descriptionEn?: string;
 
-    @IsString()
     @IsOptional()
+    @IsString()
+    contentVi?: string;
+
+    @IsOptional()
+    @IsString()
+    contentEn?: string;
+
+    @IsOptional()
+    @IsString()
     @MaxLength(500)
-    r2AudioUrl?: string;
+    audioUrlVi?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(500)
+    audioUrlEn?: string;
 
     @IsString()
     @IsOptional()
     @MaxLength(500)
     thumbnailUrl?: string;
 
-    @IsString()
     @IsOptional()
+    @IsString()
     @MaxLength(500)
-    audioUrl?: string;
+    r2AudioUrl?: string;
 
     @IsString()
     @IsOptional()

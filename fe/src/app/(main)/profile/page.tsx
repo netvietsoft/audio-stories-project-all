@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
     User,
@@ -25,11 +26,14 @@ import { apiClient } from "@/lib/api/api-client";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 import AvatarUpload from "@/components/profile/AvatarUpload";
+import { getLocalizedValue } from "@/lib/story-localization";
 
 type FavoriteStory = {
     id: string;
     slug: string;
     title: string;
+    titleVi?: string | null;
+    titleEn?: string | null;
     thumbnailUrl: string | null;
     status: "ongoing" | "completed";
     totalViews: number;
@@ -69,6 +73,8 @@ type HistoryItem = {
         id: string;
         slug: string;
         title: string;
+        titleVi?: string | null;
+        titleEn?: string | null;
         thumbnailUrl: string | null;
         author?: { name: string };
     };
@@ -76,6 +82,8 @@ type HistoryItem = {
         id: string;
         chapterNumber: number;
         title: string;
+        titleVi?: string | null;
+        titleEn?: string | null;
         audioDuration: number | null;
         r2AudioUrl: string | null;
     };
@@ -97,21 +105,23 @@ const formatDuration = (seconds?: number | null) => {
     return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
 };
 
-const timeAgo = (input: string) => {
+const timeAgo = (input: string, locale: string, t: (key: string, values?: Record<string, string | number>) => string) => {
     const diff = Date.now() - new Date(input).getTime();
-    if (Number.isNaN(diff) || diff < 0) return "Vừa xong";
+    if (Number.isNaN(diff) || diff < 0) return t("justNow");
     const min = Math.floor(diff / 60000);
-    if (min < 1) return "Vừa xong";
-    if (min < 60) return `${min} phút trước`;
+    if (min < 1) return t("justNow");
+    if (min < 60) return t("minutesAgo", { count: min });
     const hour = Math.floor(min / 60);
-    if (hour < 24) return `${hour} giờ trước`;
+    if (hour < 24) return t("hoursAgo", { count: hour });
     const day = Math.floor(hour / 24);
-    if (day < 30) return `${day} ngày trước`;
-    return new Date(input).toLocaleDateString("vi-VN");
+    if (day < 30) return t("daysAgo", { count: day });
+    return new Date(input).toLocaleDateString(locale === "en" ? "en-US" : "vi-VN");
 };
 
 export default function ProfilePage() {
     const router = useRouter();
+    const locale = useLocale();
+    const t = useTranslations("ProfilePage");
     const { user } = useUserStore();
     const [mounted, setMounted] = useState(false);
     const [activePanel, setActivePanel] = useState<PanelType>("activity");
@@ -177,15 +187,20 @@ export default function ProfilePage() {
         () =>
             historyItems.slice(0, 8).map((item) => ({
                 id: item.id,
-                text: `Đã nghe chương ${item.chapter.chapterNumber}: ${item.chapter.title} (${item.story.title})`,
-                time: timeAgo(item.lastListenedAt),
+                text: t("recentActivityHeard", {
+                    chapterNumber: item.chapter.chapterNumber,
+                    chapterTitle: getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title),
+                    storyTitle: getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title),
+                }),
+                time: timeAgo(item.lastListenedAt, locale, t),
                 rawTime: item.lastListenedAt,
             })),
-        [historyItems],
+        [historyItems, locale, t],
     );
 
     const resumeFromHistory = (item: HistoryItem) => {
         const href = `/story/${item.story.slug}/chuong-${item.chapter.chapterNumber}`;
+        const localizedChapterTitle = getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title);
         if (item.chapter.r2AudioUrl) {
             playTrack(
                 {
@@ -194,7 +209,7 @@ export default function ProfilePage() {
                     storyId: item.story.id,
                     storySlug: item.story.slug,
                     chapterNumber: item.chapter.chapterNumber,
-                    title: `Chương ${item.chapter.chapterNumber}: ${item.chapter.title}`,
+                    title: t("chapterTitle", { number: item.chapter.chapterNumber, title: localizedChapterTitle }),
                     author: item.story.author?.name,
                     audioUrl: item.chapter.r2AudioUrl,
                     coverUrl: item.story.thumbnailUrl || undefined,
@@ -258,7 +273,7 @@ export default function ProfilePage() {
         <div className="max-w-7xl mx-auto pb-20">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
-                    <h2 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Hồ sơ hiện tại</h2>
+                    <h2 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">{t("currentProfile")}</h2>
                     <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-end">
                         <div className="relative group">
                             <div className="h-28 w-28 overflow-hidden rounded-3xl border-4 border-white bg-white shadow-2xl dark:border-gray-900 md:h-36 md:w-36">
@@ -273,15 +288,15 @@ export default function ProfilePage() {
 
                         <div className="text-center sm:text-left">
                             <h1 className="flex items-center justify-center gap-2 text-3xl font-extrabold text-gray-900 dark:text-white sm:justify-start">
-                                {user.name || "Người dùng"}
+                                {user.name || t("userFallback")}
                                 <Award className="h-6 w-6 text-amber-500" />
                             </h1>
                             <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                                 <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
-                                    {user.roles?.[0] || "Thành viên"}
+                                    {user.roles?.[0] || t("member")}
                                 </span>
                                 <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    <Clock className="h-4 w-4 text-blue-500" /> Tham gia hệ thống
+                                    <Clock className="h-4 w-4 text-blue-500" /> {t("joinedSystem")}
                                 </span>
                             </div>
                         </div>
@@ -289,10 +304,10 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
-                    <h2 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Thông tin tài khoản</h2>
+                    <h2 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">{t("accountInfo")}</h2>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                            <label className="ml-1 text-xs font-extrabold uppercase tracking-widest text-gray-400">Tên tài khoản</label>
+                            <label className="ml-1 text-xs font-extrabold uppercase tracking-widest text-gray-400">{t("accountName")}</label>
                             <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/50">
                                 <User className="h-5 w-5 text-blue-500" />
                                 <span className="font-bold text-gray-700 dark:text-gray-200">{user.name || "N/A"}</span>
@@ -300,7 +315,7 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="ml-1 text-xs font-extrabold uppercase tracking-widest text-gray-400">Địa chỉ email</label>
+                            <label className="ml-1 text-xs font-extrabold uppercase tracking-widest text-gray-400">{t("emailAddress")}</label>
                             <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/50">
                                 <Mail className="h-5 w-5 text-indigo-500" />
                                 <span className="break-all font-bold text-gray-700 dark:text-gray-200">{user.email}</span>
@@ -308,28 +323,28 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="ml-1 text-xs font-extrabold uppercase tracking-widest text-gray-400">Xếp hạng</label>
+                            <label className="ml-1 text-xs font-extrabold uppercase tracking-widest text-gray-400">{t("rank")}</label>
                             <div className="rounded-2xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/50">
                                 <div className="flex items-center gap-2">
                                     <Shield className="h-5 w-5 text-gray-400" />
                                     <span className="rounded bg-gray-100 px-2 py-1 font-mono text-xs font-bold text-gray-500 dark:bg-gray-800">
-                                        Level {user.vipTier || 0}
+                                        {t("level", { level: user.vipTier || 0 })}
                                     </span>
                                 </div>
                                 {user.vipExpirationDate ? (
                                     <p className="mt-1 text-[11px] text-gray-400">
-                                        Hết hạn: {new Date(user.vipExpirationDate).toLocaleDateString("vi-VN")}
+                                        {t("expiresAt", { date: new Date(user.vipExpirationDate).toLocaleDateString(locale === "en" ? "en-US" : "vi-VN") })}
                                     </p>
                                 ) : null}
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <label className="ml-1 text-xs font-extrabold uppercase tracking-widest text-gray-400">Ví credits</label>
+                            <label className="ml-1 text-xs font-extrabold uppercase tracking-widest text-gray-400">{t("creditsWallet")}</label>
                             <div className="flex items-center gap-2 rounded-2xl border border-green-100 bg-green-50 p-3 dark:border-amber-900/30 dark:bg-green-900/10">
                                 <CreditCard className="h-5 w-5 text-amber-500" />
                                 <span className="text-lg font-extrabold text-green-700 dark:text-green-400">
-                                    {Number(user.credits ?? 0).toLocaleString("vi-VN")}
+                                    {Number(user.credits ?? 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
                                 </span>
                             </div>
                         </div>
@@ -341,43 +356,43 @@ export default function ProfilePage() {
                 <div className="space-y-6">
                     <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
                         <h3 className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 text-lg font-bold text-gray-900 dark:border-gray-700 dark:text-white">
-                            <Award className="h-5 w-5 text-amber-500" /> Thành tích cá nhân
+                            <Award className="h-5 w-5 text-amber-500" /> {t("personalAchievements")}
                         </h3>
                         <div className="space-y-5">
                             <div className="flex items-center justify-between">
                                 <span className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    <BookOpen className="h-4 w-4" /> Audio đã nghe
+                                    <BookOpen className="h-4 w-4" /> {t("audiosListened")}
                                 </span>
                                 <span className="font-extrabold text-blue-600 dark:text-blue-400">{listenedTotal}</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    <Heart className="h-4 w-4" /> Truyện yêu thích
+                                    <Heart className="h-4 w-4" /> {t("favoriteStories")}
                                 </span>
                                 <span className="font-extrabold text-red-500">{favoriteTotal}</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    <Calendar className="h-4 w-4" /> Ngày hoạt động
+                                    <Calendar className="h-4 w-4" /> {t("activeDays")}
                                 </span>
                                 <span className="font-mono font-extrabold text-green-500">{activeDays}</span>
                             </div>
                         </div>
                         {isLoadingData ? (
-                            <p className="mt-4 text-xs text-gray-400">Đang đồng bộ dữ liệu thật...</p>
+                            <p className="mt-4 text-xs text-gray-400">{t("syncingData")}</p>
                         ) : null}
                     </div>
 
                     <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
                         <div className="border-b border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
-                            <p className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">Quản lý</p>
+                            <p className="px-2 text-xs font-bold uppercase tracking-widest text-gray-400">{t("management")}</p>
                         </div>
                         <button
                             onClick={() => router.push("/profile/settings")}
                             className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
                         >
                             <Settings className="h-5 w-5 text-gray-400 transition-transform group-hover:rotate-45" />
-                            <span className="font-semibold">Cài đặt bảo mật</span>
+                            <span className="font-semibold">{t("securitySettings")}</span>
                             <ChevronRight className="ml-auto h-4 w-4 text-gray-300" />
                         </button>
                         <button
@@ -385,7 +400,7 @@ export default function ProfilePage() {
                             className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-blue-600 transition-colors hover:bg-blue-50 dark:border-gray-700 dark:text-blue-400 dark:hover:bg-blue-900/10"
                         >
                             <CreditCard className="h-5 w-5" />
-                            <span className="font-semibold">Nạp credits</span>
+                            <span className="font-semibold">{t("topUpCredits")}</span>
                             <ChevronRight className="ml-auto h-4 w-4" />
                         </button>
                         <button
@@ -393,7 +408,7 @@ export default function ProfilePage() {
                             className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
                         >
                             <CreditCard className="h-5 w-5 text-green-500" />
-                            <span className="font-semibold">Lịch sử giao dịch</span>
+                            <span className="font-semibold">{t("transactionHistory")}</span>
                             <ChevronRight className="ml-auto h-4 w-4 text-gray-300" />
                         </button>
                         <button
@@ -401,7 +416,7 @@ export default function ProfilePage() {
                             className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
                         >
                             <Heart className="h-5 w-5 text-red-500" />
-                            <span className="font-semibold">Truyện yêu thích</span>
+                            <span className="font-semibold">{t("favoriteStories")}</span>
                             <ChevronRight className="ml-auto h-4 w-4 text-gray-300" />
                         </button>
                         <button
@@ -409,7 +424,7 @@ export default function ProfilePage() {
                             className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
                         >
                             <History className="h-5 w-5 text-blue-500" />
-                            <span className="font-semibold">Lịch sử nghe</span>
+                            <span className="font-semibold">{t("listeningHistory")}</span>
                             <ChevronRight className="ml-auto h-4 w-4 text-gray-300" />
                         </button>
                         <button
@@ -417,7 +432,7 @@ export default function ProfilePage() {
                             className="group flex w-full items-center gap-3 px-6 py-4 text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700"
                         >
                             <Sparkles className="h-5 w-5 text-purple-500" />
-                            <span className="font-semibold">Hoạt động gần đây</span>
+                            <span className="font-semibold">{t("recentActivity")}</span>
                             <ChevronRight className="ml-auto h-4 w-4 text-gray-300" />
                         </button>
                     </div>
@@ -427,9 +442,9 @@ export default function ProfilePage() {
                     <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-2xl dark:border-gray-700 dark:bg-gray-800">
                         <div className="mb-8 flex items-center justify-between">
                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                {activePanel === "activity" && "Hoạt động gần đây"}
-                                {activePanel === "favorites" && "Truyện yêu thích"}
-                                {activePanel === "history" && "Lịch sử nghe"}
+                                {activePanel === "activity" && t("recentActivity")}
+                                {activePanel === "favorites" && t("favoriteStories")}
+                                {activePanel === "history" && t("listeningHistory")}
                             </h2>
                             {activePanel === "favorites" ? (
                                 <button
@@ -437,7 +452,7 @@ export default function ProfilePage() {
                                     onClick={() => void clearAllFavorites()}
                                     className="inline-flex items-center gap-1 rounded-lg border border-red-300 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20"
                                 >
-                                    <Trash2 className="h-3.5 w-3.5" /> Xóa toàn bộ
+                                    <Trash2 className="h-3.5 w-3.5" /> {t("clearAll")}
                                 </button>
                             ) : null}
                             {activePanel !== "favorites" ? (
@@ -446,7 +461,7 @@ export default function ProfilePage() {
                                     onClick={() => void clearAllHistory()}
                                     className="inline-flex items-center gap-1 rounded-lg border border-red-300 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20"
                                 >
-                                    <Trash2 className="h-3.5 w-3.5" /> Xóa toàn bộ
+                                    <Trash2 className="h-3.5 w-3.5" /> {t("clearAll")}
                                 </button>
                             ) : null}
                         </div>
@@ -470,7 +485,7 @@ export default function ProfilePage() {
                                                 onClick={() => void removeHistoryItem(history.id)}
                                                 className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20"
                                             >
-                                                <Trash2 className="h-3.5 w-3.5" /> Xóa
+                                                <Trash2 className="h-3.5 w-3.5" /> {t("delete")}
                                             </button>
                                         ) : null}
                                     </div>
@@ -493,7 +508,7 @@ export default function ProfilePage() {
                                                     <Link href={`/story/${story.slug}`}>
                                                         <img
                                                             src={story.thumbnailUrl || "https://placehold.co/240x360?text=No+Cover"}
-                                                            alt={story.title}
+                                                            alt={getLocalizedValue(locale, story.titleVi, story.titleEn, story.title)}
                                                             className="h-full w-full object-cover"
                                                         />
                                                     </Link>
@@ -502,29 +517,29 @@ export default function ProfilePage() {
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-start justify-between gap-2">
                                                         <Link href={`/story/${story.slug}`} className="min-w-0">
-                                                            <p className="line-clamp-2 text-base font-bold text-gray-900 dark:text-gray-100">{story.title}</p>
+                                                            <p className="line-clamp-2 text-base font-bold text-gray-900 dark:text-gray-100">{getLocalizedValue(locale, story.titleVi, story.titleEn, story.title)}</p>
                                                         </Link>
                                                         <button
                                                             disabled={isMutating}
                                                             onClick={() => void removeFavoriteItem(story.id)}
                                                             className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20"
                                                         >
-                                                            <Trash2 className="h-3.5 w-3.5" /> Xóa
+                                                            <Trash2 className="h-3.5 w-3.5" /> {t("delete")}
                                                         </button>
                                                     </div>
                                                     <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                                                        Tác giả: <b>{story.author?.name || "Đang cập nhật"}</b>
+                                                        {t("author")}: <b>{story.author?.name || t("updating")}</b>
                                                     </p>
                                                     <div className="mt-2 space-y-1 text-xs">
                                                         <div className="flex flex-wrap items-center gap-2">
-                                                            <span className="text-gray-500 dark:text-gray-400">{chapterTotal} chương</span>
+                                                            <span className="text-gray-500 dark:text-gray-400">{t("chaptersCount", { count: chapterTotal })}</span>
                                                             <span className="text-gray-400 dark:text-gray-500">-</span>
                                                             <span className="rounded bg-blue-100 px-2 py-1 font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                                                                {story.status === "completed" ? "Full" : "Đang ra"}
+                                                                {story.status === "completed" ? t("full") : t("ongoing")}
                                                             </span>
                                                         </div>
                                                         <p className="text-gray-500 dark:text-gray-400">
-                                                            {Number(story.totalViews || 0).toLocaleString("vi-VN")} lượt nghe
+                                                            {t("listens", { count: Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN") })}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -534,7 +549,7 @@ export default function ProfilePage() {
                                 </div>
                             ) : (
                                 <p className="rounded-2xl border border-dashed border-gray-300 p-6 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                                    Bạn chưa có truyện yêu thích nào.
+                                    {t("noFavorites")}
                                 </p>
                             )
                         ) : null}
@@ -551,26 +566,26 @@ export default function ProfilePage() {
                                                     <Link href={`/story/${item.story.slug}`} className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800">
                                                         <img
                                                             src={item.story.thumbnailUrl || "https://placehold.co/140x200?text=No+Cover"}
-                                                            alt={item.story.title}
+                                                            alt={getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title)}
                                                             className="h-full w-full object-cover"
                                                         />
                                                     </Link>
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex items-start justify-between gap-2">
-                                                            <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{item.story.title}</p>
+                                                            <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title)}</p>
                                                             <button
                                                                 disabled={isMutating}
                                                                 onClick={() => void removeHistoryItem(item.id)}
                                                                 className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20"
                                                             >
-                                                                <Trash2 className="h-3.5 w-3.5" /> Xóa
+                                                                <Trash2 className="h-3.5 w-3.5" /> {t("delete")}
                                                             </button>
                                                         </div>
                                                         <p className="mt-1 line-clamp-1 text-sm text-gray-600 dark:text-gray-300">
-                                                            Chương {item.chapter.chapterNumber}: {item.chapter.title}
+                                                            {t("chapterTitle", { number: item.chapter.chapterNumber, title: getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title) })}
                                                         </p>
                                                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                            Đã nghe {formatDuration(item.progressSeconds)} / {formatDuration(item.chapter.audioDuration)}
+                                                            {t("listenedProgress", { current: formatDuration(item.progressSeconds), total: formatDuration(item.chapter.audioDuration) })}
                                                         </p>
                                                         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
                                                             <div className="h-full rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
@@ -580,7 +595,7 @@ export default function ProfilePage() {
                                                                 onClick={() => resumeFromHistory(item)}
                                                                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
                                                             >
-                                                                <PlayCircle className="h-4 w-4" /> Nghe tiếp
+                                                                <PlayCircle className="h-4 w-4" /> {t("continueListening")}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -591,14 +606,14 @@ export default function ProfilePage() {
                                 </div>
                             ) : (
                                 <p className="rounded-2xl border border-dashed border-gray-300 p-6 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                                    Chưa có lịch sử nghe.
+                                    {t("noHistory")}
                                 </p>
                             )
                         ) : null}
 
                         {activePanel === "activity" && recentActivities.length === 0 ? (
                             <p className="rounded-2xl border border-dashed border-gray-300 p-6 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                                Chưa có dữ liệu hoạt động gần đây.
+                                {t("noRecentActivity")}
                             </p>
                         ) : null}
                     </div>

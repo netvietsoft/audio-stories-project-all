@@ -1,14 +1,17 @@
 import Link from "next/link";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Eye, Star } from "lucide-react";
 import FavoriteButton from "@/components/shared/FavoriteButton";
+import { getLocalizedValue } from "@/lib/story-localization";
 
 type StoryCardStory = {
   id: string;
   slug: string;
   title: string;
+  titleVi?: string | null;
+  titleEn?: string | null;
   thumbnailUrl: string | null;
   status: "ongoing" | "completed";
   totalViews: number;
@@ -31,12 +34,14 @@ type StoryCardProps = {
 
 export default function StoryCard({ story, className }: StoryCardProps) {
   const t = useTranslations("StoryCard");
+  const locale = useLocale();
   const isNew = story.createdAt
     ? Date.now() - new Date(story.createdAt).getTime() <= 7 * 24 * 60 * 60 * 1000
     : false;
-  const statusLabel = story.status === "completed" ? "Full" : isNew ? "New" : t("ongoing");
+  const statusLabel = story.status === "completed" ? t("full") : isNew ? t("new") : t("ongoing");
   const categoryLabel = story.categories?.[0]?.category?.name || t("updating");
   const rating = Number(story.averageRating || 0).toFixed(1);
+  const localizedTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
 
   return (
     <Link
@@ -45,7 +50,7 @@ export default function StoryCard({ story, className }: StoryCardProps) {
     >
       <Image
         src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
-        alt={story.title}
+        alt={localizedTitle}
         fill
         sizes="(max-width: 768px) 150px, 250px"
         className="object-cover transition-transform duration-500 group-hover:scale-110"
@@ -69,7 +74,7 @@ export default function StoryCard({ story, className }: StoryCardProps) {
 
       <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3 z-10 pointer-events-none flex flex-col">
         <h3 className="text-white font-bold text-sm md:text-base leading-tight line-clamp-2 mb-1">
-          {story.title}
+          {localizedTitle}
         </h3>
 
         <p className="text-gray-300 text-[10px] md:text-xs truncate mb-1.5 md:mb-2">
@@ -83,7 +88,7 @@ export default function StoryCard({ story, className }: StoryCardProps) {
           </div>
           <div className="flex items-center gap-1 text-[10px] md:text-xs text-gray-300">
             <Eye className="w-3 h-3 md:w-3.5 md:h-3.5" />
-            <span>{Number(story.totalViews || 0).toLocaleString("vi-VN")}</span>
+            <span>{Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}</span>
           </div>
         </div>
       </div>

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ChevronDown, Eye } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { getLocalizedValue } from "@/lib/story-localization";
 
 type CategoryItem = {
   id: number;
@@ -26,6 +27,8 @@ type StoryItem = {
   id: string;
   slug: string;
   title: string;
+  titleVi?: string | null;
+  titleEn?: string | null;
   thumbnailUrl: string | null;
   status: "ongoing" | "completed";
   totalViews: number;
@@ -46,6 +49,7 @@ const LIMIT = 12;
 export default function CategoriesClient({ initialSlug }: { initialSlug?: string }) {
   const t = useTranslations("CategoryStoriesPage");
   const tCommon = useTranslations("Common");
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -54,11 +58,6 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
-  const [totalStories, setTotalStories] = useState(0);
-
-  const [activeTab, setActiveTab] = useState<"tien_hiep" | "truyen_ngan">("tien_hiep");
-
-  const [wordCount, setWordCount] = useState<string>("all");
   const [sort, setSort] = useState<"latest" | "views" | "rating" | "title_asc" | "chapters_desc">("latest");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -80,7 +79,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
   useEffect(() => {
     const loadCategories = async () => {
       const res = await apiClient.get<{ data: CategoryItem[] }>("/stories/categories-with-count");
-      setCategories([{ id: 0, name: "Tất cả", slug: "all", storiesCount: 0 }, ...(res.data.data || [])]);
+      setCategories([{ id: 0, name: t("allCategories"), slug: "all", storiesCount: 0 }, ...(res.data.data || [])]);
     };
     
     const loadAuthors = async () => {
@@ -94,9 +93,20 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
     
     void loadCategories();
     void loadAuthors();
-  }, []);
+  }, [t]);
 
   const currentCategory = useMemo(() => categories.find((item) => item.slug === activeSlug), [categories, activeSlug]);
+  const currentCategoryName = currentCategory?.name ?? t("allCategories");
+  const selectedSortLabel =
+    sort === "latest"
+      ? t("sortLatest")
+      : sort === "views"
+        ? t("sortViews")
+        : sort === "rating"
+          ? t("sortRating")
+          : sort === "title_asc"
+            ? t("sortTitle")
+            : t("sortChapters");
 
   const selectedAuthor = useMemo(() => authors.find(a => a.id === author), [authors, author]);
   
@@ -129,7 +139,6 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
       });
       setStories(res.data.data || []);
       setLastPage(res.data.meta?.lastPage || 1);
-      setTotalStories(res.data.meta?.total || 0);
     };
 
     void loadStories();
@@ -176,24 +185,26 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
         {/* Keywords */}
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">
-            Các từ khóa liên quan đến {currentCategory?.name !== "Tất cả" ? currentCategory?.name?.toLowerCase() : "tiểu thuyết lịch sử"}
+            {t("relatedKeywords", {
+              name: currentCategory?.name !== t("allCategories") ? currentCategoryName.toLowerCase() : t("defaultKeywordTopic"),
+            })}
           </h3>
           <div className="flex flex-wrap gap-2">
             <span className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md cursor-pointer hover:bg-gray-200">
-              sói hoàng hôn
+              {t("keyword1")}
             </span>
             <span className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md cursor-pointer hover:bg-gray-200">
-              người sói trực tuyến
+              {t("keyword2")}
             </span>
             <span className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md cursor-pointer hover:bg-gray-200">
-              biến hình người sói nữ
+              {t("keyword3")}
             </span>
           </div>
         </div>
 
         {/* Popular Searches */}
         <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Tìm kiếm phổ biến</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">{t("popularSearches")}</h3>
           {/* Mock content for popular searches */}
         </div>
       </div>
@@ -201,14 +212,14 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
       {/* MAIN CONTENT */}
       <div className="flex-1 min-w-0">
         <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-          {currentCategory?.name !== "Tất cả" ? currentCategory?.name : "Tất cả tiểu thuyết"}
+          {currentCategory?.name !== t("allCategories") ? currentCategoryName : t("allStoriesTitle")}
         </h1>
 
         {/* Description Box */}
-        {currentCategory && currentCategory.name !== "Tất cả" && (
+        {currentCategory && currentCategory.name !== t("allCategories") && (
           <div className="bg-blue-50 dark:bg-blue-500/20 rounded-xl p-4 mb-6 flex items-center justify-between">
             <p className="text-sm text-black dark:text-white line-clamp-1">
-              {currentCategory.description || `Tiểu thuyết về ${currentCategory.name.toLowerCase()} là một thể loại văn học miêu tả ${currentCategory.name.toLowerCase()} và những sinh vật biến hình thần...`}
+              {currentCategory.description || t("categoryFallbackDescription", { name: currentCategory.name.toLowerCase() })}
             </p>
             <button className="text-blue-700 dark:text-blue-300 p-1">
               <ChevronDown className="h-5 w-5" />
@@ -221,7 +232,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full flex-1">
             <input
               type="text"
-              placeholder="Tìm kiếm truyện..."
+              placeholder={t("searchStoriesPlaceholder")}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full lg:max-w-[20rem] min-w-0"
@@ -238,9 +249,9 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                 className="flex items-center justify-between w-full sm:w-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 text-slate-900 dark:text-white rounded-lg px-4 py-2 text-sm"
               >
                 <span>
-                  {status === "" && "Tất cả trạng thái"}
-                  {status === "ongoing" && "Đang ra"}
-                  {status === "completed" && "Đã hoàn thành"}
+                  {status === "" && t("allStatuses")}
+                  {status === "ongoing" && t("ongoing")}
+                  {status === "completed" && t("completedLong")}
                 </span>
                 <ChevronDown className="h-4 w-4 text-gray-500" />
               </button>
@@ -248,9 +259,9 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
               {statusDropdownOpen && (
                 <div className="absolute left-0 mt-2 w-full sm:w-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1">
                   {[
-                    { id: "", label: "Tất cả trạng thái" },
-                    { id: "ongoing", label: "Đang ra" },
-                    { id: "completed", label: "Đã hoàn thành" },
+                    { id: "", label: t("allStatuses") },
+                    { id: "ongoing", label: t("ongoing") },
+                    { id: "completed", label: t("completedLong") },
                   ].map((s) => (
                     <button
                       key={s.id}
@@ -284,7 +295,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                 className="flex items-center justify-between w-full sm:w-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 text-slate-900 dark:text-white rounded-lg px-4 py-2 text-sm"
               >
                 <span className="truncate">
-                  {selectedAuthor ? selectedAuthor.name : "Chọn tác giả..."}
+                  {selectedAuthor ? selectedAuthor.name : t("selectAuthor")}
                 </span>
                 <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
               </button>
@@ -293,7 +304,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                 <div className="absolute left-0 mt-2 w-full sm:w-64 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 p-2">
                    <input
                       type="text"
-                      placeholder="Tìm kiếm tác giả..."
+                     placeholder={t("searchAuthorPlaceholder")}
                       value={authorSearch}
                       onChange={(e) => setAuthorSearch(e.target.value)}
                       className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 mb-1"
@@ -305,7 +316,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                         className="flex justify-between items-center w-full px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md"
                       >
                         <span className={!author ? "font-semibold text-blue-600 dark:text-blue-400" : ""}>
-                          Tất cả tác giả
+                          {t("allAuthors")}
                         </span>
                         {!author && <span className="text-blue-600 dark:text-blue-400">✓</span>}
                       </button>
@@ -325,7 +336,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                       
                       {filteredAuthors.length === 0 && (
                         <div className="px-3 py-4 text-sm text-center text-slate-500">
-                          Không tìm thấy tác giả
+                          {t("authorNotFound")}
                         </div>
                       )}
                     </div>
@@ -344,24 +355,18 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
               }}
               className="flex items-center justify-between w-full lg:w-44 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-slate-900 dark:text-white rounded-lg px-4 py-2 font-medium text-sm"
             >
-              <span>
-                {sort === "latest" && "Mới cập nhật"}
-                {sort === "views" && "Lượt xem"}
-                {sort === "rating" && "Đánh giá"}
-                {sort === "title_asc" && "Tên A-Z"}
-                {sort === "chapters_desc" && "Số chương"}
-              </span>
+              <span>{selectedSortLabel}</span>
               <ChevronDown className="h-4 w-4 text-gray-500" />
             </button>
 
             {sortDropdownOpen && (
               <div className="absolute right-0 mt-2 w-full sm:w-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1">
                 {[
-                  { id: "latest", label: "Mới cập nhật" },
-                  { id: "views", label: "Lượt xem" },
-                  { id: "rating", label: "Đánh giá" },
-                  { id: "title_asc", label: "Tên A-Z" },
-                  { id: "chapters_desc", label: "Số chương" },
+                  { id: "latest", label: t("sortLatest") },
+                  { id: "views", label: t("sortViews") },
+                  { id: "rating", label: t("sortRating") },
+                  { id: "title_asc", label: t("sortTitle") },
+                  { id: "chapters_desc", label: t("sortChapters") },
                 ].map((s) => (
                   <button
                     key={s.id}
@@ -388,7 +393,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
         {/* Story Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
           {stories.map((story) => (
-            <HorizontalStoryCard key={story.id} story={story} />
+            <HorizontalStoryCard key={story.id} story={story} locale={locale} />
           ))}
         </div>
 
@@ -417,17 +422,18 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
   );
 }
 
-function HorizontalStoryCard({ story }: { story: StoryItem }) {
+function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: string }) {
+  const t = useTranslations("CategoryStoriesPage");
   const rating = Number(story.averageRating || 0).toFixed(1);
   const views = story.totalViews > 1000 ? (story.totalViews / 1000).toFixed(1) + 'K' : story.totalViews;
-  const isNew = story.createdAt ? Date.now() - new Date(story.createdAt).getTime() <= 7 * 24 * 60 * 60 * 1000 : false;
+  const localizedTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
 
   return (
     <div className="flex gap-4 group cursor-pointer bg-white dark:bg-slate-900 rounded-xl overflow-hidden p-2 transition hover:bg-gray-50 dark:hover:bg-slate-800">
       <div className="relative w-[100px] h-[133px] flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
         <Image
           src={story.thumbnailUrl || "https://placehold.co/200x300?text=No+Cover"}
-          alt={story.title}
+          alt={localizedTitle}
           fill
           sizes="100px"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -441,7 +447,7 @@ function HorizontalStoryCard({ story }: { story: StoryItem }) {
         <div>
           <Link href={`/story/${story.slug}`} className="block">
             <h3 className="font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-blue-600 transition-colors">
-              {story.title}
+              {localizedTitle}
             </h3>
           </Link>
           <div className="flex flex-wrap gap-2 mt-1">
@@ -458,10 +464,10 @@ function HorizontalStoryCard({ story }: { story: StoryItem }) {
             ))}
           </div>
           <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-1.5">
-            {story.author?.name || "Đang cập nhật"}
+            {story.author?.name || t("updating")}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">
-            {story.description || "Một câu chuyện tình yêu trong thế giới mafia. Một thế giới đen tối với biết bao bí ẩn..."}
+            {story.description || t("storyFallbackDescription")}
           </p>
         </div>
 
@@ -471,7 +477,7 @@ function HorizontalStoryCard({ story }: { story: StoryItem }) {
             <span>{rating}</span>
           </div>
           <div className="text-gray-500">
-            {views}
+            {t("viewsShort", { count: views })}
           </div>
         </div>
       </div>

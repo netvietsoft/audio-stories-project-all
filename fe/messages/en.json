@@ -292,6 +292,16 @@
     "ongoing": "Ongoing",
     "updating": "Updating"
   },
+  "StoryListView": {
+    "noChapters": "No chapters yet",
+    "statusOngoing": "Ongoing",
+    "chapterLabel": "Chapter {number}: {title}",
+    "justNow": "just now",
+    "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
+    "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
+    "weeksAgo": "{count, plural, one {# week ago} other {# weeks ago}}",
+    "monthsAgo": "{count, plural, one {# month ago} other {# months ago}}"
+  },
   "StoryFilterBar": {
     "quickFilter": "Quick filters",
     "allCategories": "All categories",

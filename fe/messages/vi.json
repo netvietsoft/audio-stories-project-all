@@ -292,6 +292,16 @@
     "ongoing": "Đang ra",
     "updating": "Đang cập nhật"
   },
+  "StoryListView": {
+    "noChapters": "Chưa có chương nào",
+    "statusOngoing": "Đang cập nhật",
+    "chapterLabel": "Chương {number}: {title}",
+    "justNow": "vừa xong",
+    "hoursAgo": "{count} giờ trước",
+    "daysAgo": "{count} ngày trước",
+    "weeksAgo": "{count} tuần trước",
+    "monthsAgo": "{count} tháng trước"
+  },
   "StoryFilterBar": {
     "quickFilter": "Bộ lọc nhanh",
     "allCategories": "Tất cả thể loại",

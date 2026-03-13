@@ -75,6 +75,7 @@ export default function Navbar() {
   // Refs
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const notifMenuRef = useRef<HTMLDivElement>(null);
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -143,6 +144,9 @@ export default function Navbar() {
       }
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSearchDropdown(false);
+      }
+      if (notifMenuRef.current && !notifMenuRef.current.contains(event.target as Node)) {
+        setIsNotifOpen(false);
       }
     };
 

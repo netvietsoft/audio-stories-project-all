@@ -3,10 +3,15 @@ import { getRequestConfig } from "next-intl/server";
 
 import { defaultLocale, isValidLocale, localeCookieName } from "../i18n";
 
-export default getRequestConfig(async () => {
+export default getRequestConfig(async ({ requestLocale }) => {
   const cookieStore = await cookies();
+  const localeFromRequest = await requestLocale;
   const localeFromCookie = cookieStore.get(localeCookieName)?.value;
-  const locale = isValidLocale(localeFromCookie) ? localeFromCookie : defaultLocale;
+  const locale = isValidLocale(localeFromRequest)
+    ? localeFromRequest
+    : isValidLocale(localeFromCookie)
+      ? localeFromCookie
+      : defaultLocale;
 
   const messageLoaders: Record<string, () => Promise<{ default: Record<string, unknown> }>> = {
     vi: () => import("../../messages/vi.json"),

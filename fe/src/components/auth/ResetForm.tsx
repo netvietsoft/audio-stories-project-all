@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { resetByCodeSchema } from "@/lib/validation/auth";
@@ -21,6 +21,8 @@ export default function ResetForm({ token, onSuccess }: ResetFormProps = {}) {
   const tAuth = useTranslations("Auth");
   const searchParams = useSearchParams();
   const router = useRouter();
+  const params = useParams<{ lang?: string }>();
+  const currentLang = params?.lang === "en" ? "en" : "vi";
   const emailFromQuery = searchParams.get("email") || "";
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export default function ResetForm({ token, onSuccess }: ResetFormProps = {}) {
         code: data.code,
         newPassword: data.password,
       });
-      router.push("/login?reset=1");
+      router.push(`/${currentLang}/login?reset=1`);
     } catch (error) {
       const message =
         typeof error === "object" &&

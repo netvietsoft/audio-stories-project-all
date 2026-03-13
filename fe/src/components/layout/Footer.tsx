@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/shared/LocalizedLink";
 import { getTranslations } from "next-intl/server";
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
 

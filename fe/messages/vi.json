@@ -109,6 +109,12 @@
     "ageRatingAll": "Mọi lứa tuổi",
     "listens": "{count} lượt nghe",
     "favorite": "Thêm vào yêu thích",
+    "share": "Chia sẻ",
+    "sharePrompt": "Nghe truyện này cùng mình nhé",
+    "copiedLink": "Đã sao chép liên kết truyện",
+    "languageSwitcherLabel": "Chọn ngôn ngữ",
+    "languageOptionVi": "🌐 Tiếng Việt",
+    "languageOptionEn": "🌐 English",
     "descriptionUpdating": "Truyện đang cập nhật giới thiệu.",
     "listenFromFirst": "Nghe từ chương đầu",
     "joinFacebook": "Tham gia cộng đồng",
@@ -291,6 +297,16 @@
     "full": "Full",
     "ongoing": "Đang ra",
     "updating": "Đang cập nhật"
+  },
+  "StoryListView": {
+    "noChapters": "Chưa có chương nào",
+    "statusOngoing": "Đang cập nhật",
+    "chapterLabel": "Chương {number}: {title}",
+    "justNow": "vừa xong",
+    "hoursAgo": "{count} giờ trước",
+    "daysAgo": "{count} ngày trước",
+    "weeksAgo": "{count} tuần trước",
+    "monthsAgo": "{count} tháng trước"
   },
   "StoryFilterBar": {
     "quickFilter": "Bộ lọc nhanh",

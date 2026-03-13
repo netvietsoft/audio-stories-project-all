@@ -24,26 +24,23 @@ export function proxy(request: NextRequest) {
           ? localeFromCookie
           : defaultLocale;
 
-    const normalizedPathname = prefixedLocale
-        ? pathname.replace(localePrefixMatcher, "") || "/"
-        : pathname;
+    if (!prefixedLocale) {
+        const redirectedUrl = request.nextUrl.clone();
+        redirectedUrl.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
+        const response = NextResponse.redirect(redirectedUrl);
+        response.cookies.set(localeCookieName, locale, { path: "/" });
+        return response;
+    }
+
+    const normalizedPathname = pathname.replace(localePrefixMatcher, "") || "/";
 
     const isProtectedRoute = AUTH_PROTECTED_PREFIXES.some((prefix) =>
         normalizedPathname.startsWith(prefix),
     );
     const isAuthRoute = authRoutes.some((route) => normalizedPathname.startsWith(route));
 
-    if (prefixedLocale) {
-        const rewriteUrl = request.nextUrl.clone();
-        rewriteUrl.pathname = normalizedPathname;
-
-        const response = NextResponse.rewrite(rewriteUrl);
-        response.cookies.set(localeCookieName, locale, { path: "/" });
-        return response;
-    }
-
     if (isProtectedRoute && !hasAccessToken) {
-        const loginUrl = new URL(AUTH_LOGIN_PATH, request.url);
+        const loginUrl = new URL(`/${locale}${AUTH_LOGIN_PATH}`, request.url);
         loginUrl.searchParams.set("redirect", normalizedPathname);
         const response = NextResponse.redirect(loginUrl);
         response.cookies.set(localeCookieName, locale, { path: "/" });
@@ -51,7 +48,7 @@ export function proxy(request: NextRequest) {
     }
 
     if (isAuthRoute && hasAccessToken) {
-        const response = NextResponse.redirect(new URL(AUTH_HOME_PATH, request.url));
+        const response = NextResponse.redirect(new URL(`/${locale}${AUTH_HOME_PATH}`, request.url));
         response.cookies.set(localeCookieName, locale, { path: "/" });
         return response;
     }

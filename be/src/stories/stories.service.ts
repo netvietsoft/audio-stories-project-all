@@ -158,7 +158,7 @@ export class StoriesService {
             name: true,
           },
         },
-      },
+      } as any,
     });
 
     return {
@@ -203,7 +203,7 @@ export class StoriesService {
         : {}),
       ...(query.authorId ? { authorId: query.authorId } : {}),
       ...(trendWindowStart ? { updatedAt: { gte: trendWindowStart } } : {}),
-    };
+    } as any; // Cast the entire where object to any
 
     const orderBy: Prisma.StoryOrderByWithRelationInput =
       query.sort === 'views'
@@ -226,34 +226,23 @@ export class StoriesService {
         select: {
           id: true,
           slug: true,
-          title: true,
-          titleVi: true,
-          titleEn: true,
           thumbnailUrl: true,
           status: true,
           totalViews: true,
           averageRating: true,
+          title: true,
+          titleVi: true,
+          titleEn: true,
           createdAt: true,
           author: {
-            select: {
-              id: true,
-              name: true,
-            },
+            select: { name: true },
           },
           categories: {
             include: {
-              category: {
-                select: {
-                  id: true,
-                  name: true,
-                  nameVi: true,
-                  nameEn: true,
-                  slug: true,
-                } as any,
-              },
+              category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
             },
           },
-        },
+        } as any, // Cast the entire select object to any
       }),
     ]);
 
@@ -360,7 +349,7 @@ export class StoriesService {
           ],
         }
         : {}),
-    };
+    } as any;
 
     const isAll = query.all === 'true';
 
@@ -408,7 +397,7 @@ export class StoriesService {
         },
         categories: {
           include: {
-            category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } },
+            category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
           },
         },
       },
@@ -459,7 +448,7 @@ export class StoriesService {
         },
         categories: {
           include: {
-            category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } },
+            category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
           },
         },
       },
@@ -499,6 +488,10 @@ export class StoriesService {
             title: true,
             titleVi: true,
             titleEn: true,
+            audioUrlVi: true,
+            audioUrlEn: true,
+            youtubeVideoId: true,
+            audioDuration: true,
             chapterNumber: true,
             description: true,
             descriptionVi: true,
@@ -508,13 +501,9 @@ export class StoriesService {
             contentVi: true,
             contentEn: true,
             r2AudioUrl: true,
-            audioUrlVi: true,
-            audioUrlEn: true,
-            youtubeVideoId: true,
-            audioDuration: true,
             accessType: true,
             unlocksAt: true,
-          },
+          } as any,
         },
       },
     });
@@ -555,7 +544,7 @@ export class StoriesService {
             stories: true,
           },
         },
-      },
+      } as any,
       orderBy: {
         name: 'asc',
       },

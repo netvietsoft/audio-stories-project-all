@@ -109,6 +109,12 @@
     "ageRatingAll": "All ages",
     "listens": "{count} listens",
     "favorite": "Add to favorites",
+    "share": "Share",
+    "sharePrompt": "Listen to this story with me",
+    "copiedLink": "Story link copied",
+    "languageSwitcherLabel": "Select language",
+    "languageOptionVi": "🌐 Vietnamese",
+    "languageOptionEn": "🌐 English",
     "descriptionUpdating": "Story description is being updated.",
     "listenFromFirst": "Start from first chapter",
     "joinFacebook": "Join community",
@@ -291,6 +297,16 @@
     "full": "Full",
     "ongoing": "Ongoing",
     "updating": "Updating"
+  },
+  "StoryListView": {
+    "noChapters": "No chapters yet",
+    "statusOngoing": "Ongoing",
+    "chapterLabel": "Chapter {number}: {title}",
+    "justNow": "just now",
+    "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
+    "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
+    "weeksAgo": "{count, plural, one {# week ago} other {# weeks ago}}",
+    "monthsAgo": "{count, plural, one {# month ago} other {# months ago}}"
   },
   "StoryFilterBar": {
     "quickFilter": "Quick filters",

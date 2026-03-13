@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { Clock } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 type ChapterItem = {
   id: string;
@@ -22,28 +23,29 @@ interface StoryListViewProps {
   isLoading?: boolean;
 }
 
-const formatTimeAgo = (dateString?: string) => {
-  if (!dateString) return "";
-  
-  const now = new Date();
-  const date = new Date(dateString);
-  const diffInMs = now.getTime() - date.getTime();
-  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-  
-  if (diffInHours < 1) return "vừa xong";
-  if (diffInHours < 24) return `${diffInHours} giờ trước`;
-  
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) return `${diffInDays} ngày trước`;
-  
-  const diffInWeeks = Math.floor(diffInDays / 7);
-  if (diffInWeeks < 4) return `${diffInWeeks} tuần trước`;
-  
-  const diffInMonths = Math.floor(diffInDays / 30);
-  return `${diffInMonths} tháng trước`;
-};
-
 export default function StoryListView({ chapters, isLoading }: StoryListViewProps) {
+  const t = useTranslations("StoryListView");
+
+  const formatTimeAgo = (dateString?: string) => {
+    if (!dateString) return "";
+
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+
+    if (diffInHours < 1) return t("justNow");
+    if (diffInHours < 24) return t("hoursAgo", { count: diffInHours });
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return t("daysAgo", { count: diffInDays });
+
+    const diffInWeeks = Math.floor(diffInDays / 7);
+    if (diffInWeeks < 4) return t("weeksAgo", { count: diffInWeeks });
+
+    const diffInMonths = Math.floor(diffInDays / 30);
+    return t("monthsAgo", { count: diffInMonths });
+  };
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -68,7 +70,7 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
   if (!chapters || chapters.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-        Chưa có chương nào
+        {t("noChapters")}
       </div>
     );
   }
@@ -96,14 +98,14 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
                 {chapter.story.title}
               </h3>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                Đang cập nhật
+                {t("statusOngoing")}
               </p>
             </div>
           </div>
 
           {/* Center: Chapter Info */}
           <div className="hidden md:block text-sm text-gray-600 dark:text-gray-400 w-64 truncate">
-            Chương {chapter.chapterNumber}: {chapter.title}
+            {t("chapterLabel", { number: chapter.chapterNumber, title: chapter.title })}
           </div>
 
           {/* Right: Time */}

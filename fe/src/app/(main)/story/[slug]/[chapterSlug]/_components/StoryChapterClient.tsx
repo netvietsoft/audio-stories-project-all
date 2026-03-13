@@ -553,6 +553,17 @@ export default function StoryChapterClient() {
 
   const hasPlayableAudio = Boolean(selectedChapterAudioUrl);
   const playerCoverUrl = selectedChapter?.thumbnailUrl || story?.thumbnailUrl || "https://placehold.co/300x300?text=No+Cover";
+  const isSelectedChapterTrack = Boolean(
+    selectedChapter &&
+      currentTrack?.id === selectedChapter.id &&
+      (!story?.id || currentTrack?.storyId === story.id),
+  );
+  const isSelectedChapterPlaying = isSelectedChapterTrack && isPlaying;
+  const playerDuration = isSelectedChapterTrack
+    ? duration
+    : (selectedChapter?.audioDuration || 0);
+  const playerCurrentTime = isSelectedChapterTrack ? currentTime : 0;
+  const canSeekSelectedChapter = hasPlayableAudio && isSelectedChapterTrack;
 
   useEffect(() => {
     if (!story || !currentTrack || currentTrack.storyId !== story.id) return;
@@ -737,6 +748,7 @@ export default function StoryChapterClient() {
   }, [activeChapterIndex, isShuffle, playByIndex, story]);
 
   const seekBy = (seconds: number) => {
+    if (!canSeekSelectedChapter) return;
     seekTo(currentTime + seconds);
   };
 
@@ -1055,7 +1067,7 @@ export default function StoryChapterClient() {
 
           <div className="mt-4 grid gap-3 md:grid-cols-[120px_minmax(0,1fr)] lg:grid-cols-[136px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
             <div className="flex flex-col items-center justify-center gap-3">
-              <div className={`relative h-24 w-24 overflow-hidden rounded-full border-4 border-blue-200 dark:border-blue-900 lg:h-28 lg:w-28 ${isPlaying ? "animate-spin [animation-duration:10s]" : ""}`}>
+              <div className={`relative h-24 w-24 overflow-hidden rounded-full border-4 border-blue-200 dark:border-blue-900 lg:h-28 lg:w-28 ${isSelectedChapterPlaying ? "animate-spin [animation-duration:10s]" : ""}`}>
                 <img
                   src={playerCoverUrl}
                   alt={story.title}
@@ -1075,16 +1087,19 @@ export default function StoryChapterClient() {
               <input
                 type="range"
                 min={0}
-                max={duration || 0}
+                max={playerDuration || 0}
                 step={1}
-                value={Math.min(currentTime, duration || 0)}
-                onChange={(event) => seekTo(Number(event.target.value))}
+                value={Math.min(playerCurrentTime, playerDuration || 0)}
+                onChange={(event) => {
+                  if (!canSeekSelectedChapter) return;
+                  seekTo(Number(event.target.value));
+                }}
                 className="w-full accent-blue-600"
               />
 
               <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                <span>{formatDuration(currentTime)}</span>
-                <span>{formatDuration(duration)}</span>
+                <span>{formatDuration(playerCurrentTime)}</span>
+                <span>{formatDuration(playerDuration)}</span>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
@@ -1092,7 +1107,11 @@ export default function StoryChapterClient() {
                   <SkipBack className="h-4 w-4" />
                 </button>
 
-                <button onClick={() => seekBy(-10)} className="rounded-full border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-600">
+                <button
+                  onClick={() => seekBy(-10)}
+                  disabled={!canSeekSelectedChapter}
+                  className="rounded-full border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
                   -10s
                 </button>
 
@@ -1103,19 +1122,23 @@ export default function StoryChapterClient() {
                       return;
                     }
                     if (!hasPlayableAudio) return;
-                    if (currentTrack?.id !== selectedChapter.id && story) {
-                      void playChapter(selectedChapter, story);
+                    if (!isSelectedChapterTrack && story) {
+                      void playChapter(selectedChapter, story, true);
                       return;
                     }
-                    togglePlay(!isPlaying);
+                    togglePlay(!isSelectedChapterPlaying);
                   }}
                   disabled={!hasPlayableAudio}
                   className="rounded-full bg-blue-600 p-3 text-white shadow-lg transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
                 >
-                  {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                  {isSelectedChapterPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                 </button>
 
-                <button onClick={() => seekBy(10)} className="rounded-full border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-600">
+                <button
+                  onClick={() => seekBy(10)}
+                  disabled={!canSeekSelectedChapter}
+                  className="rounded-full border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
                   +10s
                 </button>
 

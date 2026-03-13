@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { forgotShema } from "@/lib/validation/auth"; 
-import Link from "next/link";
+import Link from "@/components/shared/LocalizedLink";
 import { apiClient } from "@/lib/api/api-client";
 import { Mail, Loader2, AlertCircle, CheckCircle2, KeyRound } from "lucide-react";
 

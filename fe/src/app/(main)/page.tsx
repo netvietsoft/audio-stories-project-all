@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import HorizontalStorySlider from "@/components/shared/HorizontalStorySlider";
+import StoryListView from "@/components/shared/StoryListView";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
 import { useRouter } from "next/navigation";
@@ -60,6 +61,7 @@ export default function HomePage() {
   const router = useRouter();
 
   const [newestStories, setNewestStories] = useState<StoryItem[]>([]);
+  const [newestChapters, setNewestChapters] = useState<any[]>([]);
   const [popularStories, setPopularStories] = useState<StoryItem[]>([]);
   const [trendingStories, setTrendingStories] = useState<StoryItem[]>([]);
   const [topRatingStories, setTopRatingStories] = useState<StoryItem[]>([]);
@@ -94,6 +96,7 @@ export default function HomePage() {
       try {
         const [
           newestRes,
+          newestChaptersRes,
           popularRes,
           trendingRes,
           topRatingRes,
@@ -104,6 +107,7 @@ export default function HomePage() {
           authorRes,
         ] = await Promise.allSettled([
           fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
+          apiClient.get("/chapters/latest", { params: { limit: 15 } }).then((r) => r.data || []).catch(() => []),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "views", trendWindow: "week" }),
           fetchExploreCached<ExploreResponse>({ limit: RANKING_LIMIT, lang, sort: "rating" }),
@@ -127,6 +131,7 @@ export default function HomePage() {
         ]);
 
         setNewestStories(newestRes.status === "fulfilled" ? (newestRes.value.data || []) : []);
+        setNewestChapters(newestChaptersRes.status === "fulfilled" ? newestChaptersRes.value : []);
         setPopularStories(popularRes.status === "fulfilled" ? (popularRes.value.data || []) : []);
         setTrendingStories(trendingRes.status === "fulfilled" ? (trendingRes.value.data || []) : []);
         setTopRatingStories(topRatingRes.status === "fulfilled" ? (topRatingRes.value.data || []) : []);
@@ -251,7 +256,7 @@ export default function HomePage() {
         isLoading={isLoading}
       />
 
-      {/* ─── Truyện mới đăng (5 truyện, 2/3/5 cols) ─────────────── */}
+      {/* ─── Truyện mới đăng (List view) ─────────────── */}
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -262,14 +267,9 @@ export default function HomePage() {
             {t("viewAll")}
           </Link>
         </div>
-          <HorizontalStorySlider
-            stories={newestStories}
-            isLoading={isLoading}
-            limit={NEW_LIMIT}
-            showArrows={false}
-            size="large"
-            fixedDesktopCols={5}
-          />
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4">
+          <StoryListView chapters={newestChapters} isLoading={isLoading} />
+        </div>
       </section>
 
       {/* ─── Truyện phổ biến (8 truyện: slider mobile, grid 8-col desktop) ─ */}

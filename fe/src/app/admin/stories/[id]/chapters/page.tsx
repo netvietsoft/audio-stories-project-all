@@ -192,7 +192,7 @@ export default function StoryChaptersPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="sticky top-0 z-10">
+      <div className="top-0">
         <div className="max-w-7xl mx-auto px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">

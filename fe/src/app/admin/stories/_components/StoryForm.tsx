@@ -205,7 +205,8 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
     );
 
     const filteredCategories = categories.filter(c =>
-        c.name.toLowerCase().includes(categorySearch.toLowerCase())
+        c.name.toLowerCase().includes(categorySearch.toLowerCase()) &&
+        !selectedCategoryIds.includes(c.id)
     );
 
     const filteredChapters = initialData?.id
@@ -390,8 +391,23 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                                         selectedCategoryIds.map(id => {
                                             const cat = categories.find(c => c.id === id);
                                             return cat ? (
-                                                <span key={id} className="bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-lg uppercase tracking-wider">
+                                                <span 
+                                                    key={id} 
+                                                    className="group relative bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-lg uppercase tracking-wider hover:pr-7 transition-all duration-200"
+                                                >
                                                     {cat.name}
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedCategoryIds(prev => prev.filter(cid => cid !== id));
+                                                        }}
+                                                        className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-indigo-700 rounded p-0.5"
+                                                    >
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
                                                 </span>
                                             ) : null;
                                         })

@@ -180,7 +180,8 @@ export default function EditStoryPage() {
   );
 
   const filteredCategories = categories.filter(c =>
-    c.name.toLowerCase().includes(categorySearch.toLowerCase())
+    c.name.toLowerCase().includes(categorySearch.toLowerCase()) &&
+    !selectedCategoryIds.includes(c.id)
   );
 
   const selectedAuthor = authors.find(a => a.id === selectedAuthorId);
@@ -521,8 +522,23 @@ export default function EditStoryPage() {
                         selectedCategoryIds.map(id => {
                           const cat = categories.find(c => c.id === id);
                           return cat ? (
-                            <span key={id} className="bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-lg font-bold">
+                            <span 
+                              key={id} 
+                              className="group relative bg-indigo-100 text-indigo-700 text-xs px-2 py-1 rounded-lg font-bold hover:pr-7 transition-all duration-200"
+                            >
                               {cat.name}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setValue('categoryIds', selectedCategoryIds.filter((cid: number) => cid !== id));
+                                }}
+                                className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-indigo-200 rounded p-0.5"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
                             </span>
                           ) : null;
                         })

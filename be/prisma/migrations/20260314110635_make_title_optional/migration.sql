@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE `categories` ADD COLUMN `name_en` VARCHAR(100) NOT NULL DEFAULT '',
+    ADD COLUMN `name_vi` VARCHAR(100) NOT NULL DEFAULT '';
+
+-- AlterTable
+ALTER TABLE `stories` MODIFY `title` VARCHAR(300) NOT NULL DEFAULT '';

@@ -29,7 +29,24 @@ export class StoriesService {
   }
 
   async create(data: CreateStoryDto) {
+    // Validate that at least one title and one description exist
+    if (!data.titleVi && !data.titleEn) {
+      throw new BadRequestException('At least one title (titleVi or titleEn) must be provided');
+    }
+    if (!data.descriptionVi && !data.descriptionEn) {
+      throw new BadRequestException('At least one description (descriptionVi or descriptionEn) must be provided');
+    }
+
     const { categoryIds, chapters, chapterIds, ...storyData } = data;
+    
+    // Set title and description from locale-specific fields for backward compatibility
+    if (!storyData.title) {
+      storyData.title = storyData.titleVi || storyData.titleEn || '';
+    }
+    if (!storyData.description) {
+      storyData.description = storyData.descriptionVi || storyData.descriptionEn || '';
+    }
+    
     const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
 
     const story = await this.prisma.story.create({

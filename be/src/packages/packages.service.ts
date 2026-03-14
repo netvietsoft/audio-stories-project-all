@@ -19,12 +19,9 @@ export class PackagesService {
 
         try {
             const allPackages = JSON.parse(packagesSetting.value);
-            if (!lang) return allPackages;
-
-            // Filter by language: include if lang matches or if package has no lang specified
-            return allPackages.filter((pkg: any) => 
-                !pkg.lang || pkg.lang === lang || pkg.lang === 'all'
-            );
+            // Return all packages - frontend will handle locale-specific display
+            // Each package now has nameVi, nameEn, descriptionVi, descriptionEn
+            return allPackages;
         } catch {
             return [];
         }

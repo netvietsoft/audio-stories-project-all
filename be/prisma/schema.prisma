@@ -167,7 +167,7 @@ enum StoryStatus {
 
 model Story {
   id            String      @id @default(uuid()) @db.VarChar(36)
-  title         String      @db.VarChar(300)
+  title         String      @default("") @db.VarChar(300)
   titleVi       String      @default("") @map("title_vi") @db.VarChar(300)
   titleEn       String      @default("") @map("title_en") @db.VarChar(300)
   slug          String      @unique @db.VarChar(350)

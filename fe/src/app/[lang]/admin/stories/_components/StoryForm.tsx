@@ -24,11 +24,11 @@ import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { UploadButton } from '@/lib/uploadthing';
 
 const storySchema = z.object({
-    titleVi: z.string().min(1, 'Tiêu đề tiếng Việt không được để trống'),
-    titleEn: z.string().min(1, 'Tiêu đề tiếng Anh không được để trống'),
+    titleVi: z.string().optional(),
+    titleEn: z.string().optional(),
     slug: z.string().min(1, 'Slug không được để trống'),
-    descriptionVi: z.string().min(1, 'Mô tả tiếng Việt không được để trống'),
-    descriptionEn: z.string().min(1, 'Mô tả tiếng Anh không được để trống'),
+    descriptionVi: z.string().optional(),
+    descriptionEn: z.string().optional(),
     thumbnailUrl: z.string().optional(),
     authorId: z.string().uuid('Vui lòng chọn tác giả'),
     status: z.enum(['ongoing', 'completed']),
@@ -36,6 +36,12 @@ const storySchema = z.object({
     audioUrl: z.string().optional(),
     facebookGroupUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
     isRecommended: z.boolean().optional(),
+}).refine((data) => data.titleVi || data.titleEn, {
+    message: 'Phải có ít nhất một tiêu đề (Tiếng Việt hoặc English)',
+    path: ['titleVi'],
+}).refine((data) => data.descriptionVi || data.descriptionEn, {
+    message: 'Phải có ít nhất một mô tả (Tiếng Việt hoặc English)',
+    path: ['descriptionVi'],
 });
 
 
@@ -60,12 +66,13 @@ interface Author {
 
 interface StoryFormProps {
     initialData?: Partial<StoryFormValues> & { id?: string };
+    selectedLocale?: 'vi' | 'en';
     onSubmit: (data: StoryFormValues) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
 }
 
-export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryFormProps) => {
+export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCancel, isLoading }: StoryFormProps) => {
     const [categories, setCategories] = useState<Category[]>([]);
     const [authors, setAuthors] = useState<Author[]>([]);
     const [isFetchingMeta, setIsFetchingMeta] = useState(true);
@@ -264,25 +271,17 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
 
             <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-8 space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-2">
-                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tiêu đề truyện (Tiếng Việt)</label>
-                            <input
-                                {...register('titleVi')}
-                                placeholder="Nhập tên truyện tiếng Việt"
-                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                            />
-                            {errors.titleVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleVi.message}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Story Title (English)</label>
-                            <input
-                                {...register('titleEn')}
-                                placeholder="Enter story title in English"
-                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                            />
-                            {errors.titleEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleEn.message}</p>}
-                        </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
+                            {selectedLocale === 'vi' ? 'Tiêu đề truyện (Tiếng Việt)' : 'Story Title (English)'}
+                        </label>
+                        <input
+                            {...register(selectedLocale === 'vi' ? 'titleVi' : 'titleEn')}
+                            placeholder={selectedLocale === 'vi' ? 'Nhập tên truyện tiếng Việt' : 'Enter story title in English'}
+                            className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                        />
+                        {selectedLocale === 'vi' && errors.titleVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleVi.message}</p>}
+                        {selectedLocale === 'en' && errors.titleEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleEn.message}</p>}
                     </div>
 
                     {/* Hàng 2: Input slug và trạng thái */}
@@ -616,27 +615,18 @@ export const StoryForm = ({ initialData, onSubmit, onCancel, isLoading }: StoryF
                         )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-2">
-                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Giới thiệu truyện (Tiếng Việt)</label>
-                            <textarea
-                                {...register('descriptionVi')}
-                                rows={5}
-                                placeholder="Nhập giới thiệu tiếng Việt..."
-                                className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
-                            />
-                            {errors.descriptionVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionVi.message}</p>}
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Story Description (English)</label>
-                            <textarea
-                                {...register('descriptionEn')}
-                                rows={5}
-                                placeholder="Enter English description..."
-                                className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
-                            />
-                            {errors.descriptionEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionEn.message}</p>}
-                        </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
+                            {selectedLocale === 'vi' ? 'Giới thiệu truyện (Tiếng Việt)' : 'Story Description (English)'}
+                        </label>
+                        <textarea
+                            {...register(selectedLocale === 'vi' ? 'descriptionVi' : 'descriptionEn')}
+                            rows={5}
+                            placeholder={selectedLocale === 'vi' ? 'Nhập giới thiệu tiếng Việt...' : 'Enter English description...'}
+                            className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                        />
+                        {selectedLocale === 'vi' && errors.descriptionVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionVi.message}</p>}
+                        {selectedLocale === 'en' && errors.descriptionEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionEn.message}</p>}
                     </div>
 
                     {/* Facebook Group URL */}

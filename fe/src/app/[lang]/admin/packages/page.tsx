@@ -18,11 +18,17 @@ import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 
 interface PaymentPackage {
     code: string;
-    name: string;
+    nameVi?: string;
+    nameEn?: string;
+    name?: string;
     priceVnd: number;
     credits: number;
+    descriptionVi?: string;
+    descriptionEn?: string;
     description?: string;
     isActive: boolean;
+    isPopular?: boolean;
+    isBestValue?: boolean;
     displayOrder: number;
     createdAt?: string;
     updatedAt?: string;
@@ -34,13 +40,18 @@ export default function PackagesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCode, setEditingCode] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [selectedLocale, setSelectedLocale] = useState<'vi' | 'en'>('vi');
     const [formData, setFormData] = useState<Partial<PaymentPackage>>({
         code: '',
-        name: '',
+        nameVi: '',
+        nameEn: '',
         priceVnd: 0,
         credits: 0,
-        description: '',
+        descriptionVi: '',
+        descriptionEn: '',
         isActive: true,
+        isPopular: false,
+        isBestValue: false,
         displayOrder: 0,
     });
 
@@ -68,11 +79,15 @@ export default function PackagesPage() {
             setEditingCode(null);
             setFormData({
                 code: '',
-                name: '',
+                nameVi: '',
+                nameEn: '',
                 priceVnd: 0,
                 credits: 0,
-                description: '',
+                descriptionVi: '',
+                descriptionEn: '',
                 isActive: true,
+                isPopular: false,
+                isBestValue: false,
                 displayOrder: packages.length,
             });
         }
@@ -92,8 +107,8 @@ export default function PackagesPage() {
         console.log('Editing code:', editingCode);
         
         // Validation
-        if (!formData.code || !formData.name) {
-            alert('Vui lòng điền đầy đủ thông tin bắt buộc (Code và Tên gói)!');
+        if (!formData.code || (!formData.nameVi && !formData.nameEn)) {
+            alert('Vui lòng điền đầy đủ thông tin bắt buộc (Code và ít nhất một tên gói)!');
             return;
         }
         
@@ -109,11 +124,15 @@ export default function PackagesPage() {
             if (editingCode) {
                 // For update, only send allowed fields (exclude code, createdAt, updatedAt)
                 const updateData = {
-                    name: formData.name,
+                    nameVi: formData.nameVi,
+                    nameEn: formData.nameEn,
                     priceVnd: formData.priceVnd,
                     credits: formData.credits,
-                    description: formData.description,
+                    descriptionVi: formData.descriptionVi,
+                    descriptionEn: formData.descriptionEn,
                     isActive: formData.isActive,
+                    isPopular: formData.isPopular,
+                    isBestValue: formData.isBestValue,
                     displayOrder: formData.displayOrder,
                 };
                 console.log('PATCH request to:', `/packages/${editingCode}`);
@@ -124,11 +143,15 @@ export default function PackagesPage() {
                 // For create, send all fields except timestamps
                 const createData = {
                     code: formData.code,
-                    name: formData.name,
+                    nameVi: formData.nameVi,
+                    nameEn: formData.nameEn,
                     priceVnd: formData.priceVnd,
                     credits: formData.credits,
-                    description: formData.description,
+                    descriptionVi: formData.descriptionVi,
+                    descriptionEn: formData.descriptionEn,
                     isActive: formData.isActive,
+                    isPopular: formData.isPopular,
+                    isBestValue: formData.isBestValue,
                     displayOrder: formData.displayOrder,
                 };
                 console.log('POST request to:', '/packages');
@@ -192,13 +215,38 @@ export default function PackagesPage() {
                         Cấu hình các gói credits và giá bán
                     </p>
                 </div>
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-200"
-                >
-                    <Plus className="w-4 h-4" />
-                    Thêm gói mới
-                </button>
+                <div className="flex items-center gap-3">
+                    {/* Locale Selector */}
+                    <div className="flex items-center gap-2 bg-white rounded-xl border-2 border-slate-200 p-1">
+                        <button
+                            onClick={() => setSelectedLocale('vi')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                selectedLocale === 'vi'
+                                    ? 'bg-emerald-600 text-white shadow-md'
+                                    : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            🇻🇳 Tiếng Việt
+                        </button>
+                        <button
+                            onClick={() => setSelectedLocale('en')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                selectedLocale === 'en'
+                                    ? 'bg-emerald-600 text-white shadow-md'
+                                    : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            🇬🇧 English
+                        </button>
+                    </div>
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-200"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Thêm gói mới
+                    </button>
+                </div>
             </div>
 
             {/* Packages Grid */}
@@ -212,7 +260,7 @@ export default function PackagesPage() {
                             }`}
                         >
                             {/* Status Badge */}
-                            <div className="absolute top-4 right-4">
+                            <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
                                 {pkg.isActive ? (
                                     <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-black text-emerald-600 uppercase">
                                         <Eye className="w-3 h-3" /> Active
@@ -222,6 +270,16 @@ export default function PackagesPage() {
                                         <EyeOff className="w-3 h-3" /> Inactive
                                     </span>
                                 )}
+                                {pkg.isPopular && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-600 uppercase">
+                                        ⭐ Phổ biến
+                                    </span>
+                                )}
+                                {pkg.isBestValue && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 border border-amber-100 text-[10px] font-black text-amber-600 uppercase">
+                                        💎 Tiết kiệm
+                                    </span>
+                                )}
                             </div>
 
                             {/* Package Info */}
@@ -229,7 +287,9 @@ export default function PackagesPage() {
                                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center mb-4">
                                     <Coins className="w-7 h-7 text-white" />
                                 </div>
-                                <h3 className="text-xl font-black text-slate-900 mb-1">{pkg.name}</h3>
+                                <h3 className="text-xl font-black text-slate-900 mb-1">
+                                    {selectedLocale === 'vi' ? (pkg.nameVi || pkg.name) : (pkg.nameEn || pkg.name)}
+                                </h3>
                                 <p className="text-xs font-mono text-slate-400 uppercase tracking-wider">
                                     Code: {pkg.code}
                                 </p>
@@ -248,8 +308,10 @@ export default function PackagesPage() {
                             </div>
 
                             {/* Description */}
-                            {pkg.description && (
-                                <p className="text-xs text-slate-500 mb-4 line-clamp-2">{pkg.description}</p>
+                            {((selectedLocale === 'vi' && pkg.descriptionVi) || (selectedLocale === 'en' && pkg.descriptionEn) || pkg.description) && (
+                                <p className="text-xs text-slate-500 mb-4 line-clamp-2">
+                                    {selectedLocale === 'vi' ? (pkg.descriptionVi || pkg.description) : (pkg.descriptionEn || pkg.description)}
+                                </p>
                             )}
 
                             {/* Actions */}
@@ -302,12 +364,39 @@ export default function PackagesPage() {
                                     {editingCode ? `Code: ${editingCode}` : 'Tạo gói thanh toán mới'}
                                 </p>
                             </div>
-                            <button
-                                onClick={handleCloseModal}
-                                className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
+                            <div className="flex items-center gap-3">
+                                {/* Locale Selector in Modal */}
+                                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedLocale('vi')}
+                                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                                            selectedLocale === 'vi'
+                                                ? 'bg-white text-emerald-600 shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        🇻🇳 VI
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedLocale('en')}
+                                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                                            selectedLocale === 'en'
+                                                ? 'bg-white text-emerald-600 shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        🇬🇧 EN
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={handleCloseModal}
+                                    className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
                         <form onSubmit={(e) => {
                             e.preventDefault();
@@ -332,16 +421,25 @@ export default function PackagesPage() {
 
                             <div className="space-y-2">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
-                                    Tên gói *
+                                    {selectedLocale === 'vi' ? 'Tên gói (Tiếng Việt) *' : 'Package Name (English) *'}
                                 </label>
                                 <input
                                     type="text"
-                                    value={formData.name || ''}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="vd: Gói 10.000 VND"
+                                    value={selectedLocale === 'vi' ? (formData.nameVi || '') : (formData.nameEn || '')}
+                                    onChange={(e) => setFormData({ 
+                                        ...formData, 
+                                        [selectedLocale === 'vi' ? 'nameVi' : 'nameEn']: e.target.value 
+                                    })}
+                                    placeholder={selectedLocale === 'vi' ? 'vd: Gói 10.000 VND' : 'e.g: 10,000 VND Package'}
                                     required
                                     className="w-full bg-slate-50 border-none rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 transition-all"
                                 />
+                                <p className="text-xs text-slate-400 mt-1">
+                                    {selectedLocale === 'vi' 
+                                        ? `Tên tiếng Anh: ${formData.nameEn || '(chưa có)'}` 
+                                        : `Vietnamese name: ${formData.nameVi || '(chưa có)'}`
+                                    }
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
@@ -378,15 +476,24 @@ export default function PackagesPage() {
 
                             <div className="space-y-2">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
-                                    Mô tả (tùy chọn)
+                                    {selectedLocale === 'vi' ? 'Mô tả (Tiếng Việt)' : 'Description (English)'}
                                 </label>
                                 <textarea
-                                    value={formData.description || ''}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    rows={3}
-                                    placeholder="Mô tả ngắn gọn về gói..."
+                                    value={selectedLocale === 'vi' ? (formData.descriptionVi || '') : (formData.descriptionEn || '')}
+                                    onChange={(e) => setFormData({ 
+                                        ...formData, 
+                                        [selectedLocale === 'vi' ? 'descriptionVi' : 'descriptionEn']: e.target.value 
+                                    })}
+                                    rows={2}
+                                    placeholder={selectedLocale === 'vi' ? 'Mô tả ngắn gọn về gói...' : 'Brief description of the package...'}
                                     className="w-full bg-slate-50 border-none rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none"
                                 />
+                                <p className="text-xs text-slate-400 mt-1">
+                                    {selectedLocale === 'vi' 
+                                        ? `Mô tả tiếng Anh: ${formData.descriptionEn || '(chưa có)'}` 
+                                        : `Vietnamese description: ${formData.descriptionVi || '(chưa có)'}`
+                                    }
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
@@ -423,6 +530,56 @@ export default function PackagesPage() {
                                         </button>
                                         <span className="text-sm font-medium text-slate-600">
                                             {formData.isActive ? 'Hoạt động' : 'Tắt'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
+                                        Gói phổ biến
+                                    </label>
+                                    <div className="flex items-center gap-3 h-[48px]">
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, isPopular: !formData.isPopular })}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                formData.isPopular ? 'bg-blue-600' : 'bg-slate-200'
+                                            }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                    formData.isPopular ? 'translate-x-6' : 'translate-x-1'
+                                                }`}
+                                            />
+                                        </button>
+                                        <span className="text-sm font-medium text-slate-600">
+                                            {formData.isPopular ? '⭐ Phổ biến' : 'Không'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
+                                        Gói tiết kiệm
+                                    </label>
+                                    <div className="flex items-center gap-3 h-[48px]">
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData({ ...formData, isBestValue: !formData.isBestValue })}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                                formData.isBestValue ? 'bg-amber-600' : 'bg-slate-200'
+                                            }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                                    formData.isBestValue ? 'translate-x-6' : 'translate-x-1'
+                                                }`}
+                                            />
+                                        </button>
+                                        <span className="text-sm font-medium text-slate-600">
+                                            {formData.isBestValue ? '💎 Tiết kiệm' : 'Không'}
                                         </span>
                                     </div>
                                 </div>

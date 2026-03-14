@@ -14,6 +14,21 @@ export class UpdatePackageDto {
     @IsInt()
     @IsPositive()
     @IsOptional()
+    price?: number;
+
+    @IsString()
+    @IsOptional()
+    @MaxLength(10)
+    currency?: string;
+
+    @IsString()
+    @IsOptional()
+    @MaxLength(10)
+    lang?: string;
+
+    @IsInt()
+    @IsPositive()
+    @IsOptional()
     credits?: number;
 
     @IsString()

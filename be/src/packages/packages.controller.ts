@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, Query } from '@nestjs/common';
 import { PackagesService } from './packages.service';
 import { CreatePackageDto } from './dto/create-package.dto';
 import { UpdatePackageDto } from './dto/update-package.dto';
@@ -11,8 +11,8 @@ export class PackagesController {
     constructor(private readonly packagesService: PackagesService) { }
 
     @Get()
-    findAll() {
-        return this.packagesService.findAll();
+    findAll(@Query('lang') lang?: string) {
+        return this.packagesService.findAll(lang);
     }
 
     @Post()

@@ -1,7 +1,20 @@
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getMessages } from "next-intl/server";
+import { NextIntlClientProvider } from "next-intl";
+import type { Metadata } from "next";
 
 import { isValidLocale } from "@/i18n";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { AppProviders } from "@/providers/app-providers";
+import AuthModal from "@/components/auth/AuthModal";
+
+
+
+export const metadata: Metadata = {
+  title: "Web Truyện Audio",
+  description: "Nền tảng nghe truyện audio chất lượng cao.",
+  manifest: "/manifest.json",
+};
 
 type LocaleLayoutProps = {
   children: React.ReactNode;
@@ -16,6 +29,17 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   }
 
   setRequestLocale(lang);
+  // Using direct import to ensure correct messages are loaded for the locale segment
+  const messages = (await import(`../../../messages/${lang}.json`)).default;
 
-  return children;
+  return (
+    <NextIntlClientProvider locale={lang} messages={messages}>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+        <AppProviders>
+          {children}
+          <AuthModal />
+        </AppProviders>
+      </ThemeProvider>
+    </NextIntlClientProvider>
+  );
 }

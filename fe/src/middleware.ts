@@ -5,14 +5,14 @@ import {
     AUTH_HOME_PATH,
     AUTH_LOGIN_PATH,
     AUTH_PROTECTED_PREFIXES,
-} from "./src/constants/auth";
-import { defaultLocale, isValidLocale, localeCookieName } from "./src/i18n";
+} from "./constants/auth";
+import { defaultLocale, isValidLocale, localeCookieName } from "./i18n";
 
 const authRoutes = [AUTH_LOGIN_PATH, "/register"];
 
 const localePrefixMatcher = /^\/(vi|en)(?=\/|$)/;
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const hasAccessToken = Boolean(request.cookies.get(ACCESS_TOKEN_KEY)?.value);
 
@@ -26,7 +26,9 @@ export function proxy(request: NextRequest) {
 
     if (!prefixedLocale) {
         const redirectedUrl = request.nextUrl.clone();
-        redirectedUrl.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
+        const cleanPathname = pathname === "/" ? "" : pathname;
+        redirectedUrl.pathname = `/${locale}${cleanPathname}`;
+        
         const response = NextResponse.redirect(redirectedUrl);
         response.cookies.set(localeCookieName, locale, { path: "/" });
         return response;

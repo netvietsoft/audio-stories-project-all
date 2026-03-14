@@ -203,6 +203,26 @@ export default function GlobalPlayer() {
     return Math.min(100, Math.max(0, (currentTime / duration) * 100));
   }, [currentTime, duration]);
 
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY && currentScrollY > 80) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
+
   if (!mounted || !currentTrack) {
     return null;
   }
@@ -215,11 +235,11 @@ export default function GlobalPlayer() {
         : undefined;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/85 px-3 py-2 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/85 sm:px-4">
+    <div className={`fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/85 px-3 py-2 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/85 sm:px-4 transition-transform duration-300 ${isVisible ? "translate-y-0" : "translate-y-full"}`}>
       <div className="mx-auto flex w-full max-w-7xl items-center gap-3">
         {chapterHref ? (
           <Link href={chapterHref} className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 transition hover:bg-gray-100/80 dark:hover:bg-gray-800/70">
-            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800">
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800">
               {currentTrack.coverUrl ? (
                 <Image
                   src={currentTrack.coverUrl}
@@ -230,6 +250,18 @@ export default function GlobalPlayer() {
                   className="h-full w-full object-cover"
                 />
               ) : null}
+              {/* Mobile Play/Pause Overlay */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  togglePlay(!isPlaying);
+                }}
+                className="absolute inset-0 flex items-center justify-center bg-black/20 text-white sm:hidden"
+              >
+                {isPlaying ? <Pause className="h-5 w-5 fill-current" /> : <Play className="h-5 w-5 fill-current" />}
+              </button>
             </div>
 
             <div className="min-w-0">

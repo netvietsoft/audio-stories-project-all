@@ -1,6 +1,7 @@
-import { Controller, Post, Body, Headers, HttpCode, Logger, Query } from '@nestjs/common';
+import { Controller, Post, Body, Headers, HttpCode, Logger, Query, BadRequestException } from '@nestjs/common';
 import { VietQRService } from '../services/vietqr.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import * as crypto from 'crypto';
 
 interface CassoTransaction {
   id: number;
@@ -34,31 +35,68 @@ export class CassoWebhookController {
     private readonly prisma: PrismaService,
   ) {}
 
+  private verifySignature(signature: string, payload: string, secret: string): boolean {
+    try {
+      // Parse signature: t=timestamp,v1=hash
+      const parts = signature.split(',');
+      const timestamp = parts[0]?.split('=')[1];
+      const hash = parts[1]?.split('=')[1];
+
+      if (!timestamp || !hash) {
+        this.logger.warn('Invalid signature format');
+        return false;
+      }
+
+      // Create signed payload: timestamp.payload
+      const signedPayload = `${timestamp}.${payload}`;
+
+      // Compute HMAC SHA-512
+      const expectedHash = crypto
+        .createHmac('sha512', secret)
+        .update(signedPayload)
+        .digest('hex');
+
+      // Compare hashes
+      return crypto.timingSafeEqual(
+        Buffer.from(hash),
+        Buffer.from(expectedHash)
+      );
+    } catch (error) {
+      this.logger.error('Error verifying signature:', error);
+      return false;
+    }
+  }
+
   @Post()
   @HttpCode(200)
   async handleWebhook(
-    @Query('secure_token') secureTokenQuery: string,
-    @Headers('secure-token') secureToken: string,
-    @Headers() headers: Record<string, string>,
+    @Headers('x-casso-signature') cassoSignature: string,
     @Body() payload: CassoWebhookPayload,
   ) {
-    // Verify secure token - Casso V2 sends token via query parameter
-    const expectedToken = process.env.CASSO_SECURE_TOKEN;
-    const receivedToken = secureTokenQuery || secureToken || headers['authorization'];
-    
-    // Log for debugging
     this.logger.log(`Received webhook request`);
-    this.logger.log(`Expected token: ${expectedToken}`);
-    this.logger.log(`Received token (query): ${secureTokenQuery}`);
-    this.logger.log(`Received token (header): ${secureToken}`);
-    this.logger.log(`All headers: ${JSON.stringify(headers)}`);
-    this.logger.log(`Final token: ${receivedToken}`);
-    this.logger.log(`Tokens match: ${receivedToken === expectedToken}`);
+    this.logger.log(`Signature: ${cassoSignature}`);
     this.logger.log(`Payload: ${JSON.stringify(payload)}`);
-    
-    if (expectedToken && receivedToken !== expectedToken) {
-      this.logger.warn('Invalid Casso secure token');
-      return { success: false, error: 'Invalid token' };
+
+    // Verify signature using secure token as secret
+    const secret = process.env.CASSO_SECURE_TOKEN;
+    if (!secret) {
+      this.logger.error('CASSO_SECURE_TOKEN not configured');
+      return { success: false, error: 'Server configuration error' };
+    }
+
+    if (!cassoSignature) {
+      this.logger.warn('No signature provided');
+      return { success: false, error: 'No signature' };
+    }
+
+    const payloadString = JSON.stringify(payload);
+    const isValid = this.verifySignature(cassoSignature, payloadString, secret);
+
+    this.logger.log(`Signature valid: ${isValid}`);
+
+    if (!isValid) {
+      this.logger.warn('Invalid Casso signature');
+      return { success: false, error: 'Invalid signature' };
     }
 
     if (payload.error !== 0 || !payload.data) {

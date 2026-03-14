@@ -452,7 +452,7 @@ export default function ProfilePage() {
                                 <button
                                     disabled={isMutating || favorites.length === 0}
                                     onClick={() => void clearAllFavorites()}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-red-300 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20"
+                                    className="inline-flex items-center gap-1 rounded-lg border border-red-300 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20 whitespace-nowrap shrink-0"
                                 >
                                     <Trash2 className="h-3.5 w-3.5" /> {t("clearAll")}
                                 </button>
@@ -461,7 +461,7 @@ export default function ProfilePage() {
                                 <button
                                     disabled={isMutating || historyItems.length === 0}
                                     onClick={() => void clearAllHistory()}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-red-300 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20"
+                                    className="inline-flex items-center gap-1 rounded-lg border border-red-300 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20 whitespace-nowrap shrink-0"
                                 >
                                     <Trash2 className="h-3.5 w-3.5" /> {t("clearAll")}
                                 </button>
@@ -477,7 +477,7 @@ export default function ProfilePage() {
                                         <div className="rounded-2xl bg-blue-50 p-3 dark:bg-blue-900/20">
                                             <BookOpen className="h-5 w-5 text-blue-500" />
                                         </div>
-                                        <div className="flex-1">
+                                        <div className="flex-1 min-w-0">
                                             <p className="line-clamp-1 text-base font-bold text-gray-800 dark:text-gray-100">{item.text}</p>
                                             <p className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">{item.time}</p>
                                         </div>
@@ -485,7 +485,7 @@ export default function ProfilePage() {
                                             <button
                                                 disabled={isMutating}
                                                 onClick={() => void removeHistoryItem(history.id)}
-                                                className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20"
+                                                className="inline-flex items-center gap-1 rounded-lg border border-red-300 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-900/20 whitespace-nowrap shrink-0"
                                             >
                                                 <Trash2 className="h-3.5 w-3.5" /> {t("delete")}
                                             </button>

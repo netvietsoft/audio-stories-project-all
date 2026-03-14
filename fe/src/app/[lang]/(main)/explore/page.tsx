@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 
 import StoryCard from "@/components/shared/StoryCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
@@ -42,28 +43,35 @@ type AuthorOption = {
 
 const LIMIT = 20;
 
-export default function ExplorePage() {
+function ExploreContent() {
   const t = useTranslations("Common");
   const locale = useLocale();
+  const searchParams = useSearchParams();
   const lang = locale === "en" ? "en" : "vi";
+  
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [authors, setAuthors] = useState<AuthorOption[]>([]);
-  const [filters, setFilters] = useState<StoryFilterValue>({
-    categoryId: "",
-    authorId: "",
-    status: "",
-    sort: "latest",
-  });
-  const [appliedFilters, setAppliedFilters] = useState<StoryFilterValue>({
-    categoryId: "",
-    authorId: "",
-    status: "",
-    sort: "latest",
-  });
+  
+  // Initialize filters from searchParams
+  const initialFilters = useMemo(() => ({
+    categoryId: searchParams.get("categoryId") || "",
+    authorId: searchParams.get("authorId") || "",
+    status: (searchParams.get("status") as any) || "",
+    sort: (searchParams.get("sort") as any) || "latest",
+  }), [searchParams]);
+
+  const [filters, setFilters] = useState<StoryFilterValue>(initialFilters);
+  const [appliedFilters, setAppliedFilters] = useState<StoryFilterValue>(initialFilters);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Update filters if URL changes
+  useEffect(() => {
+    setFilters(initialFilters);
+    setAppliedFilters(initialFilters);
+  }, [initialFilters]);
 
   const canLoadMore = useMemo(() => page < lastPage, [page, lastPage]);
 
@@ -138,5 +146,13 @@ export default function ExplorePage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ExplorePage() {
+  return (
+    <Suspense>
+      <ExploreContent />
+    </Suspense>
   );
 }

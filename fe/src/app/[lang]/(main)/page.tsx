@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
-import HorizontalStorySlider from "@/components/shared/HorizontalStorySlider";
+import InfiniteMarqueeSlider from "@/components/shared/InfiniteMarqueeSlider";
 import StoryListView from "@/components/shared/StoryListView";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
@@ -28,6 +28,8 @@ type StoryItem = {
 type CategoryItem = {
   id: number;
   name: string;
+  nameVi?: string | null;
+  nameEn?: string | null;
   slug: string;
   storiesCount?: number;
 };
@@ -66,7 +68,8 @@ export default function HomePage() {
   const [trendingStories, setTrendingStories] = useState<StoryItem[]>([]);
   const [topRatingStories, setTopRatingStories] = useState<StoryItem[]>([]);
   const [topViewsStories, setTopViewsStories] = useState<StoryItem[]>([]);
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [topCategories, setTopCategories] = useState<CategoryItem[]>([]);
+  const [allCategories, setAllCategories] = useState<CategoryItem[]>([]);
   const [authors, setAuthors] = useState<AuthorItem[]>([]);
   const [hall, setHall] = useState<HallMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,7 +110,7 @@ export default function HomePage() {
           authorRes,
         ] = await Promise.allSettled([
           fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
-          apiClient.get("/chapters/latest", { params: { limit: 5 } }).then((r) => r.data || []).catch(() => []),
+          apiClient.get("/chapters/latest", { params: { limit: 12 } }).then((r) => r.data || []).catch(() => []),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "views", trendWindow: "week" }),
           fetchExploreCached<ExploreResponse>({ limit: RANKING_LIMIT, lang, sort: "rating" }),
@@ -139,9 +142,10 @@ export default function HomePage() {
 
         const catTop = catTopRes.status === "fulfilled" ? catTopRes.value : [];
         const catFb = catFallbackRes.status === "fulfilled"
-          ? (catFallbackRes.value as Array<{ id: number; name: string; slug: string }>).map((c) => ({ ...c, storiesCount: 0 }))
+          ? (catFallbackRes.value as Array<any>).map((c) => ({ ...c, storiesCount: 0 }))
           : [];
-        setCategories((catTop.length ? catTop : catFb));
+        setTopCategories(catTop.length ? catTop : catFb);
+        setAllCategories(catFb);
 
         setHall(hallRes.status === "fulfilled" ? hallRes.value : []);
         setAuthors(authorRes.status === "fulfilled" ? authorRes.value : []);
@@ -217,7 +221,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── Hashtag / Category Strip ────────────────────────────── */}
-      {categories.length > 0 && (
+      {topCategories.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
@@ -226,13 +230,13 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-            {categories.map((cat) => (
+            {topCategories.map((cat) => (
               <Link
                 key={cat.id}
-                href={`/categories/${cat.slug}`}
+                href={`/explore?categoryId=${cat.id}`}
                 className="flex-shrink-0 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-300"
               >
-                #{cat.name}
+                #{locale === "en" ? (cat.nameEn || cat.name) : (cat.nameVi || cat.name)}
               </Link>
             ))}
           </div>
@@ -241,7 +245,12 @@ export default function HomePage() {
 
       {/* ─── Quick Filter Bar ────────────────────────────────────── */}
       <StoryFilterBar
-        categories={categories.map((c) => ({ id: c.id, name: c.name }))}
+        categories={allCategories.map((c) => ({
+          id: c.id,
+          name: c.name,
+          nameVi: c.nameVi,
+          nameEn: c.nameEn
+        }))}
         authors={authors}
         value={filterValue}
         onChange={setFilterValue}
@@ -251,7 +260,7 @@ export default function HomePage() {
           if (filterValue.authorId) params.append("authorId", filterValue.authorId);
           if (filterValue.status) params.append("status", filterValue.status);
           if (filterValue.sort && filterValue.sort !== "latest") params.append("sort", filterValue.sort);
-          router.push(`/explore?${params.toString()}`);
+          router.push(`/${locale}/explore?${params.toString()}`);
         }}
         isLoading={isLoading}
       />
@@ -283,7 +292,7 @@ export default function HomePage() {
             {t("viewAll")}
           </Link>
         </div>
-        <HorizontalStorySlider stories={popularStories} isLoading={isLoading} limit={POPULAR_LIMIT} />
+        <InfiniteMarqueeSlider stories={popularStories} isLoading={isLoading} />
       </section>
 
       {/* ─── Bảng Xếp Hạng (3 cols trên desktop) ───────────────── */}
@@ -383,48 +392,48 @@ function RankingColumn({
       <ul className="divide-y divide-slate-100 dark:divide-slate-800">
         {isLoading
           ? Array.from({ length: RANKING_LIMIT }).map((_, i) => (
-              <li key={i} className="flex items-center gap-3 px-4 py-3 animate-pulse">
-                <div className="w-6 h-4 rounded bg-slate-200 dark:bg-slate-700" />
-                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0" />
-                <div className="flex-1 space-y-1.5">
-                  <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
-                  <div className="h-2.5 w-1/2 rounded bg-slate-200 dark:bg-slate-700" />
+            <li key={i} className="flex items-center gap-3 px-4 py-3 animate-pulse">
+              <div className="w-6 h-4 rounded bg-slate-200 dark:bg-slate-700" />
+              <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
+                <div className="h-2.5 w-1/2 rounded bg-slate-200 dark:bg-slate-700" />
+              </div>
+            </li>
+          ))
+          : items.map((item, idx) => {
+            const content = (
+              <li key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                <span className={`w-6 text-center text-sm font-black tabular-nums shrink-0 ${rankColors[idx] || "text-slate-400"}`}>
+                  {idx + 1}
+                </span>
+                <div className="w-10 h-10 shrink-0 relative">
+                  <Image
+                    src={
+                      item.avatarUrl ||
+                      (isUserRanking
+                        ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(item.name)}`
+                        : "https://placehold.co/80x80?text=?")
+                    }
+                    alt={item.name}
+                    fill
+                    sizes="40px"
+                    unoptimized={isUserRanking || item.avatarUrl?.includes("dicebear")}
+                    className={`object-cover ${isUserRanking ? "rounded-full" : "rounded-md"}`}
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{item.name}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{item.meta}</p>
                 </div>
               </li>
-            ))
-          : items.map((item, idx) => {
-              const content = (
-                <li key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                  <span className={`w-6 text-center text-sm font-black tabular-nums shrink-0 ${rankColors[idx] || "text-slate-400"}`}>
-                    {idx + 1}
-                  </span>
-                  <div className="w-10 h-10 shrink-0 relative">
-                    <Image
-                      src={
-                        item.avatarUrl ||
-                        (isUserRanking
-                          ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(item.name)}`
-                          : "https://placehold.co/80x80?text=?")
-                      }
-                      alt={item.name}
-                      fill
-                      sizes="40px"
-                      unoptimized={isUserRanking || item.avatarUrl?.includes("dicebear")}
-                      className={`object-cover ${isUserRanking ? "rounded-full" : "rounded-md"}`}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{item.name}</p>
-                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{item.meta}</p>
-                  </div>
-                </li>
-              );
-              return item.href ? (
-                <Link key={item.id} href={item.href} className="block">
-                  {content}
-                </Link>
-              ) : content;
-            })}
+            );
+            return item.href ? (
+              <Link key={item.id} href={item.href} className="block">
+                {content}
+              </Link>
+            ) : content;
+          })}
       </ul>
     </div>
   );

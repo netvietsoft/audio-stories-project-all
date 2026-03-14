@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { BellRing } from "lucide-react";
+import { BellRing, ArrowLeft } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+
+export const dynamic = 'force-dynamic';
 
 type NotificationItem = {
   id: string;
@@ -19,6 +22,7 @@ type NotificationsResponse = {
 };
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const t = useTranslations("NotificationsPage");
   const locale = useLocale();
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -46,17 +50,31 @@ export default function NotificationsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4">
+      {/* Back Button for Mobile */}
+      <div className="flex items-center gap-4 lg:hidden">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center justify-center h-10 w-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-sm active:scale-95 transition-all text-slate-600 dark:text-slate-300"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">{t("title")}</span>
+      </div>
+
       <div className="flex items-center justify-between">
-        <h1 className="inline-flex items-center gap-3 text-3xl font-black text-gray-900 dark:text-gray-100">
+        <h1 className="inline-flex items-center gap-3 text-3xl font-black text-gray-900 dark:text-gray-100 max-lg:hidden">
           <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
             <BellRing className="h-7 w-7 text-blue-600 dark:text-blue-400" />
           </div>
           {t("title")}
         </h1>
+        <h1 className="lg:hidden hidden"></h1> {/* Just for structural sanity if needed, but flex-between handles it */}
+        
         {items.some(item => !item.isRead) && (
           <button
             onClick={() => void markAllRead()}
-            className="px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+            className="px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all ml-auto"
           >
             {t("markAllRead")}
           </button>

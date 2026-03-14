@@ -17,6 +17,21 @@ export class CreatePackageDto {
 
     @IsInt()
     @Min(0)
+    @IsOptional()
+    price?: number;
+
+    @IsString()
+    @IsOptional()
+    @MaxLength(10)
+    currency?: string;
+
+    @IsString()
+    @IsOptional()
+    @MaxLength(10)
+    lang?: string;
+
+    @IsInt()
+    @Min(0)
     credits: number;
 
     @IsString()

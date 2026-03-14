@@ -7,7 +7,7 @@ import { UpdatePackageDto } from './dto/update-package.dto';
 export class PackagesService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async findAll() {
+    async findAll(lang?: string) {
         // Using site_settings table to store packages as JSON
         const packagesSetting = await this.prisma.siteSetting.findUnique({
             where: { key: 'payment_packages' },
@@ -18,7 +18,13 @@ export class PackagesService {
         }
 
         try {
-            return JSON.parse(packagesSetting.value);
+            const allPackages = JSON.parse(packagesSetting.value);
+            if (!lang) return allPackages;
+
+            // Filter by language: include if lang matches or if package has no lang specified
+            return allPackages.filter((pkg: any) => 
+                !pkg.lang || pkg.lang === lang || pkg.lang === 'all'
+            );
         } catch {
             return [];
         }

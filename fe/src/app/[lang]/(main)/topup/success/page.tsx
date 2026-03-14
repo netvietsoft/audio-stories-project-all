@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { CheckCircle, Coins, ArrowRight, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api/api-client';
 
 export default function TopupSuccessPage() {
+    const t = useTranslations("Topup");
+    const locale = useLocale();
     const router = useRouter();
     const [userData, setUserData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -45,10 +48,10 @@ export default function TopupSuccessPage() {
 
                     {/* Title */}
                     <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-gray-100 mb-3 tracking-tight">
-                        Thanh toán thành công!
+                        {t("paymentSuccessTitle")}
                     </h1>
                     <p className="text-slate-600 dark:text-gray-300 text-base sm:text-lg font-medium mb-8">
-                        Credits đã được cộng vào tài khoản của bạn
+                        {t("paymentSuccessDesc")}
                     </p>
 
                     {/* Credits Display */}
@@ -56,14 +59,14 @@ export default function TopupSuccessPage() {
                         <div className="flex items-center justify-center gap-3 mb-2">
                             <Coins className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                             <span className="text-sm font-black text-slate-500 dark:text-gray-400 uppercase tracking-widest">
-                                Số dư hiện tại
+                                {t("currentBalance")}
                             </span>
                         </div>
                         <div className="text-5xl sm:text-6xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
                             {userData?.credits?.toLocaleString() || '0'}
                         </div>
                         <div className="text-sm font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mt-2">
-                            Credits
+                            {t("credits")}
                         </div>
                     </div>
 
@@ -71,12 +74,12 @@ export default function TopupSuccessPage() {
                     {userData && (
                         <div className="bg-slate-50 dark:bg-gray-700/50 rounded-2xl p-4 mb-8 text-left">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="font-bold text-slate-500 dark:text-gray-400">Tài khoản:</span>
+                                <span className="font-bold text-slate-500 dark:text-gray-400">{t("accountLabel")}</span>
                                 <span className="font-black text-slate-900 dark:text-gray-100">{userData.email}</span>
                             </div>
                             {userData.displayName && (
                                 <div className="flex items-center justify-between text-sm mt-2">
-                                    <span className="font-bold text-slate-500 dark:text-gray-400">Tên hiển thị:</span>
+                                    <span className="font-bold text-slate-500 dark:text-gray-400">{t("displayNameLabel")}</span>
                                     <span className="font-black text-slate-900 dark:text-gray-100">{userData.displayName}</span>
                                 </div>
                             )}
@@ -86,25 +89,25 @@ export default function TopupSuccessPage() {
                     {/* Actions */}
                     <div className="flex flex-col sm:flex-row gap-4">
                         <button
-                            onClick={() => router.push('/')}
+                            onClick={() => router.push(`/${locale}`)}
                             className="flex-1 py-4 px-6 bg-emerald-600 dark:bg-emerald-700 text-white rounded-2xl font-black text-sm uppercase tracking-wide hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-all active:scale-95 shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30 flex items-center justify-center gap-2"
                         >
-                            Về trang chủ
+                            {t("backToHome")}
                             <ArrowRight className="w-5 h-5" />
                         </button>
                         <button
-                            onClick={() => router.push('/topup')}
+                            onClick={() => router.push(`/${locale}/topup`)}
                             className="flex-1 py-4 px-6 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 rounded-2xl font-black text-sm uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-gray-600 transition-all active:scale-95 border-2 border-slate-200 dark:border-gray-600 flex items-center justify-center gap-2"
                         >
                             <Coins className="w-5 h-5" />
-                            Nạp thêm
+                            {t("topupMore")}
                         </button>
                     </div>
                 </div>
 
                 {/* Additional Info */}
                 <div className="text-center mt-6 text-sm text-slate-500 dark:text-gray-400 font-medium">
-                    <p>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</p>
+                    <p>{t("thankYou")}</p>
                 </div>
             </div>
         </div>

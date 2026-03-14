@@ -24,53 +24,28 @@ type RecommendedSliderProps = {
 
 export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
   const t = useTranslations("RecommendedSlider");
-  const trackRef = useRef<HTMLDivElement | null>(null);
-
-  const scrollByAmount = (direction: "left" | "right") => {
-    const node = trackRef.current;
-    if (!node) return;
-
-    const amount = Math.max(260, Math.round(node.clientWidth * 0.8));
-    node.scrollBy({
-      left: direction === "left" ? -amount : amount,
-      behavior: "smooth",
-    });
-  };
 
   if (!stories.length) {
     return null;
   }
 
+  // Duplicate stories to create the seamless loop
+  const duplicatedStories = [...stories, ...stories];
+
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("title")}</h3>
-        <div className="hidden items-center gap-2 md:flex">
-          <button
-            type="button"
-            onClick={() => scrollByAmount("left")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-            aria-label={t("scrollLeft")}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollByAmount("right")}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-300 text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-            aria-label={t("scrollRight")}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
       </div>
 
-      <div ref={trackRef} className="scrollbar-hide flex snap-x gap-3 overflow-x-auto pb-1">
-        {stories.map((story) => (
-          <div key={story.id} className="h-[250px] w-[100px] min-w-[210px] flex-shrink-0 snap-start">
-            <StoryCard story={story} className="h-full w-full" />
-          </div>
-        ))}
+      <div className="relative w-full overflow-hidden pb-1 pause-on-hover">
+        <div className="animate-marquee flex gap-4">
+          {duplicatedStories.map((story, idx) => (
+            <div key={`${story.id}-${idx}`} className="w-[180px] sm:w-[210px] shrink-0 group transition-transform duration-300 hover:scale-105 hover:-translate-y-1">
+              <StoryCard story={story} className="h-full w-full" />
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

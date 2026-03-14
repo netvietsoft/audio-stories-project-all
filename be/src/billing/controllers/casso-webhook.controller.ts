@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Headers, HttpCode, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Headers, HttpCode, Logger, Query } from '@nestjs/common';
 import { VietQRService } from '../services/vietqr.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -37,20 +37,26 @@ export class CassoWebhookController {
   @Post()
   @HttpCode(200)
   async handleWebhook(
+    @Query('secure_token') secureTokenQuery: string,
     @Headers('secure-token') secureToken: string,
+    @Headers() headers: Record<string, string>,
     @Body() payload: CassoWebhookPayload,
   ) {
-    // Verify secure token
+    // Verify secure token - Casso V2 sends token via query parameter
     const expectedToken = process.env.CASSO_SECURE_TOKEN;
+    const receivedToken = secureTokenQuery || secureToken || headers['authorization'];
     
     // Log for debugging
     this.logger.log(`Received webhook request`);
     this.logger.log(`Expected token: ${expectedToken}`);
-    this.logger.log(`Received token: ${secureToken}`);
-    this.logger.log(`Tokens match: ${secureToken === expectedToken}`);
+    this.logger.log(`Received token (query): ${secureTokenQuery}`);
+    this.logger.log(`Received token (header): ${secureToken}`);
+    this.logger.log(`All headers: ${JSON.stringify(headers)}`);
+    this.logger.log(`Final token: ${receivedToken}`);
+    this.logger.log(`Tokens match: ${receivedToken === expectedToken}`);
     this.logger.log(`Payload: ${JSON.stringify(payload)}`);
     
-    if (expectedToken && secureToken !== expectedToken) {
+    if (expectedToken && receivedToken !== expectedToken) {
       this.logger.warn('Invalid Casso secure token');
       return { success: false, error: 'Invalid token' };
     }

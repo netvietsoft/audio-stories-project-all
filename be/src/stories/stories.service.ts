@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Prisma, StoryStatus } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
@@ -618,5 +618,67 @@ export class StoriesService {
     });
 
     return { message: 'Story deleted successfully' };
+  }
+
+  async giftCredits(storyId: string, userId: string, amount: number, message?: string) {
+    // Validate amount
+    if (amount < 10) {
+      throw new BadRequestException('Minimum gift amount is 10 credits');
+    }
+
+    // Get user and check balance
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, credits: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.credits < amount) {
+      throw new BadRequestException('Insufficient credits');
+    }
+
+    // Get story
+    const story = await this.prisma.story.findUnique({
+      where: { id: storyId },
+      select: { id: true, authorId: true, deletedAt: true, title: true },
+    });
+
+    if (!story || story.deletedAt) {
+      throw new NotFoundException('Story not found');
+    }
+
+    if (!story.authorId) {
+      throw new BadRequestException('Story has no author');
+    }
+
+    // Deduct credits from user and create transaction record
+    await this.prisma.$transaction([
+      // Deduct credits from user
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { credits: { decrement: amount } },
+      }),
+      // Create credit transaction record
+      this.prisma.creditTransaction.create({
+        data: {
+          userId,
+          type: 'spend',
+          amount: -amount,
+          balanceBefore: user.credits,
+          balanceAfter: user.credits - amount,
+          referenceId: storyId,
+          description: `Gift ${amount} credits to story: ${story.title}${message ? ` - ${message}` : ''}`,
+        },
+      }),
+    ]);
+
+    return {
+      ok: true,
+      message: 'Gift sent successfully',
+      amount,
+    };
   }
 }

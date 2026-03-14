@@ -23,7 +23,10 @@ export default function AdminLayout({
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
-        if (pathname === '/admin/login') {
+        // Check if current path is login page (with or without locale)
+        const isLoginPage = pathname?.includes('/admin/login');
+        
+        if (isLoginPage) {
             setIsLoading(false);
             setHasAccess(true);
             return;
@@ -45,7 +48,9 @@ export default function AdminLayout({
         setIsLoading(false);
 
         if (!access) {
-            router.push('/admin/login');
+            // Extract locale from pathname (e.g., /vi/admin or /en/admin)
+            const locale = pathname?.split('/')[1] || 'vi';
+            router.push(`/${locale}/admin/login`);
         }
     }, [router, pathname]);
 
@@ -69,11 +74,14 @@ export default function AdminLayout({
             // 2. Clear admin store
             useAdminStore.getState().clearAuth();
 
-            router.push('/admin/login');
+            // Extract locale from pathname
+            const locale = pathname?.split('/')[1] || 'vi';
+            router.push(`/${locale}/admin/login`);
             router.refresh();
         } catch (error) {
             console.error('Logout failed:', error);
-            router.push('/admin/login');
+            const locale = pathname?.split('/')[1] || 'vi';
+            router.push(`/${locale}/admin/login`);
             router.refresh();
         } finally {
             setIsLoggingOut(false);
@@ -89,7 +97,8 @@ export default function AdminLayout({
     }
 
     // Skip layout for login page
-    if (pathname === '/admin/login') {
+    const isLoginPage = pathname?.includes('/admin/login');
+    if (isLoginPage) {
         return <>{children}</>;
     }
 

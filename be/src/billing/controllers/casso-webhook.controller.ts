@@ -47,20 +47,35 @@ export class CassoWebhookController {
         return false;
       }
 
-      // Create signed payload: timestamp.payload
-      const signedPayload = `${timestamp}.${payload}`;
+      this.logger.log(`Timestamp: ${timestamp}`);
+      this.logger.log(`Expected hash: ${hash}`);
 
-      // Compute HMAC SHA-512
-      const expectedHash = crypto
-        .createHmac('sha512', secret)
-        .update(signedPayload)
-        .digest('hex');
+      // Try different payload formats
+      const formats = [
+        `${timestamp}.${payload}`,           // Format 1: timestamp.payload
+        payload,                              // Format 2: just payload
+        `${timestamp}${payload}`,            // Format 3: timestamp+payload (no dot)
+      ];
 
-      // Compare hashes
-      return crypto.timingSafeEqual(
-        Buffer.from(hash),
-        Buffer.from(expectedHash)
-      );
+      for (let i = 0; i < formats.length; i++) {
+        const signedPayload = formats[i];
+        
+        // Compute HMAC SHA-512
+        const computedHash = crypto
+          .createHmac('sha512', secret)
+          .update(signedPayload)
+          .digest('hex');
+
+        this.logger.log(`Format ${i + 1} hash: ${computedHash}`);
+
+        if (computedHash === hash) {
+          this.logger.log(`✅ Signature matched with format ${i + 1}`);
+          return true;
+        }
+      }
+
+      this.logger.warn('No format matched the signature');
+      return false;
     } catch (error) {
       this.logger.error('Error verifying signature:', error);
       return false;

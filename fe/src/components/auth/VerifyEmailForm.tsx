@@ -47,16 +47,18 @@ const normalizeUserProfile = (profile: BackendMeResponse): UserProfile => ({
 
 interface VerifyEmailFormProps {
   token?: string;
+  email?: string;
   onSuccess?: () => void;
 }
 
-export default function VerifyEmailForm({ token, onSuccess }: VerifyEmailFormProps = {}) {
+export default function VerifyEmailForm({ token, email: emailProp, onSuccess }: VerifyEmailFormProps = {}) {
   const t = useTranslations("VerifyEmailForm");
   const router = useRouter();
   const params = useParams<{ lang?: string }>();
   const currentLang = params?.lang === "en" ? "en" : "vi";
   const searchParams = useSearchParams();
   const emailFromQuery = useMemo(() => searchParams.get("email") || "", [searchParams]);
+  const defaultEmail = emailProp || emailFromQuery;
 
   const setAuth = useUserStore((state) => state.setAuth);
 
@@ -75,7 +77,7 @@ export default function VerifyEmailForm({ token, onSuccess }: VerifyEmailFormPro
   } = useForm<VerifyEmailValues>({
     resolver: zodResolver(verifyEmailSchema),
     defaultValues: {
-      email: emailFromQuery,
+      email: defaultEmail,
       code: "",
     },
   });
@@ -108,7 +110,11 @@ export default function VerifyEmailForm({ token, onSuccess }: VerifyEmailFormPro
       setAuthCookies(access_token, refresh_token);
 
       setSubmitSuccess(t("success"));
-      router.replace(`/${currentLang}`);
+      
+      // Reload page to update auth state
+      setTimeout(() => {
+        window.location.href = `/${currentLang}`;
+      }, 1000);
     } catch (error) {
       const message =
         typeof error === "object" &&

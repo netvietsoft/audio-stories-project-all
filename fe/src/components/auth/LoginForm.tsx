@@ -13,6 +13,7 @@ import { apiClient } from "@/lib/api/api-client";
 import { setAuthCookies } from "@/lib/auth/cookies";
 import { useUserStore } from "@/stores/user-store";
 import { Mail, Lock, Loader2, AlertCircle, LogIn } from "lucide-react";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
 
 type LoginFormValues = z.infer<typeof loginSchenma>;
 
@@ -49,6 +50,7 @@ export default function LoginForm({
     const searchParams = useSearchParams();
     const setAuth = useUserStore((state) => state.setAuth);
     const user = useUserStore((state) => state.user);
+    const { openVerify } = useAuthModalStore();
 
     useEffect(() => {
         if (user && !onSuccess) {
@@ -60,12 +62,14 @@ export default function LoginForm({
     const {
         register,
         handleSubmit,
+        watch,
         formState: { errors, isSubmitting },
     } = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchenma),
     });
 
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const emailValue = watch("email");
 
     const onSubmit = async (data: LoginFormValues) => {
         try {
@@ -115,7 +119,22 @@ export default function LoginForm({
                     ((typeof (error as any).response?.data?.message === "string") || Array.isArray((error as any).response?.data?.message))
                     ? (error as any).response.data.message
                     : t("submitFailed");
-            setSubmitError(Array.isArray(message) ? String(message[0]) : String(message));
+            
+            const errorMessage = Array.isArray(message) ? String(message[0]) : String(message);
+            
+            // Check if error is about unverified email
+            const isUnverifiedError = errorMessage.toLowerCase().includes("not verified") || 
+                                     errorMessage.toLowerCase().includes("verify") || 
+                                     errorMessage.toLowerCase().includes("xác thực") ||
+                                     errorMessage.toLowerCase().includes("chưa được xác nhận") ||
+                                     errorMessage.toLowerCase().includes("chưa xác thực");
+            
+            if (isUnverifiedError && emailValue) {
+                // Open verify modal with the email
+                openVerify(undefined, emailValue);
+            } else {
+                setSubmitError(errorMessage);
+            }
         }
     }
 

@@ -10,7 +10,7 @@ import ResetForm from './ResetForm';
 import VerifyEmailForm from './VerifyEmailForm';
 
 export default function AuthModal() {
-  const { isOpen, view, resetToken, verifyToken, close, setView } = useAuthModalStore();
+  const { isOpen, view, resetToken, verifyToken, email, close, setView } = useAuthModalStore();
 
   if (!isOpen) return null;
 
@@ -47,6 +47,7 @@ export default function AuthModal() {
         return (
           <ResetForm
             token={resetToken || ''}
+            email={email}
             onSuccess={() => setView('login')}
           />
         );
@@ -54,6 +55,7 @@ export default function AuthModal() {
         return (
           <VerifyEmailForm
             token={verifyToken || ''}
+            email={email}
             onSuccess={() => setView('login')}
           />
         );

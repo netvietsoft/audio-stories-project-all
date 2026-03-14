@@ -10,6 +10,7 @@ import { forgotShema } from "@/lib/validation/auth";
 import Link from "@/components/shared/LocalizedLink";
 import { apiClient } from "@/lib/api/api-client";
 import { Mail, Loader2, AlertCircle, CheckCircle2, KeyRound } from "lucide-react";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
 
 type ForgotFormValues = z.infer<typeof forgotShema>;
 
@@ -20,8 +21,8 @@ interface ForgotFormProps {
 
 export default function ForgotForm({ onSuccess, onSwitchToLogin }: ForgotFormProps = {}) {
   const t = useTranslations("ForgotForm");
-  const tAuth = useTranslations("Auth");
   const router = useRouter();
+  const { openReset } = useAuthModalStore();
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -41,13 +42,10 @@ export default function ForgotForm({ onSuccess, onSwitchToLogin }: ForgotFormPro
         redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
       });
       setIsSuccess(true);
-      if (onSuccess) {
-        setTimeout(() => onSuccess(), 1000);
-      } else {
-        setTimeout(() => {
-          router.push(`/reset-password?email=${encodeURIComponent(data.email)}`);
-        }, 1000);
-      }
+      // Always open reset modal after sending code
+      setTimeout(() => {
+        openReset(undefined, data.email);
+      }, 1000);
     } catch (error) {
       const message =
         typeof error === "object" &&
@@ -62,7 +60,7 @@ export default function ForgotForm({ onSuccess, onSwitchToLogin }: ForgotFormPro
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-[32px] shadow-xl shadow-slate-200/50 dark:shadow-gray-950/50 border border-slate-200 dark:border-gray-800 p-8 md:p-10">
+      <div>
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-indigo-50 dark:bg-indigo-950 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4">
             <KeyRound className="w-8 h-8" />

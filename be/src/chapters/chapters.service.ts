@@ -62,6 +62,8 @@ export class ChaptersService {
                 ? {
                     OR: [
                         { title: { contains: search } },
+                        { titleVi: { contains: search } },
+                        { titleEn: { contains: search } },
                     ],
                 }
                 : {}),
@@ -82,7 +84,7 @@ export class ChaptersService {
                 orderBy: { createdAt: 'desc' },
                 include: {
                     story: {
-                        select: { title: true },
+                        select: { title: true, titleVi: true, titleEn: true },
                     },
                 },
             }),

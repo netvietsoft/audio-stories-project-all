@@ -2,7 +2,7 @@
 
 import { BellRing, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { apiClient } from "@/lib/api/api-client";
@@ -11,13 +11,15 @@ import { useUserStore } from "@/stores/user-store";
 type Props = {
   storyId: string;
   className?: string;
+  labelClassName?: string;
 };
 
-export default function StoryUpdateSubscriptionButton({ storyId, className = "" }: Props) {
+export default function StoryUpdateSubscriptionButton({ storyId, className = "", labelClassName }: Props) {
   const t = useTranslations("StoryDetail");
   const user = useUserStore((state) => state.user);
   const router = useRouter();
   const pathname = usePathname();
+  const params = useParams<{ lang?: string }>();
 
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,8 +56,9 @@ export default function StoryUpdateSubscriptionButton({ storyId, className = "" 
 
   const handleClick = async () => {
     if (!user) {
+      const lang = params?.lang === "en" ? "en" : "vi";
       const redirect = pathname || "/";
-      router.push(`/login?redirect=${encodeURIComponent(redirect)}`);
+      router.push(`/${lang}/login?redirect=${encodeURIComponent(redirect)}`);
       return;
     }
 
@@ -83,7 +86,7 @@ export default function StoryUpdateSubscriptionButton({ storyId, className = "" 
       title={user ? t("subscribeHint") : t("subscribeLoginHint")}
     >
       {isLoading || isHydrating ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
-      <span>{isSubscribed ? t("subscribedUpdates") : t("subscribeUpdates")}</span>
+      <span className={labelClassName}>{isSubscribed ? t("subscribedUpdates") : t("subscribeUpdates")}</span>
     </button>
   );
 }

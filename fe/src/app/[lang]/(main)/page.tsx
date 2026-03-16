@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import InfiniteMarqueeSlider from "@/components/shared/InfiniteMarqueeSlider";
 import StoryListView from "@/components/shared/StoryListView";
+import StoryDiscoveryBoard from "@/components/shared/StoryDiscoveryBoard";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
 import { useRouter } from "next/navigation";
@@ -16,6 +17,11 @@ type StoryItem = {
   id: string;
   slug: string;
   title: string;
+  titleVi?: string | null;
+  titleEn?: string | null;
+  description?: string | null;
+  descriptionVi?: string | null;
+  descriptionEn?: string | null;
   thumbnailUrl: string | null;
   status: "ongoing" | "completed";
   totalViews: number;
@@ -160,6 +166,16 @@ export default function HomePage() {
   }, [lang, t]);
 
   const activeHero = heroStories[heroIndex];
+  const discoveryFeaturedStories = (trendingStories.length ? trendingStories : popularStories).slice(0, 7);
+  const discoveryNewStories = newestStories.slice(0, 9);
+  const discoveryBanners = heroStories.slice(0, 2).map((story) => ({
+    id: story.id,
+    title: story.title,
+    titleVi: (story as any).titleVi,
+    titleEn: (story as any).titleEn,
+    imageUrl: story.thumbnailUrl,
+    href: `/story/${story.slug}`,
+  }));
 
   return (
     <div className="space-y-12">
@@ -263,6 +279,14 @@ export default function HomePage() {
           router.push(`/${locale}/explore?${params.toString()}`);
         }}
         isLoading={isLoading}
+      />
+
+      {/* ─── Story Discovery Board (2/3 + 1/3 layout) ─────────── */}
+      <StoryDiscoveryBoard
+        featuredStories={discoveryFeaturedStories}
+        newStories={discoveryNewStories}
+        banners={discoveryBanners}
+        lang={lang}
       />
 
       {/* ─── Truyện mới đăng (List view) ─────────────── */}

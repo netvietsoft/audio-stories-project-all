@@ -5,7 +5,7 @@ import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { BookOpen, ChevronDown, Clock3, Globe, Headphones, ListMusic, Lock, Play, PlayCircle, Share2, Star } from "lucide-react";
+import { BookOpen, ChevronDown, Clock3, Facebook, Globe, Headphones, ListMusic, Lock, Play, PlayCircle, Share2, Star } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
@@ -264,8 +264,73 @@ export default function StoryDetailClient() {
               />
             </div>
 
-            {/* Row 2: Subscribe, Share, Language */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Mobile actions: icon-only, single row */}
+            <div className="md:hidden -mx-1 overflow-x-auto">
+              <div className="flex min-w-max items-center gap-2 px-1">
+                <FavoriteButton
+                  storyId={story.id}
+                  size="md"
+                  icon="heart"
+                  label={t("favorite")}
+                  labelClassName="sr-only"
+                  className="h-11 w-11 justify-center rounded-full border"
+                  activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
+                  inactiveClassName="border-gray-300 bg-white text-black hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                />
+
+                <StoryUpdateSubscriptionButton
+                  storyId={story.id}
+                  labelClassName="sr-only"
+                  className="h-11 w-11 justify-center rounded-full px-0"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void onShare();
+                  }}
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-300 bg-white text-black shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-blue-800/60 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+                  aria-label={t("share")}
+                  title={t("share")}
+                >
+                  <Share2 className="h-4 w-4" />
+                </button>
+
+                {(hasVi || hasEn) ? (
+                  <div className="relative">
+                    <Globe className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                    <select
+                      value={currentLang}
+                      onChange={(event) => handleSwitchLanguage(event.target.value as "vi" | "en")}
+                      className="appearance-none h-11 rounded-full border border-gray-300 bg-white py-2 pl-9 pr-9 text-sm font-medium text-gray-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                      aria-label={t("languageSwitcherLabel")}
+                    >
+                      {hasVi ? <option value="vi">VI</option> : null}
+                      {hasEn ? <option value="en">EN</option> : null}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                  </div>
+                ) : null}
+
+                {story.facebookGroupUrl ? (
+                  <a
+                    href={story.facebookGroupUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm transition-colors hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
+                    aria-label={t("joinFacebook")}
+                    title={t("joinFacebook")}
+                  >
+                    <Facebook className="h-4 w-4" />
+                  </a>
+                ) : null}
+              </div>
+            </div>
+
+            {/* Desktop actions */}
+            <div className="hidden md:flex md:flex-col gap-3">
+              {/* Row 2: Subscribe, Share, Language */}
+              <div className="flex flex-col sm:flex-row gap-3">
               <StoryUpdateSubscriptionButton storyId={story.id} className="w-full sm:flex-1" />
 
               <button
@@ -294,18 +359,21 @@ export default function StoryDetailClient() {
                   <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                 </div>
               ) : null}
-            </div>
+              </div>
 
-            {/* Row 3: Facebook Group */}
-            <a
-              href={story.facebookGroupUrl || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold border shadow-sm transition-colors w-full border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
-            >
-              <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-              {t("joinFacebook")}
-            </a>
+              {/* Row 3: Facebook Group */}
+              {story.facebookGroupUrl ? (
+                <a
+                  href={story.facebookGroupUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold border shadow-sm transition-colors w-full border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
+                >
+                  <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                  {t("joinFacebook")}
+                </a>
+              ) : null}
+            </div>
           </div>
         </div>
       </section>

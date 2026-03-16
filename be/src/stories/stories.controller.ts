@@ -67,15 +67,11 @@ export class StoriesController {
   }
 
   @Get('explore')
-  @UseInterceptors(CacheInterceptor)
-  @CacheTTL(300)
   explore(@Query() query: ExploreQueryDto) {
     return this.storiesService.exploreStories(query);
   }
 
   @Get('trending')
-  @UseInterceptors(CacheInterceptor)
-  @CacheTTL(300)
   trending(
     @Query('limit') limit?: string,
     @Query('page') page?: string,

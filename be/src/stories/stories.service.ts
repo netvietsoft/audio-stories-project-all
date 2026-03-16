@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { Prisma, StoryStatus } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
@@ -8,7 +10,37 @@ import { UpdateStoryDto } from './dto/update-story.dto';
 
 @Injectable()
 export class StoriesService {
-  constructor(private readonly prisma: PrismaService) { }
+  private readonly exploreCacheVersionKey = 'stories:explore:version';
+  private readonly exploreCacheTtlSeconds = 60;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) { }
+
+  private async getExploreCacheVersion() {
+    const cachedVersion = await this.cacheManager.get<number>(this.exploreCacheVersionKey);
+    if (typeof cachedVersion === 'number' && Number.isFinite(cachedVersion)) {
+      return cachedVersion;
+    }
+
+    const initialVersion = Date.now();
+    await this.cacheManager.set(this.exploreCacheVersionKey, initialVersion, this.exploreCacheTtlSeconds);
+    return initialVersion;
+  }
+
+  private buildExploreCacheKey(query: ExploreQueryDto, version: number) {
+    const normalizedEntries = Object.entries(query)
+      .filter(([, value]) => value !== undefined && value !== null && value !== '')
+      .sort(([left], [right]) => left.localeCompare(right));
+
+    return `stories:explore:v${version}:${JSON.stringify(normalizedEntries)}`;
+  }
+
+  private async invalidateExploreCache() {
+    const nextVersion = Date.now();
+    await this.cacheManager.set(this.exploreCacheVersionKey, nextVersion, this.exploreCacheTtlSeconds);
+  }
 
   private normalizeNestedChapterPayload(chapter: any) {
     return {
@@ -83,6 +115,8 @@ export class StoriesService {
           },
         });
       }
+
+      await this.invalidateExploreCache();
 
       return this.serializeStory(story);
     } catch (error) {
@@ -188,6 +222,17 @@ export class StoriesService {
   }
 
   async exploreStories(query: ExploreQueryDto) {
+    const version = await this.getExploreCacheVersion();
+    const cacheKey = this.buildExploreCacheKey(query, version);
+    const cached = await this.cacheManager.get<{
+      data: any[];
+      meta: { total: number; page: number; lastPage: number };
+    }>(cacheKey);
+
+    if (cached) {
+      return cached;
+    }
+
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const now = new Date();
@@ -247,6 +292,9 @@ export class StoriesService {
         select: {
           id: true,
           slug: true,
+          description: true,
+          descriptionVi: true,
+          descriptionEn: true,
           thumbnailUrl: true,
           status: true,
           totalViews: true,
@@ -267,7 +315,7 @@ export class StoriesService {
       }),
     ]);
 
-    return {
+    const result = {
       data: stories.map((story) => this.serializeStory(story)),
       meta: {
         total,
@@ -275,6 +323,10 @@ export class StoriesService {
         lastPage: Math.max(1, Math.ceil(total / limit)),
       },
     };
+
+    await this.cacheManager.set(cacheKey, result, this.exploreCacheTtlSeconds);
+
+    return result;
   }
 
   async getTopCategories(limit = 5, _lang: 'vi' | 'en' = 'vi') {
@@ -476,6 +528,8 @@ export class StoriesService {
       },
     });
 
+    await this.invalidateExploreCache();
+
     return this.serializeStory(updated);
   }
 
@@ -620,6 +674,8 @@ export class StoriesService {
       },
     });
 
+    await this.invalidateExploreCache();
+
     return this.serializeStory(updated);
   }
 
@@ -638,6 +694,8 @@ export class StoriesService {
       where: { id },
       data: { deletedAt: new Date() },
     });
+
+    await this.invalidateExploreCache();
 
     return { message: 'Story deleted successfully' };
   }

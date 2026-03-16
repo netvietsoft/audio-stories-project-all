@@ -8,13 +8,22 @@ import { StoryForm } from '../_components/StoryForm';
 import type { StoryFormValues } from '../_components/StoryForm';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { revalidateStoriesCache } from '@/app/[lang]/admin/_actions/revalidate';
+import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
+import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
 export default function NewStoryPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
-    const initialLocale = (searchParams.get('lang') as 'vi' | 'en') || 'vi';
-    const [selectedLocale, setSelectedLocale] = useState<'vi' | 'en'>(initialLocale);
+    const initialLocale = searchParams.get('lang') || 'vi';
+    const [selectedLocale, setSelectedLocale] = useState(initialLocale);
+    const { languages } = useAdminLanguages();
+
+    React.useEffect(() => {
+        if (!languages.some((language) => language.key === selectedLocale)) {
+            setSelectedLocale(languages[0]?.key || 'vi');
+        }
+    }, [languages, selectedLocale]);
 
     const handleSubmit = async (data: StoryFormValues) => {
         setIsLoading(true);
@@ -57,30 +66,12 @@ export default function NewStoryPage() {
                     <p className="text-slate-500 font-medium ml-16">Nhập thông tin chi tiết để xuất bản tác phẩm mới lên hệ thống.</p>
                 </div>
                 {/* Locale Selector */}
-                <div className="flex items-center gap-2 bg-white rounded-xl border-2 border-slate-200 p-1">
-                    <button
-                        type="button"
-                        onClick={() => setSelectedLocale('vi')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                            selectedLocale === 'vi'
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'text-slate-600 hover:bg-slate-50'
-                        }`}
-                    >
-                        🇻🇳 Tiếng Việt
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setSelectedLocale('en')}
-                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                            selectedLocale === 'en'
-                                ? 'bg-indigo-600 text-white shadow-md'
-                                : 'text-slate-600 hover:bg-slate-50'
-                        }`}
-                    >
-                        🇬🇧 English
-                    </button>
-                </div>
+                <AdminLanguageDropdown
+                    languages={languages}
+                    value={selectedLocale}
+                    onChange={setSelectedLocale}
+                    className="w-full md:w-64"
+                />
             </div>
 
             {/* Form */}

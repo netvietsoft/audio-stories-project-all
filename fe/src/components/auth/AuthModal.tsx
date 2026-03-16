@@ -1,6 +1,5 @@
 "use client";
 
-import React from 'react';
 import { X } from 'lucide-react';
 import { useAuthModalStore } from '@/stores/auth-modal-store';
 import LoginForm from './LoginForm';
@@ -65,7 +64,7 @@ export default function AuthModal() {
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) {

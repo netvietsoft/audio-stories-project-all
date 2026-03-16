@@ -79,7 +79,7 @@ export class StoriesController {
   trending(
     @Query('limit') limit?: string,
     @Query('page') page?: string,
-    @Query('lang') lang: 'vi' | 'en' = 'vi',
+    @Query('lang') lang = 'vi',
     @Query('trendWindow') trendWindow: 'today' | 'week' | 'month' | 'all' = 'week',
   ) {
     return this.storiesService.exploreStories({
@@ -99,7 +99,7 @@ export class StoriesController {
   @Get('categories/top')
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(3600)
-  getTopCategories(@Query('limit') limit?: string, @Query('lang') lang: 'vi' | 'en' = 'vi') {
+  getTopCategories(@Query('limit') limit?: string, @Query('lang') lang = 'vi') {
     return this.storiesService.getTopCategories(Number(limit) || 5, lang);
   }
 

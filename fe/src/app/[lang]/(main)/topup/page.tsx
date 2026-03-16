@@ -20,6 +20,9 @@ import VietQRPayment from '@/components/payment/VietQRPayment';
 
 interface PaymentPackage {
     code: string;
+    title?: string;
+    titleVi?: string;
+    titleEn?: string;
     name: string;
     nameVi?: string;
     nameEn?: string;
@@ -40,6 +43,9 @@ interface PaymentPackage {
 export default function TopupPage() {
     const t = useTranslations("Topup");
     const locale = useLocale();
+    const currentLocale: 'vi' | 'en' = locale === 'en' ? 'en' : 'vi';
+    const usdToVndRateRaw = Number(process.env.NEXT_PUBLIC_USD_TO_VND_RATE || '25000');
+    const usdToVndRate = Number.isFinite(usdToVndRateRaw) && usdToVndRateRaw > 0 ? usdToVndRateRaw : 25000;
     const [packages, setPackages] = useState<PaymentPackage[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedPackage, setSelectedPackage] = useState<PaymentPackage | null>(null);
@@ -51,21 +57,28 @@ export default function TopupPage() {
 
     useEffect(() => {
         fetchPackages();
-    }, []);
+    }, [currentLocale]);
 
     const fetchPackages = async () => {
         setIsLoading(true);
         try {
-            const res = await apiClient.get(`/packages?lang=${locale}`);
+            const res = await apiClient.get(`/packages?lang=${currentLocale}`);
             const activePackages = res.data
                 .filter((pkg: PaymentPackage) => pkg.isActive)
                 .sort((a: PaymentPackage, b: PaymentPackage) => a.displayOrder - b.displayOrder);
             setPackages(activePackages);
 
-            // Auto-select popular package if available, otherwise first package
-            if (activePackages.length > 0 && !selectedPackage) {
+            const nextSelectedPackage = activePackages.find(
+                (pkg: PaymentPackage) => pkg.code === selectedPackage?.code,
+            );
+
+            if (nextSelectedPackage) {
+                handleSelectPackage(nextSelectedPackage);
+            } else if (activePackages.length > 0) {
                 const popularPackage = activePackages.find((pkg: PaymentPackage) => pkg.isPopular);
                 handleSelectPackage(popularPackage || activePackages[0]);
+            } else {
+                setSelectedPackage(null);
             }
         } catch (error) {
             console.error('Failed to fetch packages:', error);
@@ -75,10 +88,63 @@ export default function TopupPage() {
     };
 
     const formatCurrency = (amount: number, currency = 'VND') => {
-        return new Intl.NumberFormat(locale === 'vi' ? 'vi-VN' : 'en-US', {
+        return new Intl.NumberFormat(currentLocale === 'vi' ? 'vi-VN' : 'en-US', {
             style: 'currency',
             currency: currency,
         }).format(amount);
+    };
+
+    const getDisplayPrice = (pkg: PaymentPackage): { amount: number; currency: 'VND' | 'USD' } => {
+        if (pkg.code === 'CUSTOM') {
+            const customAmountVnd =
+                typeof pkg.priceVnd === 'number' && pkg.priceVnd > 0
+                    ? pkg.priceVnd
+                    : typeof pkg.price === 'number' && pkg.price > 0
+                        ? pkg.price
+                        : 0;
+            return { amount: customAmountVnd, currency: 'VND' };
+        }
+
+        if (currentLocale === 'en') {
+            const packageCurrency = (pkg.currency || '').toUpperCase();
+            const hasUsdPrice = packageCurrency === 'USD' && typeof pkg.price === 'number' && pkg.price > 0;
+
+            if (hasUsdPrice) {
+                return { amount: pkg.price as number, currency: 'USD' };
+            }
+
+            const fallbackVnd =
+                typeof pkg.priceVnd === 'number' && pkg.priceVnd > 0
+                    ? pkg.priceVnd
+                    : typeof pkg.price === 'number' && pkg.price > 0
+                        ? pkg.price
+                        : 0;
+
+            return { amount: fallbackVnd / usdToVndRate, currency: 'USD' };
+        }
+
+        const amountVnd =
+            typeof pkg.priceVnd === 'number' && pkg.priceVnd > 0
+                ? pkg.priceVnd
+                : typeof pkg.price === 'number' && pkg.price > 0
+                    ? pkg.price
+                    : 0;
+
+        return { amount: amountVnd, currency: 'VND' };
+    };
+
+    const getLocalizedPackageTitle = (pkg: PaymentPackage) => {
+        if (currentLocale === 'vi') {
+            return pkg.titleVi || pkg.nameVi || pkg.title || pkg.name;
+        }
+        return pkg.titleEn || pkg.nameEn || pkg.title || pkg.name;
+    };
+
+    const getLocalizedPackageDescription = (pkg: PaymentPackage) => {
+        if (currentLocale === 'vi') {
+            return pkg.descriptionVi || pkg.description;
+        }
+        return pkg.descriptionEn || pkg.description;
     };
 
     const handleSelectPackage = (pkg: PaymentPackage) => {
@@ -115,7 +181,7 @@ export default function TopupPage() {
             }
         } catch (error: any) {
             console.error('Payment error:', error);
-            const errorMessage = error?.response?.data?.message || error?.message || (locale === 'vi' ? 'Có lỗi xảy ra. Vui lòng thử lại.' : 'An error occurred. Please try again.');
+            const errorMessage = error?.response?.data?.message || error?.message || (currentLocale === 'vi' ? 'Có lỗi xảy ra. Vui lòng thử lại.' : 'An error occurred. Please try again.');
             alert(errorMessage);
         } finally {
             setIsProcessing(false);
@@ -129,6 +195,8 @@ export default function TopupPage() {
             </div>
         );
     }
+
+    const selectedDisplayPrice = selectedPackage ? getDisplayPrice(selectedPackage) : null;
 
     return (
         <div className="min-h-screen font-sans">
@@ -147,14 +215,11 @@ export default function TopupPage() {
                                         const isPopular = pkg.isPopular || false;
                                         const isBestValue = pkg.isBestValue || false;
                                         const isSelected = selectedPackage?.code === pkg.code;
+                                        const displayPrice = getDisplayPrice(pkg);
                                         
                                         // Get localized name and description
-                                        const packageName = locale === 'vi' 
-                                            ? (pkg.nameVi || pkg.name) 
-                                            : (pkg.nameEn || pkg.name);
-                                        const packageDescription = locale === 'vi'
-                                            ? (pkg.descriptionVi || pkg.description)
-                                            : (pkg.descriptionEn || pkg.description);
+                                        const packageName = getLocalizedPackageTitle(pkg);
+                                        const packageDescription = getLocalizedPackageDescription(pkg);
 
                                         return (
                                             <div
@@ -212,7 +277,7 @@ export default function TopupPage() {
                                                             {t("payment")}
                                                         </div>
                                                         <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                                                            {formatCurrency(pkg.price || pkg.priceVnd, pkg.currency)}
+                                                            {formatCurrency(displayPrice.amount, displayPrice.currency)}
                                                         </div>
                                                     </div>
 
@@ -391,7 +456,9 @@ export default function TopupPage() {
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center py-4 border-b border-dashed border-slate-200 dark:border-slate-700">
                                         <span className="text-slate-500 dark:text-slate-400 font-medium">{t("selectedPackage")}</span>
-                                        <span className="font-bold text-slate-900 dark:text-white text-right break-words max-w-[60%] leading-tight">{selectedPackage.name}</span>
+                                        <span className="font-bold text-slate-900 dark:text-white text-right break-words max-w-[60%] leading-tight">
+                                            {selectedPackage.code === 'CUSTOM' ? selectedPackage.name : getLocalizedPackageTitle(selectedPackage)}
+                                        </span>
                                     </div>
 
                                     <div className="flex justify-between items-center py-4 border-b border-dashed border-slate-200 dark:border-slate-700">
@@ -405,7 +472,7 @@ export default function TopupPage() {
                                     <div className="flex justify-between items-center pt-6 pb-2">
                                         <span className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-sm">{t("totalAmount")}</span>
                                         <span className="text-3xl font-black text-violet-600 dark:text-violet-400">
-                                            {formatCurrency(selectedPackage.price || selectedPackage.priceVnd, selectedPackage.currency)}
+                                            {selectedDisplayPrice ? formatCurrency(selectedDisplayPrice.amount, selectedDisplayPrice.currency) : ''}
                                         </span>
                                     </div>
 
@@ -497,3 +564,4 @@ export default function TopupPage() {
         </div>
     );
 }
+

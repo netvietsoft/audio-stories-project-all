@@ -134,6 +134,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
         params: {
           page,
           limit: LIMIT,
+          lang: locale,
           categoryId: currentCategory && currentCategory.id !== 0 ? currentCategory.id : undefined,
           sort: apiSort,
           ...(search ? { search } : {}),
@@ -141,12 +142,15 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
           ...(author ? { authorId: author } : {}), // Assuming backend supports author search via authorId or similar query
         },
       });
-      setStories(res.data.data || []);
+      setStories((res.data.data || []).map((story) => ({
+        ...story,
+        title: getLocalizedValue(locale, story.titleVi, story.titleEn, story.title),
+      })));
       setLastPage(res.data.meta?.lastPage || 1);
     };
 
     void loadStories();
-  }, [currentCategory, page, sort, categories, search, status, author]);
+  }, [currentCategory, page, sort, categories, search, status, author, locale]);
 
   const handleCategorySelect = (slug: string) => {
     setPage(1);

@@ -47,6 +47,8 @@ type TopCategoryItem = {
 type SearchResultItem = {
   id: string;
   title: string;
+  titleVi: string | null;
+  titleEn: string | null;
   slug: string;
   thumbnailUrl: string | null;
   author?: { name: string };
@@ -331,7 +333,7 @@ export default function Navbar() {
                             />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
-                                {story.title}
+                                {currentLang === 'en' ? story.titleEn || story.title : story.titleVi || story.title}
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
                                 {story.author?.name || "Đang cập nhật"}
@@ -673,7 +675,7 @@ export default function Navbar() {
                             />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
-                                {story.title}
+                                {currentLang === 'en' ? story.titleEn || story.title : story.titleVi || story.title}
                               </p>
                               <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
                                 {story.author?.name || "Đang cập nhật"}

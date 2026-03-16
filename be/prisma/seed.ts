@@ -34,6 +34,38 @@ async function main() {
     },
   });
 
+  console.log('Seeding languages...');
+
+  await prisma.language.upsert({
+    where: { key: 'vi' },
+    update: {
+      name: 'Tiếng Việt',
+      isActive: true,
+      displayOrder: 0,
+    },
+    create: {
+      key: 'vi',
+      name: 'Tiếng Việt',
+      isActive: true,
+      displayOrder: 0,
+    },
+  });
+
+  await prisma.language.upsert({
+    where: { key: 'en' },
+    update: {
+      name: 'English',
+      isActive: true,
+      displayOrder: 1,
+    },
+    create: {
+      key: 'en',
+      name: 'English',
+      isActive: true,
+      displayOrder: 1,
+    },
+  });
+
   console.log('Seeding users...');
 
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@truyen-audio.app';
@@ -125,28 +157,83 @@ async function main() {
   const categories = await Promise.all([
     prisma.category.upsert({
       where: { slug: 'tien-hiep' },
-      update: {},
-      create: { name: 'Tien Hiep', slug: 'tien-hiep', description: 'The gioi tu luyen huyen bi' },
+      update: {
+        nameVi: 'Tiên Hiệp',
+        nameEn: 'Xianxia',
+        language: 'vi',
+      },
+      create: {
+        name: 'Tien Hiep',
+        nameVi: 'Tiên Hiệp',
+        nameEn: 'Xianxia',
+        slug: 'tien-hiep',
+        language: 'vi',
+        description: 'The gioi tu luyen huyen bi',
+      },
     }),
     prisma.category.upsert({
       where: { slug: 'kiem-hiep' },
-      update: {},
-      create: { name: 'Kiem Hiep', slug: 'kiem-hiep', description: 'Giang ho an oan tinh thu' },
+      update: {
+        nameVi: 'Kiếm Hiệp',
+        nameEn: 'Wuxia',
+        language: 'vi',
+      },
+      create: {
+        name: 'Kiem Hiep',
+        nameVi: 'Kiếm Hiệp',
+        nameEn: 'Wuxia',
+        slug: 'kiem-hiep',
+        language: 'vi',
+        description: 'Giang ho an oan tinh thu',
+      },
     }),
     prisma.category.upsert({
       where: { slug: 'do-thi' },
-      update: {},
-      create: { name: 'Do Thi', slug: 'do-thi', description: 'Truyen hien dai' },
+      update: {
+        nameVi: 'Đô Thị',
+        nameEn: 'Urban',
+        language: 'vi',
+      },
+      create: {
+        name: 'Do Thi',
+        nameVi: 'Đô Thị',
+        nameEn: 'Urban',
+        slug: 'do-thi',
+        language: 'vi',
+        description: 'Truyen hien dai',
+      },
     }),
     prisma.category.upsert({
       where: { slug: 'ngon-tinh' },
-      update: {},
-      create: { name: 'Ngon Tinh', slug: 'ngon-tinh', description: 'Tinh cam lang man' },
+      update: {
+        nameVi: 'Ngôn Tình',
+        nameEn: 'Romance',
+        language: 'vi',
+      },
+      create: {
+        name: 'Ngon Tinh',
+        nameVi: 'Ngôn Tình',
+        nameEn: 'Romance',
+        slug: 'ngon-tinh',
+        language: 'vi',
+        description: 'Tinh cam lang man',
+      },
     }),
     prisma.category.upsert({
       where: { slug: 'huyen-huyen' },
-      update: {},
-      create: { name: 'Huyen Huyen', slug: 'huyen-huyen', description: 'Phieu luu ky ao' },
+      update: {
+        nameVi: 'Huyền Huyễn',
+        nameEn: 'Fantasy',
+        language: 'vi',
+      },
+      create: {
+        name: 'Huyen Huyen',
+        nameVi: 'Huyền Huyễn',
+        nameEn: 'Fantasy',
+        slug: 'huyen-huyen',
+        language: 'vi',
+        description: 'Phieu luu ky ao',
+      },
     }),
   ]);
 
@@ -156,8 +243,15 @@ async function main() {
   for (const name of authorNames) {
     const author = await prisma.author.upsert({
       where: { slug: slugify(name) },
-      update: { name },
-      create: { name, slug: slugify(name) },
+      update: {
+        name,
+        language: 'vi',
+      },
+      create: {
+        name,
+        slug: slugify(name),
+        language: 'vi',
+      },
     });
     authors.push(author);
   }
@@ -189,7 +283,7 @@ async function main() {
     const titleVi = storySeed[i]!.vi;
     const titleEn = storySeed[i]!.en;
     const title = titleVi;
-    const storyLang = 'multi';
+    const storyLang = i % 2 === 0 ? 'vi' : 'en'; // Alternate between vi and en
     const chapterTotal = i >= storySeed.length - 2 ? 0 : 18;
     const storyDescriptionVi = `${titleVi} - truyện audio song ngữ dùng để kiểm tra giao diện theo locale và trạng thái cập nhật chương.`;
     const storyDescriptionEn = `${titleEn} - bilingual audio story for locale-based browsing and chapter update testing.`;
@@ -211,6 +305,11 @@ async function main() {
         description: storyDescriptionVi,
         descriptionVi: storyDescriptionVi,
         descriptionEn: storyDescriptionEn,
+        facebookGroupUrl: i % 3 === 0 ? 'https://facebook.com/groups/example' : null,
+        twitterUrl: i % 4 === 0 ? 'https://twitter.com/example' : null,
+        instagramUrl: i % 5 === 0 ? 'https://instagram.com/example' : null,
+        redditUrl: i % 6 === 0 ? 'https://reddit.com/r/example' : null,
+        whatsappUrl: i % 7 === 0 ? 'https://wa.me/1234567890' : null,
       },
       create: {
         title,
@@ -228,6 +327,11 @@ async function main() {
         description: storyDescriptionVi,
         descriptionVi: storyDescriptionVi,
         descriptionEn: storyDescriptionEn,
+        facebookGroupUrl: i % 3 === 0 ? 'https://facebook.com/groups/example' : null,
+        twitterUrl: i % 4 === 0 ? 'https://twitter.com/example' : null,
+        instagramUrl: i % 5 === 0 ? 'https://instagram.com/example' : null,
+        redditUrl: i % 6 === 0 ? 'https://reddit.com/r/example' : null,
+        whatsappUrl: i % 7 === 0 ? 'https://wa.me/1234567890' : null,
       },
     });
 
@@ -275,6 +379,7 @@ async function main() {
           title: chapterTitleVi,
           titleVi: chapterTitleVi,
           titleEn: chapterTitleEn,
+          language: 'vi',
           description: chapterDescriptionVi,
           descriptionVi: chapterDescriptionVi,
           descriptionEn: chapterDescriptionEn,
@@ -296,6 +401,7 @@ async function main() {
           title: chapterTitleVi,
           titleVi: chapterTitleVi,
           titleEn: chapterTitleEn,
+          language: 'vi',
           description: chapterDescriptionVi,
           descriptionVi: chapterDescriptionVi,
           descriptionEn: chapterDescriptionEn,

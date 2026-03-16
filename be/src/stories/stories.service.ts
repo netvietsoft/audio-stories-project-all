@@ -29,12 +29,9 @@ export class StoriesService {
   }
 
   async create(data: CreateStoryDto) {
-    // Validate that at least one title and one description exist
-    if (!data.titleVi && !data.titleEn) {
-      throw new BadRequestException('At least one title (titleVi or titleEn) must be provided');
-    }
-    if (!data.descriptionVi && !data.descriptionEn) {
-      throw new BadRequestException('At least one description (descriptionVi or descriptionEn) must be provided');
+    // Validate that at least one title exists
+    if (!data.titleVi && !data.titleEn && !data.title) {
+      throw new BadRequestException('At least one title (titleVi, titleEn, or title) must be provided');
     }
 
     const { categoryIds, chapters, chapterIds, ...storyData } = data;
@@ -202,6 +199,7 @@ export class StoriesService {
 
     const where: Prisma.StoryWhereInput = {
       deletedAt: null,
+      ...(query.lang ? { language: query.lang } : {}),
       ...(query.status ? { status: query.status as StoryStatus } : {}),
       ...(query.search
         ? {
@@ -277,7 +275,7 @@ export class StoriesService {
     };
   }
 
-  async getTopCategories(limit = 5, _lang: 'vi' | 'en' = 'vi') {
+  async getTopCategories(limit = 5, _lang = 'vi') {
     const safeLimit = Math.min(Math.max(limit || 5, 1), 20);
     const grouped = await this.prisma.storyCategory.groupBy({
       by: ['categoryId'],
@@ -307,6 +305,7 @@ export class StoriesService {
           nameVi: true,
           nameEn: true,
           slug: true,
+          language: true,
         } as any,
       })
       : [];
@@ -357,8 +356,7 @@ export class StoriesService {
     const limit = query.limit ?? 20;
 
     const where: Prisma.StoryWhereInput = {
-      // Admin sees everything (including soft deleted if needed, but let's stick to non-deleted for now)
-      deletedAt: null,
+      // Don't filter by deletedAt in admin - show all stories including soft deleted
       ...(query.status ? { status: query.status as StoryStatus } : {}),
       ...(query.lang ? { language: query.lang } : {}),
       ...(query.search
@@ -425,7 +423,7 @@ export class StoriesService {
       },
     });
 
-    if (!story || story.deletedAt) {
+    if (!story) {
       throw new NotFoundException('Story not found');
     }
 
@@ -438,7 +436,7 @@ export class StoriesService {
       select: { id: true, deletedAt: true },
     });
 
-    if (!existing || existing.deletedAt) {
+    if (!existing) {
       throw new NotFoundException('Story not found');
     }
 
@@ -545,6 +543,7 @@ export class StoriesService {
         nameVi: true,
         nameEn: true,
         slug: true,
+        language: true,
       } as any,
       orderBy: {
         name: 'asc',
@@ -560,6 +559,7 @@ export class StoriesService {
         nameVi: true,
         nameEn: true,
         slug: true,
+        language: true,
         description: true,
         _count: {
           select: {
@@ -579,6 +579,7 @@ export class StoriesService {
         nameVi: item.nameVi,
         nameEn: item.nameEn,
         slug: item.slug,
+        language: item.language,
         description: item.description,
         storiesCount: item._count ? item._count.stories : 0,
       })),
@@ -603,7 +604,7 @@ export class StoriesService {
       select: { id: true, deletedAt: true },
     });
 
-    if (!existing || existing.deletedAt) {
+    if (!existing) {
       throw new NotFoundException('Story not found');
     }
 
@@ -629,8 +630,12 @@ export class StoriesService {
       select: { id: true, deletedAt: true },
     });
 
-    if (!existing || existing.deletedAt) {
+    if (!existing) {
       throw new NotFoundException('Story not found');
+    }
+
+    if (existing.deletedAt) {
+      return { message: 'Story is already deleted' };
     }
 
     // Soft delete the story
@@ -668,7 +673,7 @@ export class StoriesService {
       select: { id: true, authorId: true, deletedAt: true, title: true },
     });
 
-    if (!story || story.deletedAt) {
+    if (!story) {
       throw new NotFoundException('Story not found');
     }
 

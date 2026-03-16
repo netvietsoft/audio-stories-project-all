@@ -7,14 +7,14 @@ export class CreateChapterDto {
     chapterNumber: number;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     @MaxLength(300)
-    titleVi: string;
+    titleVi?: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     @MaxLength(300)
-    titleEn: string;
+    titleEn?: string;
 
     @IsOptional()
     @IsString()

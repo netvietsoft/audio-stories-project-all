@@ -250,13 +250,13 @@ export default function UserDetailsPage() {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="bg-slate-100/50 p-1.5 rounded-3xl flex flex-wrap gap-1 max-w-fit mx-auto md:mx-0 border border-slate-200/60 shadow-inner">
+            <div className="grid w-full max-w-md grid-cols-2 gap-1.5 rounded-3xl border border-slate-200/60 bg-slate-100/50 p-1.5 shadow-inner mx-auto md:mx-0 md:w-auto md:max-w-fit md:grid-cols-4">
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         className={`
-                            flex items-center gap-2.5 px-6 py-3 rounded-2xl text-sm font-bold transition-all
+                            flex w-full items-center justify-center gap-2.5 rounded-2xl px-4 py-3 text-center text-sm font-bold transition-all
                             ${activeTab === tab.id
                                 ? 'bg-white text-indigo-600 shadow-md transform scale-[1.02]'
                                 : 'text-slate-500 hover:text-slate-900 hover:bg-white/50'}
@@ -318,20 +318,23 @@ export default function UserDetailsPage() {
                                     {user.listeningHistory.length > 0 ? (
                                         <div className="space-y-3">
                                             {user.listeningHistory.slice(0, 5).map((history, i) => (
-                                                <div key={i} className="flex items-center gap-4 p-4 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
-                                                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500">
-                                                        <Clock className="w-5 h-5" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-bold text-slate-900 truncate">{history.story.title}</p>
-                                                        <p className="text-xs text-slate-500 mt-0.5">
-                                                            Chương {history.chapter.chapterNumber}: {history.chapter.title}
-                                                        </p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">
-                                                            {formatDate(history.lastListenedAt, true)}
-                                                        </p>
+                                                <div key={i} className="rounded-2xl border border-transparent p-4 transition-all hover:border-slate-100 hover:bg-slate-50">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                                                            <Clock className="w-5 h-5" />
+                                                        </div>
+                                                        <div className="min-w-0 flex-1 space-y-2">
+                                                            <div className="space-y-1">
+                                                                <p className="text-sm font-bold leading-5 text-slate-900 break-words">{history.story.title}</p>
+                                                                <p className="text-xs leading-5 text-slate-500 break-words">
+                                                                    Chương {history.chapter.chapterNumber}: {history.chapter.title}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                                                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-500">Moi nhat</span>
+                                                                <span>{formatDate(history.lastListenedAt, true)}</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
@@ -392,7 +395,7 @@ export default function UserDetailsPage() {
                             </h3>
                             <p className="text-slate-500 font-medium mt-1">Chi tiết sử dụng và nạp tín dụng của người dùng</p>
                         </div>
-                        <div className="overflow-x-auto">
+                        <div className="hidden overflow-x-auto md:block">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-50 border-b border-slate-100">
                                     <tr>
@@ -442,6 +445,49 @@ export default function UserDetailsPage() {
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+
+                        <div className="divide-y divide-slate-100 md:hidden">
+                            {user.creditTransactions.length > 0 ? user.creditTransactions.map(tx => (
+                                <div key={tx.id} className="space-y-4 p-5">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="space-y-1">
+                                            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Thời gian</p>
+                                            <p className="text-sm font-bold leading-6 text-slate-900 break-words">{formatDate(tx.createdAt, true)}</p>
+                                        </div>
+                                        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-black uppercase tracking-tight
+                                            ${tx.type === 'topup' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                                tx.type === 'spend' ? 'bg-rose-50 text-rose-700 border border-rose-100' :
+                                                    'bg-indigo-50 text-indigo-700 border border-indigo-100'}
+                                        `}>
+                                            {tx.type === 'topup' ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                                            {tx.type === 'topup' ? 'Nạp tiền' : tx.type === 'spend' ? 'Chi tiêu' : tx.type}
+                                        </span>
+                                    </div>
+
+                                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                                        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Nội dung</p>
+                                        <p className="mt-2 text-sm font-medium leading-6 text-slate-700 break-words">{tx.description || 'Không có mô tả'}</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                                            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Số lượng</p>
+                                            <p className={`mt-2 text-lg font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                                            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Số dư mới</p>
+                                            <p className="mt-2 text-lg font-black text-slate-900">{tx.balanceAfter.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="px-8 py-16 text-center text-slate-400 font-bold">
+                                    Chưa có giao dịch nào được ghi nhận.
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -545,50 +591,100 @@ export default function UserDetailsPage() {
                                     Lịch sử nạp tiền
                                 </h3>
                             </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead className="bg-slate-50 border-b border-slate-100">
-                                        <tr>
-                                            <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Mã gói</th>
-                                            <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Giá trị (VND)</th>
-                                            <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Tín dụng nhận</th>
-                                            <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
-                                            <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Ngày nạp</th>
+                            <div className="hidden overflow-x-auto md:block">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 border-b border-slate-100">
+                                    <tr>
+                                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Thời gian</th>
+                                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Loại giao dịch</th>
+                                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Nội dung</th>
+                                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Số lượng</th>
+                                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Số dư mới</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {user.creditTransactions.length > 0 ? user.creditTransactions.map(tx => (
+                                        <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
+                                            <td className="px-8 py-6">
+                                                <p className="text-sm font-bold text-slate-900">{formatDate(tx.createdAt, true)}</p>
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-tight
+                                                    ${tx.type === 'topup' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                                        tx.type === 'spend' ? 'bg-rose-50 text-rose-700 border border-rose-100' :
+                                                            'bg-indigo-50 text-indigo-700 border border-indigo-100'}
+                                                `}>
+                                                    {tx.type === 'topup' ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                                                    {tx.type === 'topup' ? 'Nạp tiền' : tx.type === 'spend' ? 'Chi tiêu' : tx.type}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-6 max-w-xs">
+                                                <p className="text-sm font-medium text-slate-600 line-clamp-1">{tx.description || 'Không có mô tả'}</p>
+                                            </td>
+                                            <td className="px-8 py-6 text-center">
+                                                <p className={`text-base font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                    {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                                                </p>
+                                            </td>
+                                            <td className="px-8 py-6 text-center">
+                                                <p className="text-sm font-bold text-slate-900">
+                                                    {tx.balanceAfter.toLocaleString()}
+                                                </p>
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {user.payments.length > 0 ? user.payments.map(p => (
-                                            <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="px-8 py-6">
-                                                    <p className="text-sm font-black text-indigo-600 uppercase tracking-tighter">{p.packageCode}</p>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <p className="text-sm font-bold text-slate-900">{p.amountVnd.toLocaleString()} đ</p>
-                                                </td>
-                                                <td className="px-8 py-6 text-center">
-                                                    <p className="text-sm font-black text-slate-900">+{p.creditsAdded.toLocaleString()}</p>
-                                                </td>
-                                                <td className="px-8 py-6 text-center">
-                                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase
-                                                        ${p.status === 'SUCCESS' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-400'}
-                                                    `}>
-                                                        {p.status === 'SUCCESS' ? 'Thành công' : p.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <p className="text-xs font-bold text-slate-500">{formatDate(p.paidAt || p.createdAt, true)}</p>
-                                                </td>
-                                            </tr>
-                                        )) : (
-                                            <tr>
-                                                <td colSpan={5} className="px-8 py-16 text-center text-slate-400 font-bold">
-                                                    Chưa có lịch sử nạp tiền.
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    )) : (
+                                        <tr>
+                                            <td colSpan={5} className="px-8 py-16 text-center text-slate-400 font-bold">
+                                                Chưa có giao dịch nào được ghi nhận.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="divide-y divide-slate-100 md:hidden">
+                            {user.creditTransactions.length > 0 ? user.creditTransactions.map(tx => (
+                                <div key={tx.id} className="space-y-4 p-5">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="space-y-1">
+                                            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Thời gian</p>
+                                            <p className="text-sm font-bold leading-6 text-slate-900 break-words">{formatDate(tx.createdAt, true)}</p>
+                                        </div>
+                                        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-[11px] font-black uppercase tracking-tight
+                                            ${tx.type === 'topup' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                                tx.type === 'spend' ? 'bg-rose-50 text-rose-700 border border-rose-100' :
+                                                    'bg-indigo-50 text-indigo-700 border border-indigo-100'}
+                                        `}>
+                                            {tx.type === 'topup' ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                                            {tx.type === 'topup' ? 'Nạp tiền' : tx.type === 'spend' ? 'Chi tiêu' : tx.type}
+                                        </span>
+                                    </div>
+
+                                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                                        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Nội dung</p>
+                                        <p className="mt-2 text-sm font-medium leading-6 text-slate-700 break-words">{tx.description || 'Không có mô tả'}</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                                            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Số lượng</p>
+                                            <p className={`mt-2 text-lg font-black ${tx.amount > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}
+                                            </p>
+                                        </div>
+                                        <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                                            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Số dư mới</p>
+                                            <p className="mt-2 text-lg font-black text-slate-900">{tx.balanceAfter.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="px-8 py-16 text-center text-slate-400 font-bold">
+                                    Chưa có giao dịch nào được ghi nhận.
+                                </div>
+                            )}
+                        </div>
                         </div>
                     </div>
                 )}
@@ -596,3 +692,8 @@ export default function UserDetailsPage() {
         </div>
     );
 }
+
+
+
+
+

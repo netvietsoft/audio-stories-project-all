@@ -9,10 +9,6 @@ import {
     Loader2,
     X,
     Music,
-    Youtube,
-    Lock,
-    Clock,
-    BookOpen,
     ChevronLeft,
     ChevronRight,
     ChevronDown,
@@ -21,6 +17,8 @@ import {
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { ChapterForm } from '../stories/[id]/chapters/_components/ChapterForm';
+import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
+import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
 interface Chapter {
     id: string;
@@ -51,16 +49,16 @@ interface Chapter {
 }
 
 export default function ChaptersGlobalPage() {
-    const getLocalizedText = (value: unknown): string => {
+    const getLocalizedText = (value: unknown, localeKey = 'vi'): string => {
         if (typeof value === 'string') return value;
         if (value && typeof value === 'object') {
             const record = value as Record<string, unknown>;
             const titleVi = typeof record.titleVi === 'string' ? record.titleVi : '';
             const titleEn = typeof record.titleEn === 'string' ? record.titleEn : '';
-            if (titleVi || titleEn) return titleVi || titleEn;
+            if (titleVi || titleEn) return localeKey === 'en' ? titleEn || titleVi : titleVi || titleEn;
             const vi = typeof record.vi === 'string' ? record.vi : '';
             const en = typeof record.en === 'string' ? record.en : '';
-            return vi || en || '';
+            return localeKey === 'en' ? en || vi || '' : vi || en || '';
         }
         return '';
     };
@@ -74,7 +72,8 @@ export default function ChaptersGlobalPage() {
     const [page, setPage] = useState(1);
     const [filterAccess, setFilterAccess] = useState('all');
     const [filterStoryId, setFilterStoryId] = useState('all');
-    const [selectedLocale, setSelectedLocale] = useState<'vi' | 'en'>('vi');
+    const [selectedLocale, setSelectedLocale] = useState('vi');
+    const { languages } = useAdminLanguages();
     const [selectedChapters, setSelectedChapters] = useState<Set<string>>(new Set());
     const [isDeletingBulk, setIsDeletingBulk] = useState(false);
     const [stories, setStories] = useState<any[]>([]);
@@ -86,20 +85,31 @@ export default function ChaptersGlobalPage() {
     const limit = 20;
 
     useEffect(() => {
+        if (!languages.some((language) => language.key === selectedLocale)) {
+            setSelectedLocale(languages[0]?.key || 'vi');
+        }
+    }, [languages, selectedLocale]);
+
+    useEffect(() => {
         fetchChapters();
     }, [page, searchTerm, filterAccess, filterStoryId, selectedLocale]);
 
     useEffect(() => {
         const fetchStories = async () => {
             try {
-                const res = await apiClient.get('/stories?all=true');
+                const res = await apiClient.get('/stories', {
+                    params: {
+                        all: true,
+                        lang: selectedLocale,
+                    },
+                });
                 setStories(Array.isArray(res.data) ? res.data : res.data.data || []);
             } catch (error) {
                 console.error('Failed to fetch stories:', error);
             }
         };
         fetchStories();
-    }, []);
+    }, [selectedLocale]);
 
     // Handle click outside for searchable select
     useEffect(() => {
@@ -146,7 +156,7 @@ export default function ChaptersGlobalPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Bạn có chắc chắn muốn xóa chương này?')) return;
+        if (!window.confirm('Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a chÆ°Æ¡ng nÃ y?')) return;
 
         try {
             await apiClient.delete(`/chapters/${id}`);
@@ -158,7 +168,7 @@ export default function ChaptersGlobalPage() {
 
     const handleBulkDelete = async () => {
         if (selectedChapters.size === 0) return;
-        if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedChapters.size} chương đã chọn?`)) return;
+        if (!window.confirm(`Báº¡n cÃ³ cháº¯c cháº¯n muá»‘n xÃ³a ${selectedChapters.size} chÆ°Æ¡ng Ä‘Ã£ chá»n?`)) return;
 
         setIsDeletingBulk(true);
         try {
@@ -169,7 +179,7 @@ export default function ChaptersGlobalPage() {
             fetchChapters();
         } catch (error) {
             console.error('Failed to delete chapters:', error);
-            alert('Có lỗi xảy ra khi xóa chapters');
+            alert('CÃ³ lá»—i xáº£y ra khi xÃ³a chapters');
         } finally {
             setIsDeletingBulk(false);
         }
@@ -253,17 +263,10 @@ export default function ChaptersGlobalPage() {
             console.error('Failed to save chapter:', error);
             const apiMessage = (error as any)?.response?.data?.message;
             const detail = Array.isArray(apiMessage) ? apiMessage.join(', ') : apiMessage;
-            alert(detail ? `Không thể lưu chương: ${detail}` : 'Không thể lưu chương. Vui lòng kiểm tra dữ liệu và thử lại.');
+            alert(detail ? `KhÃ´ng thá»ƒ lÆ°u chÆ°Æ¡ng: ${detail}` : 'KhÃ´ng thá»ƒ lÆ°u chÆ°Æ¡ng. Vui lÃ²ng kiá»ƒm tra dá»¯ liá»‡u vÃ  thá»­ láº¡i.');
         } finally {
             setIsSubmitting(false);
         }
-    };
-
-    const formatDuration = (seconds: number | null) => {
-        if (!seconds) return '--:--';
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -275,42 +278,27 @@ export default function ChaptersGlobalPage() {
                         <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
                             <Music className="w-6 h-6 text-white" />
                         </div>
-                        Quản lý Chương
+                        Quan ly Chuong
                     </h1>
                     <p className="text-slate-500 mt-2 font-medium">
-                        Tất cả các chương trong hệ thống ({total} chương)
+                        Tat ca cac chuong trong he thong ({total} chuong)
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    {/* Locale Selector */}
-                    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-                        <button
-                            onClick={() => setSelectedLocale('vi')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                selectedLocale === 'vi'
-                                    ? 'bg-indigo-600 text-white shadow-md'
-                                    : 'text-slate-600 hover:bg-slate-50'
-                            }`}
-                        >
-                            VI
-                        </button>
-                        <button
-                            onClick={() => setSelectedLocale('en')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                selectedLocale === 'en'
-                                    ? 'bg-indigo-600 text-white shadow-md'
-                                    : 'text-slate-600 hover:bg-slate-50'
-                            }`}
-                        >
-                            EN
-                        </button>
-                    </div>
+                    <AdminLanguageDropdown
+                        languages={languages}
+                        value={selectedLocale}
+                        onChange={(nextKey) => {
+                            setSelectedLocale(nextKey);
+                            setPage(1);
+                        }}
+                    />
                     <button
                         onClick={handleCreate}
                         className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200"
                     >
                         <Plus className="w-4 h-4" />
-                        Thêm chương mới
+                        Them chuong moi
                     </button>
                 </div>
             </div>
@@ -321,7 +309,7 @@ export default function ChaptersGlobalPage() {
                 {selectedChapters.size > 0 && (
                     <div className="flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-2xl">
                         <p className="text-sm font-bold text-red-900">
-                            Đã chọn {selectedChapters.size} chương
+                            Da chon {selectedChapters.size} chuong
                         </p>
                         <button
                             onClick={handleBulkDelete}
@@ -331,12 +319,12 @@ export default function ChaptersGlobalPage() {
                             {isDeletingBulk ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    Đang xóa...
+                                    Dang xoa...
                                 </>
                             ) : (
                                 <>
                                     <Trash2 className="w-4 h-4" />
-                                    Xóa đã chọn
+                                    Xoa da chon
                                 </>
                             )}
                         </button>
@@ -347,7 +335,7 @@ export default function ChaptersGlobalPage() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                     <input
                         type="text"
-                        placeholder="Tìm theo tiêu đề chương..."
+                        placeholder="Tim theo tieu de chuong..."
                         className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                         value={searchTerm}
                         onChange={(e) => {
@@ -367,10 +355,10 @@ export default function ChaptersGlobalPage() {
                             }}
                             className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-10 pr-10 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
                         >
-                            <option value="all">Tất cả loại truy cập</option>
-                            <option value="free">Miễn phí (Free)</option>
-                            <option value="timed">Mở khóa theo thời gian</option>
-                            <option value="vip">Dành cho VIP</option>
+                            <option value="all">Tat ca loai truy cap</option>
+                            <option value="free">Mien phi (Free)</option>
+                            <option value="timed">Mo khoa theo thoi gian</option>
+                            <option value="vip">Danh cho VIP</option>
                         </select>
                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
@@ -383,10 +371,10 @@ export default function ChaptersGlobalPage() {
                         >
                             <span className="truncate">
                                 {filterStoryId === 'all' 
-                                    ? 'Tất cả truyện' 
+                                    ? 'Tat ca truyen' 
                                     : filterStoryId === 'null'
-                                    ? 'Chưa gán truyện'
-                                    : getLocalizedText(stories.find(s => s.id === filterStoryId)?.title) || 'Lọc theo truyện'}
+                                    ? 'Chua gan truyen'
+                                    : getLocalizedText(stories.find(s => s.id === filterStoryId)?.title, selectedLocale) || 'Loc theo truyen'}
                             </span>
                             <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isStoryFilterOpen ? 'rotate-180' : ''}`} />
                         </button>
@@ -397,7 +385,7 @@ export default function ChaptersGlobalPage() {
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                     <input
                                         type="text"
-                                        placeholder="Tìm truyện..."
+                                        placeholder="Tim truyen..."
                                         className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold focus:ring-2 focus:ring-indigo-500/20"
                                         value={storySearch}
                                         onChange={(e) => setStorySearch(e.target.value)}
@@ -413,7 +401,7 @@ export default function ChaptersGlobalPage() {
                                         }}
                                         className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${filterStoryId === 'all' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
                                     >
-                                        Tất cả truyện
+                                        Tat ca truyen
                                         {filterStoryId === 'all' && <Check className="w-4 h-4" />}
                                     </button>
                                     <button
@@ -424,12 +412,12 @@ export default function ChaptersGlobalPage() {
                                         }}
                                         className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${filterStoryId === 'null' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
                                     >
-                                        Chưa gán truyện
+                                        Chua gan truyen
                                         {filterStoryId === 'null' && <Check className="w-4 h-4" />}
                                     </button>
                                     <div className="h-px bg-slate-100 my-1 mx-2" />
-                                    {stories.filter(s => getLocalizedText(s.title).toLowerCase().includes(storySearch.toLowerCase())).length > 0 ? (
-                                        stories.filter(s => getLocalizedText(s.title).toLowerCase().includes(storySearch.toLowerCase())).map((story) => (
+                                    {stories.filter(s => getLocalizedText(s.title, selectedLocale).toLowerCase().includes(storySearch.toLowerCase())).length > 0 ? (
+                                        stories.filter(s => getLocalizedText(s.title, selectedLocale).toLowerCase().includes(storySearch.toLowerCase())).map((story) => (
                                             <button
                                                 key={story.id}
                                                 onClick={() => {
@@ -440,12 +428,12 @@ export default function ChaptersGlobalPage() {
                                                 }}
                                                 className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between group transition-all ${filterStoryId === story.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'}`}
                                             >
-                                                <span className="truncate">{getLocalizedText(story.title)}</span>
+                                                <span className="truncate">{getLocalizedText(story.title, selectedLocale)}</span>
                                                 {filterStoryId === story.id && <Check className="w-4 h-4 shrink-0" />}
                                             </button>
                                         ))
                                     ) : (
-                                        <p className="p-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Không tìm thấy</p>
+                                        <p className="p-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Khong tim thay</p>
                                     )}
                                 </div>
                             </div>
@@ -455,157 +443,92 @@ export default function ChaptersGlobalPage() {
             </div>
             </div>
 
-            {/* Chapters Table */}
+            {/* Chapters List */}
             <div className="bg-white rounded-[40px] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-100">
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-16">
+                <div className="flex items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50 px-6 py-4 md:px-8">
+                    <label className="flex items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-500">
+                        <input
+                            type="checkbox"
+                            checked={chapters.length > 0 && selectedChapters.size === chapters.length}
+                            onChange={toggleSelectAll}
+                            className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        />
+                        Ch?n t?t c?
+                    </label>
+                    <p className="text-xs font-bold text-slate-400">{chapters.length} chuong</p>
+                </div>
+
+                <div className="divide-y divide-slate-100">
+                    {isLoading ? (
+                        Array(5).fill(0).map((_, i) => (
+                            <div key={i} className="px-6 py-5 md:px-8 animate-pulse">
+                                <div className="h-14 bg-slate-50 rounded-2xl" />
+                            </div>
+                        ))
+                    ) : chapters.length > 0 ? (
+                        chapters.map((chapter) => (
+                            <div
+                                key={chapter.id}
+                                className="group flex items-center justify-between gap-4 px-6 py-5 transition-all duration-300 hover:bg-slate-50/60 md:px-8"
+                            >
+                                <div className="flex min-w-0 items-center gap-4">
                                     <input
                                         type="checkbox"
-                                        checked={chapters.length > 0 && selectedChapters.size === chapters.length}
-                                        onChange={toggleSelectAll}
-                                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                        checked={selectedChapters.has(chapter.id)}
+                                        onChange={() => toggleChapterSelection(chapter.id)}
+                                        className="h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                     />
-                                </th>
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-24">#</th>
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Tiêu đề chương</th>
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Truyện</th>
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Audio / Thống kê</th>
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Loại</th>
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {isLoading ? (
-                                Array(5).fill(0).map((_, i) => (
-                                    <tr key={i} className="animate-pulse">
-                                        <td colSpan={7} className="px-8 py-6">
-                                            <div className="h-12 bg-slate-50 rounded-2xl" />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : chapters.length > 0 ? (
-                                chapters.map((chapter) => (
-                                    <tr key={chapter.id} className="group hover:bg-slate-50/50 transition-all duration-300">
-                                        <td className="px-8 py-5 text-center">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedChapters.has(chapter.id)}
-                                                onChange={() => toggleChapterSelection(chapter.id)}
-                                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                            />
-                                        </td>
-                                        <td className="px-8 py-5 text-center">
-                                            <span className="text-sm font-black text-slate-900 bg-slate-100 px-3 py-1 rounded-lg">
-                                                {chapter.chapterNumber}
-                                            </span>
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            <p className="text-sm font-black text-slate-900">
-                                                {selectedLocale === 'vi' 
-                                                    ? (chapter.titleVi || chapter.title)
-                                                    : (chapter.titleEn || chapter.title)
-                                                }
-                                            </p>
-                                            <div className="flex items-center gap-3 mt-1.5">
-                                                {chapter.r2AudioUrl ? (
-                                                    <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                                                        <Music className="w-3 h-3" /> R2 Audio
-                                                    </span>
-                                                ) : chapter.youtubeVideoId ? (
-                                                    <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">
-                                                        <Youtube className="w-3 h-3" /> YouTube
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[10px] font-black uppercase tracking-tighter text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                                                        No Audio
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            {chapter.story ? (
-                                                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">
-                                                    {selectedLocale === 'vi'
-                                                        ? (chapter.story.titleVi || chapter.story.title)
-                                                        : (chapter.story.titleEn || chapter.story.title)
-                                                    }
-                                                </span>
-                                            ) : (
-                                                <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100">
-                                                    Chưa gán truyện
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            <div className="flex flex-col gap-1.5">
-                                                <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-                                                    <Clock className="w-3.5 h-3.5" />
-                                                    {formatDuration(chapter.audioDuration)}
-                                                </div>
-                                                {chapter.content && (
-                                                    <div className="flex items-center gap-2 text-xs font-bold text-indigo-500">
-                                                        <BookOpen className="w-3.5 h-3.5" />
-                                                        Có văn bản
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            {chapter.accessType === 'vip' ? (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-100 text-[10px] font-black text-amber-600 uppercase tracking-widest">
-                                                    <Lock className="w-3 h-3" /> VIP
-                                                </span>
-                                            ) : chapter.accessType === 'timed' ? (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-[10px] font-black text-indigo-600 uppercase tracking-widest">
-                                                    <Clock className="w-3 h-3" /> Timed
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-black text-emerald-600 uppercase tracking-widest">
-                                                    Free
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-8 py-5 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                                <button
-                                                    onClick={() => handleEdit(chapter)}
-                                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(chapter.id)}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan={7} className="px-8 py-20 text-center">
-                                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                                            <Music className="w-6 h-6 text-slate-300" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-slate-900">Chưa có chương nào</h3>
-                                        <p className="text-slate-500 mt-1">Bắt đầu bằng cách thêm chương đầu tiên.</p>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-black text-slate-900 md:text-base">
+                                            Chuong {chapter.chapterNumber}: {selectedLocale === 'en'
+                                                ? (chapter.titleEn || chapter.titleVi || chapter.title)
+                                                : (chapter.titleVi || chapter.titleEn || chapter.title)}
+                                        </p>
+                                        <p className="mt-1 truncate text-xs font-medium text-slate-500">
+                                            {chapter.story
+                                                ? (selectedLocale === 'en'
+                                                    ? (chapter.story.titleEn || chapter.story.titleVi || chapter.story.title)
+                                                    : (chapter.story.titleVi || chapter.story.titleEn || chapter.story.title))
+                                                : 'Chua gán truy?n'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex shrink-0 items-center gap-2">
+                                    <button
+                                        onClick={() => handleEdit(chapter)}
+                                        className="rounded-xl p-2 text-slate-400 transition-all hover:bg-indigo-50 hover:text-indigo-600"
+                                        title="Ch?nh s?a"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(chapter.id)}
+                                        className="rounded-xl p-2 text-slate-400 transition-all hover:bg-red-50 hover:text-red-600"
+                                        title="Xóa"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="px-8 py-20 text-center">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                <Music className="w-6 h-6 text-slate-300" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900">ChÆ°a cÃ³ chÆ°Æ¡ng nÃ o</h3>
+                            <p className="text-slate-500 mt-1">Báº¯t Ä‘áº§u báº±ng cÃ¡ch thÃªm chÆ°Æ¡ng Ä‘áº§u tiÃªn.</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Pagination */}
                 {totalPages > 1 && (
                     <div className="px-8 py-6 border-t border-slate-100 flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-500">
-                            Trang {page} / {totalPages} (Tổng {total} chương)
+                            Trang {page} / {totalPages} (Tá»•ng {total} chÆ°Æ¡ng)
                         </p>
                         <div className="flex items-center gap-2">
                             <button
@@ -634,10 +557,10 @@ export default function ChaptersGlobalPage() {
                         <div className="p-8 border-b border-slate-100 flex items-center justify-between shrink-0">
                             <div>
                                 <h2 className="text-2xl font-black text-slate-900">
-                                    {editingChapter ? 'Chỉnh sửa Chương' : 'Thêm Chương Mới'}
+                                    {editingChapter ? 'Chá»‰nh sá»­a ChÆ°Æ¡ng' : 'ThÃªm ChÆ°Æ¡ng Má»›i'}
                                 </h2>
                                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
-                                    {getLocalizedText(editingChapter?.story?.title) || 'Chương độc lập'}
+                                    {getLocalizedText(editingChapter?.story?.title, selectedLocale) || 'ChÆ°Æ¡ng Ä‘á»™c láº­p'}
                                 </p>
                             </div>
                             <button
@@ -677,3 +600,7 @@ export default function ChaptersGlobalPage() {
         </div>
     );
 }
+
+
+
+

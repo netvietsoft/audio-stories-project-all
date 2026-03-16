@@ -220,8 +220,8 @@ export default function MembershipsPage() {
                         }}
                     />
                 </div>
-                <div className="flex gap-4">
-                    <div className="relative">
+                <div className="grid w-full grid-cols-2 gap-4 md:flex md:w-auto">
+                    <div className="relative min-w-0">
                         <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                         <select
                             value={typeFilter}
@@ -229,14 +229,14 @@ export default function MembershipsPage() {
                                 setTypeFilter(e.target.value);
                                 setPage(1);
                             }}
-                            className="bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-8 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 transition-all appearance-none cursor-pointer min-w-[180px]"
+                            className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-8 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 transition-all appearance-none cursor-pointer md:min-w-[180px]"
                         >
                             <option value="">Tất cả loại</option>
                             <option value="all_authors">Toàn tác giả</option>
                             <option value="specific_author">Riêng tác giả</option>
                         </select>
                     </div>
-                    <div className="relative">
+                    <div className="relative min-w-0">
                         <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                         <select
                             value={statusFilter}
@@ -244,7 +244,7 @@ export default function MembershipsPage() {
                                 setStatusFilter(e.target.value);
                                 setPage(1);
                             }}
-                            className="bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-8 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 transition-all appearance-none cursor-pointer min-w-[180px]"
+                            className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-8 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 transition-all appearance-none cursor-pointer md:min-w-[180px]"
                         >
                             <option value="">Tất cả trạng thái</option>
                             <option value="active">Đang hoạt động</option>
@@ -256,7 +256,7 @@ export default function MembershipsPage() {
 
             {/* Memberships Table */}
             <div className="bg-white rounded-[40px] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="hidden overflow-x-auto md:block">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -372,6 +372,93 @@ export default function MembershipsPage() {
                     </table>
                 </div>
 
+                <div className="divide-y divide-slate-100 md:hidden">
+                    {isLoading ? (
+                        Array(4).fill(0).map((_, i) => (
+                            <div key={i} className="animate-pulse p-4">
+                                <div className="h-24 rounded-2xl bg-slate-50" />
+                            </div>
+                        ))
+                    ) : memberships.length > 0 ? (
+                        memberships.map((membership) => {
+                            const active = isActive(membership.endDate);
+                            const daysLeft = getDaysRemaining(membership.endDate);
+                            return (
+                                <div key={membership.id} className="p-4">
+                                    <div className="space-y-3 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-amber-600 text-sm font-bold text-white">
+                                                    {membership.user.displayName.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-black text-slate-900 break-words">{membership.user.displayName}</p>
+                                                    <p className="text-xs font-medium text-slate-400 break-all">{membership.user.email}</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDelete(membership.id)}
+                                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-all hover:bg-red-50 hover:text-red-600"
+                                                title="Xoa hoi vien"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {membership.type === 'all_authors' ? (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-100 bg-purple-50 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-purple-600">
+                                                    <Users className="w-3 h-3" /> Toan tac gia
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-indigo-600">
+                                                    <User className="w-3 h-3" /> Rieng tac gia
+                                                </span>
+                                            )}
+                                            {active ? (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-600">
+                                                    <CheckCircle className="w-3 h-3" /> Hoat dong
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-red-100 bg-red-50 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-red-600">
+                                                    <XCircle className="w-3 h-3" /> Het han
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Tac gia</p>
+                                                <p className="mt-1 text-sm font-bold text-slate-700 break-words">{membership.author?.name || '-'}</p>
+                                            </div>
+                                            <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Credits</p>
+                                                <p className="mt-1 text-sm font-bold text-amber-600">{membership.creditsSpent.toLocaleString()} credits</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Thoi han</p>
+                                            <p className="mt-1 text-sm font-bold text-slate-700">{formatDate(membership.startDate)} - {formatDate(membership.endDate)}</p>
+                                            {active && daysLeft > 0 && (
+                                                <p className="mt-1 text-xs font-bold text-emerald-600">Con {daysLeft} ngay</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="px-8 py-20 text-center">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                <Crown className="w-6 h-6 text-slate-300" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900">Chua co hoi vien nao</h3>
+                            <p className="text-slate-500 mt-1">Cac goi hoi vien se hien thi o day.</p>
+                        </div>
+                    )}
+                </div>
+
                 {/* Pagination */}
                 {totalPages > 1 && (
                     <div className="px-8 py-6 border-t border-slate-100 flex items-center justify-between">
@@ -400,3 +487,5 @@ export default function MembershipsPage() {
         </div>
     );
 }
+
+

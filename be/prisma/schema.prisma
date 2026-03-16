@@ -147,6 +147,19 @@ model Role {
   @@map("roles")
 }
 
+model Language {
+  id           Int      @id @default(autoincrement()) @db.UnsignedInt
+  key          String   @unique @db.VarChar(16)
+  name         String   @db.VarChar(120)
+  isActive     Boolean  @default(true) @map("is_active")
+  displayOrder Int      @default(0) @map("display_order") @db.UnsignedInt
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, displayOrder])
+  @@map("languages")
+}
+
 model Category {
   id          Int      @id @default(autoincrement()) @db.UnsignedInt
   name        String   @unique @db.VarChar(100)

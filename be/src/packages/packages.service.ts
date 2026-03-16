@@ -7,6 +7,23 @@ import { UpdatePackageDto } from './dto/update-package.dto';
 export class PackagesService {
     constructor(private readonly prisma: PrismaService) { }
 
+    private hasLocaleContent(pkg: any, lang: string) {
+        if (lang === 'vi') {
+            return Boolean(
+                (typeof pkg?.nameVi === 'string' && pkg.nameVi.trim()) ||
+                (typeof pkg?.descriptionVi === 'string' && pkg.descriptionVi.trim()),
+            );
+        }
+
+        if (lang === 'en') {
+            return Boolean(
+                (typeof pkg?.nameEn === 'string' && pkg.nameEn.trim()) ||
+                (typeof pkg?.descriptionEn === 'string' && pkg.descriptionEn.trim()),
+            );
+        }
+
+        return false;
+    }
     async findAll(lang?: string) {
         // Using site_settings table to store packages as JSON
         const packagesSetting = await this.prisma.siteSetting.findUnique({
@@ -19,9 +36,31 @@ export class PackagesService {
 
         try {
             const allPackages = JSON.parse(packagesSetting.value);
-            // Return all packages - frontend will handle locale-specific display
-            // Each package now has nameVi, nameEn, descriptionVi, descriptionEn
-            return allPackages;
+
+            if (!Array.isArray(allPackages)) {
+                return [];
+            }
+
+            if (!lang) {
+                return allPackages;
+            }
+
+            const normalizedLang = lang.toLowerCase();
+
+            // Locale filter is flexible:
+            // 1) Explicit package lang match.
+            // 2) Package has localized content for requested locale (name/description).
+            // This avoids empty lists for legacy data where lang is missing or inconsistent.
+            const filtered = allPackages.filter((pkg: any) => {
+                const pkgLang =
+                    typeof pkg?.lang === 'string' && pkg.lang.trim().length > 0
+                        ? pkg.lang.toLowerCase()
+                        : '';
+                return pkgLang === normalizedLang || this.hasLocaleContent(pkg, normalizedLang);
+            });
+
+            // Fall back to full list so UI does not break if data shape is unexpected.
+            return filtered.length > 0 ? filtered : allPackages;
         } catch {
             return [];
         }
@@ -32,11 +71,12 @@ export class PackagesService {
 
         // Check if code already exists
         if (packages.find((p: any) => p.code === createPackageDto.code)) {
-            throw new ConflictException(`Package with code "${createPackageDto.code}" already exists`);
+            throw new ConflictException('Package with code "' + createPackageDto.code + '" already exists');
         }
 
         const newPackage = {
             ...createPackageDto,
+            lang: (createPackageDto.lang || 'vi').toLowerCase(),
             isActive: createPackageDto.isActive ?? true,
             displayOrder: createPackageDto.displayOrder ?? packages.length,
             createdAt: new Date().toISOString(),
@@ -51,7 +91,7 @@ export class PackagesService {
                 key: 'payment_packages',
                 value: JSON.stringify(packages),
                 type: 'json',
-                description: 'Danh sách các gói thanh toán',
+                description: 'Danh sÃ¡ch cÃ¡c gÃ³i thanh toÃ¡n',
             },
         });
 
@@ -63,12 +103,15 @@ export class PackagesService {
         const index = packages.findIndex((p: any) => p.code === code);
 
         if (index === -1) {
-            throw new NotFoundException(`Package with code "${code}" not found`);
+            throw new NotFoundException('Package with code "' + code + '" not found');
         }
 
         packages[index] = {
             ...packages[index],
             ...updatePackageDto,
+            lang: updatePackageDto.lang
+                ? updatePackageDto.lang.toLowerCase()
+                : packages[index].lang,
             updatedAt: new Date().toISOString(),
         };
 
@@ -85,7 +128,7 @@ export class PackagesService {
         const index = packages.findIndex((p: any) => p.code === code);
 
         if (index === -1) {
-            throw new NotFoundException(`Package with code "${code}" not found`);
+            throw new NotFoundException('Package with code "' + code + '" not found');
         }
 
         const removed = packages.splice(index, 1)[0];
@@ -98,3 +141,4 @@ export class PackagesService {
         return removed;
     }
 }
+

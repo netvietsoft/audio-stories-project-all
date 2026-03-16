@@ -15,7 +15,7 @@ type ChapterItem = {
     slug: string;
     thumbnailUrl: string | null;
     author?: { name: string };
-  };
+  } | null;
 };
 
 interface StoryListViewProps {
@@ -67,7 +67,9 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
     );
   }
 
-  if (!chapters || chapters.length === 0) {
+  const validChapters = (chapters || []).filter((chapter) => chapter?.story?.slug);
+
+  if (!validChapters.length) {
     return (
       <div className="text-center py-12 text-gray-500 dark:text-gray-400">
         {t("noChapters")}
@@ -77,25 +79,25 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
 
   return (
     <div className="space-y-0.5">
-      {chapters.map((chapter) => (
+      {validChapters.map((chapter) => (
         <Link
           key={chapter.id}
-          href={`/story/${chapter.story.slug}/chuong-${chapter.chapterNumber}`}
+          href={`/story/${chapter.story!.slug}/chuong-${chapter.chapterNumber}`}
           className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors group"
         >
           {/* Left: Thumbnail + Story Title */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
               <Image
-                src={chapter.story.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
-                alt={chapter.story.title}
+                src={chapter.story!.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
+                alt={chapter.story!.title}
                 fill
                 className="object-cover"
               />
             </div>
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                {chapter.story.title}
+                {chapter.story!.title}
               </h3>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                 {t("statusOngoing")}

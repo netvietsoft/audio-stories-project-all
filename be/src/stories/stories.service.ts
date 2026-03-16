@@ -38,15 +38,7 @@ export class StoriesService {
     }
 
     const { categoryIds, chapters, chapterIds, ...storyData } = data;
-    
-    // Set title and description from locale-specific fields for backward compatibility
-    if (!storyData.title) {
-      storyData.title = storyData.titleVi || storyData.titleEn || '';
-    }
-    if (!storyData.description) {
-      storyData.description = storyData.descriptionVi || storyData.descriptionEn || '';
-    }
-    
+
     const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
 
     try {

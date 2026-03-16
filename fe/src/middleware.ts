@@ -11,9 +11,20 @@ import { defaultLocale, isValidLocale, localeCookieName } from "./i18n";
 const authRoutes = [AUTH_LOGIN_PATH, "/register"];
 
 const localePrefixMatcher = /^\/(vi|en)(?=\/|$)/;
+const publicFileMatcher = /\.[^/]+$/;
 
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
+
+    // Skip locale/auth middleware for static files in /public and framework assets.
+    if (
+        pathname.startsWith("/_next") ||
+        pathname.startsWith("/api") ||
+        publicFileMatcher.test(pathname)
+    ) {
+        return NextResponse.next();
+    }
+
     const hasAccessToken = Boolean(request.cookies.get(ACCESS_TOKEN_KEY)?.value);
 
     const prefixedLocale = pathname.match(localePrefixMatcher)?.[1];
@@ -61,5 +72,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)"],
+    matcher: ["/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|manifest.json).*)"],
 };

@@ -34,6 +34,12 @@ export default function CategoriesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedLocale, setSelectedLocale] = useState<'vi' | 'en'>('vi');
+
+    const getLocalizedName = (cat: Category) => {
+        if (selectedLocale === 'vi') return cat.nameVi || cat.name;
+        return cat.nameEn || cat.name;
+    };
 
     useEffect(() => {
         fetchCategories();
@@ -109,13 +115,38 @@ export default function CategoriesPage() {
                     </h1>
                     <p className="text-slate-500 mt-2 font-medium">Tổ chức và phân loại các tác phẩm trên hệ thống.</p>
                 </div>
-                <button
-                    onClick={handleCreate}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200"
-                >
-                    <Plus className="w-4 h-4" />
-                    Thêm danh mục
-                </button>
+                <div className="flex items-center gap-3">
+                    {/* Locale Selector */}
+                    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                        <button
+                            onClick={() => setSelectedLocale('vi')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                selectedLocale === 'vi'
+                                    ? 'bg-indigo-600 text-white shadow-md'
+                                    : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            VI
+                        </button>
+                        <button
+                            onClick={() => setSelectedLocale('en')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                selectedLocale === 'en'
+                                    ? 'bg-indigo-600 text-white shadow-md'
+                                    : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            EN
+                        </button>
+                    </div>
+                    <button
+                        onClick={handleCreate}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Thêm danh mục
+                    </button>
+                </div>
             </div>
 
             {/* Filters and Search */}
@@ -166,10 +197,8 @@ export default function CategoriesPage() {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-slate-900">{cat.name}</p>
-                                                    {cat.description && (
-                                                        <p className="text-xs text-slate-500 line-clamp-1">{cat.description}</p>
-                                                    )}
+                                                    <p className="text-sm font-black text-slate-900">{getLocalizedName(cat)}</p>
+                                                    <p className="text-xs text-slate-400 font-medium">{cat.name}</p>
                                                 </div>
                                             </div>
                                         </td>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "@/components/shared/LocalizedLink";
 import { useLocale, useTranslations } from "next-intl";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
     User,
     Mail,
@@ -120,6 +120,7 @@ const timeAgo = (input: string, locale: string, t: (key: string, values?: Record
 
 export default function ProfilePage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const params = useParams<{ lang?: string }>();
     const currentLang = params?.lang === "en" ? "en" : "vi";
     const locale = useLocale();
@@ -146,6 +147,13 @@ export default function ProfilePage() {
             router.push(`/${currentLang}`);
         }
     }, [currentLang, mounted, router, user]);
+
+    useEffect(() => {
+        const panel = searchParams.get("panel");
+        if (panel === "favorites" || panel === "history" || panel === "activity") {
+            setActivePanel(panel);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         if (!mounted || !user) return;

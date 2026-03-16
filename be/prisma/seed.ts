@@ -63,8 +63,10 @@ async function main() {
     {
       email: 'reader1@seed.local',
       displayName: 'Reader One',
-      credits: 1200,
-      vipTier: 1,
+      avatarUrl: 'https://api.dicebear.com/9.x/adventurer/svg?seed=ReaderOne',
+      credits: 128500,
+      vipTier: 5,
+      totalUnlockedStories: 320,
       vipExpirationDate: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000),
       allowEmailNoti: true,
       allowBellNoti: true,
@@ -72,18 +74,55 @@ async function main() {
     {
       email: 'reader2@seed.local',
       displayName: 'Reader Two',
-      credits: 700,
-      vipTier: 0,
-      vipExpirationDate: null,
-      allowEmailNoti: false,
+      avatarUrl: 'https://api.dicebear.com/9.x/adventurer/svg?seed=ReaderTwo',
+      credits: 117400,
+      vipTier: 4,
+      totalUnlockedStories: 281,
+      vipExpirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      allowEmailNoti: true,
       allowBellNoti: true,
     },
     {
       email: 'reader3@seed.local',
       displayName: 'Reader Three',
-      credits: 450,
-      vipTier: 0,
-      vipExpirationDate: null,
+      avatarUrl: 'https://api.dicebear.com/9.x/adventurer/svg?seed=ReaderThree',
+      credits: 109300,
+      vipTier: 4,
+      totalUnlockedStories: 260,
+      vipExpirationDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000),
+      allowEmailNoti: true,
+      allowBellNoti: true,
+    },
+    {
+      email: 'reader4@seed.local',
+      displayName: 'Reader Four',
+      avatarUrl: 'https://api.dicebear.com/9.x/adventurer/svg?seed=ReaderFour',
+      credits: 98200,
+      vipTier: 3,
+      totalUnlockedStories: 241,
+      vipExpirationDate: new Date(Date.now() + 24 * 24 * 60 * 60 * 1000),
+      allowEmailNoti: true,
+      allowBellNoti: true,
+    },
+    {
+      email: 'reader5@seed.local',
+      displayName: 'Reader Five',
+      avatarUrl: 'https://api.dicebear.com/9.x/adventurer/svg?seed=ReaderFive',
+      credits: 93100,
+      vipTier: 2,
+      totalUnlockedStories: 214,
+      vipExpirationDate: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000),
+      allowEmailNoti: false,
+      allowBellNoti: true,
+    },
+    {
+      email: 'reader6@seed.local',
+      displayName: 'Reader Six',
+      avatarUrl: 'https://api.dicebear.com/9.x/adventurer/svg?seed=ReaderSix',
+      credits: 88700,
+      vipTier: 2,
+      totalUnlockedStories: 190,
+      vipExpirationDate: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000),
       allowEmailNoti: true,
       allowBellNoti: false,
     },
@@ -95,8 +134,10 @@ async function main() {
       where: { email: item.email },
       update: {
         displayName: item.displayName,
+        avatarUrl: item.avatarUrl,
         credits: item.credits,
         vipTier: item.vipTier,
+        totalUnlockedStories: item.totalUnlockedStories,
         vipExpirationDate: item.vipExpirationDate,
         emailVerifiedAt: new Date(),
         roleId: userRole.id,
@@ -108,7 +149,9 @@ async function main() {
         displayName: item.displayName,
         passwordHash: commonPassword,
         credits: item.credits,
+        avatarUrl: item.avatarUrl,
         vipTier: item.vipTier,
+        totalUnlockedStories: item.totalUnlockedStories,
         vipExpirationDate: item.vipExpirationDate,
         emailVerifiedAt: new Date(),
         roleId: userRole.id,
@@ -163,16 +206,46 @@ async function main() {
   }
 
   const storySeed = [
-    { vi: 'Pham Nhan Tu Tien', en: 'A Record of a Mortal Journey to Immortality' },
-    { vi: 'Dau Pha Thuong Khung', en: 'Battle Through the Heavens' },
-    { vi: 'Tien Nghich', en: 'Renegade Immortal' },
-    { vi: 'Nhat Niem Vinh Hang', en: 'A Will Eternal' },
-    { vi: 'Tinh Than Bien', en: 'Stellar Transformations' },
-    { vi: 'The Gioi Hoan My', en: 'Perfect World' },
-    { vi: 'Long Vuong Truyen Thuyet', en: 'Legend of the Dragon King' },
-    { vi: 'Dai Chua Te', en: 'The Great Ruler' },
-    { vi: 'Vu Dong Can Khon', en: 'Martial Universe' },
-    { vi: 'Ta Co Mot Toa Thanh', en: 'I Own a Ruined City' },
+    {
+      vi: 'Pham Nhan Lang Thang Qua Chinh Do Ma Vuc De Tim Con Duong Truong Sinh Bat Diet',
+      en: 'A Mortal Wanderer Crossing the Demon Empire Frontier in Search of an Undying Ascension Path',
+    },
+    {
+      vi: 'Thieu Nien Bi Truc Xuat Khoi Tong Mon Va Bat Dau Cuoc Hanh Trinh Dot Pha Cuu Tang Troi',
+      en: 'The Young Exile Who Left the Sect and Began a Journey to Burn Through Nine Heavens',
+    },
+    {
+      vi: 'Nguoi Giu Kiem Co Don Tren Vung Hoang Mac Va Loi The Phan Nghich Cua Tien Dao',
+      en: 'The Lone Sword Keeper of the Wasteland and the Rebellious Oath Against the Immortal Dao',
+    },
+    {
+      vi: 'Mot Y Niem Vinh Hang Giua Tram Tran Kiep Nan Va Hanh Trinh Bao Ve Nguoi Than Yeu',
+      en: 'One Eternal Thought Amid Endless Calamities and a Journey to Protect the Ones He Loves',
+    },
+    {
+      vi: 'Tinh Than Co Dai Thuc Tinh Trong Co The Yeo Duoi Cua Thieu Nien Bi Lang Quen',
+      en: 'Ancient Star Blood Awakens Inside the Frail Body of a Boy the World Has Forgotten',
+    },
+    {
+      vi: 'The Gioi Hoan My Sau Dai Tuyet Tan The Va Cuoc Tro Ve Cua Ke So Huu Huyet Mach Than',
+      en: 'Perfect World After the Great Snowfall and the Return of the Heir to a Divine Bloodline',
+    },
+    {
+      vi: 'Long Vuong Ngu Tren Bien Sau Tinh Day Truoc Dai Chien Cua Tram Thanh Tri Co Dai',
+      en: 'The Sleeping Dragon King Wakes Before the Grand War of a Hundred Ancient Strongholds',
+    },
+    {
+      vi: 'Dai Chua Te Tre Tuoi Va Ban Do Quyen Luc Dang Lam Rung Chuyen Ca Tam Gioi',
+      en: 'The Young Great Ruler and the Expanding Map of Power That Shakes All Three Realms',
+    },
+    {
+      vi: 'Vu Dong Can Khon Cua Ke Tro Ve Tu Vuc Sau Va Hanh Trinh Thanh Lap De Che Moi',
+      en: 'Martial Cosmos of the Survivor Who Returned from the Abyss to Build a New Dominion',
+    },
+    {
+      vi: 'Ta So Huu Toa Co Thanh Tan Phe Noi Cat Giau Bi Mat Ve Mot Nen Van Minh Da Mat',
+      en: 'I Inherited a Ruined Ancient City That Hides the Final Secret of a Lost Civilization',
+    },
   ];
 
   const stories = [] as Awaited<ReturnType<typeof prisma.story.upsert>>[];
@@ -185,14 +258,60 @@ async function main() {
     'He held his sword and decided to move forward despite uncertain outcome.',
   ];
 
+  const buildLongStoryIntroduction = (language: 'vi' | 'en', title: string, authorName: string) => {
+    const viSentences = [
+      `${title} mở ra bằng một thời đại hỗn loạn nơi biên giới giữa tiên môn, ma vực và thế tục không còn ranh giới rõ ràng nữa.`,
+      `Nhân vật chính bước vào câu chuyện với thân phận nhỏ bé nhưng luôn mang trong tim khát vọng đổi vận, bảo vệ người thân và tìm ra ý nghĩa thật sự của sức mạnh.`,
+      `Mỗi chặng đường đều được bồi đắp bằng những cuộc gặp gỡ nhiều tầng cảm xúc, những trận chiến căng thẳng và vô số quyết định khiến vận mệnh của cả một vùng trời thay đổi.`,
+      `Điểm nổi bật của truyện là nhịp kể chậm rãi nhưng dồn lực, liên tục mở rộng thế giới quan, chiều sâu tâm lý và những bí mật cổ xưa được chôn vùi qua nhiều thế hệ.`,
+      `Tác giả ${authorName} xây dựng hành trình trưởng thành bằng các lớp mâu thuẫn về tình thân, danh vọng, niềm tin, phản bội và sự cô độc của người đứng trước lựa chọn không có đường lui.`,
+      `Phần giới thiệu này được kéo dài để phục vụ kiểm thử giao diện, vì vậy mỗi đoạn đều chủ ý có độ dài lớn, câu chữ nhiều nhịp và lượng thông tin dày để quan sát cách hiển thị trên nhiều kích thước màn hình.`,
+      `Khi theo dõi truyện, người đọc sẽ liên tục bắt gặp những cổ thành đổ nát, chiến trường bỏ hoang, truyền thừa thất lạc, dị bảo thức tỉnh và các thế lực đang âm thầm tranh đoạt quyền khống chế tương lai.`,
+      `Không chỉ là một câu chuyện tu luyện hay phiêu lưu, đây còn là hành trình nhìn lại bản thân, trả giá cho tham vọng, học cách tin tưởng và chấp nhận rằng mọi lựa chọn đều để lại vết hằn lâu dài.`,
+      `Các mối quan hệ trong truyện được phát triển theo hướng nhiều lớp, lúc là đồng minh, lúc là đối thủ, lúc lại trở thành chiếc gương phản chiếu những giới hạn sâu kín nhất của nhân vật chính.`,
+      `Càng tiến xa, câu chuyện càng làm rõ câu hỏi cốt lõi rằng sức mạnh tối thượng có thực sự mang lại tự do, hay chỉ đẩy con người vào một vòng xoáy trách nhiệm khắc nghiệt hơn trước.`,
+    ];
+
+    const enSentences = [
+      `${title} begins in a fractured age where the borders between immortal factions, demonic territories, and mortal kingdoms have almost completely dissolved.`,
+      `The protagonist enters the narrative with little status, yet carries an unshakable desire to change fate, protect loved ones, and understand what power is truly meant for.`,
+      `Every stage of the journey is shaped by layered encounters, tense confrontations, and choices that gradually alter the destiny of an entire world.`,
+      `The story stands out because it expands its universe with deliberate pacing, emotional weight, and ancient secrets that were buried across many generations.`,
+      `Author ${authorName} frames the path of growth through conflicts involving loyalty, ambition, family bonds, betrayal, and the loneliness of standing before irreversible decisions.`,
+      `This introduction is intentionally long for interface testing, so each paragraph carries extra density, flowing rhythm, and enough text volume to stress real layouts across breakpoints.`,
+      `Readers repeatedly encounter ruined strongholds, abandoned battlefields, sleeping inheritances, awakening relics, and rival powers struggling to control the shape of the future.`,
+      `More than a cultivation saga or adventure fantasy, the novel becomes a meditation on identity, consequence, sacrifice, and the burden of carrying hope for others.`,
+      `Its relationships unfold in layers, shifting from alliance to rivalry and sometimes becoming mirrors that expose the most private limits of the central character.`,
+      `As the plot widens, the central question becomes sharper: does ultimate strength create freedom, or does it merely lock a person inside harsher responsibilities than before.`,
+    ];
+
+    const sentencePool = language === 'vi' ? viSentences : enSentences;
+    const targetWordCount = 4000;
+    const words: string[] = [];
+    let paragraphIndex = 0;
+
+    while (words.length < targetWordCount) {
+      const paragraph = Array.from({ length: 5 }, (_, sentenceIndex) => {
+        const baseSentence = sentencePool[(paragraphIndex + sentenceIndex) % sentencePool.length]!;
+        return `${baseSentence} ${language === 'vi' ? `Doan mo rong ${paragraphIndex + 1} nhan manh them chieu sau cua boi canh, nhan vat va xung dot trung tam de nguoi doc cam nhan duoc quy mo that su cua tac pham.` : `Expansion passage ${paragraphIndex + 1} reinforces the depth of the setting, character arcs, and central conflict so the interface can be tested with realistic narrative density.`}`;
+      }).join(' ');
+
+      words.push(...paragraph.split(/\s+/));
+      paragraphIndex += 1;
+    }
+
+    return words.slice(0, targetWordCount).join(' ');
+  };
+
   for (let i = 0; i < storySeed.length; i += 1) {
     const titleVi = storySeed[i]!.vi;
     const titleEn = storySeed[i]!.en;
     const title = titleVi;
     const storyLang = 'multi';
     const chapterTotal = i >= storySeed.length - 2 ? 0 : 18;
-    const storyDescriptionVi = `${titleVi} - truyện audio song ngữ dùng để kiểm tra giao diện theo locale và trạng thái cập nhật chương.`;
-    const storyDescriptionEn = `${titleEn} - bilingual audio story for locale-based browsing and chapter update testing.`;
+    const authorName = authors[i % authors.length].name;
+    const storyDescriptionVi = buildLongStoryIntroduction('vi', titleVi, authorName);
+    const storyDescriptionEn = buildLongStoryIntroduction('en', titleEn, authorName);
 
     const story = await prisma.story.upsert({
       where: { slug: slugify(title) },

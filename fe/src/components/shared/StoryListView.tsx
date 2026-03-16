@@ -15,7 +15,7 @@ type ChapterItem = {
     slug: string;
     thumbnailUrl: string | null;
     author?: { name: string };
-  };
+  } | null;
 };
 
 interface StoryListViewProps {
@@ -48,7 +48,7 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
   };
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2">
         {[...Array(10)].map((_, i) => (
           <div
             key={i}
@@ -76,45 +76,64 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
   }
 
   return (
-    <div className="space-y-0.5">
-      {chapters.map((chapter) => (
-        <Link
-          key={chapter.id}
-          href={`/story/${chapter.story.slug}/chuong-${chapter.chapterNumber}`}
-          className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors group"
-        >
-          {/* Left: Thumbnail + Story Title */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
-              <Image
-                src={chapter.story.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
-                alt={chapter.story.title}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                {chapter.story.title}
-              </h3>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                {t("statusOngoing")}
-              </p>
-            </div>
-          </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2">
+      {chapters.map((chapter) => {
+        const story = chapter.story;
+        const hasStoryLink = Boolean(story?.slug);
+        const storyTitle = story?.title || "Unknown story";
+        const chapterHref = hasStoryLink
+          ? `/story/${story!.slug}/chuong-${chapter.chapterNumber}`
+          : "#";
 
-          {/* Center: Chapter Info */}
-          <div className="hidden md:block text-sm text-gray-600 dark:text-gray-400 w-64 truncate">
-            {t("chapterLabel", { number: chapter.chapterNumber, title: chapter.title })}
-          </div>
+        return (
+          <Link
+            key={chapter.id}
+            href={chapterHref}
+            aria-disabled={!hasStoryLink}
+            onClick={(event) => {
+              if (!hasStoryLink) {
+                event.preventDefault();
+              }
+            }}
+            className={`flex items-center gap-4 p-3 rounded-lg transition-colors group ${
+              hasStoryLink
+                ? "hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                : "opacity-80 cursor-not-allowed"
+            }`}
+          >
+            {/* Left: Thumbnail + Story Title */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
+                <Image
+                  src={story?.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
+                  alt={storyTitle}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  {storyTitle}
+                </h3>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                  {t("statusOngoing")}
+                </p>
+              </div>
+            </div>
 
-          {/* Right: Time */}
-          <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 w-28 justify-end shrink-0">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{formatTimeAgo(chapter.createdAt)}</span>
-          </div>
-        </Link>
-      ))}
+            {/* Center: Chapter Info */}
+            <div className="hidden md:block text-sm text-gray-600 dark:text-gray-400 w-64 truncate">
+              {t("chapterLabel", { number: chapter.chapterNumber, title: chapter.title })}
+            </div>
+
+            {/* Right: Time */}
+            <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 w-28 justify-end shrink-0">
+              <Clock className="w-3.5 h-3.5" />
+              <span>{formatTimeAgo(chapter.createdAt)}</span>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }

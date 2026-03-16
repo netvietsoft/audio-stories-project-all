@@ -4,13 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
+import { Headphones, Heart, PlayCircle } from "lucide-react";
 
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import InfiniteMarqueeSlider from "@/components/shared/InfiniteMarqueeSlider";
 import StoryListView from "@/components/shared/StoryListView";
-import StoryDiscoveryBoard from "@/components/shared/StoryDiscoveryBoard";
+import { InteractiveStoryShelf, TopContributorsLeaderboard } from "@/components/shared/StoryDiscoveryBoard";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
+import { getLocalizedValue } from "@/lib/story-localization";
+import { useUserStore } from "@/stores/user-store";
 import { useRouter } from "next/navigation";
 
 type StoryItem = {
@@ -45,39 +48,96 @@ type AuthorItem = {
   name: string;
 };
 
-type HallMember = {
+type FavoriteItem = {
   id: string;
-  displayName: string;
-  avatarUrl: string | null;
-  vipTier: number;
-  totalUnlockedStories: number;
-  credits: number;
+  slug: string;
+  title: string;
+  titleVi?: string | null;
+  titleEn?: string | null;
+  thumbnailUrl: string | null;
+  status: "ongoing" | "completed";
+  totalViews: number;
+  author?: {
+    name: string;
+  };
+  categories?: Array<{ category: { id: number; name: string; nameVi?: string | null; nameEn?: string | null; slug: string } }>;
+};
+
+type FavoriteResponse = {
+  data: FavoriteItem[];
+};
+
+type HistoryItem = {
+  id: string;
+  progressSeconds: number;
+  lastListenedAt: string;
+  story: {
+    id: string;
+    slug: string;
+    title: string;
+    titleVi?: string | null;
+    titleEn?: string | null;
+    thumbnailUrl: string | null;
+    author?: {
+      name: string;
+    };
+  };
+  chapter: {
+    id: string;
+    chapterNumber: number;
+    title: string;
+    titleVi?: string | null;
+    titleEn?: string | null;
+    audioDuration: number | null;
+  };
+};
+
+type HistoryResponse = {
+  data: HistoryItem[];
 };
 
 type ExploreResponse = {
   data: StoryItem[];
 };
 
+type HallContributor = {
+  id: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  vipTier: number;
+  credits: number;
+  totalUnlockedStories: number;
+};
+
+type HallResponse = {
+  data: HallContributor[];
+};
+
 const NEW_LIMIT = 5;
 const POPULAR_LIMIT = 8;
-const RANKING_LIMIT = 5;
 
 export default function HomePage() {
   const t = useTranslations("Home");
+  const tProfile = useTranslations("ProfilePage");
+  const tNavbar = useTranslations("Navbar");
+  const tStoryDetail = useTranslations("StoryDetail");
+  const tProfileHistory = useTranslations("ProfileHistoryPage");
   const locale = useLocale();
   const lang = locale === "en" ? "en" : "vi";
   const router = useRouter();
+  const accessToken = useUserStore((state) => state.accessToken);
 
   const [newestStories, setNewestStories] = useState<StoryItem[]>([]);
   const [newestChapters, setNewestChapters] = useState<any[]>([]);
   const [popularStories, setPopularStories] = useState<StoryItem[]>([]);
   const [trendingStories, setTrendingStories] = useState<StoryItem[]>([]);
-  const [topRatingStories, setTopRatingStories] = useState<StoryItem[]>([]);
-  const [topViewsStories, setTopViewsStories] = useState<StoryItem[]>([]);
   const [topCategories, setTopCategories] = useState<CategoryItem[]>([]);
   const [allCategories, setAllCategories] = useState<CategoryItem[]>([]);
   const [authors, setAuthors] = useState<AuthorItem[]>([]);
-  const [hall, setHall] = useState<HallMember[]>([]);
+  const [hallContributors, setHallContributors] = useState<HallContributor[]>([]);
+  const [favoriteStories, setFavoriteStories] = useState<FavoriteItem[]>([]);
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [isPersonalizedLoading, setIsPersonalizedLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
   const [filterValue, setFilterValue] = useState<StoryFilterValue>({
@@ -108,19 +168,15 @@ export default function HomePage() {
           newestChaptersRes,
           popularRes,
           trendingRes,
-          topRatingRes,
-          topViewsRes,
           catTopRes,
           catFallbackRes,
-          hallRes,
           authorRes,
+          hallRes,
         ] = await Promise.allSettled([
           fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
           apiClient.get("/chapters/latest", { params: { limit: 12 } }).then((r) => r.data || []).catch(() => []),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "views", trendWindow: "week" }),
-          fetchExploreCached<ExploreResponse>({ limit: RANKING_LIMIT, lang, sort: "rating" }),
-          fetchExploreCached<ExploreResponse>({ limit: RANKING_LIMIT, lang, sort: "views" }),
           apiClient
             .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 20, lang } })
             .then((r) => r.data?.data || [])
@@ -130,12 +186,12 @@ export default function HomePage() {
             .then((r) => r.data || [])
             .catch(() => []),
           apiClient
-            .get<{ data: HallMember[] }>("/stories/hall-of-fame", { params: { limit: 5 } })
-            .then((r) => r.data?.data || [])
-            .catch(() => []),
-          apiClient
             .get<AuthorItem[]>("/stories/authors")
             .then((r) => r.data || [])
+            .catch(() => []),
+          apiClient
+            .get<HallResponse>("/stories/hall-of-fame", { params: { limit: 6 } })
+            .then((r) => r.data?.data || [])
             .catch(() => []),
         ]);
 
@@ -143,8 +199,6 @@ export default function HomePage() {
         setNewestChapters(newestChaptersRes.status === "fulfilled" ? newestChaptersRes.value : []);
         setPopularStories(popularRes.status === "fulfilled" ? (popularRes.value.data || []) : []);
         setTrendingStories(trendingRes.status === "fulfilled" ? (trendingRes.value.data || []) : []);
-        setTopRatingStories(topRatingRes.status === "fulfilled" ? (topRatingRes.value.data || []) : []);
-        setTopViewsStories(topViewsRes.status === "fulfilled" ? (topViewsRes.value.data || []) : []);
 
         const catTop = catTopRes.status === "fulfilled" ? catTopRes.value : [];
         const catFb = catFallbackRes.status === "fulfilled"
@@ -153,8 +207,8 @@ export default function HomePage() {
         setTopCategories(catTop.length ? catTop : catFb);
         setAllCategories(catFb);
 
-        setHall(hallRes.status === "fulfilled" ? hallRes.value : []);
         setAuthors(authorRes.status === "fulfilled" ? authorRes.value : []);
+        setHallContributors(hallRes.status === "fulfilled" ? hallRes.value : []);
       } catch (error) {
         console.error(t("loadError"), error);
       } finally {
@@ -165,17 +219,36 @@ export default function HomePage() {
     void loadHome();
   }, [lang, t]);
 
+  useEffect(() => {
+    if (!accessToken) {
+      setFavoriteStories([]);
+      setHistoryItems([]);
+      setIsPersonalizedLoading(false);
+      return;
+    }
+
+    const loadPersonalized = async () => {
+      setIsPersonalizedLoading(true);
+      try {
+        const [favoriteRes, historyRes] = await Promise.all([
+          apiClient.get<FavoriteResponse>("/favorites", { params: { page: 1, limit: 3, sort: "latest" } }),
+          apiClient.get<HistoryResponse>("/history", { params: { page: 1, limit: 3 } }),
+        ]);
+
+        setFavoriteStories(favoriteRes.data.data || []);
+        setHistoryItems(historyRes.data.data || []);
+      } catch (error) {
+        console.error("Failed to load personalized home data", error);
+      } finally {
+        setIsPersonalizedLoading(false);
+      }
+    };
+
+    void loadPersonalized();
+  }, [accessToken]);
+
   const activeHero = heroStories[heroIndex];
   const discoveryFeaturedStories = (trendingStories.length ? trendingStories : popularStories).slice(0, 7);
-  const discoveryNewStories = newestStories.slice(0, 9);
-  const discoveryBanners = heroStories.slice(0, 2).map((story) => ({
-    id: story.id,
-    title: story.title,
-    titleVi: (story as any).titleVi,
-    titleEn: (story as any).titleEn,
-    imageUrl: story.thumbnailUrl,
-    href: `/story/${story.slug}`,
-  }));
 
   return (
     <div className="space-y-12">
@@ -281,13 +354,145 @@ export default function HomePage() {
         isLoading={isLoading}
       />
 
-      {/* ─── Story Discovery Board (2/3 + 1/3 layout) ─────────── */}
-      <StoryDiscoveryBoard
-        featuredStories={discoveryFeaturedStories}
-        newStories={discoveryNewStories}
-        banners={discoveryBanners}
-        lang={lang}
-      />
+      {accessToken ? (
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("continueTitle")}</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("continueSubtitle")}</p>
+              </div>
+              <Link href="/profile/history" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-50 dark:border-slate-700 dark:text-blue-400 dark:hover:bg-slate-800">
+                <Headphones className="h-4 w-4" />
+                {tNavbar("listeningHistory")}
+              </Link>
+            </div>
+
+            {isPersonalizedLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+                ))}
+              </div>
+            ) : historyItems.length > 0 ? (
+              <div className="space-y-3">
+                {historyItems.map((item) => {
+                  const storyTitle = getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title);
+                  const chapterTitle = getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title);
+                  const progressPercent = item.chapter.audioDuration
+                    ? Math.min(100, Math.round((item.progressSeconds / item.chapter.audioDuration) * 100))
+                    : 0;
+
+                  return (
+                    <Link
+                      key={item.id}
+                      href={`/story/${item.story.slug}/chuong-${item.chapter.chapterNumber}`}
+                      className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+                    >
+                      <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
+                        <Image
+                          src={item.story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
+                          alt={storyTitle}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-1 text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
+                        <p className="mt-1 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{tProfile("chapterTitle", { number: item.chapter.chapterNumber, title: chapterTitle })}</p>
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                          <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${progressPercent}%` }} />
+                        </div>
+                        <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{t("continueProgress", { percent: progressPercent })}</p>
+                      </div>
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
+                        <PlayCircle className="h-5 w-5" />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                {t("continueEmpty")}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("favoritesListTitle")}</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("favoritesListSubtitle")}</p>
+              </div>
+              <Link href="/profile?panel=favorites" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-50 dark:border-slate-700 dark:text-blue-400 dark:hover:bg-slate-800">
+                <Heart className="h-4 w-4" />
+                {tNavbar("favorites")}
+              </Link>
+            </div>
+
+            {isPersonalizedLoading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+                ))}
+              </div>
+            ) : favoriteStories.length > 0 ? (
+              <div className="space-y-3">
+                {favoriteStories.map((story) => {
+                  const storyTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
+                  const categoryName = story.categories?.[0]?.category
+                    ? getLocalizedValue(locale, story.categories[0].category.nameVi, story.categories[0].category.nameEn, story.categories[0].category.name)
+                    : t("uncategorized");
+
+                  return (
+                    <Link
+                      key={story.id}
+                      href={`/story/${story.slug}`}
+                      className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+                    >
+                      <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
+                        <Image
+                          src={story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
+                          alt={storyTitle}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-1 text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
+                        <p className="mt-1 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{categoryName}</p>
+                        <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{story.author?.name || tStoryDetail("authorUpdating")}</p>
+                      </div>
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-sm">
+                        <Heart className="h-5 w-5" />
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                {t("favoritesEmpty")}
+              </div>
+            )}
+          </div>
+        </section>
+      ) : null}
+
+      {/* ─── Truyện Trending ─────────────────────────────────────── */}
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("trendingTitle")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t("trendingSubtitle")}</p>
+          </div>
+          <Link href="/trending" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            {t("viewAll")}
+          </Link>
+        </div>
+        <InteractiveStoryShelf stories={discoveryFeaturedStories} />
+      </section>
 
       {/* ─── Truyện mới đăng (List view) ─────────────── */}
       <section className="space-y-4">
@@ -319,146 +524,20 @@ export default function HomePage() {
         <InfiniteMarqueeSlider stories={popularStories} isLoading={isLoading} />
       </section>
 
-      {/* ─── Bảng Xếp Hạng (3 cols trên desktop) ───────────────── */}
+      {/* ─── Hall of Fame ─────────────────────────────────────────── */}
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("rankingsTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t("rankingsSubtitle")}</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("hallTitle")}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t("hallSubtitle")}</p>
           </div>
+          <Link href="/hall" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            {t("viewFullRanking")}
+          </Link>
         </div>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          {/* Bảng 1: Xếp hạng sức mạnh (Hall of Fame) */}
-          <RankingColumn
-            title={t("rankHallTitle")}
-            viewAllHref="/vinh-danh"
-            viewAllLabel={t("viewAll")}
-            items={hall.map((m) => ({
-              id: m.id,
-              name: m.displayName,
-              avatarUrl: m.avatarUrl,
-              meta: t("vipUnlocked", { tier: m.vipTier, count: m.totalUnlockedStories }),
-            }))}
-            isLoading={isLoading}
-            isUserRanking
-          />
-          {/* Bảng 2: Truyện mới nhất */}
-          <RankingColumn
-            title={t("rankNewestTitle")}
-            viewAllHref="/new"
-            viewAllLabel={t("viewAll")}
-            items={newestStories.map((s) => ({
-              id: s.id,
-              name: s.title,
-              avatarUrl: s.thumbnailUrl,
-              meta: s.author?.name || "",
-              href: `/story/${s.slug}`,
-            }))}
-            isLoading={isLoading}
-          />
-          {/* Bảng 3: Truyện được xem nhiều nhất */}
-          <RankingColumn
-            title={t("rankViewsTitle")}
-            viewAllHref="/trending"
-            viewAllLabel={t("viewAll")}
-            items={topViewsStories.map((s) => ({
-              id: s.id,
-              name: s.title,
-              avatarUrl: s.thumbnailUrl,
-              meta: t("totalViews", { count: Number(s.totalViews || 0).toLocaleString("vi-VN") }),
-              href: `/story/${s.slug}`,
-            }))}
-            isLoading={isLoading}
-          />
-        </div>
+        <TopContributorsLeaderboard contributors={hallContributors} />
       </section>
 
-    </div>
-  );
-}
-
-/* ──────────────────────────────────────────────────────────────
-   RankingColumn sub-component
-   ────────────────────────────────────────────────────────────── */
-type RankingItem = {
-  id: string;
-  name: string;
-  avatarUrl: string | null;
-  meta: string;
-  href?: string;
-};
-
-function RankingColumn({
-  title,
-  viewAllHref,
-  viewAllLabel,
-  items,
-  isLoading,
-  isUserRanking = false,
-}: {
-  title: string;
-  viewAllHref: string;
-  viewAllLabel: string;
-  items: RankingItem[];
-  isLoading: boolean;
-  isUserRanking?: boolean;
-}) {
-  const rankColors = ["text-amber-500", "text-slate-400", "text-amber-700", "text-slate-500", "text-slate-500"];
-
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-700">
-        <h3 className="font-bold text-slate-900 dark:text-white">{title}</h3>
-        <Link href={viewAllHref} className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
-          {viewAllLabel}
-        </Link>
-      </div>
-      <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-        {isLoading
-          ? Array.from({ length: RANKING_LIMIT }).map((_, i) => (
-            <li key={i} className="flex items-center gap-3 px-4 py-3 animate-pulse">
-              <div className="w-6 h-4 rounded bg-slate-200 dark:bg-slate-700" />
-              <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0" />
-              <div className="flex-1 space-y-1.5">
-                <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-slate-700" />
-                <div className="h-2.5 w-1/2 rounded bg-slate-200 dark:bg-slate-700" />
-              </div>
-            </li>
-          ))
-          : items.map((item, idx) => {
-            const content = (
-              <li key={item.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                <span className={`w-6 text-center text-sm font-black tabular-nums shrink-0 ${rankColors[idx] || "text-slate-400"}`}>
-                  {idx + 1}
-                </span>
-                <div className="w-10 h-10 shrink-0 relative">
-                  <Image
-                    src={
-                      item.avatarUrl ||
-                      (isUserRanking
-                        ? `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(item.name)}`
-                        : "https://placehold.co/80x80?text=?")
-                    }
-                    alt={item.name}
-                    fill
-                    sizes="40px"
-                    unoptimized={isUserRanking || item.avatarUrl?.includes("dicebear")}
-                    className={`object-cover ${isUserRanking ? "rounded-full" : "rounded-md"}`}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{item.name}</p>
-                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">{item.meta}</p>
-                </div>
-              </li>
-            );
-            return item.href ? (
-              <Link key={item.id} href={item.href} className="block">
-                {content}
-              </Link>
-            ) : content;
-          })}
-      </ul>
     </div>
   );
 }

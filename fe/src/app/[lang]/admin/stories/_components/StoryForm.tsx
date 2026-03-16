@@ -35,6 +35,10 @@ const storySchema = z.object({
     categoryIds: z.array(z.number()).min(1, 'Chọn ít nhất một thể loại'),
     audioUrl: z.string().optional(),
     facebookGroupUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
+    twitterUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
+    instagramUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
+    redditUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
+    whatsappUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
     isRecommended: z.boolean().optional(),
 }).refine((data) => data.titleVi || data.titleEn, {
     message: 'Phải có ít nhất một tiêu đề (Tiếng Việt hoặc English)',
@@ -114,6 +118,10 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
             categoryIds: [],
             isRecommended: false,
             facebookGroupUrl: '',
+            twitterUrl: '',
+            instagramUrl: '',
+            redditUrl: '',
+            whatsappUrl: '',
             ...(initialData
                 ? {
                     titleVi: initialData.titleVi,
@@ -127,6 +135,10 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     categoryIds: initialData.categoryIds,
                     audioUrl: initialData.audioUrl,
                     facebookGroupUrl: initialData.facebookGroupUrl,
+                    twitterUrl: initialData.twitterUrl,
+                    instagramUrl: initialData.instagramUrl,
+                    redditUrl: initialData.redditUrl,
+                    whatsappUrl: initialData.whatsappUrl,
                     isRecommended: initialData.isRecommended,
                 }
                 : {}),
@@ -642,6 +654,65 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                         />
                         {errors.facebookGroupUrl && <p className="text-xs font-bold text-red-500 ml-2">{errors.facebookGroupUrl.message}</p>}
+                    </div>
+
+                    {/* Social Media Links Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Twitter/X URL */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
+                                Link Twitter/X
+                            </label>
+                            <input
+                                {...register('twitterUrl')}
+                                type="url"
+                                placeholder="https://twitter.com/..."
+                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                            />
+                            {errors.twitterUrl && <p className="text-xs font-bold text-red-500 ml-2">{errors.twitterUrl.message}</p>}
+                        </div>
+
+                        {/* Instagram URL */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
+                                Link Instagram
+                            </label>
+                            <input
+                                {...register('instagramUrl')}
+                                type="url"
+                                placeholder="https://instagram.com/..."
+                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                            />
+                            {errors.instagramUrl && <p className="text-xs font-bold text-red-500 ml-2">{errors.instagramUrl.message}</p>}
+                        </div>
+
+                        {/* Reddit URL */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
+                                Link Reddit
+                            </label>
+                            <input
+                                {...register('redditUrl')}
+                                type="url"
+                                placeholder="https://reddit.com/r/..."
+                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                            />
+                            {errors.redditUrl && <p className="text-xs font-bold text-red-500 ml-2">{errors.redditUrl.message}</p>}
+                        </div>
+
+                        {/* WhatsApp URL */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
+                                Link WhatsApp
+                            </label>
+                            <input
+                                {...register('whatsappUrl')}
+                                type="url"
+                                placeholder="https://chat.whatsapp.com/..."
+                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                            />
+                            {errors.whatsappUrl && <p className="text-xs font-bold text-red-500 ml-2">{errors.whatsappUrl.message}</p>}
+                        </div>
                     </div>
 
                     {/* Thumbnail Upload using UploadThing - Redesigned */}

@@ -66,4 +66,9 @@ export class CreateChapterDto {
     @IsEnum(ChapterAccessType)
     @IsOptional()
     accessType?: ChapterAccessType;
+
+    @IsString()
+    @IsOptional()
+    @MaxLength(10)
+    language?: string;
 }

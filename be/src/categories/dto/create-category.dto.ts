@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsIn } from 'class-validator';
 
 export class CreateCategoryDto {
     @IsString()
@@ -24,4 +24,9 @@ export class CreateCategoryDto {
     @IsString()
     @IsOptional()
     iconUrl?: string;
+
+    @IsString()
+    @IsOptional()
+    @IsIn(['vi', 'en'])
+    language?: string;
 }

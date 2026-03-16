@@ -49,49 +49,61 @@ export class StoriesService {
     
     const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
 
-    const story = await this.prisma.story.create({
-      data: {
-        ...normalizedStoryData,
-        categories: categoryIds
-          ? {
-            create: categoryIds.map((id) => ({
-              categoryId: id,
-            })),
-          }
-          : undefined,
-        totalChapters: (chapters?.length || 0) + (chapterIds?.length || 0),
-        chapters: chapters?.length
-          ? {
-            create: chapters.map((chapter) => this.normalizeNestedChapterPayload(chapter)),
-          }
-          : undefined,
-      },
-      include: {
-        author: {
-          select: { id: true, name: true },
+    try {
+      const story = await this.prisma.story.create({
+        data: {
+          ...normalizedStoryData,
+          categories: categoryIds
+            ? {
+              create: categoryIds.map((id) => ({
+                categoryId: id,
+              })),
+            }
+            : undefined,
+          totalChapters: (chapters?.length || 0) + (chapterIds?.length || 0),
+          chapters: chapters?.length
+            ? {
+              create: chapters.map((chapter) => this.normalizeNestedChapterPayload(chapter)),
+            }
+            : undefined,
         },
-        categories: {
-          include: {
-            category: { select: { name: true } },
+        include: {
+          author: {
+            select: { id: true, name: true },
+          },
+          categories: {
+            include: {
+              category: { select: { name: true } },
+            },
           },
         },
-      },
-    });
-
-    // Assign existing chapters to this story if chapterIds provided
-    if (chapterIds && chapterIds.length > 0) {
-      await this.prisma.chapter.updateMany({
-        where: {
-          id: { in: chapterIds },
-          deletedAt: null,
-        },
-        data: {
-          storyId: story.id,
-        },
       });
-    }
 
-    return this.serializeStory(story);
+      // Assign existing chapters to this story if chapterIds provided
+      if (chapterIds && chapterIds.length > 0) {
+        await this.prisma.chapter.updateMany({
+          where: {
+            id: { in: chapterIds },
+            deletedAt: null,
+          },
+          data: {
+            storyId: story.id,
+          },
+        });
+      }
+
+      return this.serializeStory(story);
+    } catch (error) {
+      if (error.code === 'P2002') {
+        // Unique constraint violation
+        const target = error.meta?.target;
+        if (target && target.includes('slug')) {
+          throw new BadRequestException(`Slug "${data.slug}" đã tồn tại. Vui lòng sử dụng slug khác.`);
+        }
+        throw new BadRequestException('Dữ liệu bị trùng lặp. Vui lòng kiểm tra lại.');
+      }
+      throw error;
+    }
   }
 
 
@@ -356,6 +368,7 @@ export class StoriesService {
       // Admin sees everything (including soft deleted if needed, but let's stick to non-deleted for now)
       deletedAt: null,
       ...(query.status ? { status: query.status as StoryStatus } : {}),
+      ...(query.lang ? { language: query.lang } : {}),
       ...(query.search
         ? {
           OR: [

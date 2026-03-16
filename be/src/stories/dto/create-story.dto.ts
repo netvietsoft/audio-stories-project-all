@@ -12,6 +12,10 @@ export class CreateStoryDto {
     @IsString()
     titleEn?: string;
 
+    @IsOptional()
+    @IsString()
+    title?: string;
+
     @IsString()
     @IsNotEmpty()
     slug: string;
@@ -23,6 +27,10 @@ export class CreateStoryDto {
     @IsOptional()
     @IsString()
     descriptionEn?: string;
+
+    @IsOptional()
+    @IsString()
+    description?: string;
 
     @IsOptional()
     @IsString()
@@ -43,6 +51,22 @@ export class CreateStoryDto {
     @IsOptional()
     @IsUrl({}, { message: 'facebookGroupUrl must be a valid URL' })
     facebookGroupUrl?: string;
+
+    @IsOptional()
+    @IsUrl({}, { message: 'twitterUrl must be a valid URL' })
+    twitterUrl?: string;
+
+    @IsOptional()
+    @IsUrl({}, { message: 'instagramUrl must be a valid URL' })
+    instagramUrl?: string;
+
+    @IsOptional()
+    @IsUrl({}, { message: 'redditUrl must be a valid URL' })
+    redditUrl?: string;
+
+    @IsOptional()
+    @IsUrl({}, { message: 'whatsappUrl must be a valid URL' })
+    whatsappUrl?: string;
 
     @IsOptional()
     @IsBoolean()

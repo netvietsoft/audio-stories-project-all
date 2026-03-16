@@ -53,7 +53,7 @@ export class ChaptersService {
     }
 
     async findAllGlobal(query: ChapterQueryDto) {
-        const { page = 1, limit = 20, search, accessType, storyId } = query;
+        const { page = 1, limit = 20, search, accessType, storyId, lang } = query;
         const skip = (page - 1) * limit;
 
         const where: Prisma.ChapterWhereInput = {
@@ -71,6 +71,7 @@ export class ChaptersService {
                     ? { storyId: null } 
                     : { storyId }
                 : {}),
+            ...(lang ? { language: lang } : {}),
         };
 
         const [chapters, total] = await Promise.all([

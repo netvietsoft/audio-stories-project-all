@@ -74,6 +74,9 @@ export default function ChaptersGlobalPage() {
     const [page, setPage] = useState(1);
     const [filterAccess, setFilterAccess] = useState('all');
     const [filterStoryId, setFilterStoryId] = useState('all');
+    const [selectedLocale, setSelectedLocale] = useState<'vi' | 'en'>('vi');
+    const [selectedChapters, setSelectedChapters] = useState<Set<string>>(new Set());
+    const [isDeletingBulk, setIsDeletingBulk] = useState(false);
     const [stories, setStories] = useState<any[]>([]);
     const [isStoryFilterOpen, setIsStoryFilterOpen] = useState(false);
     const [storySearch, setStorySearch] = useState('');
@@ -84,7 +87,7 @@ export default function ChaptersGlobalPage() {
 
     useEffect(() => {
         fetchChapters();
-    }, [page, searchTerm, filterAccess, filterStoryId]);
+    }, [page, searchTerm, filterAccess, filterStoryId, selectedLocale]);
 
     useEffect(() => {
         const fetchStories = async () => {
@@ -115,6 +118,7 @@ export default function ChaptersGlobalPage() {
             const params = new URLSearchParams({
                 page: page.toString(),
                 limit: limit.toString(),
+                lang: selectedLocale,
                 ...(searchTerm && { search: searchTerm }),
                 ...(filterAccess !== 'all' && { accessType: filterAccess }),
                 ...(filterStoryId !== 'all' && { storyId: filterStoryId }),
@@ -123,6 +127,7 @@ export default function ChaptersGlobalPage() {
             setChapters(res.data.data);
             setTotal(res.data.meta.total);
             setTotalPages(res.data.meta.totalPages);
+            setSelectedChapters(new Set()); // Clear selection when fetching new data
         } catch (error) {
             console.error('Failed to fetch chapters:', error);
         } finally {
@@ -148,6 +153,43 @@ export default function ChaptersGlobalPage() {
             fetchChapters();
         } catch (error) {
             console.error('Failed to delete chapter:', error);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedChapters.size === 0) return;
+        if (!window.confirm(`Bạn có chắc chắn muốn xóa ${selectedChapters.size} chương đã chọn?`)) return;
+
+        setIsDeletingBulk(true);
+        try {
+            await Promise.all(
+                Array.from(selectedChapters).map(id => apiClient.delete(`/chapters/${id}`))
+            );
+            setSelectedChapters(new Set());
+            fetchChapters();
+        } catch (error) {
+            console.error('Failed to delete chapters:', error);
+            alert('Có lỗi xảy ra khi xóa chapters');
+        } finally {
+            setIsDeletingBulk(false);
+        }
+    };
+
+    const toggleChapterSelection = (id: string) => {
+        const newSelection = new Set(selectedChapters);
+        if (newSelection.has(id)) {
+            newSelection.delete(id);
+        } else {
+            newSelection.add(id);
+        }
+        setSelectedChapters(newSelection);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedChapters.size === chapters.length) {
+            setSelectedChapters(new Set());
+        } else {
+            setSelectedChapters(new Set(chapters.map(c => c.id)));
         }
     };
 
@@ -236,17 +278,68 @@ export default function ChaptersGlobalPage() {
                         Tất cả các chương trong hệ thống ({total} chương)
                     </p>
                 </div>
-                <button
-                    onClick={handleCreate}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200"
-                >
-                    <Plus className="w-4 h-4" />
-                    Thêm chương mới
-                </button>
+                <div className="flex items-center gap-3">
+                    {/* Locale Selector */}
+                    <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                        <button
+                            onClick={() => setSelectedLocale('vi')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                selectedLocale === 'vi'
+                                    ? 'bg-indigo-600 text-white shadow-md'
+                                    : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            VI
+                        </button>
+                        <button
+                            onClick={() => setSelectedLocale('en')}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                selectedLocale === 'en'
+                                    ? 'bg-indigo-600 text-white shadow-md'
+                                    : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            EN
+                        </button>
+                    </div>
+                    <button
+                        onClick={handleCreate}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Thêm chương mới
+                    </button>
+                </div>
             </div>
 
             {/* Search */}
-            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
+            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex flex-col gap-4">
+                {/* Bulk Delete Button */}
+                {selectedChapters.size > 0 && (
+                    <div className="flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-2xl">
+                        <p className="text-sm font-bold text-red-900">
+                            Đã chọn {selectedChapters.size} chương
+                        </p>
+                        <button
+                            onClick={handleBulkDelete}
+                            disabled={isDeletingBulk}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isDeletingBulk ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Đang xóa...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="w-4 h-4" />
+                                    Xóa đã chọn
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
+                <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative group flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                     <input
@@ -357,6 +450,7 @@ export default function ChaptersGlobalPage() {
                     </div>
                 </div>
             </div>
+            </div>
 
             {/* Chapters Table */}
             <div className="bg-white rounded-[40px] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
@@ -364,6 +458,14 @@ export default function ChaptersGlobalPage() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
+                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-16">
+                                    <input
+                                        type="checkbox"
+                                        checked={chapters.length > 0 && selectedChapters.size === chapters.length}
+                                        onChange={toggleSelectAll}
+                                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                    />
+                                </th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-24">#</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Tiêu đề chương</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Truyện</th>
@@ -376,7 +478,7 @@ export default function ChaptersGlobalPage() {
                             {isLoading ? (
                                 Array(5).fill(0).map((_, i) => (
                                     <tr key={i} className="animate-pulse">
-                                        <td colSpan={6} className="px-8 py-6">
+                                        <td colSpan={7} className="px-8 py-6">
                                             <div className="h-12 bg-slate-50 rounded-2xl" />
                                         </td>
                                     </tr>
@@ -385,12 +487,25 @@ export default function ChaptersGlobalPage() {
                                 chapters.map((chapter) => (
                                     <tr key={chapter.id} className="group hover:bg-slate-50/50 transition-all duration-300">
                                         <td className="px-8 py-5 text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedChapters.has(chapter.id)}
+                                                onChange={() => toggleChapterSelection(chapter.id)}
+                                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                            />
+                                        </td>
+                                        <td className="px-8 py-5 text-center">
                                             <span className="text-sm font-black text-slate-900 bg-slate-100 px-3 py-1 rounded-lg">
                                                 {chapter.chapterNumber}
                                             </span>
                                         </td>
                                         <td className="px-8 py-5">
-                                            <p className="text-sm font-black text-slate-900">{getLocalizedText(chapter.title)}</p>
+                                            <p className="text-sm font-black text-slate-900">
+                                                {selectedLocale === 'vi' 
+                                                    ? (chapter.titleVi || chapter.title)
+                                                    : (chapter.titleEn || chapter.title)
+                                                }
+                                            </p>
                                             <div className="flex items-center gap-3 mt-1.5">
                                                 {chapter.r2AudioUrl ? (
                                                     <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-tighter text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
@@ -410,7 +525,10 @@ export default function ChaptersGlobalPage() {
                                         <td className="px-8 py-5">
                                             {chapter.story ? (
                                                 <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">
-                                                    {getLocalizedText(chapter.story.title)}
+                                                    {selectedLocale === 'vi'
+                                                        ? (chapter.story.titleVi || chapter.story.title)
+                                                        : (chapter.story.titleEn || chapter.story.title)
+                                                    }
                                                 </span>
                                             ) : (
                                                 <span className="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100">
@@ -467,7 +585,7 @@ export default function ChaptersGlobalPage() {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={6} className="px-8 py-20 text-center">
+                                    <td colSpan={7} className="px-8 py-20 text-center">
                                         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
                                             <Music className="w-6 h-6 text-slate-300" />
                                         </div>

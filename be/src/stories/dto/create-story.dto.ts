@@ -4,29 +4,13 @@ import { StoryStatus } from '@prisma/client';
 import { CreateChapterDto } from '@/chapters/dto/create-chapter.dto';
 
 export class CreateStoryDto {
-    @IsOptional()
     @IsString()
-    titleVi?: string;
-
-    @IsOptional()
-    @IsString()
-    titleEn?: string;
-
-    @IsOptional()
-    @IsString()
-    title?: string;
+    @IsNotEmpty()
+    title: string;
 
     @IsString()
     @IsNotEmpty()
     slug: string;
-
-    @IsOptional()
-    @IsString()
-    descriptionVi?: string;
-
-    @IsOptional()
-    @IsString()
-    descriptionEn?: string;
 
     @IsOptional()
     @IsString()

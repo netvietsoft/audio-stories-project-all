@@ -12,15 +12,13 @@ async function main() {
     select: {
       id: true,
       title: true,
-      titleVi: true,
-      titleEn: true,
       deletedAt: true,
     },
   });
 
   console.log(`Found ${softDeleted.length} soft-deleted stories:`);
   softDeleted.forEach((s, i) => {
-    console.log(`${i + 1}. ${s.titleVi || s.titleEn || s.title} (deleted at: ${s.deletedAt})`);
+    console.log(`${i + 1}. ${s.title} (deleted at: ${s.deletedAt})`);
   });
 
   if (softDeleted.length === 0) {

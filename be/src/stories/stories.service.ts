@@ -43,27 +43,19 @@ export class StoriesService {
   }
 
   private normalizeNestedChapterPayload(chapter: any) {
-    return {
-      ...chapter,
-      title: chapter.titleVi || chapter.titleEn || '',
-      description: chapter.descriptionVi || chapter.descriptionEn || null,
-      content: chapter.contentVi || chapter.contentEn || null,
-      r2AudioUrl: chapter.audioUrlVi || chapter.audioUrlEn || chapter.r2AudioUrl || null,
-    };
+    // No normalization needed - just return the data as-is
+    return chapter;
   }
 
   private normalizeStoryFlatPayload(data: any) {
-    return {
-      ...data,
-      title: data.titleVi || data.titleEn || data.title || '',
-      description: data.descriptionVi || data.descriptionEn || data.description || null,
-    };
+    // No normalization needed - just return the data as-is
+    return data;
   }
 
   async create(data: CreateStoryDto) {
-    // Validate that at least one title exists
-    if (!data.titleVi && !data.titleEn && !data.title) {
-      throw new BadRequestException('At least one title (titleVi, titleEn, or title) must be provided');
+    // Validate that title exists
+    if (!data.title) {
+      throw new BadRequestException('Title must be provided');
     }
 
     const { categoryIds, chapters, chapterIds, ...storyData } = data;
@@ -151,8 +143,6 @@ export class StoriesService {
             select: {
               id: true,
               name: true,
-              nameVi: true,
-              nameEn: true,
               slug: true,
             } as any,
           },
@@ -199,8 +189,6 @@ export class StoriesService {
         id: true,
         slug: true,
         title: true,
-        titleVi: true,
-        titleEn: true,
         thumbnailUrl: true,
         status: true,
         totalViews: true,
@@ -250,8 +238,6 @@ export class StoriesService {
         ? {
           OR: [
             { title: { contains: query.search } },
-            { titleVi: { contains: query.search } },
-            { titleEn: { contains: query.search } },
             { author: { name: { contains: query.search } } },
           ],
         }
@@ -291,22 +277,18 @@ export class StoriesService {
           id: true,
           slug: true,
           description: true,
-          descriptionVi: true,
-          descriptionEn: true,
           thumbnailUrl: true,
           status: true,
           totalViews: true,
           averageRating: true,
           title: true,
-          titleVi: true,
-          titleEn: true,
           createdAt: true,
           author: {
             select: { name: true },
           },
           categories: {
             include: {
-              category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
+              category: { select: { id: true, name: true, slug: true } as any },
             },
           },
         } as any, // Cast the entire select object to any
@@ -354,8 +336,6 @@ export class StoriesService {
         select: {
           id: true,
           name: true,
-          nameVi: true,
-          nameEn: true,
           slug: true,
           language: true,
         } as any,
@@ -415,8 +395,6 @@ export class StoriesService {
         ? {
           OR: [
             { title: { contains: query.search } },
-            { titleVi: { contains: query.search } },
-            { titleEn: { contains: query.search } },
             { author: { name: { contains: query.search } } },
           ],
         }
@@ -440,7 +418,7 @@ export class StoriesService {
           },
           categories: {
             include: {
-              category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
+              category: { select: { id: true, name: true, slug: true } as any },
             },
           },
           _count: {
@@ -469,7 +447,7 @@ export class StoriesService {
         },
         categories: {
           include: {
-            category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
+            category: { select: { id: true, name: true, slug: true } as any },
           },
         },
       },
@@ -520,7 +498,7 @@ export class StoriesService {
         },
         categories: {
           include: {
-            category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
+            category: { select: { id: true, name: true, slug: true } as any },
           },
         },
       },
@@ -532,8 +510,8 @@ export class StoriesService {
   }
 
   async getStoryDetail(slug: string) {
-    const story = await this.prisma.story.findUnique({
-      where: { slug },
+    const story = await this.prisma.story.findFirst({
+      where: { slug, deletedAt: null },
       include: {
         author: {
           select: {
@@ -547,8 +525,6 @@ export class StoriesService {
               select: {
                 id: true,
                 name: true,
-                nameVi: true,
-                nameEn: true,
                 slug: true,
               } as any,
             },
@@ -560,20 +536,12 @@ export class StoriesService {
           select: {
             id: true,
             title: true,
-            titleVi: true,
-            titleEn: true,
-            audioUrlVi: true,
-            audioUrlEn: true,
             youtubeVideoId: true,
             audioDuration: true,
             chapterNumber: true,
             description: true,
-            descriptionVi: true,
-            descriptionEn: true,
             thumbnailUrl: true,
             content: true,
-            contentVi: true,
-            contentEn: true,
             r2AudioUrl: true,
             accessType: true,
             unlocksAt: true,
@@ -594,8 +562,6 @@ export class StoriesService {
       select: {
         id: true,
         name: true,
-        nameVi: true,
-        nameEn: true,
         slug: true,
         language: true,
       } as any,
@@ -610,8 +576,6 @@ export class StoriesService {
       select: {
         id: true,
         name: true,
-        nameVi: true,
-        nameEn: true,
         slug: true,
         language: true,
         description: true,
@@ -630,8 +594,6 @@ export class StoriesService {
       data: (categories as any[]).map((item) => ({
         id: item.id,
         name: item.name,
-        nameVi: item.nameVi,
-        nameEn: item.nameEn,
         slug: item.slug,
         language: item.language,
         description: item.description,

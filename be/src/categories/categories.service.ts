@@ -17,8 +17,6 @@ export class CategoriesService {
         const where: Prisma.CategoryWhereInput = search ? {
             OR: [
                 { name: { contains: search } },
-                { nameVi: { contains: search } },
-                { nameEn: { contains: search } },
                 { slug: { contains: search } },
             ]
         } : {};
@@ -33,8 +31,6 @@ export class CategoriesService {
                 select: {
                     id: true,
                     name: true,
-                    nameVi: true,
-                    nameEn: true,
                     slug: true,
                     language: true,
                     description: true,
@@ -63,8 +59,6 @@ export class CategoriesService {
             select: {
                 id: true,
                 name: true,
-                nameVi: true,
-                nameEn: true,
                 slug: true,
                 language: true,
                 description: true,

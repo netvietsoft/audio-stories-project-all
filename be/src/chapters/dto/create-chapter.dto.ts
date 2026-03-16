@@ -7,42 +7,18 @@ export class CreateChapterDto {
     chapterNumber: number;
 
     @IsString()
-    @IsOptional()
+    @IsNotEmpty()
     @MaxLength(300)
-    titleVi?: string;
-
-    @IsString()
-    @IsOptional()
-    @MaxLength(300)
-    titleEn?: string;
+    title: string;
 
     @IsOptional()
     @IsString()
     @MaxLength(2000)
-    descriptionVi?: string;
+    description?: string;
 
     @IsOptional()
     @IsString()
-    @MaxLength(2000)
-    descriptionEn?: string;
-
-    @IsOptional()
-    @IsString()
-    contentVi?: string;
-
-    @IsOptional()
-    @IsString()
-    contentEn?: string;
-
-    @IsOptional()
-    @IsString()
-    @MaxLength(500)
-    audioUrlVi?: string;
-
-    @IsOptional()
-    @IsString()
-    @MaxLength(500)
-    audioUrlEn?: string;
+    content?: string;
 
     @IsString()
     @IsOptional()

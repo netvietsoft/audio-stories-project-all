@@ -195,19 +195,18 @@ async function main() {
     seededUsers.push({ id: user.id, email: user.email, displayName: user.displayName });
   }
 
-  console.log('Seeding categories, authors, stories, chapters...');
+  console.log('Seeding categories...');
 
-  // Create categories for both languages
   const categoriesData = [
-    { name: 'Tiên Hiệp', slug: 'tien-hiep', language: 'vi', description: 'The gioi tu luyen huyen bi' },
+    { name: 'Tiên Hiệp', slug: 'tien-hiep', language: 'vi', description: 'Thế giới tu luyện huyền bí' },
     { name: 'Xianxia', slug: 'xianxia', language: 'en', description: 'Cultivation fantasy world' },
-    { name: 'Kiếm Hiệp', slug: 'kiem-hiep', language: 'vi', description: 'Giang ho an oan tinh thu' },
+    { name: 'Kiếm Hiệp', slug: 'kiem-hiep', language: 'vi', description: 'Giang hồ ân oán tình thù' },
     { name: 'Wuxia', slug: 'wuxia', language: 'en', description: 'Martial arts world' },
-    { name: 'Đô Thị', slug: 'do-thi', language: 'vi', description: 'Truyen hien dai' },
+    { name: 'Đô Thị', slug: 'do-thi', language: 'vi', description: 'Truyện hiện đại' },
     { name: 'Urban', slug: 'urban', language: 'en', description: 'Modern stories' },
-    { name: 'Ngôn Tình', slug: 'ngon-tinh', language: 'vi', description: 'Tinh cam lang man' },
+    { name: 'Ngôn Tình', slug: 'ngon-tinh', language: 'vi', description: 'Tình cảm lãng mạn' },
     { name: 'Romance', slug: 'romance', language: 'en', description: 'Romantic stories' },
-    { name: 'Huyền Huyễn', slug: 'huyen-huyen', language: 'vi', description: 'Phieu luu ky ao' },
+    { name: 'Huyền Huyễn', slug: 'huyen-huyen', language: 'vi', description: 'Phiêu lưu kỳ ảo' },
     { name: 'Fantasy', slug: 'fantasy', language: 'en', description: 'Fantasy adventure' },
   ];
 
@@ -229,7 +228,9 @@ async function main() {
     }
   }
 
-  const authorNames = ['Than Dong', 'Thien Tam Tho Dau', 'Duong Gia Tam Thieu', 'Mong Nhap Than Co', 'Nga Cat Tay Hong Thi'];
+  console.log('Seeding authors...');
+
+  const authorNames = ['Thần Đồng', 'Thiên Tàm Thổ Đậu', 'Dương Gia Tam Thiếu', 'Mộng Nhập Thần Cơ', 'Ngã Cật Tây Hồng Thị'];
 
   const authors = [] as Awaited<ReturnType<typeof prisma.author.upsert>>[];
   for (const name of authorNames) {
@@ -248,60 +249,14 @@ async function main() {
     authors.push(author);
   }
 
+  console.log('Seeding stories and chapters...');
+
   const storySeed = [
-<<<<<<< HEAD
     { vi: 'Phàm Nhân Tu Tiên', en: 'A Record of a Mortal Journey to Immortality' },
     { vi: 'Đấu Phá Thương Khung', en: 'Battle Through the Heavens' },
     { vi: 'Tiên Nghịch', en: 'Renegade Immortal' },
     { vi: 'Nhất Niệm Vĩnh Hằng', en: 'A Will Eternal' },
     { vi: 'Tinh Thần Biến', en: 'Stellar Transformations' },
-    { vi: 'Thế Giới Hoàn Mỹ', en: 'Perfect World' },
-    { vi: 'Long Vương Truyền Thuyết', en: 'Legend of the Dragon King' },
-    { vi: 'Đại Chúa Tể', en: 'The Great Ruler' },
-    { vi: 'Vũ Động Càn Khôn', en: 'Martial Universe' },
-    { vi: 'Ta Có Một Tòa Thành', en: 'I Own a Ruined City' },
-=======
-    {
-      vi: 'Pham Nhan Lang Thang Qua Chinh Do Ma Vuc De Tim Con Duong Truong Sinh Bat Diet',
-      en: 'A Mortal Wanderer Crossing the Demon Empire Frontier in Search of an Undying Ascension Path',
-    },
-    {
-      vi: 'Thieu Nien Bi Truc Xuat Khoi Tong Mon Va Bat Dau Cuoc Hanh Trinh Dot Pha Cuu Tang Troi',
-      en: 'The Young Exile Who Left the Sect and Began a Journey to Burn Through Nine Heavens',
-    },
-    {
-      vi: 'Nguoi Giu Kiem Co Don Tren Vung Hoang Mac Va Loi The Phan Nghich Cua Tien Dao',
-      en: 'The Lone Sword Keeper of the Wasteland and the Rebellious Oath Against the Immortal Dao',
-    },
-    {
-      vi: 'Mot Y Niem Vinh Hang Giua Tram Tran Kiep Nan Va Hanh Trinh Bao Ve Nguoi Than Yeu',
-      en: 'One Eternal Thought Amid Endless Calamities and a Journey to Protect the Ones He Loves',
-    },
-    {
-      vi: 'Tinh Than Co Dai Thuc Tinh Trong Co The Yeo Duoi Cua Thieu Nien Bi Lang Quen',
-      en: 'Ancient Star Blood Awakens Inside the Frail Body of a Boy the World Has Forgotten',
-    },
-    {
-      vi: 'The Gioi Hoan My Sau Dai Tuyet Tan The Va Cuoc Tro Ve Cua Ke So Huu Huyet Mach Than',
-      en: 'Perfect World After the Great Snowfall and the Return of the Heir to a Divine Bloodline',
-    },
-    {
-      vi: 'Long Vuong Ngu Tren Bien Sau Tinh Day Truoc Dai Chien Cua Tram Thanh Tri Co Dai',
-      en: 'The Sleeping Dragon King Wakes Before the Grand War of a Hundred Ancient Strongholds',
-    },
-    {
-      vi: 'Dai Chua Te Tre Tuoi Va Ban Do Quyen Luc Dang Lam Rung Chuyen Ca Tam Gioi',
-      en: 'The Young Great Ruler and the Expanding Map of Power That Shakes All Three Realms',
-    },
-    {
-      vi: 'Vu Dong Can Khon Cua Ke Tro Ve Tu Vuc Sau Va Hanh Trinh Thanh Lap De Che Moi',
-      en: 'Martial Cosmos of the Survivor Who Returned from the Abyss to Build a New Dominion',
-    },
-    {
-      vi: 'Ta So Huu Toa Co Thanh Tan Phe Noi Cat Giau Bi Mat Ve Mot Nen Van Minh Da Mat',
-      en: 'I Inherited a Ruined Ancient City That Hides the Final Secret of a Lost Civilization',
-    },
->>>>>>> master
   ];
 
   const stories = [] as Awaited<ReturnType<typeof prisma.story.upsert>>[];
@@ -314,139 +269,126 @@ async function main() {
     'He held his sword and decided to move forward despite uncertain outcome.',
   ];
 
-  const buildLongStoryIntroduction = (language: 'vi' | 'en', title: string, authorName: string) => {
-    const viSentences = [
-      `${title} mở ra bằng một thời đại hỗn loạn nơi biên giới giữa tiên môn, ma vực và thế tục không còn ranh giới rõ ràng nữa.`,
-      `Nhân vật chính bước vào câu chuyện với thân phận nhỏ bé nhưng luôn mang trong tim khát vọng đổi vận, bảo vệ người thân và tìm ra ý nghĩa thật sự của sức mạnh.`,
-      `Mỗi chặng đường đều được bồi đắp bằng những cuộc gặp gỡ nhiều tầng cảm xúc, những trận chiến căng thẳng và vô số quyết định khiến vận mệnh của cả một vùng trời thay đổi.`,
-      `Điểm nổi bật của truyện là nhịp kể chậm rãi nhưng dồn lực, liên tục mở rộng thế giới quan, chiều sâu tâm lý và những bí mật cổ xưa được chôn vùi qua nhiều thế hệ.`,
-      `Tác giả ${authorName} xây dựng hành trình trưởng thành bằng các lớp mâu thuẫn về tình thân, danh vọng, niềm tin, phản bội và sự cô độc của người đứng trước lựa chọn không có đường lui.`,
-      `Phần giới thiệu này được kéo dài để phục vụ kiểm thử giao diện, vì vậy mỗi đoạn đều chủ ý có độ dài lớn, câu chữ nhiều nhịp và lượng thông tin dày để quan sát cách hiển thị trên nhiều kích thước màn hình.`,
-      `Khi theo dõi truyện, người đọc sẽ liên tục bắt gặp những cổ thành đổ nát, chiến trường bỏ hoang, truyền thừa thất lạc, dị bảo thức tỉnh và các thế lực đang âm thầm tranh đoạt quyền khống chế tương lai.`,
-      `Không chỉ là một câu chuyện tu luyện hay phiêu lưu, đây còn là hành trình nhìn lại bản thân, trả giá cho tham vọng, học cách tin tưởng và chấp nhận rằng mọi lựa chọn đều để lại vết hằn lâu dài.`,
-      `Các mối quan hệ trong truyện được phát triển theo hướng nhiều lớp, lúc là đồng minh, lúc là đối thủ, lúc lại trở thành chiếc gương phản chiếu những giới hạn sâu kín nhất của nhân vật chính.`,
-      `Càng tiến xa, câu chuyện càng làm rõ câu hỏi cốt lõi rằng sức mạnh tối thượng có thực sự mang lại tự do, hay chỉ đẩy con người vào một vòng xoáy trách nhiệm khắc nghiệt hơn trước.`,
-    ];
-
-    const enSentences = [
-      `${title} begins in a fractured age where the borders between immortal factions, demonic territories, and mortal kingdoms have almost completely dissolved.`,
-      `The protagonist enters the narrative with little status, yet carries an unshakable desire to change fate, protect loved ones, and understand what power is truly meant for.`,
-      `Every stage of the journey is shaped by layered encounters, tense confrontations, and choices that gradually alter the destiny of an entire world.`,
-      `The story stands out because it expands its universe with deliberate pacing, emotional weight, and ancient secrets that were buried across many generations.`,
-      `Author ${authorName} frames the path of growth through conflicts involving loyalty, ambition, family bonds, betrayal, and the loneliness of standing before irreversible decisions.`,
-      `This introduction is intentionally long for interface testing, so each paragraph carries extra density, flowing rhythm, and enough text volume to stress real layouts across breakpoints.`,
-      `Readers repeatedly encounter ruined strongholds, abandoned battlefields, sleeping inheritances, awakening relics, and rival powers struggling to control the shape of the future.`,
-      `More than a cultivation saga or adventure fantasy, the novel becomes a meditation on identity, consequence, sacrifice, and the burden of carrying hope for others.`,
-      `Its relationships unfold in layers, shifting from alliance to rivalry and sometimes becoming mirrors that expose the most private limits of the central character.`,
-      `As the plot widens, the central question becomes sharper: does ultimate strength create freedom, or does it merely lock a person inside harsher responsibilities than before.`,
-    ];
-
-    const sentencePool = language === 'vi' ? viSentences : enSentences;
-    const targetWordCount = 4000;
-    const words: string[] = [];
-    let paragraphIndex = 0;
-
-    while (words.length < targetWordCount) {
-      const paragraph = Array.from({ length: 5 }, (_, sentenceIndex) => {
-        const baseSentence = sentencePool[(paragraphIndex + sentenceIndex) % sentencePool.length]!;
-        return `${baseSentence} ${language === 'vi' ? `Doan mo rong ${paragraphIndex + 1} nhan manh them chieu sau cua boi canh, nhan vat va xung dot trung tam de nguoi doc cam nhan duoc quy mo that su cua tac pham.` : `Expansion passage ${paragraphIndex + 1} reinforces the depth of the setting, character arcs, and central conflict so the interface can be tested with realistic narrative density.`}`;
-      }).join(' ');
-
-      words.push(...paragraph.split(/\s+/));
-      paragraphIndex += 1;
-    }
-
-    return words.slice(0, targetWordCount).join(' ');
-  };
-
   for (let i = 0; i < storySeed.length; i += 1) {
-    const storyLang = i % 2 === 0 ? 'vi' : 'en';
-    const title = storyLang === 'vi' ? storySeed[i]!.vi : storySeed[i]!.en;
-    const chapterTotal = i >= storySeed.length - 2 ? 0 : 18;
-<<<<<<< HEAD
-    const storyDescription = storyLang === 'vi' 
-      ? `${storySeed[i]!.vi} - truyện audio dùng để kiểm tra giao diện theo locale và trạng thái cập nhật chương.`
-      : `${storySeed[i]!.en} - audio story for locale-based browsing and chapter update testing.`;
-=======
-    const authorName = authors[i % authors.length].name;
-    const storyDescriptionVi = buildLongStoryIntroduction('vi', titleVi, authorName);
-    const storyDescriptionEn = buildLongStoryIntroduction('en', titleEn, authorName);
->>>>>>> master
-
-    const existing = await prisma.story.findFirst({
-      where: { slug: slugify(title), language: storyLang },
+    const storyData = storySeed[i]!;
+    
+    const titleVi = storyData.vi;
+    const slugVi = slugify(titleVi);
+    const descriptionVi = `${titleVi} - truyện audio tiếng Việt dùng để kiểm tra giao diện và chức năng cập nhật chương.`;
+    
+    const existingVi = await prisma.story.findFirst({
+      where: { slug: slugVi, language: 'vi' },
     });
 
-    const story = existing
+    const storyVi = existingVi
       ? await prisma.story.update({
-          where: { id: existing.id },
+          where: { id: existingVi.id },
           data: {
-            title,
-            language: storyLang,
+            title: titleVi,
+            language: 'vi',
             authorId: authors[i % authors.length].id,
             status: i % 3 === 0 ? 'completed' : 'ongoing',
-            thumbnailUrl: `https://picsum.photos/seed/story-${i + 1}/600/900`,
+            thumbnailUrl: `https://picsum.photos/seed/story-vi-${i + 1}/600/900`,
             totalViews: BigInt(200000 + i * 45000),
-            isFeatured: i < 5,
+            isFeatured: i < 3,
             isRecommended: i % 2 === 0,
-            featuredOrder: i < 5 ? i + 1 : null,
-            description: storyDescription,
-            facebookGroupUrl: i % 3 === 0 ? 'https://facebook.com/groups/example' : null,
-            twitterUrl: i % 4 === 0 ? 'https://twitter.com/example' : null,
-            instagramUrl: i % 5 === 0 ? 'https://instagram.com/example' : null,
-            redditUrl: i % 6 === 0 ? 'https://reddit.com/r/example' : null,
-            whatsappUrl: i % 7 === 0 ? 'https://wa.me/1234567890' : null,
+            featuredOrder: i < 3 ? i + 1 : null,
+            description: descriptionVi,
           },
         })
       : await prisma.story.create({
           data: {
-            title,
-            slug: slugify(title),
-            language: storyLang,
+            title: titleVi,
+            slug: slugVi,
+            language: 'vi',
             authorId: authors[i % authors.length].id,
             status: i % 3 === 0 ? 'completed' : 'ongoing',
-            thumbnailUrl: `https://picsum.photos/seed/story-${i + 1}/600/900`,
+            thumbnailUrl: `https://picsum.photos/seed/story-vi-${i + 1}/600/900`,
             totalViews: BigInt(200000 + i * 45000),
-            isFeatured: i < 5,
+            isFeatured: i < 3,
             isRecommended: i % 2 === 0,
-            featuredOrder: i < 5 ? i + 1 : null,
-            description: storyDescription,
-            facebookGroupUrl: i % 3 === 0 ? 'https://facebook.com/groups/example' : null,
-            twitterUrl: i % 4 === 0 ? 'https://twitter.com/example' : null,
-            instagramUrl: i % 5 === 0 ? 'https://instagram.com/example' : null,
-            redditUrl: i % 6 === 0 ? 'https://reddit.com/r/example' : null,
-            whatsappUrl: i % 7 === 0 ? 'https://wa.me/1234567890' : null,
+            featuredOrder: i < 3 ? i + 1 : null,
+            description: descriptionVi,
           },
         });
 
-    await prisma.storyCategory.deleteMany({ where: { storyId: story.id } });
-    
-    // Get categories for this story's language
-    const storyCats = categories.filter(c => c.language === storyLang);
+    await prisma.storyCategory.deleteMany({ where: { storyId: storyVi.id } });
+    const viCats = categories.filter(c => c.language === 'vi');
     await prisma.storyCategory.createMany({
       data: [
-        { storyId: story.id, categoryId: storyCats[i % storyCats.length].id },
-        { storyId: story.id, categoryId: storyCats[(i + 1) % storyCats.length].id },
+        { storyId: storyVi.id, categoryId: viCats[i % viCats.length].id },
+        { storyId: storyVi.id, categoryId: viCats[(i + 1) % viCats.length].id },
       ],
       skipDuplicates: true,
     });
 
+    stories.push(storyVi);
+
+    const titleEn = storyData.en;
+    const slugEn = slugify(titleEn);
+    const descriptionEn = `${titleEn} - English audio story for interface and chapter update testing.`;
+    
+    const existingEn = await prisma.story.findFirst({
+      where: { slug: slugEn, language: 'en' },
+    });
+
+    const storyEn = existingEn
+      ? await prisma.story.update({
+          where: { id: existingEn.id },
+          data: {
+            title: titleEn,
+            language: 'en',
+            authorId: authors[i % authors.length].id,
+            status: i % 3 === 0 ? 'completed' : 'ongoing',
+            thumbnailUrl: `https://picsum.photos/seed/story-en-${i + 1}/600/900`,
+            totalViews: BigInt(180000 + i * 40000),
+            isFeatured: i < 3,
+            isRecommended: i % 2 === 1,
+            featuredOrder: i < 3 ? i + 6 : null,
+            description: descriptionEn,
+          },
+        })
+      : await prisma.story.create({
+          data: {
+            title: titleEn,
+            slug: slugEn,
+            language: 'en',
+            authorId: authors[i % authors.length].id,
+            status: i % 3 === 0 ? 'completed' : 'ongoing',
+            thumbnailUrl: `https://picsum.photos/seed/story-en-${i + 1}/600/900`,
+            totalViews: BigInt(180000 + i * 40000),
+            isFeatured: i < 3,
+            isRecommended: i % 2 === 1,
+            featuredOrder: i < 3 ? i + 6 : null,
+            description: descriptionEn,
+          },
+        });
+
+    await prisma.storyCategory.deleteMany({ where: { storyId: storyEn.id } });
+    const enCats = categories.filter(c => c.language === 'en');
+    await prisma.storyCategory.createMany({
+      data: [
+        { storyId: storyEn.id, categoryId: enCats[i % enCats.length].id },
+        { storyId: storyEn.id, categoryId: enCats[(i + 1) % enCats.length].id },
+      ],
+      skipDuplicates: true,
+    });
+
+    stories.push(storyEn);
+
+    const chapterTotal = 15;
     for (let chapterNumber = 1; chapterNumber <= chapterTotal; chapterNumber += 1) {
       const chapterSeed = i * 20 + chapterNumber;
       const paragraphCount = 3 + (chapterNumber % 2);
       const content = Array.from({ length: paragraphCount }, (_, idx) => {
         const template = paragraphTemplates[(chapterNumber + idx) % paragraphTemplates.length]!;
-        return `[Paragraph ${idx + 1}] ${template}`;
+        return `[Đoạn ${idx + 1}] ${template}`;
       }).join('\n\n');
 
-      const chapterTitle = storyLang === 'vi'
-        ? `Chương ${chapterNumber}: Chuyển động linh lực`
-        : `Chapter ${chapterNumber}: Spirit Shift`;
-      const chapterDescription = storyLang === 'vi'
-        ? `Giới thiệu chương ${chapterNumber} của ${title}`
-        : `Chapter ${chapterNumber} introduction of ${title}`;
+      const chapterTitle = `Chương ${chapterNumber}: Chuyển động linh lực`;
+      const chapterDescription = `Giới thiệu chương ${chapterNumber} của ${titleVi}`;
       const chapterAudio = `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(chapterSeed % 16) + 1}.mp3`;
-      const chapterThumb = `https://picsum.photos/seed/chapter-${i + 1}-${chapterNumber}/320/320`;
+      const chapterThumb = `https://picsum.photos/seed/chapter-vi-${i + 1}-${chapterNumber}/320/320`;
 
       const accessType = chapterNumber % 9 === 0 ? 'vip' : chapterNumber % 4 === 0 ? 'timed' : 'free';
       const unlocksAt = accessType === 'timed'
@@ -456,13 +398,13 @@ async function main() {
       const chapter = await prisma.chapter.upsert({
         where: {
           storyId_chapterNumber: {
-            storyId: story.id,
+            storyId: storyVi.id,
             chapterNumber,
           },
         },
         update: {
           title: chapterTitle,
-          language: storyLang,
+          language: 'vi',
           description: chapterDescription,
           thumbnailUrl: chapterThumb,
           content,
@@ -473,10 +415,10 @@ async function main() {
           unlocksAt,
         },
         create: {
-          storyId: story.id,
+          storyId: storyVi.id,
           chapterNumber,
           title: chapterTitle,
-          language: storyLang,
+          language: 'vi',
           description: chapterDescription,
           thumbnailUrl: chapterThumb,
           content,
@@ -489,19 +431,80 @@ async function main() {
       });
 
       if (chapterNumber === 1) {
-        firstChapterByStory.set(story.id, chapter.id);
+        firstChapterByStory.set(storyVi.id, chapter.id);
       }
     }
 
     await prisma.story.update({
-      where: { id: story.id },
+      where: { id: storyVi.id },
       data: { totalChapters: chapterTotal },
     });
 
-    stories.push(story);
+    for (let chapterNumber = 1; chapterNumber <= chapterTotal; chapterNumber += 1) {
+      const chapterSeed = i * 20 + chapterNumber + 100;
+      const paragraphCount = 3 + (chapterNumber % 2);
+      const content = Array.from({ length: paragraphCount }, (_, idx) => {
+        const template = paragraphTemplates[(chapterNumber + idx) % paragraphTemplates.length]!;
+        return `[Paragraph ${idx + 1}] ${template}`;
+      }).join('\n\n');
+
+      const chapterTitle = `Chapter ${chapterNumber}: Spirit Shift`;
+      const chapterDescription = `Chapter ${chapterNumber} introduction of ${titleEn}`;
+      const chapterAudio = `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(chapterSeed % 16) + 1}.mp3`;
+      const chapterThumb = `https://picsum.photos/seed/chapter-en-${i + 1}-${chapterNumber}/320/320`;
+
+      const accessType = chapterNumber % 9 === 0 ? 'vip' : chapterNumber % 4 === 0 ? 'timed' : 'free';
+      const unlocksAt = accessType === 'timed'
+        ? new Date(Date.now() + ((chapterNumber % 5) + 1) * 24 * 60 * 60 * 1000)
+        : null;
+
+      const chapter = await prisma.chapter.upsert({
+        where: {
+          storyId_chapterNumber: {
+            storyId: storyEn.id,
+            chapterNumber,
+          },
+        },
+        update: {
+          title: chapterTitle,
+          language: 'en',
+          description: chapterDescription,
+          thumbnailUrl: chapterThumb,
+          content,
+          r2AudioUrl: chapterAudio,
+          youtubeVideoId: chapterNumber % 3 === 0 ? 'dQw4w9WgXcQ' : null,
+          audioDuration: 540 + chapterNumber * 12,
+          accessType,
+          unlocksAt,
+        },
+        create: {
+          storyId: storyEn.id,
+          chapterNumber,
+          title: chapterTitle,
+          language: 'en',
+          description: chapterDescription,
+          thumbnailUrl: chapterThumb,
+          content,
+          r2AudioUrl: chapterAudio,
+          youtubeVideoId: chapterNumber % 3 === 0 ? 'dQw4w9WgXcQ' : null,
+          audioDuration: 540 + chapterNumber * 12,
+          accessType,
+          unlocksAt,
+        },
+      });
+
+      if (chapterNumber === 1) {
+        firstChapterByStory.set(storyEn.id, chapter.id);
+      }
+    }
+
+    await prisma.story.update({
+      where: { id: storyEn.id },
+      data: { totalChapters: chapterTotal },
+    });
   }
 
-  console.log('Seeding reviews and rating summary...');
+  console.log('Seeding reviews...');
 
   for (const story of stories) {
     for (let i = 0; i < seededUsers.length; i += 1) {
@@ -543,12 +546,13 @@ async function main() {
     });
   }
 
-  console.log('Seeding favorites, history, comments, and reactions...');
+  console.log('Seeding user interactions...');
 
   for (let i = 0; i < seededUsers.length; i += 1) {
     const user = seededUsers[i]!;
     const favoriteStory = stories[i % stories.length]!;
     const historyStory = stories[(i + 1) % stories.length]!;
+    const subscribedStory = stories[(i + 2) % stories.length]!;
     const chapterId = firstChapterByStory.get(historyStory.id);
 
     await prisma.userFavorite.upsert({
@@ -562,6 +566,20 @@ async function main() {
       create: {
         userId: user.id,
         storyId: favoriteStory.id,
+      },
+    });
+
+    await prisma.userStorySubscription.upsert({
+      where: {
+        userId_storyId: {
+          userId: user.id,
+          storyId: subscribedStory.id,
+        },
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        storyId: subscribedStory.id,
       },
     });
 
@@ -589,189 +607,12 @@ async function main() {
     }
   }
 
-  await prisma.chapterComment.deleteMany({
-    where: {
-      content: { startsWith: '[SEED]' },
-    },
-  });
-
-  const parentComments: Array<{ id: string; chapterId: string; storyId: string }> = [];
-  for (let i = 0; i < Math.min(3, stories.length); i += 1) {
-    const story = stories[i]!;
-    const chapterId = firstChapterByStory.get(story.id);
-    if (!chapterId) continue;
-
-    const owner = seededUsers[i % seededUsers.length]!;
-    const replyUser = seededUsers[(i + 1) % seededUsers.length]!;
-
-    const parent = await prisma.chapterComment.create({
-      data: {
-        userId: owner.id,
-        chapterId,
-        storyId: story.id,
-        content: `[SEED] Main comment for ${story.title}`,
-        timestampSeconds: null,
-      },
-    });
-
-    await prisma.chapterComment.create({
-      data: {
-        userId: replyUser.id,
-        chapterId,
-        storyId: story.id,
-        parentId: parent.id,
-        content: `[SEED] Reply comment for ${story.title}`,
-        timestampSeconds: null,
-      },
-    });
-
-    parentComments.push({ id: parent.id, chapterId, storyId: story.id });
-  }
-
-  for (let i = 0; i < parentComments.length; i += 1) {
-    const comment = parentComments[i]!;
-    const user = seededUsers[i % seededUsers.length]!;
-    await prisma.commentReaction.upsert({
-      where: {
-        userId_commentId_type: {
-          userId: user.id,
-          commentId: comment.id,
-          type: 'helpful',
-        },
-      },
-      update: {},
-      create: {
-        userId: user.id,
-        commentId: comment.id,
-        type: 'helpful',
-      },
-    });
-
-    await prisma.chapterComment.update({
-      where: { id: comment.id },
-      data: { likesCount: 1 },
-    });
-  }
-
-  console.log('Seeding transactions, memberships, notifications...');
-
-  const userIds = seededUsers.map((u) => u.id);
-
-  await prisma.payment.deleteMany({
-    where: {
-      userId: { in: userIds },
-      transactionCode: { startsWith: 'SEED-TX-' },
-    },
-  });
-
-  await prisma.creditTransaction.deleteMany({
-    where: {
-      userId: { in: userIds },
-      description: { startsWith: '[SEED]' },
-    },
-  });
-
-  await prisma.membership.deleteMany({ where: { userId: { in: userIds } } });
-  await prisma.userStorySubscription.deleteMany({ where: { userId: { in: userIds } } });
-  await prisma.notification.deleteMany({
-    where: {
-      userId: { in: userIds },
-      title: { startsWith: '[SEED]' },
-    },
-  });
-
-  for (let i = 0; i < seededUsers.length; i += 1) {
-    const user = seededUsers[i]!;
-    const author = authors[i % authors.length]!;
-    const subscribedStory = stories[i % stories.length]!;
-
-    await prisma.userStorySubscription.upsert({
-      where: {
-        userId_storyId: {
-          userId: user.id,
-          storyId: subscribedStory.id,
-        },
-      },
-      update: {},
-      create: {
-        userId: user.id,
-        storyId: subscribedStory.id,
-      },
-    });
-
-    await prisma.payment.create({
-      data: {
-        userId: user.id,
-        packageCode: `PKG_${i + 1}`,
-        amountVnd: 99000 + i * 50000,
-        creditsAdded: 1000 + i * 500,
-        status: i % 2 === 0 ? 'SUCCESS' : 'PENDING',
-        transactionCode: `SEED-TX-${i + 1}`,
-        paidAt: i % 2 === 0 ? new Date() : null,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      },
-    });
-
-    await prisma.creditTransaction.createMany({
-      data: [
-        {
-          userId: user.id,
-          type: 'topup',
-          amount: 1000 + i * 500,
-          balanceBefore: 0,
-          balanceAfter: 1000 + i * 500,
-          description: `[SEED] Topup for ${user.displayName}`,
-        },
-        {
-          userId: user.id,
-          type: 'spend',
-          amount: -(150 + i * 20),
-          balanceBefore: 1000 + i * 500,
-          balanceAfter: 850 + i * 480,
-          description: `[SEED] Unlock chapter spend for ${user.displayName}`,
-        },
-      ],
-    });
-
-    await prisma.membership.create({
-      data: {
-        userId: user.id,
-        type: i % 2 === 0 ? 'all_authors' : 'specific_author',
-        authorId: i % 2 === 0 ? null : author.id,
-        startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + (i + 1) * 24 * 60 * 60 * 1000),
-        creditsSpent: 299 + i * 100,
-      },
-    });
-
-    await prisma.notification.createMany({
-      data: [
-        {
-          userId: user.id,
-          type: 'new_chapter',
-          title: '[SEED] Story update subscription',
-          body: `Bạn đang nhận cập nhật cho truyện ${subscribedStory.title}. Khi có chương mới hoặc cập nhật nội dung, thông báo sẽ hiện ở đây.`,
-          isRead: false,
-        },
-        {
-          userId: user.id,
-          type: 'transaction',
-          title: '[SEED] Transaction update',
-          body: 'Your topup transaction is recorded successfully.',
-          isRead: i % 2 === 0,
-        },
-        {
-          userId: user.id,
-          type: 'membership_expiry',
-          title: '[SEED] Membership expiring soon',
-          body: 'Your membership will expire in less than 72 hours.',
-          isRead: false,
-        },
-      ],
-    });
-  }
-
-  console.log('Seed completed!');
+  console.log('✅ Seed completed!');
+  console.log(`📊 Summary:`);
+  console.log(`   - ${categories.length} categories (${categories.filter(c => c.language === 'vi').length} VI, ${categories.filter(c => c.language === 'en').length} EN)`);
+  console.log(`   - ${stories.length} stories (${stories.filter(s => s.language === 'vi').length} VI, ${stories.filter(s => s.language === 'en').length} EN)`);
+  console.log(`   - ${stories.length * 15} chapters total`);
+  console.log(`   - ${seededUsers.length} demo users`);
 }
 
 main()

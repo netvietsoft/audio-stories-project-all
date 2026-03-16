@@ -9,8 +9,6 @@ async function main() {
     select: {
       id: true,
       title: true,
-      titleVi: true,
-      titleEn: true,
       language: true,
       deletedAt: true,
       createdAt: true,
@@ -35,7 +33,7 @@ async function main() {
 
   console.log('\nAll stories:');
   allStories.forEach((s, i) => {
-    console.log(`${i + 1}. ${s.titleVi || s.titleEn || s.title} (lang: ${s.language}, deleted: ${s.deletedAt ? 'YES' : 'NO'})`);
+    console.log(`${i + 1}. ${s.title} (lang: ${s.language}, deleted: ${s.deletedAt ? 'YES' : 'NO'})`);
   });
 }
 

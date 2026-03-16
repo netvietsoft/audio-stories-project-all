@@ -15,14 +15,8 @@ export class ChaptersService {
     ) { }
 
     private normalizeChapterFlatPayload(data: Record<string, any>) {
-        const next: Record<string, any> = { ...data };
-
-        next.title = next.titleVi || next.titleEn || next.title || '';
-        next.description = next.descriptionVi || next.descriptionEn || next.description || null;
-        next.content = next.contentVi || next.contentEn || next.content || null;
-        next.r2AudioUrl = next.audioUrlVi || next.audioUrlEn || next.r2AudioUrl || null;
-
-        return next;
+        // No normalization needed - just return the data as-is
+        return data;
     }
 
     async findAllByStory(storyId: string) {
@@ -60,11 +54,7 @@ export class ChaptersService {
             deletedAt: null,
             ...(search
                 ? {
-                    OR: [
-                        { title: { contains: search } },
-                        { titleVi: { contains: search } },
-                        { titleEn: { contains: search } },
-                    ],
+                    title: { contains: search },
                 }
                 : {}),
             ...(accessType ? { accessType } : {}),
@@ -84,7 +74,7 @@ export class ChaptersService {
                 orderBy: { createdAt: 'desc' },
                 include: {
                     story: {
-                        select: { title: true, titleVi: true, titleEn: true },
+                        select: { title: true },
                     },
                 },
             }),
@@ -166,15 +156,10 @@ export class ChaptersService {
         const chapter = await this.findOne(id);
         const shouldNotifyUpdate =
             data.storyId !== undefined ||
-            data.titleVi !== undefined ||
-            data.titleEn !== undefined ||
-            data.descriptionVi !== undefined ||
-            data.descriptionEn !== undefined ||
-            data.contentVi !== undefined ||
-            data.contentEn !== undefined ||
+            data.title !== undefined ||
+            data.description !== undefined ||
+            data.content !== undefined ||
             data.r2AudioUrl !== undefined ||
-            data.audioUrlVi !== undefined ||
-            data.audioUrlEn !== undefined ||
             data.thumbnailUrl !== undefined;
 
         console.log('Updating chapter with data:', data);

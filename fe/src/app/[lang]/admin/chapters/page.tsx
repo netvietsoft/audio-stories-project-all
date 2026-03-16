@@ -209,6 +209,7 @@ export default function ChaptersGlobalPage() {
         accessType: 'free' | 'timed' | 'vip';
         storyId?: string;
         unlocksAt?: string;
+        language?: string;
     }) => {
         setIsSubmitting(true);
         try {
@@ -227,6 +228,7 @@ export default function ChaptersGlobalPage() {
                     youtubeVideoId: data.youtubeVideoId || undefined,
                     audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
                     accessType: data.accessType,
+                    language: selectedLocale,
                 };
                 await apiClient.patch(`/chapters/${editingChapter.id}`, updatePayload);
             } else {
@@ -241,6 +243,7 @@ export default function ChaptersGlobalPage() {
                     thumbnailUrl: data.thumbnailUrl || undefined,
                     youtubeVideoId: data.youtubeVideoId || undefined,
                     audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
+                    language: selectedLocale,
                 };
                 await apiClient.post(`/chapters`, createPayload);
             }
@@ -662,6 +665,7 @@ export default function ChaptersGlobalPage() {
                                     audioDuration: editingChapter.audioDuration ?? 0,
                                     accessType: editingChapter.accessType,
                                 } : {}}
+                                selectedLocale={selectedLocale}
                                 onSubmit={handleSubmit}
                                 onCancel={() => setIsModalOpen(false)}
                                 isLoading={isSubmitting}

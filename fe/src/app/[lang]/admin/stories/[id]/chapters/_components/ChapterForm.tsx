@@ -27,8 +27,8 @@ type LocalizedText = { vi: string; en: string };
 
 const chapterSchema = z.object({
     chapterNumber: z.coerce.number().min(0, 'Số chương không được âm'),
-    titleVi: z.string().min(1, 'Tiêu đề tiếng Việt không được để trống'),
-    titleEn: z.string().min(1, 'Tiêu đề tiếng Anh không được để trống'),
+    titleVi: z.string().optional(),
+    titleEn: z.string().optional(),
     descriptionVi: z.string().optional(),
     descriptionEn: z.string().optional(),
     contentVi: z.string().optional(),
@@ -47,6 +47,9 @@ const chapterSchema = z.object({
         z.string().uuid('ID truyện không hợp lệ').optional(),
     ),
     unlocksAt: z.string().optional(),
+}).refine((data) => data.titleVi || data.titleEn, {
+    message: 'Phải có ít nhất một tiêu đề (Tiếng Việt hoặc English)',
+    path: ['titleVi'],
 });
 
 export type ChapterFormValues = {
@@ -84,6 +87,7 @@ interface ChapterFormProps {
         audioUrlVi?: string;
         audioUrlEn?: string;
     };
+    selectedLocale?: 'vi' | 'en';
     onSubmit: (data: ChapterFormValues) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
@@ -150,7 +154,7 @@ const getLocalizedText = (value: unknown): string => {
     return parsed.vi || parsed.en || '';
 };
 
-export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: ChapterFormProps) => {
+export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCancel, isLoading }: ChapterFormProps) => {
     const [stories, setStories] = useState<any[]>([]);
     const [isStoryOpen, setIsStoryOpen] = useState(false);
     const [storySearch, setStorySearch] = useState('');
@@ -332,7 +336,7 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
         const audioValue = watch(audioField) || '';
 
         return (
-            <div className={`flex flex-col gap-4 ${lang === 'vi' ? 'border-r border-gray-200 pr-4' : 'pl-4'}`}>
+            <div className={`flex flex-col gap-4`}>
                 <h3 className={`text-lg font-bold ${accentClass}`}>{title}</h3>
 
                 <div className="space-y-2">
@@ -505,6 +509,18 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                                     />
                                 </div>
                                 <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setValue('storyId', '');
+                                            setIsStoryOpen(false);
+                                            setStorySearch('');
+                                        }}
+                                        className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center justify-between group transition-all text-red-600 hover:bg-red-50 mb-1`}
+                                    >
+                                        <span>-- Bỏ gán truyện --</span>
+                                        {!selectedStoryId && <Check className="w-4 h-4 shrink-0" />}
+                                    </button>
                                     {filteredStories.length > 0 ? (
                                         filteredStories.map((story) => (
                                             <button
@@ -636,11 +652,11 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                 </div>
             </div>
 
-            <hr className="border-gray-200" />
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {renderLangColumn('vi', '🇻🇳 Tiếng Việt', 'text-blue-600')}
-                {renderLangColumn('en', '🇬🇧 English', 'text-red-600')}
+            <div className="w-full">
+                {selectedLocale === 'vi' 
+                    ? renderLangColumn('vi', '🇻🇳 Tiếng Việt', 'text-blue-600')
+                    : renderLangColumn('en', '🇬🇧 English', 'text-red-600')
+                }
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

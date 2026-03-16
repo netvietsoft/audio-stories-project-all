@@ -6,6 +6,16 @@ export class UpdatePackageDto {
     @MaxLength(100)
     name?: string;
 
+    @IsString()
+    @IsOptional()
+    @MaxLength(100)
+    nameVi?: string;
+
+    @IsString()
+    @IsOptional()
+    @MaxLength(100)
+    nameEn?: string;
+
     @IsInt()
     @IsPositive()
     @IsOptional()
@@ -36,9 +46,27 @@ export class UpdatePackageDto {
     @MaxLength(255)
     description?: string;
 
+    @IsString()
+    @IsOptional()
+    @MaxLength(255)
+    descriptionVi?: string;
+
+    @IsString()
+    @IsOptional()
+    @MaxLength(255)
+    descriptionEn?: string;
+
     @IsBoolean()
     @IsOptional()
     isActive?: boolean;
+
+    @IsBoolean()
+    @IsOptional()
+    isPopular?: boolean;
+
+    @IsBoolean()
+    @IsOptional()
+    isBestValue?: boolean;
 
     @IsInt()
     @IsOptional()

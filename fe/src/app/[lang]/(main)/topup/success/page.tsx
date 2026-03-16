@@ -14,7 +14,15 @@ export default function TopupSuccessPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        // Fetch immediately when page loads
         fetchUserData();
+        
+        // Refetch after 2 seconds to ensure backend has processed the payment
+        const timer = setTimeout(() => {
+            fetchUserData();
+        }, 2000);
+        
+        return () => clearTimeout(timer);
     }, []);
 
     const fetchUserData = async () => {

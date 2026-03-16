@@ -29,6 +29,8 @@ import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 interface Story {
     id: string;
     title: string;
+    titleVi?: string;
+    titleEn?: string;
     slug: string;
     thumbnailUrl: string | null;
     status: 'ongoing' | 'completed';
@@ -75,13 +77,14 @@ export default function StoriesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [selectedLocale, setSelectedLocale] = useState<'vi' | 'en'>('vi');
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [updatingRecommendId, setUpdatingRecommendId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchStories();
-    }, [page, filterStatus]);
+    }, [page, filterStatus, selectedLocale]);
 
     const fetchStories = async () => {
         setIsLoading(true);
@@ -89,6 +92,7 @@ export default function StoriesPage() {
             const params = new URLSearchParams({
                 page: page.toString(),
                 limit: '10',
+                lang: selectedLocale,
                 ...(filterStatus !== 'all' ? { status: filterStatus } : {}),
                 ...(searchTerm ? { search: searchTerm } : {}),
             });
@@ -170,11 +174,40 @@ export default function StoriesPage() {
                     <p className="text-slate-500 mt-2 font-medium">Danh sách và thông tin chi tiết các tác phẩm trên hệ thống.</p>
                 </div>
                 <div className="flex items-center gap-3">
+                    {/* Locale Selector */}
+                    <div className="flex items-center gap-2 bg-white rounded-xl border-2 border-slate-200 p-1">
+                        <button
+                            onClick={() => {
+                                setSelectedLocale('vi');
+                                setPage(1);
+                            }}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                selectedLocale === 'vi'
+                                    ? 'bg-indigo-600 text-white shadow-md'
+                                    : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            🇻🇳 Tiếng Việt
+                        </button>
+                        <button
+                            onClick={() => {
+                                setSelectedLocale('en');
+                                setPage(1);
+                            }}
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+                                selectedLocale === 'en'
+                                    ? 'bg-indigo-600 text-white shadow-md'
+                                    : 'text-slate-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            🇬🇧 English
+                        </button>
+                    </div>
                     <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
                         <Download className="w-4 h-4" />
                         Xuất báo cáo
                     </button>
-                    <Link href="/admin/stories/new">
+                    <Link href={`/admin/stories/new?lang=${selectedLocale}`}>
                         <button className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200">
                             <Plus className="w-4 h-4" />
                             Thêm truyện mới
@@ -280,8 +313,11 @@ export default function StoriesPage() {
                                             <div className="flex items-center gap-4">
                                                 <StoryThumbnail story={story} />
                                                 <div className="min-w-0">
-                                                    <p className="text-sm font-black text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
-                                                        {story.title}
+                                                    <p className="text-sm font-black text-slate-900 truncate group-hover:text-indigo-600 transition-colors" title={selectedLocale === 'vi' ? (story.titleVi || story.title) : (story.titleEn || story.title)}>
+                                                        {(() => {
+                                                            const displayTitle = selectedLocale === 'vi' ? (story.titleVi || story.title) : (story.titleEn || story.title);
+                                                            return displayTitle.length > 26 ? `${displayTitle.substring(0, 26)}...` : displayTitle;
+                                                        })()}
                                                     </p>
                                                     <p className="text-xs text-slate-500 font-bold mt-0.5">
                                                         By <span className="text-slate-700">{story.author.name}</span>

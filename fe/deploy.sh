@@ -120,6 +120,13 @@ else
     git commit -m "Deploy FE: $(date '+%Y-%m-%d %H:%M:%S')" . || echo "ℹ️  Nothing to commit"
 fi
 
+echo "📥 Syncing with remote master..."
+git pull origin master --rebase || {
+    echo "⚠️  Pull failed, trying to resolve..."
+    git rebase --abort 2>/dev/null || true
+    git pull origin master --no-rebase
+}
+
 echo "📤 Pushing to master..."
 git push origin HEAD:master
 echo "✅ Pushed to master"

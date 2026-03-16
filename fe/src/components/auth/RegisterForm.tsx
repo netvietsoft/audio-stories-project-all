@@ -11,6 +11,7 @@ import { registerSchema } from "@/lib/validation/auth";
 import GoogleOAuthBtn from "./GoogleOAuthBtn";
 import { apiClient } from "@/lib/api/api-client";
 import { User, Mail, Lock, CheckCircle2, Loader2, AlertCircle, UserPlus } from "lucide-react";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
@@ -23,6 +24,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
   const t = useTranslations("RegisterForm");
   const tAuth = useTranslations("Auth");
   const router = useRouter();
+  const { openVerify } = useAuthModalStore();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
 
@@ -48,13 +50,10 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
 
       setSubmitSuccess(t("success"));
 
-      if (onSuccess) {
-        setTimeout(() => onSuccess(), 1000);
-      } else {
-        setTimeout(() => {
-          router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
-        }, 1000);
-      }
+      // Always open verify modal after successful registration
+      setTimeout(() => {
+        openVerify(undefined, data.email);
+      }, 1000);
     } catch (error) {
       const message =
         typeof error === "object" &&

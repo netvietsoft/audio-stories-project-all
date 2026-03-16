@@ -27,6 +27,7 @@ import {
   Volume2,
   VolumeX,
   Smile,
+  Gift,
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
@@ -258,6 +259,14 @@ export default function StoryChapterClient() {
   const [showTopupAction, setShowTopupAction] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const user = useUserStore((state) => state.user);
+  
+  // Gift states
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+  const [giftAmount, setGiftAmount] = useState("");
+  const [giftMessage, setGiftMessage] = useState("");
+  const [isGiftingCredits, setIsGiftingCredits] = useState(false);
+  const [giftError, setGiftError] = useState("");
+
   const setUser = useUserStore((state) => state.setUser);
 
   const currentTrack = useAudioStore((state) => state.currentTrack);
@@ -827,6 +836,59 @@ export default function StoryChapterClient() {
     setIsUnlockModalOpen(false);
   };
 
+  const handleGiftCredits = async () => {
+    if (!user) {
+      router.push(`/${currentLang}/login`);
+      return;
+    }
+
+    const amount = parseInt(giftAmount);
+    if (isNaN(amount) || amount < 10) {
+      setGiftError(t("giftMinAmount"));
+      return;
+    }
+
+    if ((user.credits ?? 0) < amount) {
+      setGiftError(t("giftInsufficientCredits"));
+      return;
+    }
+
+    if (!story?.id) return;
+
+    setIsGiftingCredits(true);
+    setGiftError("");
+
+    try {
+      await apiClient.post(`/stories/${story.id}/gift`, {
+        amount,
+        message: giftMessage.trim() || undefined,
+      });
+
+      // Update user credits
+      setUser({
+        ...user,
+        credits: (user.credits ?? 0) - amount,
+      });
+
+      // Reset form and close modal
+      setGiftAmount("");
+      setGiftMessage("");
+      setIsGiftModalOpen(false);
+      alert(t("giftSuccess"));
+    } catch (error) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "response" in error &&
+        typeof (error as any).response?.data?.message === "string"
+          ? (error as any).response.data.message
+          : t("giftError");
+      setGiftError(message);
+    } finally {
+      setIsGiftingCredits(false);
+    }
+  };
+
   const submitReview = async () => {
     if (!story) return;
     if (!user) {
@@ -1309,6 +1371,20 @@ export default function StoryChapterClient() {
           </div>
         </section>
 
+        {/* Gift Section */}
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("giftChapter")}</h2>
+            <button
+              onClick={() => setIsGiftModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-pink-500/30 transition-all hover:shadow-xl hover:shadow-pink-500/40 active:scale-95"
+            >
+              <Gift className="h-5 w-5" />
+              {t("giftButton")}
+            </button>
+          </div>
+        </section>
+
         {/* Reviews */}
         <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readerReviews")}</h2>
@@ -1588,6 +1664,95 @@ export default function StoryChapterClient() {
               >
                 Mua VIP
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Gift Modal */}
+      {isGiftModalOpen ? (
+        <div 
+          className="fixed inset-0 z-[70] bg-black/60 p-4 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsGiftModalOpen(false);
+              setGiftAmount("");
+              setGiftMessage("");
+              setGiftError("");
+            }
+          }}
+        >
+          <div className="min-h-screen flex items-center justify-center py-8">
+            <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-900">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
+                <Gift className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t("giftModalTitle")}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t("giftModalDescription")}</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  {t("giftAmount")}
+                </label>
+                <input
+                  type="number"
+                  min="10"
+                  value={giftAmount}
+                  onChange={(e) => setGiftAmount(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  placeholder={t("giftAmountPlaceholder")}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  {t("giftMessage")}
+                </label>
+                <textarea
+                  rows={3}
+                  value={giftMessage}
+                  onChange={(e) => setGiftMessage(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500 resize-none"
+                  placeholder={t("giftMessagePlaceholder")}
+                />
+              </div>
+
+              <div className="rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-4 py-3 text-sm">
+                <p className="text-gray-600 dark:text-gray-300">
+                  {t("yourBalance", { balance: Number(user?.credits ?? 0).toLocaleString() })}
+                </p>
+              </div>
+
+              {giftError ? (
+                <p className="text-sm font-medium text-red-600 dark:text-red-400">{giftError}</p>
+              ) : null}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setIsGiftModalOpen(false);
+                    setGiftAmount("");
+                    setGiftMessage("");
+                    setGiftError("");
+                  }}
+                  className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  {t("cancel")}
+                </button>
+                <button
+                  onClick={handleGiftCredits}
+                  disabled={isGiftingCredits}
+                  className="flex-1 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGiftingCredits ? "..." : t("giftConfirm")}
+                </button>
+              </div>
+            </div>
             </div>
           </div>
         </div>

@@ -118,6 +118,7 @@ model Author {
   id             String   @id @default(uuid()) @db.VarChar(36)
   name           String   @db.VarChar(150)
   slug           String   @unique @db.VarChar(200)
+  language       String   @default("vi") @db.VarChar(8)
   avatarUrl      String?  @map("avatar_url") @db.Text
   bio            String?  @db.Text
   followersCount Int      @default(0) @map("followers_count") @db.UnsignedInt
@@ -129,6 +130,7 @@ model Author {
   memberships       Membership[]
 
   @@index([name])
+  @@index([language])
   @@map("authors")
 }
 
@@ -151,12 +153,14 @@ model Category {
   nameVi      String   @default("") @map("name_vi") @db.VarChar(100)
   nameEn      String   @default("") @map("name_en") @db.VarChar(100)
   slug        String   @unique @db.VarChar(120)
+  language    String   @default("vi") @db.VarChar(8)
   description String?  @db.Text
   iconUrl     String?  @map("icon_url") @db.VarChar(255)
   createdAt   DateTime @default(now()) @map("created_at")
 
   stories StoryCategory[]
 
+  @@index([language])
   @@map("categories")
 }
 
@@ -167,7 +171,7 @@ enum StoryStatus {
 
 model Story {
   id            String      @id @default(uuid()) @db.VarChar(36)
-  title         String      @db.VarChar(300)
+  title         String      @default("") @db.VarChar(300)
   titleVi       String      @default("") @map("title_vi") @db.VarChar(300)
   titleEn       String      @default("") @map("title_en") @db.VarChar(300)
   slug          String      @unique @db.VarChar(350)
@@ -244,6 +248,7 @@ model Chapter {
   title          String            @db.VarChar(300)
   titleVi        String            @default("") @map("title_vi") @db.VarChar(300)
   titleEn        String            @default("") @map("title_en") @db.VarChar(300)
+  language       String            @default("vi") @db.VarChar(8)
   description    String?           @db.Text
   descriptionVi  String?           @map("description_vi") @db.Text
   descriptionEn  String?           @map("description_en") @db.Text
@@ -273,6 +278,7 @@ model Chapter {
   @@index([accessType])
   @@index([unlocksAt])
   @@index([storyId, chapterNumber(sort: Asc)])
+  @@index([language])
   @@map("chapters")
 }
 

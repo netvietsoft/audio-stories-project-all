@@ -21,14 +21,20 @@ import VietQRPayment from '@/components/payment/VietQRPayment';
 interface PaymentPackage {
     code: string;
     name: string;
+    nameVi?: string;
+    nameEn?: string;
     priceVnd: number;
     price?: number;
     currency?: string;
     lang?: string;
     credits: number;
     description?: string;
+    descriptionVi?: string;
+    descriptionEn?: string;
     isActive: boolean;
     displayOrder: number;
+    isPopular?: boolean;
+    isBestValue?: boolean;
 }
 
 export default function TopupPage() {
@@ -56,9 +62,10 @@ export default function TopupPage() {
                 .sort((a: PaymentPackage, b: PaymentPackage) => a.displayOrder - b.displayOrder);
             setPackages(activePackages);
 
-            // Auto-select first package if none selected
+            // Auto-select popular package if available, otherwise first package
             if (activePackages.length > 0 && !selectedPackage) {
-                handleSelectPackage(activePackages[0]);
+                const popularPackage = activePackages.find((pkg: PaymentPackage) => pkg.isPopular);
+                handleSelectPackage(popularPackage || activePackages[0]);
             }
         } catch (error) {
             console.error('Failed to fetch packages:', error);
@@ -136,20 +143,18 @@ export default function TopupPage() {
                             {packages.length > 0 ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
                                     {packages.map((pkg) => {
-                                        // Determine badges based on displayOrder and credits
-                                        const sortedByDisplayOrder = [...packages].sort((a, b) => a.displayOrder - b.displayOrder);
-                                        const sortedByCredits = [...packages].sort((a, b) => b.credits - a.credits);
-
-                                        // Popular package: middle displayOrder
-                                        const middleIndex = Math.floor(sortedByDisplayOrder.length / 2);
-                                        const popularPackage = sortedByDisplayOrder[middleIndex];
-                                        const isPopular = popularPackage ? pkg.code === popularPackage.code : false;
-
-                                        // Best value package: highest credits
-                                        const bestValuePackage = sortedByCredits[0];
-                                        const isBestValue = bestValuePackage ? pkg.code === bestValuePackage.code : false;
-
+                                        // Use database flags for badges
+                                        const isPopular = pkg.isPopular || false;
+                                        const isBestValue = pkg.isBestValue || false;
                                         const isSelected = selectedPackage?.code === pkg.code;
+                                        
+                                        // Get localized name and description
+                                        const packageName = locale === 'vi' 
+                                            ? (pkg.nameVi || pkg.name) 
+                                            : (pkg.nameEn || pkg.name);
+                                        const packageDescription = locale === 'vi'
+                                            ? (pkg.descriptionVi || pkg.description)
+                                            : (pkg.descriptionEn || pkg.description);
 
                                         return (
                                             <div
@@ -188,14 +193,14 @@ export default function TopupPage() {
                                                         <Coins className={`w-6 h-6 ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-violet-500'}`} />
                                                     </div>
                                                     <h3 className={`text-xs font-black tracking-tight ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-slate-900 dark:text-white'}`}>
-                                                        {pkg.name}
+                                                        {packageName}
                                                     </h3>
                                                 </div>
 
                                                 {/* Description */}
-                                                {pkg.description && (
+                                                {packageDescription && (
                                                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">
-                                                        {pkg.description}
+                                                        {packageDescription}
                                                     </p>
                                                 )}
 
@@ -206,7 +211,7 @@ export default function TopupPage() {
                                                         <div className="text-[10px] font-bold  text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">
                                                             {t("payment")}
                                                         </div>
-                                                        <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                                                        <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                                                             {formatCurrency(pkg.price || pkg.priceVnd, pkg.currency)}
                                                         </div>
                                                     </div>
@@ -220,7 +225,7 @@ export default function TopupPage() {
                                                             {t("receive")}
                                                         </div>
                                                         <div className="flex items-center justify-center gap-1.5">
-                                                            <span className={`text-2xl sm:text-3xl font-black tracking-tight ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
+                                                            <span className={`text-xl sm:text-2xl font-black tracking-tight ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
                                                                 {pkg.credits.toLocaleString()}
                                                             </span>
                                                             <span className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">
@@ -247,13 +252,13 @@ export default function TopupPage() {
                                                 </div>
 
                                                 <button
-                                                    className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide transition-all flex items-center justify-center gap-2 mt-auto ${isSelected
+                                                    className={`w-full py-3.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 mt-auto whitespace-nowrap ${isSelected
                                                         ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30'
                                                         : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/20 group-hover:text-violet-600 dark:group-hover:text-violet-400'
                                                         }`}
                                                 >
-                                                    <CreditCard className="w-4 h-4" />
-                                                    {isSelected ? t("selected") : t("selectPackage")}
+                                                    <CreditCard className="w-4 h-4 flex-shrink-0" />
+                                                    <span className="truncate">{isSelected ? t("selected") : t("selectPackage")}</span>
                                                 </button>
                                             </div>
                                         );
@@ -337,7 +342,7 @@ export default function TopupPage() {
 
                                         <button
                                             disabled={customAmount < 6000 && selectedPackage?.code === 'CUSTOM'}
-                                            className={`w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide transition-all flex items-center justify-center gap-2 mt-auto ${customAmount < 6000 && selectedPackage?.code === 'CUSTOM'
+                                            className={`w-full py-3.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 mt-auto whitespace-nowrap ${customAmount < 6000 && selectedPackage?.code === 'CUSTOM'
                                                 ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 cursor-not-allowed'
                                                 : selectedPackage?.code === 'CUSTOM'
                                                     ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30'
@@ -354,8 +359,8 @@ export default function TopupPage() {
                                                 displayOrder: 999,
                                             })}
                                         >
-                                            <CreditCard className="w-4 h-4" />
-                                            {selectedPackage?.code === 'CUSTOM' ? t("selected") : t("enterOption")}
+                                            <CreditCard className="w-4 h-4 flex-shrink-0" />
+                                            <span className="truncate">{selectedPackage?.code === 'CUSTOM' ? t("selected") : t("enterOption")}</span>
                                         </button>
                                     </div>
 

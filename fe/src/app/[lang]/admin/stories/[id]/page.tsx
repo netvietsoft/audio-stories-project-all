@@ -17,7 +17,8 @@ export default function EditStoryPage() {
 
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [initialData, setInitialData] = useState<(Partial<StoryFormValues> & { id?: string }) | null>(null);
+  const [initialData, setInitialData] = useState<(Partial<StoryFormValues> & { id?: string; language?: string }) | null>(null);
+  const [selectedLocale, setSelectedLocale] = useState<'vi' | 'en'>('vi');
 
   useEffect(() => {
     if (!storyId) return;
@@ -27,8 +28,14 @@ export default function EditStoryPage() {
         const storyRes = await apiClient.get(`/stories/admin/${storyId}`);
         const story = storyRes.data;
 
+        // Set locale based on story's language
+        if (story.language) {
+          setSelectedLocale(story.language);
+        }
+
         setInitialData({
           id: story.id,
+          language: story.language,
           titleVi: story.titleVi || story.title || "",
           titleEn: story.titleEn || "",
           slug: story.slug || "",
@@ -40,6 +47,10 @@ export default function EditStoryPage() {
           categoryIds: (story.categories || []).map((item: { category: { id: number } }) => item.category.id),
           audioUrl: story.audioUrl || "",
           facebookGroupUrl: story.facebookGroupUrl || "",
+          twitterUrl: story.twitterUrl || "",
+          instagramUrl: story.instagramUrl || "",
+          redditUrl: story.redditUrl || "",
+          whatsappUrl: story.whatsappUrl || "",
           isRecommended: !!story.isRecommended,
         });
       } catch (error) {
@@ -98,10 +109,36 @@ export default function EditStoryPage() {
           </div>
           <p className="ml-16 font-medium text-slate-500">Cập nhật thông tin truyện với nội dung đa ngôn ngữ.</p>
         </div>
+        {/* Locale Selector */}
+        <div className="flex items-center gap-2 bg-white rounded-xl border-2 border-slate-200 p-1">
+          <button
+            type="button"
+            onClick={() => setSelectedLocale('vi')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              selectedLocale === 'vi'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            🇻🇳 Tiếng Việt
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedLocale('en')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+              selectedLocale === 'en'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            🇬🇧 English
+          </button>
+        </div>
       </div>
 
       <StoryForm
         initialData={initialData}
+        selectedLocale={selectedLocale}
         onSubmit={handleSubmit}
         onCancel={() => router.push(`/${currentLang}/admin/stories`)}
         isLoading={isSubmitting}

@@ -26,4 +26,8 @@ export class ChapterQueryDto {
     @IsOptional()
     @IsString()
     storyId?: string;
+
+    @IsOptional()
+    @IsString()
+    lang?: string;
 }

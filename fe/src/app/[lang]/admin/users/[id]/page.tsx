@@ -26,7 +26,7 @@ import {
     Plus,
     MoreVertical
 } from 'lucide-react';
-import { apiClient } from '@/lib/api/api-client';
+import { adminApiClient } from '@/lib/api/admin-api-client';
 import Link from '@/components/shared/LocalizedLink';
 
 interface UserDetail {
@@ -129,7 +129,7 @@ export default function UserDetailsPage() {
     const fetchUser = async () => {
         setIsLoading(true);
         try {
-            const res = await apiClient.get(`/auth/users/${id}`);
+            const res = await adminApiClient.get(`/auth/users/${id}`);
             setUser(res.data);
         } catch (error) {
             console.error('Failed to fetch user:', error);

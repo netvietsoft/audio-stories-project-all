@@ -89,12 +89,21 @@ export class AuthService {
     // Resolve country from IP
     let country: string | null = null;
     if (ip) {
-      const geo = geoip.lookup(ip);
-      if (geo) {
-        country = geo.country;
-        this.logger.log(`Resolved country for ${ip}: ${country}`);
+      // Skip localhost and private IPs
+      const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
+      const isPrivate = ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.');
+      
+      if (isLocalhost || isPrivate) {
+        this.logger.warn(`Skipping GeoIP for local/private IP: ${ip}`);
+        country = null; // or set a default like 'VN'
       } else {
-        this.logger.warn(`GeoIP lookup failed for IP: ${ip}`);
+        const geo = geoip.lookup(ip);
+        if (geo) {
+          country = geo.country;
+          this.logger.log(`Resolved country for ${ip}: ${country}`);
+        } else {
+          this.logger.warn(`GeoIP lookup failed for IP: ${ip}`);
+        }
       }
     } else {
       this.logger.warn(`No IP provided for registration`);
@@ -138,9 +147,14 @@ export class AuthService {
 
     // Backfill country if missing and IP provided
     if (!user.country && ip) {
-      const geo = geoip.lookup(ip);
-      if (geo) {
-        data.country = geo.country;
+      const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
+      const isPrivate = ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.');
+      
+      if (!isLocalhost && !isPrivate) {
+        const geo = geoip.lookup(ip);
+        if (geo) {
+          data.country = geo.country;
+        }
       }
     }
 
@@ -155,12 +169,17 @@ export class AuthService {
     if (user) {
       const data: any = { lastLoginAt: new Date() };
       if (!user.country && ip) {
-        const geo = geoip.lookup(ip);
-        if (geo) {
-          data.country = geo.country;
-          this.logger.log(`[VerifyEmail] Backfilled country for ${userId}: ${geo.country} (IP: ${ip})`);
-        } else {
-          this.logger.warn(`[VerifyEmail] GeoIP lookup failed for IP: ${ip}`);
+        const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
+        const isPrivate = ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.');
+        
+        if (!isLocalhost && !isPrivate) {
+          const geo = geoip.lookup(ip);
+          if (geo) {
+            data.country = geo.country;
+            this.logger.log(`[VerifyEmail] Backfilled country for ${userId}: ${geo.country} (IP: ${ip})`);
+          } else {
+            this.logger.warn(`[VerifyEmail] GeoIP lookup failed for IP: ${ip}`);
+          }
         }
       }
       await this.prisma.user.update({ where: { id: userId }, data });
@@ -180,12 +199,17 @@ export class AuthService {
     if (user) {
       const data: any = { lastLoginAt: new Date() };
       if (!user.country && ip) {
-        const geo = geoip.lookup(ip);
-        if (geo) {
-          data.country = geo.country;
-          this.logger.log(`[VerifyCode] Backfill country: ${geo.country} for IP ${ip}`);
-        } else {
-          this.logger.warn(`[VerifyCode] GeoIP lookup failed for IP: ${ip}`);
+        const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
+        const isPrivate = ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.');
+        
+        if (!isLocalhost && !isPrivate) {
+          const geo = geoip.lookup(ip);
+          if (geo) {
+            data.country = geo.country;
+            this.logger.log(`[VerifyCode] Backfill country: ${geo.country} for IP ${ip}`);
+          } else {
+            this.logger.warn(`[VerifyCode] GeoIP lookup failed for IP: ${ip}`);
+          }
         }
       }
       await this.prisma.user.update({ where: { id: userId }, data });

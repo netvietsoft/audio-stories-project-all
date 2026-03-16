@@ -48,9 +48,14 @@ export class OAuthService {
     // Resolve country if provided
     let country: string | null = null;
     if (ip) {
-      const geo = geoip.lookup(ip);
-      if (geo) {
-        country = geo.country;
+      const isLocalhost = ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
+      const isPrivate = ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.');
+      
+      if (!isLocalhost && !isPrivate) {
+        const geo = geoip.lookup(ip);
+        if (geo) {
+          country = geo.country;
+        }
       }
     }
 

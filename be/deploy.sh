@@ -120,10 +120,10 @@ else
     git commit -m "Deploy BE: $(date '+%Y-%m-%d %H:%M:%S')" . || echo "ℹ️  Nothing to commit"
 fi
 
-echo "� Syncing with remote master..."
+echo "📥 Syncing with remote master..."
 git pull origin master --rebase
 
-echo "�📤 Pushing to master..."
+echo "📤 Pushing to master..."
 git push origin HEAD:master
 echo "✅ Pushed to master"
 

@@ -10,20 +10,23 @@ import { resetByCodeSchema } from "@/lib/validation/auth";
 import { apiClient } from "@/lib/api/api-client";
 import { Mail, Lock, Loader2, AlertCircle, CheckCircle2, KeyRound } from "lucide-react";
 import CodeInput from "./CodeInput";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
 
 interface ResetFormProps {
   token?: string;
+  email?: string;
   onSuccess?: () => void;
 }
 
-export default function ResetForm({ token, onSuccess }: ResetFormProps = {}) {
+export default function ResetForm({ token, email: emailProp, onSuccess }: ResetFormProps = {}) {
   const t = useTranslations("ResetForm");
-  const tAuth = useTranslations("Auth");
   const searchParams = useSearchParams();
   const router = useRouter();
   const params = useParams<{ lang?: string }>();
   const currentLang = params?.lang === "en" ? "en" : "vi";
+  const { setView } = useAuthModalStore();
   const emailFromQuery = searchParams.get("email") || "";
+  const defaultEmail = emailProp || emailFromQuery;
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [isResending, setIsResending] = useState(false);
@@ -31,7 +34,7 @@ export default function ResetForm({ token, onSuccess }: ResetFormProps = {}) {
   const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<z.infer<typeof resetByCodeSchema>>({
     resolver: zodResolver(resetByCodeSchema),
     defaultValues: {
-      email: emailFromQuery,
+      email: defaultEmail,
       code: "",
       password: "",
       confirmPassword: "",
@@ -49,7 +52,18 @@ export default function ResetForm({ token, onSuccess }: ResetFormProps = {}) {
         code: data.code,
         newPassword: data.password,
       });
-      router.push(`/${currentLang}/login?reset=1`);
+      
+      // If onSuccess is provided (modal context), call it
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        // Otherwise switch to login view in modal or redirect
+        if (emailProp) {
+          setView('login');
+        } else {
+          router.push(`/${currentLang}/login?reset=1`);
+        }
+      }
     } catch (error) {
       const message =
         typeof error === "object" &&

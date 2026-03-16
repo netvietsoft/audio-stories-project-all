@@ -9,6 +9,7 @@ import { StoriesService } from './stories.service';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { Roles } from '@/auth/decorators/roles.decorator';
+import { Account } from '@/auth/decorators/account.decorator';
 
 @Controller('stories')
 export class StoriesController {
@@ -126,6 +127,12 @@ export class StoriesController {
   @Roles('ADMIN')
   deleteStory(@Param('id') id: string) {
     return this.storiesService.deleteStory(id);
+  }
+
+  @Post(':id/gift')
+  @UseGuards(JwtAccessGuard)
+  giftCredits(@Param('id') id: string, @Body() dto: { amount: number; message?: string }, @Account() user: any) {
+    return this.storiesService.giftCredits(id, user.sub, dto.amount, dto.message);
   }
 
   // IMPORTANT: This must be LAST because it's a catch-all route

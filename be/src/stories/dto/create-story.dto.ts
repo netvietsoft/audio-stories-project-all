@@ -4,25 +4,33 @@ import { StoryStatus } from '@prisma/client';
 import { CreateChapterDto } from '@/chapters/dto/create-chapter.dto';
 
 export class CreateStoryDto {
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
-    titleVi: string;
+    titleVi?: string;
 
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
-    titleEn: string;
+    titleEn?: string;
+
+    @IsOptional()
+    @IsString()
+    title?: string;
 
     @IsString()
     @IsNotEmpty()
     slug: string;
 
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
-    descriptionVi: string;
+    descriptionVi?: string;
 
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
-    descriptionEn: string;
+    descriptionEn?: string;
+
+    @IsOptional()
+    @IsString()
+    description?: string;
 
     @IsOptional()
     @IsString()
@@ -45,6 +53,22 @@ export class CreateStoryDto {
     facebookGroupUrl?: string;
 
     @IsOptional()
+    @IsUrl({}, { message: 'twitterUrl must be a valid URL' })
+    twitterUrl?: string;
+
+    @IsOptional()
+    @IsUrl({}, { message: 'instagramUrl must be a valid URL' })
+    instagramUrl?: string;
+
+    @IsOptional()
+    @IsUrl({}, { message: 'redditUrl must be a valid URL' })
+    redditUrl?: string;
+
+    @IsOptional()
+    @IsUrl({}, { message: 'whatsappUrl must be a valid URL' })
+    whatsappUrl?: string;
+
+    @IsOptional()
     @IsBoolean()
     isRecommended?: boolean;
 
@@ -63,4 +87,8 @@ export class CreateStoryDto {
     @IsArray()
     @IsString({ each: true })
     chapterIds?: string[];
+
+    @IsOptional()
+    @IsString()
+    language?: string;
 }

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Prisma, StoryStatus } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
@@ -29,52 +29,81 @@ export class StoriesService {
   }
 
   async create(data: CreateStoryDto) {
-    const { categoryIds, chapters, chapterIds, ...storyData } = data;
-    const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
-
-    const story = await this.prisma.story.create({
-      data: {
-        ...normalizedStoryData,
-        categories: categoryIds
-          ? {
-            create: categoryIds.map((id) => ({
-              categoryId: id,
-            })),
-          }
-          : undefined,
-        totalChapters: (chapters?.length || 0) + (chapterIds?.length || 0),
-        chapters: chapters?.length
-          ? {
-            create: chapters.map((chapter) => this.normalizeNestedChapterPayload(chapter)),
-          }
-          : undefined,
-      },
-      include: {
-        author: {
-          select: { id: true, name: true },
-        },
-        categories: {
-          include: {
-            category: { select: { name: true } },
-          },
-        },
-      },
-    });
-
-    // Assign existing chapters to this story if chapterIds provided
-    if (chapterIds && chapterIds.length > 0) {
-      await this.prisma.chapter.updateMany({
-        where: {
-          id: { in: chapterIds },
-          deletedAt: null,
-        },
-        data: {
-          storyId: story.id,
-        },
-      });
+    // Validate that at least one title and one description exist
+    if (!data.titleVi && !data.titleEn) {
+      throw new BadRequestException('At least one title (titleVi or titleEn) must be provided');
+    }
+    if (!data.descriptionVi && !data.descriptionEn) {
+      throw new BadRequestException('At least one description (descriptionVi or descriptionEn) must be provided');
     }
 
-    return this.serializeStory(story);
+    const { categoryIds, chapters, chapterIds, ...storyData } = data;
+    
+    // Set title and description from locale-specific fields for backward compatibility
+    if (!storyData.title) {
+      storyData.title = storyData.titleVi || storyData.titleEn || '';
+    }
+    if (!storyData.description) {
+      storyData.description = storyData.descriptionVi || storyData.descriptionEn || '';
+    }
+    
+    const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
+
+    try {
+      const story = await this.prisma.story.create({
+        data: {
+          ...normalizedStoryData,
+          categories: categoryIds
+            ? {
+              create: categoryIds.map((id) => ({
+                categoryId: id,
+              })),
+            }
+            : undefined,
+          totalChapters: (chapters?.length || 0) + (chapterIds?.length || 0),
+          chapters: chapters?.length
+            ? {
+              create: chapters.map((chapter) => this.normalizeNestedChapterPayload(chapter)),
+            }
+            : undefined,
+        },
+        include: {
+          author: {
+            select: { id: true, name: true },
+          },
+          categories: {
+            include: {
+              category: { select: { name: true } },
+            },
+          },
+        },
+      });
+
+      // Assign existing chapters to this story if chapterIds provided
+      if (chapterIds && chapterIds.length > 0) {
+        await this.prisma.chapter.updateMany({
+          where: {
+            id: { in: chapterIds },
+            deletedAt: null,
+          },
+          data: {
+            storyId: story.id,
+          },
+        });
+      }
+
+      return this.serializeStory(story);
+    } catch (error) {
+      if (error.code === 'P2002') {
+        // Unique constraint violation
+        const target = error.meta?.target;
+        if (target && target.includes('slug')) {
+          throw new BadRequestException(`Slug "${data.slug}" đã tồn tại. Vui lòng sử dụng slug khác.`);
+        }
+        throw new BadRequestException('Dữ liệu bị trùng lặp. Vui lòng kiểm tra lại.');
+      }
+      throw error;
+    }
   }
 
 
@@ -339,6 +368,7 @@ export class StoriesService {
       // Admin sees everything (including soft deleted if needed, but let's stick to non-deleted for now)
       deletedAt: null,
       ...(query.status ? { status: query.status as StoryStatus } : {}),
+      ...(query.lang ? { language: query.lang } : {}),
       ...(query.search
         ? {
           OR: [
@@ -618,5 +648,67 @@ export class StoriesService {
     });
 
     return { message: 'Story deleted successfully' };
+  }
+
+  async giftCredits(storyId: string, userId: string, amount: number, message?: string) {
+    // Validate amount
+    if (amount < 10) {
+      throw new BadRequestException('Minimum gift amount is 10 credits');
+    }
+
+    // Get user and check balance
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, credits: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.credits < amount) {
+      throw new BadRequestException('Insufficient credits');
+    }
+
+    // Get story
+    const story = await this.prisma.story.findUnique({
+      where: { id: storyId },
+      select: { id: true, authorId: true, deletedAt: true, title: true },
+    });
+
+    if (!story || story.deletedAt) {
+      throw new NotFoundException('Story not found');
+    }
+
+    if (!story.authorId) {
+      throw new BadRequestException('Story has no author');
+    }
+
+    // Deduct credits from user and create transaction record
+    await this.prisma.$transaction([
+      // Deduct credits from user
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { credits: { decrement: amount } },
+      }),
+      // Create credit transaction record
+      this.prisma.creditTransaction.create({
+        data: {
+          userId,
+          type: 'spend',
+          amount: -amount,
+          balanceBefore: user.credits,
+          balanceAfter: user.credits - amount,
+          referenceId: storyId,
+          description: `Gift ${amount} credits to story: ${story.title}${message ? ` - ${message}` : ''}`,
+        },
+      }),
+    ]);
+
+    return {
+      ok: true,
+      message: 'Gift sent successfully',
+      amount,
+    };
   }
 }

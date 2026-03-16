@@ -97,7 +97,7 @@ export default function NewStoriesPage() {
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {stories.map((story) => (
-          <StoryCard key={story.id} story={story} />
+          <StoryCard key={story.id} story={story} variant="newly-posted" />
         ))}
       </div>
 

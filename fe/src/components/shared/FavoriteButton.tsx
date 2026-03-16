@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Heart } from "lucide-react";
+import { useParams, usePathname, useRouter } from "next/navigation";
 
 import { useUserStore } from "@/stores/user-store";
 import { useFavoriteStore } from "@/stores/favorite-store";
@@ -14,6 +15,7 @@ type FavoriteButtonProps = {
   icon?: "heart" | "bookmark";
   activeClassName?: string;
   inactiveClassName?: string;
+  labelClassName?: string;
 };
 
 export default function FavoriteButton({
@@ -24,11 +26,15 @@ export default function FavoriteButton({
   icon = "heart",
   activeClassName,
   inactiveClassName,
+  labelClassName,
 }: FavoriteButtonProps) {
   const user = useUserStore((state) => state.user);
   const hydrate = useFavoriteStore((state) => state.hydrate);
   const toggle = useFavoriteStore((state) => state.toggle);
   const isFavorite = useFavoriteStore((state) => state.isFavorite(storyId));
+  const params = useParams<{ lang?: string }>();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,11 +52,18 @@ export default function FavoriteButton({
   return (
     <button
       type="button"
-      disabled={!user || isSubmitting}
+      disabled={isSubmitting}
       onClick={async (event) => {
         event.preventDefault();
         event.stopPropagation();
-        if (!user || isSubmitting) return;
+        if (isSubmitting) return;
+
+        if (!user) {
+          const lang = params?.lang === "en" ? "en" : "vi";
+          const redirect = pathname || "/";
+          router.push(`/${lang}/login?redirect=${encodeURIComponent(redirect)}`);
+          return;
+        }
 
         setIsSubmitting(true);
         try {
@@ -68,7 +81,7 @@ export default function FavoriteButton({
       ) : (
         <Heart className={iconSize} fill={isFavorite ? "currentColor" : "none"} />
       )}
-      {label ? <span>{label}</span> : null}
+      {label ? <span className={labelClassName}>{label}</span> : null}
     </button>
   );
 }

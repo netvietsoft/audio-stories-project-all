@@ -162,10 +162,8 @@ model Language {
 
 model Category {
   id          Int      @id @default(autoincrement()) @db.UnsignedInt
-  name        String   @unique @db.VarChar(100)
-  nameVi      String   @default("") @map("name_vi") @db.VarChar(100)
-  nameEn      String   @default("") @map("name_en") @db.VarChar(100)
-  slug        String   @unique @db.VarChar(120)
+  name        String   @db.VarChar(100)
+  slug        String   @db.VarChar(120)
   language    String   @default("vi") @db.VarChar(8)
   description String?  @db.Text
   iconUrl     String?  @map("icon_url") @db.VarChar(255)
@@ -173,6 +171,7 @@ model Category {
 
   stories StoryCategory[]
 
+  @@unique([slug, language])
   @@index([language])
   @@map("categories")
 }
@@ -184,14 +183,10 @@ enum StoryStatus {
 
 model Story {
   id            String      @id @default(uuid()) @db.VarChar(36)
-  title         String      @default("") @db.VarChar(300)
-  titleVi       String      @default("") @map("title_vi") @db.VarChar(300)
-  titleEn       String      @default("") @map("title_en") @db.VarChar(300)
-  slug          String      @unique @db.VarChar(350)
+  title         String      @db.VarChar(300)
+  slug          String      @db.VarChar(350)
   language      String      @default("vi") @db.VarChar(8)
   description   String?     @db.Text
-  descriptionVi String?     @map("description_vi") @db.Text
-  descriptionEn String?     @map("description_en") @db.Text
   thumbnailUrl  String?     @map("thumbnail_url") @db.Text
   authorId      String      @map("author_id") @db.VarChar(36)
   status        StoryStatus @default(ongoing)
@@ -210,7 +205,6 @@ model Story {
   redditUrl         String?     @map("reddit_url") @db.VarChar(500)
   whatsappUrl       String?     @map("whatsapp_url") @db.VarChar(500)
   createdAt         DateTime    @default(now()) @map("created_at")
-
   updatedAt     DateTime    @updatedAt @map("updated_at")
   deletedAt     DateTime?   @map("deleted_at")
 
@@ -225,12 +219,14 @@ model Story {
   playlistItems    PlaylistItem[]
   chapterComments  ChapterComment[]
 
+  @@unique([slug, language])
   @@index([title])
   @@index([authorId])
   @@index([status, isFeatured, publishedAt, updatedAt])
   @@index([totalViews])
   @@index([averageRating])
   @@index([isRecommended, updatedAt])
+  @@index([language])
   @@map("stories")
 }
 
@@ -259,19 +255,12 @@ model Chapter {
   storyId        String?           @map("story_id") @db.VarChar(36)
   chapterNumber  Float             @map("chapter_number") @db.Float
   title          String            @db.VarChar(300)
-  titleVi        String            @default("") @map("title_vi") @db.VarChar(300)
-  titleEn        String            @default("") @map("title_en") @db.VarChar(300)
   language       String            @default("vi") @db.VarChar(8)
   description    String?           @db.Text
-  descriptionVi  String?           @map("description_vi") @db.Text
-  descriptionEn  String?           @map("description_en") @db.Text
   thumbnailUrl   String?           @map("thumbnail_url") @db.Text
   content        String?           @db.LongText
-  contentVi      String?           @map("content_vi") @db.LongText
-  contentEn      String?           @map("content_en") @db.LongText
+  audioUrl       String?           @map("audio_url") @db.VarChar(500)
   r2AudioUrl     String?           @map("r2_audio_url") @db.VarChar(500)
-  audioUrlVi     String?           @map("audio_url_vi") @db.VarChar(500)
-  audioUrlEn     String?           @map("audio_url_en") @db.VarChar(500)
   youtubeVideoId String?           @map("youtube_video_id") @db.VarChar(20)
   audioDuration  Int?              @map("audio_duration") @db.UnsignedInt
   accessType     ChapterAccessType @default(free) @map("access_type")

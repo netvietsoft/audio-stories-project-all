@@ -80,7 +80,9 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
 
   useEffect(() => {
     const loadCategories = async () => {
-      const res = await apiClient.get<{ data: CategoryItem[] }>("/stories/categories-with-count");
+      const res = await apiClient.get<{ data: CategoryItem[] }>("/stories/categories-with-count", {
+        params: { language: locale }
+      });
       setCategories([{ id: 0, name: t("allCategories"), slug: "all", storiesCount: 0 }, ...(res.data.data || [])]);
     };
     
@@ -95,7 +97,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
     
     void loadCategories();
     void loadAuthors();
-  }, [t]);
+  }, [t, locale]);
 
   const currentCategory = useMemo(() => categories.find((item) => item.slug === activeSlug), [categories, activeSlug]);
   const currentCategoryName = currentCategory 

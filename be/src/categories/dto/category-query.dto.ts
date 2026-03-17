@@ -17,4 +17,8 @@ export class CategoryQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsString()
+  language?: string = 'vi';
 }

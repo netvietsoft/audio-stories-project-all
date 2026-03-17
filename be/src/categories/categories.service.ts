@@ -13,13 +13,17 @@ export class CategoriesService {
         const page = query.page || 1;
         const limit = query.limit || 12;
         const search = query.search;
+        const language = query.language || 'vi';
 
-        const where: Prisma.CategoryWhereInput = search ? {
-            OR: [
-                { name: { contains: search } },
-                { slug: { contains: search } },
-            ]
-        } : {};
+        const where: Prisma.CategoryWhereInput = {
+            language,
+            ...(search ? {
+                OR: [
+                    { name: { contains: search } },
+                    { slug: { contains: search } },
+                ]
+            } : {})
+        };
 
         const [total, data] = await Promise.all([
             this.prisma.category.count({ where }),

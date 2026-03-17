@@ -278,10 +278,10 @@ export default function ChaptersGlobalPage() {
                         <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
                             <Music className="w-6 h-6 text-white" />
                         </div>
-                        Quan ly Chuong
+                        Quản lý Chương
                     </h1>
                     <p className="text-slate-500 mt-2 font-medium">
-                        Tat ca cac chuong trong he thong ({total} chuong)
+                        Tất cả các chương trong hệ thống ({total} chương)
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -298,7 +298,7 @@ export default function ChaptersGlobalPage() {
                         className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200"
                     >
                         <Plus className="w-4 h-4" />
-                        Them chuong moi
+                        Thêm chương mới
                     </button>
                 </div>
             </div>
@@ -309,7 +309,7 @@ export default function ChaptersGlobalPage() {
                 {selectedChapters.size > 0 && (
                     <div className="flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-2xl">
                         <p className="text-sm font-bold text-red-900">
-                            Da chon {selectedChapters.size} chuong
+                            Đã chọn {selectedChapters.size} chương
                         </p>
                         <button
                             onClick={handleBulkDelete}
@@ -319,12 +319,12 @@ export default function ChaptersGlobalPage() {
                             {isDeletingBulk ? (
                                 <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    Dang xoa...
+                                    Đang xóa...
                                 </>
                             ) : (
                                 <>
                                     <Trash2 className="w-4 h-4" />
-                                    Xoa da chon
+                                    Xóa đã chọn
                                 </>
                             )}
                         </button>
@@ -335,7 +335,7 @@ export default function ChaptersGlobalPage() {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                     <input
                         type="text"
-                        placeholder="Tim theo tieu de chuong..."
+                        placeholder="Tìm theo tiêu đề chương..."
                         className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                         value={searchTerm}
                         onChange={(e) => {
@@ -355,10 +355,10 @@ export default function ChaptersGlobalPage() {
                             }}
                             className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-10 pr-10 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
                         >
-                            <option value="all">Tat ca loai truy cap</option>
-                            <option value="free">Mien phi (Free)</option>
-                            <option value="timed">Mo khoa theo thoi gian</option>
-                            <option value="vip">Danh cho VIP</option>
+                            <option value="all">Tất cả loại truy cập</option>
+                            <option value="free">Miễn phí (Free)</option>
+                            <option value="timed">Mở khóa theo thời gian</option>
+                            <option value="vip">Dành cho VIP</option>
                         </select>
                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
@@ -371,10 +371,10 @@ export default function ChaptersGlobalPage() {
                         >
                             <span className="truncate">
                                 {filterStoryId === 'all' 
-                                    ? 'Tat ca truyen' 
+                                    ? 'Tất cả truyện' 
                                     : filterStoryId === 'null'
-                                    ? 'Chua gan truyen'
-                                    : getLocalizedText(stories.find(s => s.id === filterStoryId)?.title, selectedLocale) || 'Loc theo truyen'}
+                                    ? 'Chưa gán truyện'
+                                    : getLocalizedText(stories.find(s => s.id === filterStoryId)?.title, selectedLocale) || 'Lọc theo truyện'}
                             </span>
                             <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isStoryFilterOpen ? 'rotate-180' : ''}`} />
                         </button>
@@ -385,7 +385,7 @@ export default function ChaptersGlobalPage() {
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                                     <input
                                         type="text"
-                                        placeholder="Tim truyen..."
+                                        placeholder="Tìm truyện..."
                                         className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold focus:ring-2 focus:ring-indigo-500/20"
                                         value={storySearch}
                                         onChange={(e) => setStorySearch(e.target.value)}
@@ -401,7 +401,7 @@ export default function ChaptersGlobalPage() {
                                         }}
                                         className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${filterStoryId === 'all' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
                                     >
-                                        Tat ca truyen
+                                        Tất cả truyện
                                         {filterStoryId === 'all' && <Check className="w-4 h-4" />}
                                     </button>
                                     <button
@@ -412,7 +412,7 @@ export default function ChaptersGlobalPage() {
                                         }}
                                         className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-between transition-all ${filterStoryId === 'null' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
                                     >
-                                        Chua gan truyen
+                                        Chưa gán truyện
                                         {filterStoryId === 'null' && <Check className="w-4 h-4" />}
                                     </button>
                                     <div className="h-px bg-slate-100 my-1 mx-2" />
@@ -433,7 +433,7 @@ export default function ChaptersGlobalPage() {
                                             </button>
                                         ))
                                     ) : (
-                                        <p className="p-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Khong tim thay</p>
+                                        <p className="p-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Không tìm thấy</p>
                                     )}
                                 </div>
                             </div>
@@ -453,9 +453,9 @@ export default function ChaptersGlobalPage() {
                             onChange={toggleSelectAll}
                             className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                         />
-                        Ch?n t?t c?
+                        Chọn tất cả
                     </label>
-                    <p className="text-xs font-bold text-slate-400">{chapters.length} chuong</p>
+                    <p className="text-xs font-bold text-slate-400">{chapters.length} chương</p>
                 </div>
 
                 <div className="divide-y divide-slate-100">
@@ -481,7 +481,7 @@ export default function ChaptersGlobalPage() {
 
                                     <div className="min-w-0">
                                         <p className="truncate text-sm font-black text-slate-900 md:text-base">
-                                            Chuong {chapter.chapterNumber}: {selectedLocale === 'en'
+                                            Chương {chapter.chapterNumber}: {selectedLocale === 'en'
                                                 ? (chapter.titleEn || chapter.titleVi || chapter.title)
                                                 : (chapter.titleVi || chapter.titleEn || chapter.title)}
                                         </p>
@@ -490,7 +490,7 @@ export default function ChaptersGlobalPage() {
                                                 ? (selectedLocale === 'en'
                                                     ? (chapter.story.titleEn || chapter.story.titleVi || chapter.story.title)
                                                     : (chapter.story.titleVi || chapter.story.titleEn || chapter.story.title))
-                                                : 'Chua gán truy?n'}
+                                                : 'Chưa gán truyện'}
                                         </p>
                                     </div>
                                 </div>
@@ -499,7 +499,7 @@ export default function ChaptersGlobalPage() {
                                     <button
                                         onClick={() => handleEdit(chapter)}
                                         className="rounded-xl p-2 text-slate-400 transition-all hover:bg-indigo-50 hover:text-indigo-600"
-                                        title="Ch?nh s?a"
+                                        title="Chỉnh sửa"
                                     >
                                         <Edit2 className="w-4 h-4" />
                                     </button>
@@ -528,7 +528,7 @@ export default function ChaptersGlobalPage() {
                 {totalPages > 1 && (
                     <div className="px-8 py-6 border-t border-slate-100 flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-500">
-                            Trang {page} / {totalPages} (Tá»•ng {total} chÆ°Æ¡ng)
+                            Trang {page} / {totalPages} (Tổng {total} chương)
                         </p>
                         <div className="flex items-center gap-2">
                             <button

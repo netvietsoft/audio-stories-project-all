@@ -52,13 +52,13 @@ export class StoriesController {
   @UseInterceptors(CacheInterceptor)
   @CacheKey('stories:categories')
   @CacheTTL(3600)
-  getCategories() {
-    return this.storiesService.getAllCategories();
+  getCategories(@Query('language') language = 'vi') {
+    return this.storiesService.getAllCategories(language);
   }
 
   @Get('categories-with-count')
-  getCategoriesWithCount() {
-    return this.storiesService.getAllCategoriesWithCount();
+  getCategoriesWithCount(@Query('language') language = 'vi') {
+    return this.storiesService.getAllCategoriesWithCount(language);
   }
 
   @Get('authors')

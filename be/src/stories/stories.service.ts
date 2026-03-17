@@ -309,13 +309,14 @@ export class StoriesService {
     return result;
   }
 
-  async getTopCategories(limit = 5, _lang = 'vi') {
+  async getTopCategories(limit = 5, lang = 'vi') {
     const safeLimit = Math.min(Math.max(limit || 5, 1), 20);
     const grouped = await this.prisma.storyCategory.groupBy({
       by: ['categoryId'],
       where: {
         story: {
           deletedAt: null,
+          language: lang,
         },
       },
       _count: {
@@ -332,7 +333,10 @@ export class StoriesService {
     const ids = grouped.map((item) => item.categoryId);
     const categories = ids.length
       ? await this.prisma.category.findMany({
-        where: { id: { in: ids } },
+        where: { 
+          id: { in: ids },
+          language: lang,
+        },
         select: {
           id: true,
           name: true,
@@ -557,8 +561,11 @@ export class StoriesService {
     return this.serializeStory(story);
   }
 
-  async getAllCategories() {
+  async getAllCategories(language = 'vi') {
     return this.prisma.category.findMany({
+      where: {
+        language,
+      },
       select: {
         id: true,
         name: true,
@@ -571,8 +578,11 @@ export class StoriesService {
     });
   }
 
-  async getAllCategoriesWithCount() {
+  async getAllCategoriesWithCount(language = 'vi') {
     const categories = await this.prisma.category.findMany({
+      where: {
+        language,
+      },
       select: {
         id: true,
         name: true,

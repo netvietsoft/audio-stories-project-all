@@ -78,43 +78,14 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
   }
 
   return (
-<<<<<<< HEAD
-    <div className="space-y-0.5">
-      {validChapters.map((chapter) => (
-        <Link
-          key={chapter.id}
-          href={`/story/${chapter.story!.slug}/chuong-${chapter.chapterNumber}`}
-          className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors group"
-        >
-          {/* Left: Thumbnail + Story Title */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
-              <Image
-                src={chapter.story!.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
-                alt={chapter.story!.title}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                {chapter.story!.title}
-              </h3>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                {t("statusOngoing")}
-              </p>
-            </div>
-          </div>
-=======
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2">
-      {chapters.map((chapter) => {
+      {validChapters.map((chapter) => {
         const story = chapter.story;
         const hasStoryLink = Boolean(story?.slug);
         const storyTitle = story?.title || "Unknown story";
         const chapterHref = hasStoryLink
           ? `/story/${story!.slug}/chuong-${chapter.chapterNumber}`
           : "#";
->>>>>>> master
 
         return (
           <Link

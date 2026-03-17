@@ -38,9 +38,8 @@ type NotificationsResponse = {
 type TopCategoryItem = {
   id: number;
   name: string;
-  nameVi: string;
-  nameEn: string;
   slug: string;
+  language: string;
   storiesCount: number;
 };
 
@@ -82,6 +81,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Refs
+  const categoryMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const notifMenuRef = useRef<HTMLDivElement>(null);
@@ -135,7 +135,7 @@ export default function Navbar() {
     const loadTopCategories = async () => {
       try {
         const response = await apiClient.get<{ data: TopCategoryItem[] }>("/stories/categories/top", {
-          params: { limit: 5 },
+          params: { limit: 5, lang: currentLang },
         });
         setTopCategories(response.data.data || []);
       } catch {
@@ -144,11 +144,14 @@ export default function Navbar() {
     };
 
     void loadTopCategories();
-  }, []);
+  }, [currentLang]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
       }
@@ -270,21 +273,34 @@ export default function Navbar() {
               <nav className="hidden lg:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">
                 <Link href="/" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("home")}</Link>
                 <div
+                  ref={categoryMenuRef}
                   className="relative"
-                  onMouseEnter={() => setIsCategoryOpen(true)}
-                  onMouseLeave={() => setIsCategoryOpen(false)}
                 >
-                  <button className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">
+                  <button 
+                    onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                    className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                  >
                     {t("categories")} <ChevronDown className="ml-1 h-4 w-4" />
                   </button>
                   {isCategoryOpen && (
                     <div className="absolute top-full left-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 mt-1">
                       {topCategories.map((item) => (
-                        <Link key={item.id} href={`/categories/${item.slug}`} className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
-                          {locale === "en" ? item.nameEn || item.name : item.nameVi || item.name}
+                        <Link 
+                          key={item.id} 
+                          href={`/categories/${item.slug}`} 
+                          onClick={() => setIsCategoryOpen(false)}
+                          className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          {item.name}
                         </Link>
                       ))}
-                      <Link href="/stories" className="block px-4 py-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700">{t("viewAll")} &rarr;</Link>
+                      <Link 
+                        href="/stories" 
+                        onClick={() => setIsCategoryOpen(false)}
+                        className="block px-4 py-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        {t("viewAll")} &rarr;
+                      </Link>
                     </div>
                   )}
                 </div>

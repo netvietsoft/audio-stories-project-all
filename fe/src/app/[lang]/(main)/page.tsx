@@ -182,7 +182,9 @@ export default function HomePage() {
             .then((r) => r.data?.data || [])
             .catch(() => []),
           apiClient
-            .get<Array<{ id: number; name: string; slug: string }>>("/stories/categories")
+            .get<Array<{ id: number; name: string; slug: string }>>("/stories/categories", {
+              params: { language: lang }
+            })
             .then((r) => r.data || [])
             .catch(() => []),
           apiClient
@@ -325,7 +327,7 @@ export default function HomePage() {
                 href={`/explore?categoryId=${cat.id}`}
                 className="flex-shrink-0 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-300"
               >
-                #{locale === "en" ? (cat.nameEn || cat.name) : (cat.nameVi || cat.name)}
+                #{cat.name}
               </Link>
             ))}
           </div>

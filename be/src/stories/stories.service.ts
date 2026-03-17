@@ -43,30 +43,19 @@ export class StoriesService {
   }
 
   private normalizeNestedChapterPayload(chapter: any) {
-    return {
-      ...chapter,
-      title: chapter.titleVi || chapter.titleEn || '',
-      description: chapter.descriptionVi || chapter.descriptionEn || null,
-      content: chapter.contentVi || chapter.contentEn || null,
-      r2AudioUrl: chapter.audioUrlVi || chapter.audioUrlEn || chapter.r2AudioUrl || null,
-    };
+    // No normalization needed - just return the data as-is
+    return chapter;
   }
 
   private normalizeStoryFlatPayload(data: any) {
-    return {
-      ...data,
-      title: data.titleVi || data.titleEn || data.title || '',
-      description: data.descriptionVi || data.descriptionEn || data.description || null,
-    };
+    // No normalization needed - just return the data as-is
+    return data;
   }
 
   async create(data: CreateStoryDto) {
-    // Validate that at least one title and one description exist
-    if (!data.titleVi && !data.titleEn) {
-      throw new BadRequestException('At least one title (titleVi or titleEn) must be provided');
-    }
-    if (!data.descriptionVi && !data.descriptionEn) {
-      throw new BadRequestException('At least one description (descriptionVi or descriptionEn) must be provided');
+    // Validate that title exists
+    if (!data.title) {
+      throw new BadRequestException('Title must be provided');
     }
 
     const { categoryIds, chapters, chapterIds, ...storyData } = data;
@@ -154,8 +143,6 @@ export class StoriesService {
             select: {
               id: true,
               name: true,
-              nameVi: true,
-              nameEn: true,
               slug: true,
             } as any,
           },
@@ -202,8 +189,6 @@ export class StoriesService {
         id: true,
         slug: true,
         title: true,
-        titleVi: true,
-        titleEn: true,
         thumbnailUrl: true,
         status: true,
         totalViews: true,
@@ -247,13 +232,12 @@ export class StoriesService {
 
     const where: Prisma.StoryWhereInput = {
       deletedAt: null,
+      ...(query.lang ? { language: query.lang } : {}),
       ...(query.status ? { status: query.status as StoryStatus } : {}),
       ...(query.search
         ? {
           OR: [
             { title: { contains: query.search } },
-            { titleVi: { contains: query.search } },
-            { titleEn: { contains: query.search } },
             { author: { name: { contains: query.search } } },
           ],
         }
@@ -293,22 +277,18 @@ export class StoriesService {
           id: true,
           slug: true,
           description: true,
-          descriptionVi: true,
-          descriptionEn: true,
           thumbnailUrl: true,
           status: true,
           totalViews: true,
           averageRating: true,
           title: true,
-          titleVi: true,
-          titleEn: true,
           createdAt: true,
           author: {
             select: { name: true },
           },
           categories: {
             include: {
-              category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
+              category: { select: { id: true, name: true, slug: true } as any },
             },
           },
         } as any, // Cast the entire select object to any
@@ -329,13 +309,14 @@ export class StoriesService {
     return result;
   }
 
-  async getTopCategories(limit = 5, _lang: 'vi' | 'en' = 'vi') {
+  async getTopCategories(limit = 5, lang = 'vi') {
     const safeLimit = Math.min(Math.max(limit || 5, 1), 20);
     const grouped = await this.prisma.storyCategory.groupBy({
       by: ['categoryId'],
       where: {
         story: {
           deletedAt: null,
+          language: lang,
         },
       },
       _count: {
@@ -352,13 +333,15 @@ export class StoriesService {
     const ids = grouped.map((item) => item.categoryId);
     const categories = ids.length
       ? await this.prisma.category.findMany({
-        where: { id: { in: ids } },
+        where: { 
+          id: { in: ids },
+          language: lang,
+        },
         select: {
           id: true,
           name: true,
-          nameVi: true,
-          nameEn: true,
           slug: true,
+          language: true,
         } as any,
       })
       : [];
@@ -409,16 +392,13 @@ export class StoriesService {
     const limit = query.limit ?? 20;
 
     const where: Prisma.StoryWhereInput = {
-      // Admin sees everything (including soft deleted if needed, but let's stick to non-deleted for now)
-      deletedAt: null,
+      // Don't filter by deletedAt in admin - show all stories including soft deleted
       ...(query.status ? { status: query.status as StoryStatus } : {}),
       ...(query.lang ? { language: query.lang } : {}),
       ...(query.search
         ? {
           OR: [
             { title: { contains: query.search } },
-            { titleVi: { contains: query.search } },
-            { titleEn: { contains: query.search } },
             { author: { name: { contains: query.search } } },
           ],
         }
@@ -442,7 +422,7 @@ export class StoriesService {
           },
           categories: {
             include: {
-              category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
+              category: { select: { id: true, name: true, slug: true } as any },
             },
           },
           _count: {
@@ -471,13 +451,13 @@ export class StoriesService {
         },
         categories: {
           include: {
-            category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
+            category: { select: { id: true, name: true, slug: true } as any },
           },
         },
       },
     });
 
-    if (!story || story.deletedAt) {
+    if (!story) {
       throw new NotFoundException('Story not found');
     }
 
@@ -490,7 +470,7 @@ export class StoriesService {
       select: { id: true, deletedAt: true },
     });
 
-    if (!existing || existing.deletedAt) {
+    if (!existing) {
       throw new NotFoundException('Story not found');
     }
 
@@ -522,7 +502,7 @@ export class StoriesService {
         },
         categories: {
           include: {
-            category: { select: { id: true, name: true, nameVi: true, nameEn: true, slug: true } as any },
+            category: { select: { id: true, name: true, slug: true } as any },
           },
         },
       },
@@ -534,8 +514,8 @@ export class StoriesService {
   }
 
   async getStoryDetail(slug: string) {
-    const story = await this.prisma.story.findUnique({
-      where: { slug },
+    const story = await this.prisma.story.findFirst({
+      where: { slug, deletedAt: null },
       include: {
         author: {
           select: {
@@ -549,8 +529,6 @@ export class StoriesService {
               select: {
                 id: true,
                 name: true,
-                nameVi: true,
-                nameEn: true,
                 slug: true,
               } as any,
             },
@@ -562,20 +540,12 @@ export class StoriesService {
           select: {
             id: true,
             title: true,
-            titleVi: true,
-            titleEn: true,
-            audioUrlVi: true,
-            audioUrlEn: true,
             youtubeVideoId: true,
             audioDuration: true,
             chapterNumber: true,
             description: true,
-            descriptionVi: true,
-            descriptionEn: true,
             thumbnailUrl: true,
             content: true,
-            contentVi: true,
-            contentEn: true,
             r2AudioUrl: true,
             accessType: true,
             unlocksAt: true,
@@ -591,14 +561,16 @@ export class StoriesService {
     return this.serializeStory(story);
   }
 
-  async getAllCategories() {
+  async getAllCategories(language = 'vi') {
     return this.prisma.category.findMany({
+      where: {
+        language,
+      },
       select: {
         id: true,
         name: true,
-        nameVi: true,
-        nameEn: true,
         slug: true,
+        language: true,
       } as any,
       orderBy: {
         name: 'asc',
@@ -606,14 +578,16 @@ export class StoriesService {
     });
   }
 
-  async getAllCategoriesWithCount() {
+  async getAllCategoriesWithCount(language = 'vi') {
     const categories = await this.prisma.category.findMany({
+      where: {
+        language,
+      },
       select: {
         id: true,
         name: true,
-        nameVi: true,
-        nameEn: true,
         slug: true,
+        language: true,
         description: true,
         _count: {
           select: {
@@ -630,9 +604,8 @@ export class StoriesService {
       data: (categories as any[]).map((item) => ({
         id: item.id,
         name: item.name,
-        nameVi: item.nameVi,
-        nameEn: item.nameEn,
         slug: item.slug,
+        language: item.language,
         description: item.description,
         storiesCount: item._count ? item._count.stories : 0,
       })),
@@ -657,7 +630,7 @@ export class StoriesService {
       select: { id: true, deletedAt: true },
     });
 
-    if (!existing || existing.deletedAt) {
+    if (!existing) {
       throw new NotFoundException('Story not found');
     }
 
@@ -685,8 +658,12 @@ export class StoriesService {
       select: { id: true, deletedAt: true },
     });
 
-    if (!existing || existing.deletedAt) {
+    if (!existing) {
       throw new NotFoundException('Story not found');
+    }
+
+    if (existing.deletedAt) {
+      return { message: 'Story is already deleted' };
     }
 
     // Soft delete the story
@@ -726,7 +703,7 @@ export class StoriesService {
       select: { id: true, authorId: true, deletedAt: true, title: true },
     });
 
-    if (!story || story.deletedAt) {
+    if (!story) {
       throw new NotFoundException('Story not found');
     }
 

@@ -15,13 +15,5 @@ export class UpdateCategoryDto {
 
     @IsOptional()
     @IsString()
-    nameEn?: string;
-
-    @IsOptional()
-    @IsString()
-    nameVi?: string;
-
-    @IsOptional()
-    @IsString()
     iconUrl?: string;
 }

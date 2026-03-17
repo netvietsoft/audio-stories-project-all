@@ -15,6 +15,8 @@ import {
     EyeOff,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
+import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
 interface PaymentPackage {
     code: string;
@@ -22,6 +24,7 @@ interface PaymentPackage {
     nameEn?: string;
     name?: string;
     priceVnd: number;
+    lang?: string;
     credits: number;
     descriptionVi?: string;
     descriptionEn?: string;
@@ -40,7 +43,8 @@ export default function PackagesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCode, setEditingCode] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [selectedLocale, setSelectedLocale] = useState<'vi' | 'en'>('vi');
+    const [selectedLocale, setSelectedLocale] = useState('vi');
+    const { languages } = useAdminLanguages();
     const [formData, setFormData] = useState<Partial<PaymentPackage>>({
         code: '',
         nameVi: '',
@@ -53,16 +57,23 @@ export default function PackagesPage() {
         isPopular: false,
         isBestValue: false,
         displayOrder: 0,
+        lang: 'vi',
     });
 
     useEffect(() => {
         fetchPackages();
-    }, []);
+    }, [selectedLocale]);
+
+    useEffect(() => {
+        if (!languages.some((language) => language.key === selectedLocale)) {
+            setSelectedLocale(languages[0]?.key || 'vi');
+        }
+    }, [languages, selectedLocale]);
 
     const fetchPackages = async () => {
         setIsLoading(true);
         try {
-            const res = await apiClient.get('/packages');
+            const res = await apiClient.get(`/packages?lang=${selectedLocale}`);
             setPackages(res.data.sort((a: PaymentPackage, b: PaymentPackage) => a.displayOrder - b.displayOrder));
         } catch (error) {
             console.error('Failed to fetch packages:', error);
@@ -89,6 +100,7 @@ export default function PackagesPage() {
                 isPopular: false,
                 isBestValue: false,
                 displayOrder: packages.length,
+                lang: selectedLocale,
             });
         }
         setIsModalOpen(true);
@@ -134,6 +146,7 @@ export default function PackagesPage() {
                     isPopular: formData.isPopular,
                     isBestValue: formData.isBestValue,
                     displayOrder: formData.displayOrder,
+                    lang: selectedLocale,
                 };
                 console.log('PATCH request to:', `/packages/${editingCode}`);
                 console.log('PATCH data:', updateData);
@@ -153,6 +166,7 @@ export default function PackagesPage() {
                     isPopular: formData.isPopular,
                     isBestValue: formData.isBestValue,
                     displayOrder: formData.displayOrder,
+                    lang: selectedLocale,
                 };
                 console.log('POST request to:', '/packages');
                 console.log('POST data:', createData);
@@ -192,6 +206,8 @@ export default function PackagesPage() {
         }).format(amount);
     };
 
+    const isEnglishLocale = selectedLocale === 'en';
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -217,28 +233,12 @@ export default function PackagesPage() {
                 </div>
                 <div className="flex items-center gap-3">
                     {/* Locale Selector */}
-                    <div className="flex items-center gap-2 bg-white rounded-xl border-2 border-slate-200 p-1">
-                        <button
-                            onClick={() => setSelectedLocale('vi')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                selectedLocale === 'vi'
-                                    ? 'bg-emerald-600 text-white shadow-md'
-                                    : 'text-slate-600 hover:bg-slate-50'
-                            }`}
-                        >
-                            🇻🇳 Tiếng Việt
-                        </button>
-                        <button
-                            onClick={() => setSelectedLocale('en')}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                selectedLocale === 'en'
-                                    ? 'bg-emerald-600 text-white shadow-md'
-                                    : 'text-slate-600 hover:bg-slate-50'
-                            }`}
-                        >
-                            🇬🇧 English
-                        </button>
-                    </div>
+                    <AdminLanguageDropdown
+                        languages={languages}
+                        value={selectedLocale}
+                        onChange={setSelectedLocale}
+                        selectClassName="focus:ring-emerald-500/20"
+                    />
                     <button
                         onClick={() => handleOpenModal()}
                         className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-200"
@@ -288,7 +288,9 @@ export default function PackagesPage() {
                                     <Coins className="w-7 h-7 text-white" />
                                 </div>
                                 <h3 className="text-xl font-black text-slate-900 mb-1">
-                                    {selectedLocale === 'vi' ? (pkg.nameVi || pkg.name) : (pkg.nameEn || pkg.name)}
+                                    {isEnglishLocale
+                                        ? (pkg.nameEn || pkg.nameVi || pkg.name)
+                                        : (pkg.nameVi || pkg.nameEn || pkg.name)}
                                 </h3>
                                 <p className="text-xs font-mono text-slate-400 uppercase tracking-wider">
                                     Code: {pkg.code}
@@ -308,9 +310,11 @@ export default function PackagesPage() {
                             </div>
 
                             {/* Description */}
-                            {((selectedLocale === 'vi' && pkg.descriptionVi) || (selectedLocale === 'en' && pkg.descriptionEn) || pkg.description) && (
+                            {((!isEnglishLocale && pkg.descriptionVi) || (isEnglishLocale && pkg.descriptionEn) || pkg.description) && (
                                 <p className="text-xs text-slate-500 mb-4 line-clamp-2">
-                                    {selectedLocale === 'vi' ? (pkg.descriptionVi || pkg.description) : (pkg.descriptionEn || pkg.description)}
+                                    {isEnglishLocale
+                                        ? (pkg.descriptionEn || pkg.descriptionVi || pkg.description)
+                                        : (pkg.descriptionVi || pkg.descriptionEn || pkg.description)}
                                 </p>
                             )}
 
@@ -366,30 +370,13 @@ export default function PackagesPage() {
                             </div>
                             <div className="flex items-center gap-3">
                                 {/* Locale Selector in Modal */}
-                                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedLocale('vi')}
-                                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                                            selectedLocale === 'vi'
-                                                ? 'bg-white text-emerald-600 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-700'
-                                        }`}
-                                    >
-                                        🇻🇳 VI
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedLocale('en')}
-                                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                                            selectedLocale === 'en'
-                                                ? 'bg-white text-emerald-600 shadow-sm'
-                                                : 'text-slate-500 hover:text-slate-700'
-                                        }`}
-                                    >
-                                        🇬🇧 EN
-                                    </button>
-                                </div>
+                                <AdminLanguageDropdown
+                                    languages={languages}
+                                    value={selectedLocale}
+                                    onChange={setSelectedLocale}
+                                    className="w-56"
+                                    selectClassName="bg-slate-50 border-slate-200 py-2 text-xs focus:ring-emerald-500/20"
+                                />
                                 <button
                                     onClick={handleCloseModal}
                                     className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
@@ -421,21 +408,21 @@ export default function PackagesPage() {
 
                             <div className="space-y-2">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
-                                    {selectedLocale === 'vi' ? 'Tên gói (Tiếng Việt) *' : 'Package Name (English) *'}
+                                    {isEnglishLocale ? 'Package Name (English) *' : 'Tên gói (Tiếng Việt) *'}
                                 </label>
                                 <input
                                     type="text"
-                                    value={selectedLocale === 'vi' ? (formData.nameVi || '') : (formData.nameEn || '')}
+                                    value={isEnglishLocale ? (formData.nameEn || '') : (formData.nameVi || '')}
                                     onChange={(e) => setFormData({ 
                                         ...formData, 
-                                        [selectedLocale === 'vi' ? 'nameVi' : 'nameEn']: e.target.value 
+                                        [isEnglishLocale ? 'nameEn' : 'nameVi']: e.target.value 
                                     })}
-                                    placeholder={selectedLocale === 'vi' ? 'vd: Gói 10.000 VND' : 'e.g: 10,000 VND Package'}
+                                    placeholder={isEnglishLocale ? 'e.g: 10,000 VND Package' : 'vd: Gói 10.000 VND'}
                                     required
                                     className="w-full bg-slate-50 border-none rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 transition-all"
                                 />
                                 <p className="text-xs text-slate-400 mt-1">
-                                    {selectedLocale === 'vi' 
+                                    {!isEnglishLocale 
                                         ? `Tên tiếng Anh: ${formData.nameEn || '(chưa có)'}` 
                                         : `Vietnamese name: ${formData.nameVi || '(chưa có)'}`
                                     }
@@ -476,20 +463,20 @@ export default function PackagesPage() {
 
                             <div className="space-y-2">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
-                                    {selectedLocale === 'vi' ? 'Mô tả (Tiếng Việt)' : 'Description (English)'}
+                                    {isEnglishLocale ? 'Description (English)' : 'Mô tả (Tiếng Việt)'}
                                 </label>
                                 <textarea
-                                    value={selectedLocale === 'vi' ? (formData.descriptionVi || '') : (formData.descriptionEn || '')}
+                                    value={isEnglishLocale ? (formData.descriptionEn || '') : (formData.descriptionVi || '')}
                                     onChange={(e) => setFormData({ 
                                         ...formData, 
-                                        [selectedLocale === 'vi' ? 'descriptionVi' : 'descriptionEn']: e.target.value 
+                                        [isEnglishLocale ? 'descriptionEn' : 'descriptionVi']: e.target.value 
                                     })}
                                     rows={2}
-                                    placeholder={selectedLocale === 'vi' ? 'Mô tả ngắn gọn về gói...' : 'Brief description of the package...'}
+                                    placeholder={isEnglishLocale ? 'Brief description of the package...' : 'Mô tả ngắn gọn về gói...'}
                                     className="w-full bg-slate-50 border-none rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none"
                                 />
                                 <p className="text-xs text-slate-400 mt-1">
-                                    {selectedLocale === 'vi' 
+                                    {!isEnglishLocale 
                                         ? `Mô tả tiếng Anh: ${formData.descriptionEn || '(chưa có)'}` 
                                         : `Vietnamese description: ${formData.descriptionVi || '(chưa có)'}`
                                     }
@@ -613,3 +600,5 @@ export default function PackagesPage() {
         </div>
     );
 }
+
+

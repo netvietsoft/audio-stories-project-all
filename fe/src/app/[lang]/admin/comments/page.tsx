@@ -260,93 +260,84 @@ export default function CommentsPage() {
                     comments.map((comment) => (
                         <div
                             key={comment.id}
-                            className={`bg-white rounded-[32px] border border-slate-200 p-6 shadow-sm hover:shadow-md transition-all ${comment.isHidden ? 'opacity-60 bg-slate-50' : ''
+                            className={`bg-white rounded-[32px] border border-slate-200 p-5 shadow-sm hover:shadow-md transition-all ${comment.isHidden ? 'opacity-60 bg-slate-50' : ''
                                 }`}
                         >
-                            <div className="flex items-start gap-4">
-                                {/* Avatar */}
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shrink-0">
-                                    {comment.user.displayName.charAt(0).toUpperCase()}
-                                </div>
-
-                                {/* Content */}
-                                <div className="flex-1 min-w-0">
-                                    {/* User Info */}
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <p className="text-sm font-black text-slate-900">{comment.user.displayName}</p>
-                                        <span className="text-xs text-slate-400">•</span>
-                                        <p className="text-xs font-medium text-slate-400">{comment.user.email}</p>
-                                        <span className="text-xs text-slate-400">•</span>
-                                        <p className="text-xs font-medium text-slate-400">{formatDate(comment.createdAt)}</p>
-                                    </div>
-
-                                    {/* Story & Chapter Info */}
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">
-                                            <BookOpen className="w-3 h-3" />
-                                            {comment.story.title}
-                                        </span>
-                                        <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded">
-                                            Chương {comment.chapter.chapterNumber}: {comment.chapter.title}
-                                        </span>
-                                        {comment.timestampSeconds && (
-                                            <span className="inline-flex items-center gap-1 text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded border border-purple-100">
-                                                <Clock className="w-3 h-3" />
-                                                {formatTimestamp(comment.timestampSeconds)}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Parent Comment (if reply) */}
-                                    {comment.parent && (
-                                        <div className="mb-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Reply className="w-3 h-3 text-slate-400" />
-                                                <p className="text-xs font-bold text-slate-500">
-                                                    Trả lời {comment.parent.user.displayName}:
-                                                </p>
-                                            </div>
-                                            <p className="text-xs text-slate-600 line-clamp-2">{comment.parent.content}</p>
+                            <div className="space-y-4">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-indigo-500 text-base font-bold text-white">
+                                            {comment.user.displayName.charAt(0).toUpperCase()}
                                         </div>
-                                    )}
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-black text-slate-900 break-words">{comment.user.displayName}</p>
+                                            <p className="text-xs font-medium text-slate-400 break-all">{comment.user.email}</p>
+                                            <p className="mt-1 text-[11px] font-medium text-slate-400">{formatDate(comment.createdAt)}</p>
+                                        </div>
+                                    </div>
 
-                                    {/* Comment Content */}
-                                    <p className="text-sm text-slate-700 mb-3 leading-relaxed">{comment.content}</p>
-
-                                    {/* Stats */}
-                                    <div className="flex items-center gap-4 text-xs text-slate-500">
-                                        <span className="font-medium">❤️ {comment.likesCount} lượt thích</span>
-                                        {comment._count.replies > 0 && (
-                                            <span className="font-medium">💬 {comment._count.replies} trả lời</span>
-                                        )}
-                                        {comment.isHidden && (
-                                            <span className="inline-flex items-center gap-1 text-red-600 bg-red-50 px-2 py-0.5 rounded font-bold">
-                                                <EyeOff className="w-3 h-3" />
-                                                Đã ẩn
-                                            </span>
-                                        )}
+                                    <div className="flex shrink-0 items-center gap-2">
+                                        <button
+                                            onClick={() => handleToggleHidden(comment.id, comment.isHidden)}
+                                            className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all ${comment.isHidden
+                                                ? 'text-emerald-600 hover:bg-emerald-50'
+                                                : 'text-amber-600 hover:bg-amber-50'
+                                                }`}
+                                            title={comment.isHidden ? 'Hien thi' : 'An'}
+                                        >
+                                            {comment.isHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(comment.id)}
+                                            className="flex h-9 w-9 items-center justify-center rounded-xl text-red-600 transition-all hover:bg-red-50"
+                                            title="Xoa"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
 
-                                {/* Actions */}
-                                <div className="flex items-center gap-2 shrink-0">
-                                    <button
-                                        onClick={() => handleToggleHidden(comment.id, comment.isHidden)}
-                                        className={`p-2 rounded-xl transition-all ${comment.isHidden
-                                            ? 'text-emerald-600 hover:bg-emerald-50'
-                                            : 'text-amber-600 hover:bg-amber-50'
-                                            }`}
-                                        title={comment.isHidden ? 'Hiển thị' : 'Ẩn'}
-                                    >
-                                        {comment.isHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(comment.id)}
-                                        className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                                        title="Xóa"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                <div className="flex flex-wrap gap-2">
+                                    <span className="inline-flex max-w-full items-center gap-1.5 rounded-xl border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-600">
+                                        <BookOpen className="w-3 h-3 shrink-0" />
+                                        <span className="truncate">{comment.story.title}</span>
+                                    </span>
+                                    <span className="inline-flex max-w-full rounded-xl bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 break-words">
+                                        Chuong {comment.chapter.chapterNumber}: {comment.chapter.title}
+                                    </span>
+                                    {comment.timestampSeconds && (
+                                        <span className="inline-flex items-center gap-1 rounded-xl border border-purple-100 bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-600">
+                                            <Clock className="w-3 h-3" />
+                                            {formatTimestamp(comment.timestampSeconds)}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {comment.parent && (
+                                    <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                                        <div className="mb-1 flex items-center gap-2">
+                                            <Reply className="w-3 h-3 text-slate-400" />
+                                            <p className="text-xs font-bold text-slate-500">
+                                                Tra loi {comment.parent.user.displayName}:
+                                            </p>
+                                        </div>
+                                        <p className="text-xs leading-5 text-slate-600 break-words">{comment.parent.content}</p>
+                                    </div>
+                                )}
+
+                                <p className="text-sm leading-7 text-slate-700 break-words">{comment.content}</p>
+
+                                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                                    <span className="font-medium">Yeu thich: {comment.likesCount}</span>
+                                    {comment._count.replies > 0 && (
+                                        <span className="font-medium">Tra loi: {comment._count.replies}</span>
+                                    )}
+                                    {comment.isHidden && (
+                                        <span className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2 py-0.5 font-bold text-red-600">
+                                            <EyeOff className="w-3 h-3" />
+                                            Da an
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -389,3 +380,5 @@ export default function CommentsPage() {
         </div>
     );
 }
+
+

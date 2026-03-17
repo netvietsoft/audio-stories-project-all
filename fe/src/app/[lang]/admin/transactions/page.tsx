@@ -236,7 +236,7 @@ export default function TransactionsPage() {
                         }}
                     />
                 </div>
-                <div className="relative">
+                <div className="relative min-w-0">
                     <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                     <select
                         value={statusFilter}
@@ -244,7 +244,7 @@ export default function TransactionsPage() {
                             setStatusFilter(e.target.value);
                             setPage(1);
                         }}
-                        className="bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-8 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 transition-all appearance-none cursor-pointer min-w-[200px]"
+                        className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-8 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 transition-all appearance-none cursor-pointer md:min-w-[200px]"
                     >
                         <option value="">Tất cả trạng thái</option>
                         <option value="SUCCESS">Thành công</option>
@@ -257,7 +257,7 @@ export default function TransactionsPage() {
 
             {/* Transactions Table */}
             <div className="bg-white rounded-[40px] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="hidden overflow-x-auto md:block">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -340,6 +340,69 @@ export default function TransactionsPage() {
                     </table>
                 </div>
 
+                <div className="divide-y divide-slate-100 md:hidden">
+                    {isLoading ? (
+                        Array(4).fill(0).map((_, i) => (
+                            <div key={i} className="animate-pulse p-4">
+                                <div className="h-24 rounded-2xl bg-slate-50" />
+                            </div>
+                        ))
+                    ) : payments.length > 0 ? (
+                        payments.map((payment) => (
+                            <div key={payment.id} className="p-4">
+                                <div className="space-y-3 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-black text-slate-900 break-words">{payment.user.displayName}</p>
+                                            <p className="mt-1 text-xs font-medium text-slate-400 break-all">{payment.user.email}</p>
+                                            <p className="mt-2 text-[11px] font-medium text-slate-400">{formatDate(payment.paidAt || payment.createdAt)}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDelete(payment.id)}
+                                            disabled={deletingId === payment.id}
+                                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-red-600 transition-all hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title="Xoa giao dich"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="inline-flex rounded-xl border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-600">
+                                            {payment.packageCode}
+                                        </span>
+                                        {getStatusBadge(payment.status)}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">So tien</p>
+                                            <p className="mt-1 text-sm font-black text-emerald-600">{formatCurrency(payment.amountVnd)}</p>
+                                        </div>
+                                        <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Credits</p>
+                                            <p className="mt-1 text-sm font-bold text-slate-900">+{payment.creditsAdded.toLocaleString()}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Ma GD</p>
+                                        <p className="mt-1 break-all font-mono text-xs text-slate-600">{payment.transactionCode || '-'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="px-8 py-20 text-center">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                <DollarSign className="w-6 h-6 text-slate-300" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900">Chua co giao dich nao</h3>
+                            <p className="text-slate-500 mt-1">Cac giao dich se hien thi o day.</p>
+                        </div>
+                    )}
+                </div>
+
                 {/* Pagination */}
                 {totalPages > 1 && (
                     <div className="px-8 py-6 border-t border-slate-100 flex items-center justify-between">
@@ -368,3 +431,4 @@ export default function TransactionsPage() {
         </div>
     );
 }
+

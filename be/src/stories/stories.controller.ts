@@ -52,13 +52,13 @@ export class StoriesController {
   @UseInterceptors(CacheInterceptor)
   @CacheKey('stories:categories')
   @CacheTTL(3600)
-  getCategories() {
-    return this.storiesService.getAllCategories();
+  getCategories(@Query('language') language = 'vi') {
+    return this.storiesService.getAllCategories(language);
   }
 
   @Get('categories-with-count')
-  getCategoriesWithCount() {
-    return this.storiesService.getAllCategoriesWithCount();
+  getCategoriesWithCount(@Query('language') language = 'vi') {
+    return this.storiesService.getAllCategoriesWithCount(language);
   }
 
   @Get('authors')
@@ -75,7 +75,7 @@ export class StoriesController {
   trending(
     @Query('limit') limit?: string,
     @Query('page') page?: string,
-    @Query('lang') lang: 'vi' | 'en' = 'vi',
+    @Query('lang') lang = 'vi',
     @Query('trendWindow') trendWindow: 'today' | 'week' | 'month' | 'all' = 'week',
   ) {
     return this.storiesService.exploreStories({
@@ -95,7 +95,7 @@ export class StoriesController {
   @Get('categories/top')
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(3600)
-  getTopCategories(@Query('limit') limit?: string, @Query('lang') lang: 'vi' | 'en' = 'vi') {
+  getTopCategories(@Query('limit') limit?: string, @Query('lang') lang = 'vi') {
     return this.storiesService.getTopCategories(Number(limit) || 5, lang);
   }
 

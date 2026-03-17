@@ -133,7 +133,7 @@ export default function AuthorsPage() {
 
             {/* Authors Table */}
             <div className="bg-white rounded-[40px] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="hidden overflow-x-auto md:block">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -215,6 +215,69 @@ export default function AuthorsPage() {
                         </tbody>
                     </table>
                 </div>
+
+                <div className="divide-y divide-slate-100 md:hidden">
+                    {isLoading ? (
+                        Array(4).fill(0).map((_, i) => (
+                            <div key={i} className="animate-pulse p-4">
+                                <div className="h-20 rounded-2xl bg-slate-50" />
+                            </div>
+                        ))
+                    ) : filteredAuthors.length > 0 ? (
+                        filteredAuthors.map((author) => (
+                            <div key={author.id} className="p-4">
+                                <div className="flex items-start gap-3">
+                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-slate-400">
+                                        {author.avatarUrl ? (
+                                            <img src={author.avatarUrl} alt="" className="h-full w-full object-cover" />
+                                        ) : (
+                                            <UserCircle className="w-5 h-5 opacity-40" />
+                                        )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-black leading-5 text-slate-900 break-words">{author.name}</p>
+                                                <p className="mt-1 text-xs font-medium text-slate-400 break-all">{author.slug}</p>
+                                                <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1">
+                                                    <BookOpen className="w-3 h-3 text-indigo-500" />
+                                                    <span className="text-[11px] font-black text-indigo-700">{author._count?.stories || 0} truyện</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex shrink-0 items-center gap-2">
+                                                <button
+                                                    onClick={() => handleEdit(author)}
+                                                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
+                                                    title="Chỉnh sửa"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(author.id)}
+                                                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-red-50 hover:text-red-600"
+                                                    title="Xóa"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {author.bio && (
+                                            <p className="mt-2 text-xs leading-5 text-slate-500 line-clamp-2">{author.bio}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="px-8 py-20 text-center">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                                <Users className="w-6 h-6 text-slate-300" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900">Không tìm thấy tác giả</h3>
+                            <p className="text-slate-500 mt-1">Cần thêm tác giả mới hoặc thay đổi bộ lọc.</p>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Modal for Create/Edit */}
@@ -251,3 +314,4 @@ export default function AuthorsPage() {
         </div>
     );
 }
+

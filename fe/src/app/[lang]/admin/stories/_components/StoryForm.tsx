@@ -40,6 +40,7 @@ const storySchema = z.object({
     redditUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
     whatsappUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
     isRecommended: z.boolean().optional(),
+    language: z.string().optional(),
 }).refine((data) => data.titleVi || data.titleEn, {
     message: 'Phải có ít nhất một tiêu đề (Tiếng Việt hoặc English)',
     path: ['titleVi'],
@@ -54,13 +55,19 @@ export type StoryFormValues = z.infer<typeof storySchema>;
 interface Category {
     id: number;
     name: string;
+    nameVi?: string;
+    nameEn?: string;
+    language?: string;
 }
 
 interface Chapter {
     id: string;
     chapterNumber: number;
     title: string;
+    titleVi?: string;
+    titleEn?: string;
     storyId?: string | null;
+    language?: string;
 }
 
 interface Author {
@@ -70,7 +77,7 @@ interface Author {
 
 interface StoryFormProps {
     initialData?: Partial<StoryFormValues> & { id?: string };
-    selectedLocale?: 'vi' | 'en';
+    selectedLocale?: string;
     onSubmit: (data: StoryFormValues) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
@@ -94,6 +101,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [isChapterOpen, setIsChapterOpen] = useState(false);
     const [chapterSearch, setChapterSearch] = useState('');
+    const isEnglishLocale = selectedLocale === 'en';
 
     const authorRef = React.useRef<HTMLDivElement>(null);
     const categoryRef = React.useRef<HTMLDivElement>(null);
@@ -140,6 +148,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     redditUrl: initialData.redditUrl,
                     whatsappUrl: initialData.whatsappUrl,
                     isRecommended: initialData.isRecommended,
+                    language: initialData.language,
                 }
                 : {}),
         },
@@ -155,11 +164,14 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                 const [catsRes, authorsRes, allChaptersRes] = await Promise.all([
                     apiClient.get('/stories/categories'),
                     apiClient.get('/stories/authors'),
-                    apiClient.get('/chapters?limit=1000'), // Fetch all available chapters
+                    apiClient.get(`/chapters?limit=1000&lang=${selectedLocale}`),
                 ]);
                 setCategories(catsRes.data);
                 setAuthors(authorsRes.data);
-                setAvailableChapters(allChaptersRes.data.data);
+                const fetchedChapters = Array.isArray(allChaptersRes.data?.data) ? allChaptersRes.data.data : [];
+                setAvailableChapters(
+                    fetchedChapters.filter((chapter: Chapter) => chapter.language === selectedLocale),
+                );
 
                 if (initialData?.id) {
                     const chapsRes = await apiClient.get(`/stories/${initialData.id}/chapters`);
@@ -173,7 +185,18 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
             }
         };
         fetchMetadata();
-    }, []);
+    }, [initialData?.id, selectedLocale]);
+
+    useEffect(() => {
+        if (initialData?.id) return;
+
+        setSelectedChapterIds((prev) =>
+            prev.filter((chapterId) => {
+                const chapter = availableChapters.find((item) => item.id === chapterId);
+                return !!chapter && !chapter.storyId && chapter.language === selectedLocale;
+            }),
+        );
+    }, [availableChapters, initialData?.id, selectedLocale]);
 
     // Close dropdowns on outside click
     useEffect(() => {
@@ -252,21 +275,33 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
         a.name.toLowerCase().includes(authorSearch.toLowerCase())
     );
 
-    const filteredCategories = categories.filter(c =>
-        c.name.toLowerCase().includes(categorySearch.toLowerCase()) &&
-        !selectedCategoryIds.includes(c.id)
-    );
+    const filteredCategories = categories.filter(c => {
+        const searchTerm = categorySearch.toLowerCase();
+        const localizedName = (selectedLocale === 'en' ? c.nameEn || c.name : c.nameVi || c.name).toLowerCase();
+        return localizedName.includes(searchTerm) && !selectedCategoryIds.includes(c.id);
+    });
+
+    const isChapterLocaleMatched = (chapter: Chapter) => chapter.language === selectedLocale;
 
     const filteredChapters = initialData?.id
-        ? chapters.filter(c =>
-            c.title.toLowerCase().includes(chapterSearch.toLowerCase()) || c.chapterNumber.toString().includes(chapterSearch)
-        )
-        : availableChapters.filter(c =>
-            (c.title.toLowerCase().includes(chapterSearch.toLowerCase()) || c.chapterNumber.toString().includes(chapterSearch)) &&
-            !c.storyId // Only show chapters not assigned to any story
-        );
+        ? chapters.filter(c => {
+            const searchTerm = chapterSearch.toLowerCase();
+            const localizedTitle = (selectedLocale === 'en' ? c.titleEn || c.title : c.titleVi || c.title).toLowerCase();
+            return (localizedTitle.includes(searchTerm) || c.chapterNumber.toString().includes(searchTerm));
+        })
+        : availableChapters.filter(c => {
+            const searchTerm = chapterSearch.toLowerCase();
+            const localizedTitle = (selectedLocale === 'en' ? c.titleEn || c.title : c.titleVi || c.title).toLowerCase();
+            return (
+                (localizedTitle.includes(searchTerm) || c.chapterNumber.toString().includes(searchTerm))
+                && !c.storyId
+                && isChapterLocaleMatched(c)
+            );
+        });
 
-    const selectedChapters = availableChapters.filter(c => selectedChapterIds.includes(c.id));
+    const selectedChapters = availableChapters.filter(
+        c => selectedChapterIds.includes(c.id) && isChapterLocaleMatched(c),
+    );
 
     const handleChapterToggle = (chapterId: string) => {
         if (selectedChapterIds.includes(chapterId)) {
@@ -285,15 +320,15 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                 <div className="p-8 space-y-8">
                     <div className="space-y-2">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
-                            {selectedLocale === 'vi' ? 'Tiêu đề truyện (Tiếng Việt)' : 'Story Title (English)'}
+                            {isEnglishLocale ? 'Story Title (English)' : 'Tiêu đề truyện (Tiếng Việt)'}
                         </label>
                         <input
-                            {...register(selectedLocale === 'vi' ? 'titleVi' : 'titleEn')}
-                            placeholder={selectedLocale === 'vi' ? 'Nhập tên truyện tiếng Việt' : 'Enter story title in English'}
+                            {...register(isEnglishLocale ? 'titleEn' : 'titleVi')}
+                            placeholder={isEnglishLocale ? 'Enter story title in English' : 'Nhập tên truyện tiếng Việt'}
                             className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                         />
-                        {selectedLocale === 'vi' && errors.titleVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleVi.message}</p>}
-                        {selectedLocale === 'en' && errors.titleEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleEn.message}</p>}
+                        {!isEnglishLocale && errors.titleVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleVi.message}</p>}
+                        {isEnglishLocale && errors.titleEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleEn.message}</p>}
                     </div>
 
                     {/* Hàng 2: Input slug và trạng thái */}
@@ -431,7 +466,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                     key={id} 
                                                     className="group relative bg-indigo-600 text-white text-[10px] px-2 py-1 rounded-lg uppercase tracking-wider hover:pr-7 transition-all duration-200"
                                                 >
-                                                    {cat.name}
+                                                    {selectedLocale === 'en' ? cat.nameEn || cat.name : cat.nameVi || cat.name}
                                                     <span
                                                         role="button"
                                                         tabIndex={0}
@@ -486,7 +521,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                     onClick={() => handleCategoryToggle(cat.id)}
                                                     className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center justify-between group"
                                                 >
-                                                    {cat.name}
+                                                    {selectedLocale === 'en' ? cat.nameEn || cat.name : cat.nameVi || cat.name}
                                                     {selectedCategoryIds.includes(cat.id) && <Check className="w-4 h-4 text-indigo-600" />}
                                                 </button>
                                             ))
@@ -570,7 +605,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                         href={`/admin/stories/${initialData.id}/chapters`}
                                                         className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center justify-between group block"
                                                     >
-                                                        <span>Chương {chap.chapterNumber}: {chap.title}</span>
+                                                        <span>Chương {chap.chapterNumber}: {selectedLocale === 'en' ? chap.titleEn || chap.title : chap.titleVi || chap.title}</span>
                                                         <Music className="w-4 h-4 text-slate-300 group-hover:text-indigo-600" />
                                                     </Link>
                                                 ) : (
@@ -580,7 +615,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                         onClick={() => handleChapterToggle(chap.id)}
                                                         className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center justify-between group"
                                                     >
-                                                        <span>Chương {chap.chapterNumber}: {chap.title}</span>
+                                                        <span>Chương {chap.chapterNumber}: {selectedLocale === 'en' ? chap.titleEn || chap.title : chap.titleVi || chap.title}</span>
                                                         {selectedChapterIds.includes(chap.id) && (
                                                             <Check className="w-4 h-4 text-indigo-600" />
                                                         )}
@@ -610,7 +645,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                             className="flex items-center justify-between bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5"
                                         >
                                             <span className="text-sm font-bold text-indigo-900">
-                                                Chương {chap.chapterNumber}: {chap.title}
+                                                Chương {chap.chapterNumber}: {selectedLocale === 'en' ? chap.titleEn || chap.title : chap.titleVi || chap.title}
                                             </span>
                                             <button
                                                 type="button"
@@ -629,16 +664,16 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
 
                     <div className="space-y-2">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
-                            {selectedLocale === 'vi' ? 'Giới thiệu truyện (Tiếng Việt)' : 'Story Description (English)'}
+                            {isEnglishLocale ? 'Story Description (English)' : 'Giới thiệu truyện (Tiếng Việt)'}
                         </label>
                         <textarea
-                            {...register(selectedLocale === 'vi' ? 'descriptionVi' : 'descriptionEn')}
+                            {...register(isEnglishLocale ? 'descriptionEn' : 'descriptionVi')}
                             rows={5}
-                            placeholder={selectedLocale === 'vi' ? 'Nhập giới thiệu tiếng Việt...' : 'Enter English description...'}
+                            placeholder={isEnglishLocale ? 'Enter English description...' : 'Nhập giới thiệu tiếng Việt...'}
                             className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
                         />
-                        {selectedLocale === 'vi' && errors.descriptionVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionVi.message}</p>}
-                        {selectedLocale === 'en' && errors.descriptionEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionEn.message}</p>}
+                        {!isEnglishLocale && errors.descriptionVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionVi.message}</p>}
+                        {isEnglishLocale && errors.descriptionEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionEn.message}</p>}
                     </div>
 
                     {/* Facebook Group URL */}

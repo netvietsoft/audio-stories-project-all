@@ -36,6 +36,7 @@ export default function StoryChaptersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [storyTitle, setStoryTitle] = useState("");
+  const [storyLanguage, setStoryLanguage] = useState<string | null>(null);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [unassignedChapters, setUnassignedChapters] = useState<Chapter[]>([]);
@@ -76,6 +77,7 @@ export default function StoryChaptersPage() {
       ]);
       
       setStoryTitle(storyRes.data.title);
+      setStoryLanguage(storyRes.data.language || null);
       setChapters(chaptersRes.data);
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -92,6 +94,7 @@ export default function StoryChaptersPage() {
           storyId: 'null',
           search: searchQuery,
           limit: 20,
+          lang: storyLanguage,
         }
       });
       setUnassignedChapters(res.data.data || []);

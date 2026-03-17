@@ -27,8 +27,8 @@ type LocalizedText = { vi: string; en: string };
 
 const chapterSchema = z.object({
     chapterNumber: z.coerce.number().min(0, 'Số chương không được âm'),
-    titleVi: z.string().min(1, 'Tiêu đề tiếng Việt không được để trống'),
-    titleEn: z.string().min(1, 'Tiêu đề tiếng Anh không được để trống'),
+    titleVi: z.string().optional(),
+    titleEn: z.string().optional(),
     descriptionVi: z.string().optional(),
     descriptionEn: z.string().optional(),
     contentVi: z.string().optional(),
@@ -47,6 +47,9 @@ const chapterSchema = z.object({
         z.string().uuid('ID truyện không hợp lệ').optional(),
     ),
     unlocksAt: z.string().optional(),
+}).refine((data) => data.titleVi || data.titleEn, {
+    message: 'Phải có ít nhất một tiêu đề (Tiếng Việt hoặc English)',
+    path: ['titleVi'],
 });
 
 export type ChapterFormValues = {
@@ -84,9 +87,18 @@ interface ChapterFormProps {
         audioUrlVi?: string;
         audioUrlEn?: string;
     };
+    selectedLocale?: string;
     onSubmit: (data: ChapterFormValues) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
+}
+
+interface StoryOption {
+    id: string;
+    title?: unknown;
+    titleVi?: string;
+    titleEn?: string;
+    language?: 'vi' | 'en' | string | null;
 }
 
 const toLocalizedText = (value: unknown): LocalizedText => {
@@ -138,20 +150,22 @@ const toLocalizedText = (value: unknown): LocalizedText => {
     return { vi: '', en: '' };
 };
 
-const getLocalizedText = (value: unknown): string => {
+const getLocalizedText = (value: unknown, locale = 'vi'): string => {
     if (value && typeof value === 'object') {
         const record = value as Record<string, unknown>;
         const vi = typeof record.titleVi === 'string' ? record.titleVi : '';
         const en = typeof record.titleEn === 'string' ? record.titleEn : '';
-        if (vi || en) return vi || en;
+        if (vi || en) {
+            return locale === 'en' ? en || vi : vi || en;
+        }
     }
 
     const parsed = toLocalizedText(value);
-    return parsed.vi || parsed.en || '';
+    return locale === 'en' ? parsed.en || parsed.vi || '' : parsed.vi || parsed.en || '';
 };
 
-export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: ChapterFormProps) => {
-    const [stories, setStories] = useState<any[]>([]);
+export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCancel, isLoading }: ChapterFormProps) => {
+    const [stories, setStories] = useState<StoryOption[]>([]);
     const [isStoryOpen, setIsStoryOpen] = useState(false);
     const [storySearch, setStorySearch] = useState('');
     const storyRef = useRef<HTMLDivElement>(null);
@@ -299,14 +313,24 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
     useEffect(() => {
         const fetchStories = async () => {
             try {
-                const res = await adminApiClient.get('/stories?all=true');
-                setStories(Array.isArray(res.data) ? res.data : res.data.data || []);
+                const res = await adminApiClient.get('/stories', {
+                    params: {
+                        all: true,
+                        lang: selectedLocale,
+                    },
+                });
+                const fetchedStories = Array.isArray(res.data) ? res.data : res.data.data || [];
+                setStories(
+                    fetchedStories.filter(
+                        (story: StoryOption) => story.language === selectedLocale,
+                    ),
+                );
             } catch (error) {
                 console.error('Failed to fetch stories:', error);
             }
         };
         fetchStories();
-    }, []);
+    }, [selectedLocale]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -321,8 +345,15 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
     const selectedStoryId = watch('storyId');
     const selectedStory = stories.find((s) => s.id === selectedStoryId);
     const filteredStories = stories.filter((s) =>
-        getLocalizedText(s.title).toLowerCase().includes(storySearch.toLowerCase()),
+        getLocalizedText(s.title, selectedLocale).toLowerCase().includes(storySearch.toLowerCase()),
     );
+
+    useEffect(() => {
+        if (!selectedStoryId) return;
+        if (!stories.some((story) => story.id === selectedStoryId)) {
+            setValue('storyId', '');
+        }
+    }, [selectedStoryId, setValue, stories]);
 
     const renderLangColumn = (lang: Locale, title: string, accentClass: string) => {
         const titleField = lang === 'vi' ? 'titleVi' : 'titleEn';
@@ -332,7 +363,7 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
         const audioValue = watch(audioField) || '';
 
         return (
-            <div className={`flex flex-col gap-4 ${lang === 'vi' ? 'border-r border-gray-200 pr-4' : 'pl-4'}`}>
+            <div className={`flex flex-col gap-4`}>
                 <h3 className={`text-lg font-bold ${accentClass}`}>{title}</h3>
 
                 <div className="space-y-2">
@@ -484,7 +515,7 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                             className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 flex items-center justify-between hover:ring-2 hover:ring-indigo-500/10 transition-all shadow-sm"
                         >
                             {selectedStory ? (
-                                <span className="text-indigo-600 truncate">{getLocalizedText(selectedStory.title)}</span>
+                                <span className="text-indigo-600 truncate">{getLocalizedText(selectedStory.title, selectedLocale)}</span>
                             ) : (
                                 <span className="text-slate-400 font-medium">-- Chọn truyện cho chương này --</span>
                             )}
@@ -505,6 +536,18 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                                     />
                                 </div>
                                 <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setValue('storyId', '');
+                                            setIsStoryOpen(false);
+                                            setStorySearch('');
+                                        }}
+                                        className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center justify-between group transition-all text-red-600 hover:bg-red-50 mb-1`}
+                                    >
+                                        <span>-- Bỏ gán truyện --</span>
+                                        {!selectedStoryId && <Check className="w-4 h-4 shrink-0" />}
+                                    </button>
                                     {filteredStories.length > 0 ? (
                                         filteredStories.map((story) => (
                                             <button
@@ -517,7 +560,7 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                                                 }}
                                                 className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center justify-between group transition-all ${selectedStoryId === story.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'}`}
                                             >
-                                                <span className="truncate">{getLocalizedText(story.title)}</span>
+                                                <span className="truncate">{getLocalizedText(story.title, selectedLocale)}</span>
                                                 {selectedStoryId === story.id && <Check className="w-4 h-4 shrink-0" />}
                                             </button>
                                         ))
@@ -636,11 +679,11 @@ export const ChapterForm = ({ initialData, onSubmit, onCancel, isLoading }: Chap
                 </div>
             </div>
 
-            <hr className="border-gray-200" />
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {renderLangColumn('vi', '🇻🇳 Tiếng Việt', 'text-blue-600')}
-                {renderLangColumn('en', '🇬🇧 English', 'text-red-600')}
+            <div className="w-full">
+                {selectedLocale === 'en' 
+                    ? renderLangColumn('en', '🇬🇧 English', 'text-red-600')
+                    : renderLangColumn('vi', '🇻🇳 Tiếng Việt', 'text-blue-600')
+                }
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

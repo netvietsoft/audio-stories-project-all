@@ -25,6 +25,8 @@ import {
 
 import Link from '@/components/shared/LocalizedLink';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
+import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
 interface Story {
     id: string;
@@ -37,6 +39,7 @@ interface Story {
     isRecommended: boolean;
     totalViews: number;
     averageRating: number | string;
+    language: string;
     createdAt: string;
     author: {
         id: string;
@@ -77,7 +80,8 @@ export default function StoriesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
-    const [selectedLocale, setSelectedLocale] = useState<'vi' | 'en'>('vi');
+    const [selectedLocale, setSelectedLocale] = useState('vi');
+    const { languages } = useAdminLanguages();
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [updatingRecommendId, setUpdatingRecommendId] = useState<string | null>(null);
@@ -86,12 +90,18 @@ export default function StoriesPage() {
         fetchStories();
     }, [page, filterStatus, selectedLocale]);
 
+    useEffect(() => {
+        if (!languages.some((language) => language.key === selectedLocale)) {
+            setSelectedLocale(languages[0]?.key || 'vi');
+        }
+    }, [languages, selectedLocale]);
+
     const fetchStories = async () => {
         setIsLoading(true);
         try {
             const params = new URLSearchParams({
                 page: page.toString(),
-                limit: '10',
+                limit: '20',
                 lang: selectedLocale,
                 ...(filterStatus !== 'all' ? { status: filterStatus } : {}),
                 ...(searchTerm ? { search: searchTerm } : {}),
@@ -173,42 +183,23 @@ export default function StoriesPage() {
                     </h1>
                     <p className="text-slate-500 mt-2 font-medium">Danh sách và thông tin chi tiết các tác phẩm trên hệ thống.</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="grid w-full grid-cols-2 gap-3 md:flex md:w-auto md:items-center">
                     {/* Locale Selector */}
-                    <div className="flex items-center gap-2 bg-white rounded-xl border-2 border-slate-200 p-1">
-                        <button
-                            onClick={() => {
-                                setSelectedLocale('vi');
-                                setPage(1);
-                            }}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                selectedLocale === 'vi'
-                                    ? 'bg-indigo-600 text-white shadow-md'
-                                    : 'text-slate-600 hover:bg-slate-50'
-                            }`}
-                        >
-                            🇻🇳 Tiếng Việt
-                        </button>
-                        <button
-                            onClick={() => {
-                                setSelectedLocale('en');
-                                setPage(1);
-                            }}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                selectedLocale === 'en'
-                                    ? 'bg-indigo-600 text-white shadow-md'
-                                    : 'text-slate-600 hover:bg-slate-50'
-                            }`}
-                        >
-                            🇬🇧 English
-                        </button>
-                    </div>
-                    <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
+                    <AdminLanguageDropdown
+                        languages={languages}
+                        value={selectedLocale}
+                        onChange={(nextKey) => {
+                            setSelectedLocale(nextKey);
+                            setPage(1);
+                        }}
+                        className="col-span-2 md:w-56"
+                    />
+                    <button className="flex min-h-[56px] w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-bold text-slate-600 shadow-sm transition-all active:scale-95 hover:bg-slate-50 md:min-h-0 md:w-auto md:rounded-xl">
                         <Download className="w-4 h-4" />
                         Xuất báo cáo
                     </button>
-                    <Link href={`/admin/stories/new?lang=${selectedLocale}`}>
-                        <button className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200">
+                    <Link href={`/admin/stories/new?lang=${selectedLocale}`} className="w-full md:w-auto">
+                        <button className="flex min-h-[56px] w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-5 py-2.5 text-center text-sm font-bold text-white shadow-lg shadow-indigo-200 transition-all active:scale-95 hover:bg-indigo-700 md:min-h-0 md:w-auto md:rounded-xl">
                             <Plus className="w-4 h-4" />
                             Thêm truyện mới
                         </button>
@@ -283,12 +274,13 @@ export default function StoriesPage() {
 
             {/* Stories Table */}
             <div className="bg-white rounded-[40px] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="hidden overflow-x-auto md:block">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Truyện</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
+                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Ngôn ngữ</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Chương</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Lượt nghe</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Đề xuất</th>
@@ -313,9 +305,9 @@ export default function StoriesPage() {
                                             <div className="flex items-center gap-4">
                                                 <StoryThumbnail story={story} />
                                                 <div className="min-w-0">
-                                                    <p className="text-sm font-black text-slate-900 truncate group-hover:text-indigo-600 transition-colors" title={selectedLocale === 'vi' ? (story.titleVi || story.title) : (story.titleEn || story.title)}>
+                                                    <p className="text-sm font-black text-slate-900 truncate group-hover:text-indigo-600 transition-colors" title={selectedLocale === 'en' ? (story.titleEn || story.titleVi || story.title) : (story.titleVi || story.titleEn || story.title)}>
                                                         {(() => {
-                                                            const displayTitle = selectedLocale === 'vi' ? (story.titleVi || story.title) : (story.titleEn || story.title);
+                                                            const displayTitle = selectedLocale === 'en' ? (story.titleEn || story.titleVi || story.title) : (story.titleVi || story.titleEn || story.title);
                                                             return displayTitle.length > 26 ? `${displayTitle.substring(0, 26)}...` : displayTitle;
                                                         })()}
                                                     </p>
@@ -339,6 +331,15 @@ export default function StoriesPage() {
                                                     : 'bg-emerald-50 text-emerald-700 border-emerald-100'}
                                             `}>
                                                 {story.status === 'ongoing' ? 'Đang ra' : 'Hoàn thành'}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-5 text-center">
+                                            <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border
+                                                ${story.language === 'vi'
+                                                    ? 'bg-red-50 text-red-700 border-red-100'
+                                                    : 'bg-indigo-50 text-indigo-700 border-indigo-100'}
+                                            `}>
+                                                {story.language === 'vi' ? '🇻🇳 VI' : '🇬🇧 EN'}
                                             </span>
                                         </td>
                                         <td className="px-8 py-5 text-center">
@@ -413,6 +414,64 @@ export default function StoriesPage() {
                     </table>
                 </div>
 
+                <div className="divide-y divide-slate-100 md:hidden">
+                    {isLoading ? (
+                        Array(5).fill(0).map((_, i) => (
+                            <div key={i} className="animate-pulse p-5">
+                                <div className="h-20 rounded-3xl bg-slate-50" />
+                            </div>
+                        ))
+                    ) : stories.length > 0 ? (
+                        stories.map((story) => {
+                            const displayTitle = selectedLocale === 'en' ? (story.titleEn || story.titleVi || story.title) : (story.titleVi || story.titleEn || story.title);
+                            return (
+                                <div key={story.id} className="space-y-4 p-5">
+                                    <div className="min-w-0 flex items-center gap-4">
+                                        <StoryThumbnail story={story} />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-base font-black leading-6 text-slate-900 break-words">{displayTitle}</p>
+                                            <p className="mt-1 text-sm font-bold text-slate-500">
+                                                By <span className="text-slate-700">{story.author.name}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 pl-[72px]">
+                                        <Link
+                                            href={`/admin/stories/${story.id}/chapters`}
+                                            title="Danh sách chương"
+                                            className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
+                                        >
+                                            <Music className="w-4 h-4" />
+                                        </Link>
+                                        <Link
+                                            href={`/admin/stories/${story.id}`}
+                                            title="Chỉnh sửa truyện"
+                                            className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
+                                        >
+                                            <Edit2 className="w-4 h-4" />
+                                        </Link>
+                                        <button
+                                            onClick={() => handleDelete(story.id, story.title)}
+                                            className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-red-50 hover:text-red-600"
+                                            title="Xóa truyện"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="px-8 py-20 text-center">
+                            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-slate-100 bg-slate-50">
+                                <Newspaper className="w-8 h-8 text-slate-300" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900">Không tìm thấy truyện</h3>
+                            <p className="mt-1 text-slate-500">Vui lòng thử điều chỉnh lại bộ lọc tìm kiếm.</p>
+                        </div>
+                    )}
+                </div>
+
                 {/* Pagination */}
                 <div className="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <p className="text-sm font-bold text-slate-500">
@@ -426,7 +485,7 @@ export default function StoriesPage() {
                         >
                             Trước
                         </button>
-                        {[...Array(Math.ceil(total / 10))].map((_, i) => (
+                        {[...Array(Math.ceil(total / 20))].map((_, i) => (
                             <button
                                 key={i}
                                 onClick={() => setPage(i + 1)}
@@ -438,7 +497,7 @@ export default function StoriesPage() {
                             </button>
                         ))}
                         <button
-                            disabled={page >= Math.ceil(total / 10)}
+                            disabled={page >= Math.ceil(total / 20)}
                             onClick={() => setPage(page + 1)}
                             className="px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-50 transition-all shadow-sm active:scale-95"
                         >
@@ -450,3 +509,6 @@ export default function StoriesPage() {
         </div>
     );
 }
+
+
+

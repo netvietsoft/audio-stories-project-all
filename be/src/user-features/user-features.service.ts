@@ -31,8 +31,6 @@ type HistoryListItem = {
     id: string;
     chapterNumber: number;
     title: string;
-    titleVi?: string | null;
-    titleEn?: string | null;
     audioDuration: number | null;
     r2AudioUrl: string | null;
   };
@@ -252,8 +250,6 @@ export class UserFeaturesService {
         id: true,
         slug: true,
         title: true,
-        titleVi: true,
-        titleEn: true,
         userStorySubscriptions: {
           select: {
             userId: true,
@@ -280,8 +276,6 @@ export class UserFeaturesService {
         storyId: true,
         chapterNumber: true,
         title: true,
-        titleVi: true,
-        titleEn: true,
       },
     });
 
@@ -289,8 +283,8 @@ export class UserFeaturesService {
       return;
     }
 
-    const storyTitle = story.titleVi || story.titleEn || story.title;
-    const chapterTitle = chapter.titleVi || chapter.titleEn || chapter.title;
+    const storyTitle = story.title;
+    const chapterTitle = chapter.title;
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     const storyUrl = `${frontendUrl}/story/${story.slug}/chuong-${chapter.chapterNumber}`;
 
@@ -347,8 +341,6 @@ export class UserFeaturesService {
         ? {
           OR: [
             { title: { contains: query.search } },
-            { titleVi: { contains: query.search } },
-            { titleEn: { contains: query.search } },
             { author: { name: { contains: query.search } } },
           ],
         }
@@ -375,8 +367,6 @@ export class UserFeaturesService {
           id: true,
           slug: true,
           title: true,
-          titleVi: true,
-          titleEn: true,
           thumbnailUrl: true,
           totalViews: true,
           status: true,
@@ -487,8 +477,6 @@ export class UserFeaturesService {
               id: true,
               slug: true,
               title: true,
-              titleVi: true,
-              titleEn: true,
               thumbnailUrl: true,
               totalViews: true,
               status: true,
@@ -505,8 +493,6 @@ export class UserFeaturesService {
               id: true,
               chapterNumber: true,
               title: true,
-              titleVi: true,
-              titleEn: true,
               audioDuration: true,
               r2AudioUrl: true,
             },
@@ -552,8 +538,6 @@ export class UserFeaturesService {
             storyId: true,
             chapterNumber: true,
             title: true,
-            titleVi: true,
-            titleEn: true,
             audioDuration: true,
             r2AudioUrl: true,
             story: {
@@ -561,8 +545,6 @@ export class UserFeaturesService {
                 id: true,
                 slug: true,
                 title: true,
-                titleVi: true,
-                titleEn: true,
                 thumbnailUrl: true,
                 totalViews: true,
                 status: true,
@@ -592,8 +574,6 @@ export class UserFeaturesService {
             id: chapter.id,
             chapterNumber: chapter.chapterNumber,
             title: chapter.title,
-            titleVi: chapter.titleVi,
-            titleEn: chapter.titleEn,
             audioDuration: chapter.audioDuration,
             r2AudioUrl: chapter.r2AudioUrl,
           },

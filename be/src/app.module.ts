@@ -26,6 +26,7 @@ import { BillingModule } from './billing/billing.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { UploadModule } from './upload/upload.module';
+import { LanguagesModule } from './languages/languages.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { UploadModule } from './upload/upload.module';
     ReviewsModule,
     NotificationsModule,
     UploadModule,
+    LanguagesModule,
   ],
   controllers: [AppController],
   providers: [

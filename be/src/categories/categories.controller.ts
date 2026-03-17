@@ -2,6 +2,7 @@ import {
     Controller,
     Get,
     Post,
+    Query,
     Body,
     Patch,
     Param,
@@ -14,6 +15,7 @@ import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { CategoryQueryDto } from './dto/category-query.dto';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { Roles } from '@/auth/decorators/roles.decorator';
@@ -26,8 +28,8 @@ export class CategoriesController {
     @UseInterceptors(CacheInterceptor)
     @CacheKey('categories:all')
     @CacheTTL(3600)
-    findAll() {
-        return this.categoriesService.findAll();
+    findAll(@Query() query: CategoryQueryDto) {
+        return this.categoriesService.findAll(query);
     }
 
     @Get(':id')
@@ -57,5 +59,12 @@ export class CategoriesController {
     @Roles('ADMIN')
     remove(@Param('id', ParseIntPipe) id: number) {
         return this.categoriesService.remove(id);
+    }
+
+    @Delete('bulk/delete')
+    @UseGuards(JwtAccessGuard, RolesGuard)
+    @Roles('ADMIN')
+    bulkRemove(@Body('ids') ids: number[]) {
+        return this.categoriesService.bulkRemove(ids);
     }
 }

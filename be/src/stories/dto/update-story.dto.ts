@@ -4,27 +4,11 @@ import { StoryStatus } from '@prisma/client';
 export class UpdateStoryDto {
   @IsOptional()
   @IsString()
-  titleVi?: string;
-
-  @IsOptional()
-  @IsString()
-  titleEn?: string;
-
-  @IsOptional()
-  @IsString()
   title?: string;
 
   @IsOptional()
   @IsString()
   slug?: string;
-
-  @IsOptional()
-  @IsString()
-  descriptionVi?: string;
-
-  @IsOptional()
-  @IsString()
-  descriptionEn?: string;
 
   @IsOptional()
   @IsString()

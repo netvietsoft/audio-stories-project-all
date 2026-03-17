@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from '@/components/shared/LocalizedLink';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X } from 'lucide-react';
+import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2 } from 'lucide-react';
 
 import { useState, useEffect } from 'react';
 import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
@@ -25,7 +25,7 @@ export default function AdminLayout({
     useEffect(() => {
         // Check if current path is login page (with or without locale)
         const isLoginPage = pathname?.includes('/admin/login');
-        
+
         if (isLoginPage) {
             setIsLoading(false);
             setHasAccess(true);
@@ -115,6 +115,7 @@ export default function AdminLayout({
         { href: '/admin/authors', label: 'Quản lý Tác giả', icon: UserCircle },
         { href: '/admin/memberships', label: 'Quản lý Hội viên', icon: Crown },
         { href: '/admin/packages', label: 'Quản lý Gói thanh toán', icon: Package },
+        { href: '/admin/languages', label: 'Quản lý Ngôn ngữ', icon: Globe2 },
         { href: '/admin/comments', label: 'Quản lý Bình luận', icon: MessageSquare },
         { href: '/admin/comment-reports', label: 'Báo cáo Bình luận', icon: Bell },
         { href: '/admin/transactions', label: 'Quản lý Giao dịch', icon: DollarSign },
@@ -167,19 +168,7 @@ export default function AdminLayout({
                 </nav>
 
                 <div className={`p-4 space-y-4 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-6'}`}>
-                    <div className="bg-slate-50 rounded-2xl border border-slate-100 overflow-hidden">
-                        <div className={`flex items-center gap-3 p-4 transition-all duration-300 ${isCollapsed ? 'justify-center p-3' : ''}`}>
-                            <div className="w-10 h-10 shrink-0 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
-                                A
-                            </div>
-                            {!isCollapsed && (
-                                <div className="overflow-hidden opacity-100 transition-opacity duration-300">
-                                    <p className="text-sm font-bold text-slate-800 truncate">Admin</p>
-                                    <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Quản trị viên</p>
-                                </div>
-                            )}
-                        </div>
-
+                    <div>
                         <div className={`px-4 pb-4 space-y-3 transition-all duration-300 ${isCollapsed ? 'px-2 pb-3' : ''}`}>
                             <button
                                 onClick={handleLogout}
@@ -196,8 +185,6 @@ export default function AdminLayout({
                                     </>
                                 )}
                             </button>
-
-                            <div className="h-px bg-slate-200 w-full"></div>
 
                             <Link
                                 href="/"

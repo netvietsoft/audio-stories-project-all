@@ -67,7 +67,9 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
     );
   }
 
-  if (!chapters || chapters.length === 0) {
+  const validChapters = (chapters || []).filter((chapter) => chapter?.story?.slug);
+
+  if (!validChapters.length) {
     return (
       <div className="text-center py-12 text-gray-500 dark:text-gray-400">
         {t("noChapters")}
@@ -77,7 +79,7 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2">
-      {chapters.map((chapter) => {
+      {validChapters.map((chapter) => {
         const story = chapter.story;
         const hasStoryLink = Boolean(story?.slug);
         const storyTitle = story?.title || "Unknown story";

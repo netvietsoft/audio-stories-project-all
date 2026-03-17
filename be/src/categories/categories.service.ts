@@ -2,29 +2,59 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { CategoryQueryDto } from './dto/category-query.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CategoriesService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async findAll() {
-        return this.prisma.category.findMany({
-            orderBy: { name: 'asc' },
-            select: {
-                id: true,
-                name: true,
-                nameVi: true,
-                nameEn: true,
-                slug: true,
-                language: true,
-                description: true,
-                iconUrl: true,
-                createdAt: true,
-                _count: {
-                    select: { stories: true },
+    async findAll(query: CategoryQueryDto) {
+        const page = query.page || 1;
+        const limit = query.limit || 12;
+        const search = query.search;
+        const language = query.language || 'vi';
+
+        const where: Prisma.CategoryWhereInput = {
+            language,
+            ...(search ? {
+                OR: [
+                    { name: { contains: search } },
+                    { slug: { contains: search } },
+                ]
+            } : {})
+        };
+
+        const [total, data] = await Promise.all([
+            this.prisma.category.count({ where }),
+            this.prisma.category.findMany({
+                where,
+                skip: (page - 1) * limit,
+                take: limit,
+                orderBy: { name: 'asc' },
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    language: true,
+                    description: true,
+                    iconUrl: true,
+                    createdAt: true,
+                    _count: {
+                        select: { stories: true },
+                    },
                 },
-            },
-        });
+            }),
+        ]);
+
+        return {
+            data,
+            meta: {
+                total,
+                page,
+                lastPage: Math.ceil(total / limit),
+            }
+        };
     }
 
     async findOne(id: number) {
@@ -33,8 +63,6 @@ export class CategoriesService {
             select: {
                 id: true,
                 name: true,
-                nameVi: true,
-                nameEn: true,
                 slug: true,
                 language: true,
                 description: true,
@@ -73,6 +101,14 @@ export class CategoriesService {
 
         return this.prisma.category.delete({
             where: { id },
+        });
+    }
+
+    async bulkRemove(ids: number[]) {
+        return this.prisma.category.deleteMany({
+            where: {
+                id: { in: ids },
+            },
         });
     }
 }

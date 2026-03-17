@@ -11,6 +11,7 @@
     "new": "New Releases",
     "trending": "Trending",
     "memberRanking": "Member Ranking",
+    "ranking": "Ranking",
     "searchPlaceholder": "Search stories...",
     "topUp": "Top Up",
     "notifications": "Notifications",
@@ -262,6 +263,18 @@
     "week": "Week",
     "month": "Month",
     "all": "All"
+  },
+  "RankingPage": {
+    "title": "Rankings",
+    "subtitle": "Discover the best stories across various categories.",
+    "tabGifts": "Most Gifted",
+    "tabRating": "Top Rated",
+    "tabFavorites": "Most Favorites",
+    "tabViews": "Most Viewed",
+    "tabLatest": "Latest Updates",
+    "top1": "Champion",
+    "top2": "Runner-up",
+    "top3": "Third Place"
   },
   "CategoriesPage": {
     "title": "Categories",

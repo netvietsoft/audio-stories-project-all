@@ -82,7 +82,7 @@ export default function StoryCard({ story, className, variant = "default" }: Sto
     return (
       <Link
         href={`/story/${story.slug}`}
-        className={`block rounded-xl border border-gray-800 bg-gray-900/60 p-2.5 group ${className || ""}`}
+        className={`block rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900/60 p-2.5 group hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-none transition-all duration-300 ${className || ""}`}
       >
         <div className="relative overflow-hidden rounded-lg">
           <Image
@@ -104,15 +104,15 @@ export default function StoryCard({ story, className, variant = "default" }: Sto
           />
         </div>
 
-        <h3 className="mt-3 line-clamp-1 text-base font-bold text-white">{localizedTitle}</h3>
+        <h3 className="mt-3 line-clamp-1 text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{localizedTitle}</h3>
 
-        <p className="line-clamp-1 text-xs text-gray-400">
+        <p className="line-clamp-1 text-xs text-slate-500 dark:text-gray-400">
           {story.author?.name || t("updating")}
         </p>
 
-        <div className="mt-2 flex items-center justify-between border-t border-gray-800 pt-2">
+        <div className="mt-2 flex items-center justify-between border-t border-slate-100 dark:border-gray-800 pt-2">
           <span className="line-clamp-1 text-sm font-medium text-blue-400">{latestChapterLabel}</span>
-          <span className="ml-2 shrink-0 text-xs text-gray-500">
+          <span className="ml-2 shrink-0 text-xs text-slate-400 dark:text-gray-500">
             {formatTimeAgo(story.latestChapterCreatedAt || story.updatedAt || story.createdAt)}
           </span>
         </div>

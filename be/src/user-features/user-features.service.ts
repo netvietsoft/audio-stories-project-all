@@ -1,8 +1,10 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma, StoryStatus } from '@prisma/client';
 import Redis from 'ioredis';
+
+import { StoriesService } from '@/stories/stories.service';
 
 import { MailService } from '@/mail/mail.service';
 import { NotificationsService } from '@/notifications/notifications.service';
@@ -50,6 +52,8 @@ export class UserFeaturesService {
     private readonly configService: ConfigService,
     private readonly notificationsService: NotificationsService,
     private readonly mailService: MailService,
+    @Inject(forwardRef(() => StoriesService))
+    private readonly storiesService: StoriesService,
   ) {
     const redisUrl = this.configService.get<string>('REDIS_URL');
     if (!redisUrl) {
@@ -170,6 +174,12 @@ export class UserFeaturesService {
           },
         },
       });
+      // Decrement favoritesCount on story
+      await this.prisma.story.update({
+        where: { id: storyId },
+        data: { favoritesCount: { decrement: 1 } },
+      });
+      await this.storiesService.invalidateExploreCache();
       return { isFavorite: false };
     }
 
@@ -179,6 +189,12 @@ export class UserFeaturesService {
         storyId,
       },
     });
+    // Increment favoritesCount on story
+    await this.prisma.story.update({
+      where: { id: storyId },
+      data: { favoritesCount: { increment: 1 } },
+    });
+    await this.storiesService.invalidateExploreCache();
 
     return { isFavorite: true };
   }

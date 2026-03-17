@@ -34,6 +34,13 @@ export class TransactionsController {
         );
     }
 
+    @Get('gifts')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
+    findAllGifts(@Query() query: TransactionQueryDto) {
+        return this.transactionsService.findAllGifts(query);
+    }
+
     @Get('payments')
     @UseGuards(RolesGuard)
     @Roles('ADMIN')

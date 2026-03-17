@@ -306,6 +306,7 @@ export default function Navbar() {
                 </div>
                 <Link href="/new" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("new")}</Link>
                 <Link href="/trending" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("trending")}</Link>
+                <Link href="/ranking" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("ranking")}</Link>
                 <Link href="/vinh-danh" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("memberRanking")}</Link>
               </nav>
             </div>
@@ -749,6 +750,12 @@ export default function Navbar() {
                         <Flame className="w-5 h-5" />
                       </div>
                       <span className="text-sm tracking-tight">{t("popular")}</span>
+                    </Link>
+                    <Link href="/ranking" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all">
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                        <Trophy className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm tracking-tight">{t("ranking")}</span>
                     </Link>
                     <Link href="/vinh-danh" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all">
                       <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">

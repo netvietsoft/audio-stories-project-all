@@ -87,6 +87,54 @@ export class TransactionsService {
         };
     }
 
+    async findAllGifts(query: TransactionQueryDto) {
+        const { page = 1, limit = 20, search } = query;
+        const skip = (page - 1) * limit;
+
+        const where: Prisma.CreditTransactionWhereInput = {
+            type: 'spend',
+            description: { contains: 'Tặng' },
+            ...(search
+                ? {
+                    OR: [
+                        { description: { contains: search } },
+                        { user: { email: { contains: search } } },
+                        { user: { displayName: { contains: search } } },
+                    ],
+                }
+                : {}),
+        };
+
+        const [gifts, total] = await Promise.all([
+            this.prisma.creditTransaction.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            email: true,
+                            displayName: true,
+                        },
+                    },
+                },
+            }),
+            this.prisma.creditTransaction.count({ where }),
+        ]);
+
+        return {
+            data: gifts,
+            meta: {
+                total,
+                page,
+                limit,
+                totalPages: Math.ceil(total / limit),
+            },
+        };
+    }
+
     async findAllPayments(query: TransactionQueryDto) {
         const { page = 1, limit = 20, search, status } = query;
         const skip = (page - 1) * limit;

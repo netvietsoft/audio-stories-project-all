@@ -37,7 +37,7 @@ export class StoriesService {
     return `stories:explore:v${version}:${JSON.stringify(normalizedEntries)}`;
   }
 
-  private async invalidateExploreCache() {
+  async invalidateExploreCache() {
     const nextVersion = Date.now();
     await this.cacheManager.set(this.exploreCacheVersionKey, nextVersion, this.exploreCacheTtlSeconds);
   }
@@ -264,7 +264,11 @@ export class StoriesService {
           ? { title: 'asc' }
           : query.sort === 'chapters_desc'
             ? { chapters: { _count: 'desc' } }
-            : { createdAt: 'desc' };
+            : query.sort === 'gifts'
+              ? { totalGifts: 'desc' }
+              : query.sort === 'favorites'
+                ? { favoritesCount: 'desc' }
+                : { createdAt: 'desc' };
 
     const [total, stories] = await Promise.all([
       this.prisma.story.count({ where }),
@@ -283,6 +287,8 @@ export class StoriesService {
           averageRating: true,
           title: true,
           createdAt: true,
+          totalGifts: true,
+          favoritesCount: true,
           author: {
             select: { name: true },
           },
@@ -677,10 +683,10 @@ export class StoriesService {
     return { message: 'Story deleted successfully' };
   }
 
-  async giftCredits(storyId: string, userId: string, amount: number, message?: string) {
+  async giftCredits(storyId: string, userId: string, amount: number, message?: string, chapterId?: string) {
     // Validate amount
-    if (amount < 10) {
-      throw new BadRequestException('Minimum gift amount is 10 credits');
+    if (amount < 1) {
+      throw new BadRequestException('Minimum gift amount is 1 credit');
     }
 
     // Get user and check balance
@@ -693,9 +699,16 @@ export class StoriesService {
       throw new NotFoundException('User not found');
     }
 
-    if (user.credits < amount) {
+    const numericAmount = Number(amount);
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      throw new BadRequestException('Invalid gift amount');
+    }
+
+    if (user.credits < numericAmount) {
       throw new BadRequestException('Insufficient credits');
     }
+
+    console.log(`[GiftCredits] Processing gift: ${numericAmount} from User ${userId} to Story ${storyId}`);
 
     // Get story
     const story = await this.prisma.story.findUnique({
@@ -711,26 +724,44 @@ export class StoriesService {
       throw new BadRequestException('Story has no author');
     }
 
+    let chapterInfo = '';
+    if (chapterId) {
+      const chapter = await this.prisma.chapter.findUnique({
+        where: { id: chapterId },
+        select: { chapterNumber: true, title: true },
+      });
+      if (chapter) {
+        chapterInfo = ` - Chương ${chapter.chapterNumber}: ${chapter.title}`;
+      }
+    }
+
     // Deduct credits from user and create transaction record
     await this.prisma.$transaction([
+      // Increment totalGifts on story
+      this.prisma.story.update({
+        where: { id: storyId },
+        data: { totalGifts: { increment: numericAmount } },
+      }),
       // Deduct credits from user
       this.prisma.user.update({
         where: { id: userId },
-        data: { credits: { decrement: amount } },
+        data: { credits: { decrement: numericAmount } },
       }),
       // Create credit transaction record
       this.prisma.creditTransaction.create({
         data: {
           userId,
           type: 'spend',
-          amount: -amount,
+          amount: -numericAmount,
           balanceBefore: user.credits,
-          balanceAfter: user.credits - amount,
-          referenceId: storyId,
-          description: `Gift ${amount} credits to story: ${story.title}${message ? ` - ${message}` : ''}`,
+          balanceAfter: user.credits - numericAmount,
+          referenceId: chapterId || storyId,
+          description: `Tặng ${numericAmount} credits cho truyện: ${story.title}${chapterInfo}${message ? ` - ${message}` : ''}`,
         },
       }),
     ]);
+
+    await this.invalidateExploreCache();
 
     return {
       ok: true,

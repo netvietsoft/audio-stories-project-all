@@ -8,5 +8,6 @@ import { StoriesService } from './stories.service';
   imports: [PrismaModule],
   controllers: [StoriesController],
   providers: [StoriesService],
+  exports: [StoriesService],
 })
 export class StoriesModule {}

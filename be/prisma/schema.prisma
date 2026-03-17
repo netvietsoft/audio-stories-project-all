@@ -197,6 +197,8 @@ model Story {
   isFeatured    Boolean     @default(false) @map("is_featured")
   isRecommended Boolean     @default(false) @map("is_recommended")
   featuredOrder Int?        @map("featured_order")
+  totalGifts    Int         @default(0) @map("total_gifts") @db.UnsignedInt
+  favoritesCount Int        @default(0) @map("favorites_count") @db.UnsignedInt
   publishedAt   DateTime?   @map("published_at")
   audioUrl          String?     @map("audio_url") @db.Text
   facebookGroupUrl  String?     @map("facebook_group_url") @db.VarChar(500)

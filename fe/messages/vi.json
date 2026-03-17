@@ -11,6 +11,7 @@
     "new": "Mới đăng",
     "trending": "Trending",
     "memberRanking": "BXH Hội Viên",
+    "ranking": "Bảng xếp hạng",
     "searchPlaceholder": "Tìm truyện...",
     "topUp": "Nạp tiền",
     "notifications": "Thông báo",
@@ -262,6 +263,18 @@
     "week": "Tuần",
     "month": "Tháng",
     "all": "Tất cả"
+  },
+  "RankingPage": {
+    "title": "Bảng xếp hạng",
+    "subtitle": "Khám phá những bộ truyện xuất sắc nhất theo nhiều tiêu chí.",
+    "tabGifts": "Tặng quà nhiều nhất",
+    "tabRating": "Đánh giá cao nhất",
+    "tabFavorites": "Yêu thích nhất",
+    "tabViews": "Nhiều lượt xem nhất",
+    "tabLatest": "Cập nhật mới nhất",
+    "top1": "Quán quân",
+    "top2": "Á quân",
+    "top3": "Hạng ba"
   },
   "CategoriesPage": {
     "title": "Trang thể loại",

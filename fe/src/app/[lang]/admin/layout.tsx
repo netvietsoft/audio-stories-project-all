@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from '@/components/shared/LocalizedLink';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2 } from 'lucide-react';
+import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift } from 'lucide-react';
 
 import { useState, useEffect } from 'react';
 import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
@@ -118,6 +118,7 @@ export default function AdminLayout({
         { href: '/admin/languages', label: 'Quản lý Ngôn ngữ', icon: Globe2 },
         { href: '/admin/comments', label: 'Quản lý Bình luận', icon: MessageSquare },
         { href: '/admin/comment-reports', label: 'Báo cáo Bình luận', icon: Bell },
+        { href: '/admin/gifts', label: 'Lịch sử Tặng quà', icon: Gift },
         { href: '/admin/transactions', label: 'Quản lý Giao dịch', icon: DollarSign },
         { href: '/admin/settings', label: 'Cài đặt', icon: Settings },
     ];

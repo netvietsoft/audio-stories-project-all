@@ -53,6 +53,7 @@ model User {
   chapterComments     ChapterComment[]
   commentReactions    CommentReaction[]
   commentReports      CommentReport[]
+  userUnlockedVariants UserUnlockedVariant[]
 
   @@index([roleId])
   @@index([isActive])
@@ -196,6 +197,7 @@ model Story {
   ratingCount   Int         @default(0) @map("rating_count") @db.UnsignedInt
   isFeatured    Boolean     @default(false) @map("is_featured")
   isRecommended Boolean     @default(false) @map("is_recommended")
+  isInteractive Boolean     @default(false) @map("is_interactive")
   featuredOrder Int?        @map("featured_order")
   totalGifts    Int         @default(0) @map("total_gifts") @db.UnsignedInt
   favoritesCount Int        @default(0) @map("favorites_count") @db.UnsignedInt
@@ -228,6 +230,7 @@ model Story {
   @@index([totalViews])
   @@index([averageRating])
   @@index([isRecommended, updatedAt])
+  @@index([isInteractive])
   @@index([language])
   @@map("stories")
 }
@@ -266,6 +269,7 @@ model Chapter {
   youtubeVideoId String?           @map("youtube_video_id") @db.VarChar(20)
   audioDuration  Int?              @map("audio_duration") @db.UnsignedInt
   accessType     ChapterAccessType @default(free) @map("access_type")
+  isInteractive  Boolean           @default(false) @map("is_interactive")
   unlocksAt      DateTime?         @map("unlocks_at")
   viewCount      BigInt            @default(0) @map("view_count") @db.UnsignedBigInt
   createdAt      DateTime          @default(now()) @map("created_at")
@@ -277,6 +281,8 @@ model Chapter {
   audioReports     AudioReport[]
   playlistItems    PlaylistItem[]
   chapterComments  ChapterComment[]
+  variants         ChapterVariant[] @relation("ChapterVariants")
+  incomingVariants ChapterVariant[] @relation("VariantNextChapter")
 
   @@unique([storyId, chapterNumber])
   @@index([accessType])
@@ -328,8 +334,11 @@ model ListeningHistory {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   story   Story   @relation(fields: [storyId], references: [id], onDelete: Cascade)
   chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  variant ChapterVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
-  @@unique([userId, chapterId])
+  variantId String? @map("variant_id") @db.VarChar(36)
+
+  @@unique([userId, chapterId, variantId])
   @@index([userId])
   @@index([chapterId])
   @@index([storyId])
@@ -703,12 +712,15 @@ model ChapterComment {
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chapter Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  story   Story            @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  parent  ChapterComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies ChapterComment[] @relation("CommentReplies")
+  chapter   Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  story     Story            @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  parent    ChapterComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   ChapterComment[] @relation("CommentReplies")
   reactions CommentReaction[]
-  reports CommentReport[]
+  reports   CommentReport[]
+  variant   ChapterVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  variantId String? @map("variant_id") @db.VarChar(36)
 
   @@index([userId])
   @@index([chapterId])
@@ -767,4 +779,47 @@ model CommentReport {
   @@index([status])
   @@index([createdAt])
   @@map("comment_reports")
+}
+
+model ChapterVariant {
+  id             String    @id @default(uuid()) @db.VarChar(36)
+  chapterId      String    @map("chapter_id") @db.VarChar(36)
+  nextChapterId  String?   @map("next_chapter_id") @db.VarChar(36)
+  nextVariantId  String?   @map("next_variant_id") @db.VarChar(36)
+  title          String    @db.VarChar(300)
+  description    String?   @db.Text
+  content        String?   @db.LongText
+  audioUrl       String?   @map("audio_url") @db.VarChar(500)
+  r2AudioUrl     String?   @map("r2_audio_url") @db.VarChar(500)
+  audioDuration  Int?      @map("audio_duration") @db.UnsignedInt
+  unlockPrice    Int       @default(0) @map("unlock_price") @db.UnsignedInt
+  orderIndex     Int       @default(0) @map("order_index") @db.UnsignedInt
+  isDefault      Boolean   @default(false) @map("is_default")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  chapter      Chapter  @relation("ChapterVariants", fields: [chapterId], references: [id], onDelete: Cascade)
+  nextChapter  Chapter? @relation("VariantNextChapter", fields: [nextChapterId], references: [id], onDelete: SetNull)
+  userUnlockedVariants UserUnlockedVariant[]
+  listeningHistory ListeningHistory[]
+  chapterComments  ChapterComment[]
+  
+  @@index([chapterId])
+  @@index([nextChapterId])
+  @@map("chapter_variants")
+}
+
+model UserUnlockedVariant {
+  userId    String   @map("user_id") @db.VarChar(36)
+  variantId String   @map("variant_id") @db.VarChar(36)
+  unlockedAt DateTime @default(now()) @map("unlocked_at")
+
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variant ChapterVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@id([userId, variantId])
+  @@index([userId])
+  @@index([variantId])
+  @@map("user_unlocked_variants")
 }

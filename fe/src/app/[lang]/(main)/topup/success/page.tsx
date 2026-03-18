@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { CheckCircle, Coins, ArrowRight, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api/api-client';
+import { useAuth } from '@/auth/auth-provider';
 
 export default function TopupSuccessPage() {
     const t = useTranslations("Topup");
     const locale = useLocale();
     const router = useRouter();
+    const { refreshProfile } = useAuth();
     const [userData, setUserData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -29,6 +31,8 @@ export default function TopupSuccessPage() {
         try {
             const res = await apiClient.get('/auth/me');
             setUserData(res.data);
+            // Update global user store with latest credits
+            void refreshProfile();
         } catch (error) {
             console.error('Failed to fetch user data:', error);
         } finally {

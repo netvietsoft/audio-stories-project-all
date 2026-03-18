@@ -18,6 +18,7 @@ type PendingHistoryPayload = {
   chapterId: string;
   progressSeconds: number;
   lastListenedAt: string;
+  variantId?: string;
 };
 
 type HistoryListItem = {
@@ -83,14 +84,19 @@ export class UserFeaturesService {
     };
   }
 
-  private historyField(userId: string, storyId: string, chapterId: string) {
-    return `${userId}:${storyId}:${chapterId}`;
+  private historyField(userId: string, storyId: string, chapterId: string, variantId?: string) {
+    return `${userId}:${storyId}:${chapterId}:${variantId || 'null'}`;
   }
 
   private parseHistoryField(field: string) {
-    const [userId, storyId, chapterId] = field.split(':');
+    const [userId, storyId, chapterId, variantId] = field.split(':');
     if (!userId || !storyId || !chapterId) return null;
-    return { userId, storyId, chapterId };
+    return { 
+      userId, 
+      storyId, 
+      chapterId, 
+      variantId: variantId === 'null' ? undefined : variantId 
+    };
   }
 
   private parsePayload(value: string): PendingHistoryPayload | null {
@@ -102,6 +108,7 @@ export class UserFeaturesService {
         chapterId: parsed.chapterId,
         progressSeconds: Math.max(0, Number(parsed.progressSeconds || 0)),
         lastListenedAt: parsed.lastListenedAt || new Date().toISOString(),
+        variantId: parsed.variantId,
       };
     } catch {
       return null;
@@ -423,42 +430,86 @@ export class UserFeaturesService {
 
     if (!this.redisEnabled || !this.redis) {
       try {
-        await this.prisma.listeningHistory.upsert({
-          where: {
-            userId_chapterId: {
+        // Handle null variantId case separately
+        if (!dto.variantId) {
+          // Find existing record without variantId
+          const existing = await this.prisma.listeningHistory.findFirst({
+            where: {
               userId,
               chapterId: dto.chapterId,
+              variantId: null,
             },
-          },
-          update: {
-            storyId: dto.storyId,
-            progressSeconds: payload.progressSeconds,
-            lastListenedAt: new Date(payload.lastListenedAt),
-          },
-          create: {
-            userId,
-            storyId: dto.storyId,
-            chapterId: dto.chapterId,
-            progressSeconds: payload.progressSeconds,
-            lastListenedAt: new Date(payload.lastListenedAt),
-          },
-        });
-      } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-          // Fallback to update if create failed due to race condition
-          await this.prisma.listeningHistory.update({
+          });
+
+          if (existing) {
+            // Update existing record
+            await this.prisma.listeningHistory.update({
+              where: { id: existing.id },
+              data: {
+                storyId: dto.storyId,
+                progressSeconds: payload.progressSeconds,
+                lastListenedAt: new Date(payload.lastListenedAt),
+              },
+            });
+          } else {
+            // Create new record
+            await this.prisma.listeningHistory.create({
+              data: {
+                userId,
+                storyId: dto.storyId,
+                chapterId: dto.chapterId,
+                variantId: null,
+                progressSeconds: payload.progressSeconds,
+                lastListenedAt: new Date(payload.lastListenedAt),
+              },
+            });
+          }
+        } else {
+          // Use upsert for non-null variantId
+          await (this.prisma.listeningHistory as any).upsert({
             where: {
-              userId_chapterId: {
+              userId_chapterId_variantId: {
                 userId,
                 chapterId: dto.chapterId,
+                variantId: dto.variantId,
               },
             },
-            data: {
+            update: {
               storyId: dto.storyId,
               progressSeconds: payload.progressSeconds,
               lastListenedAt: new Date(payload.lastListenedAt),
             },
+            create: {
+              userId,
+              storyId: dto.storyId,
+              chapterId: dto.chapterId,
+              variantId: dto.variantId,
+              progressSeconds: payload.progressSeconds,
+              lastListenedAt: new Date(payload.lastListenedAt),
+            },
           });
+        }
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          // Fallback to update if create failed due to race condition
+          const existing = await this.prisma.listeningHistory.findFirst({
+            where: {
+              userId,
+              chapterId: dto.chapterId,
+              variantId: dto.variantId || null,
+            },
+          });
+          
+          if (existing) {
+            await this.prisma.listeningHistory.update({
+              where: { id: existing.id },
+              data: {
+                storyId: dto.storyId,
+                progressSeconds: payload.progressSeconds,
+                lastListenedAt: new Date(payload.lastListenedAt),
+              },
+            });
+          }
         } else {
           throw error;
         }
@@ -469,7 +520,7 @@ export class UserFeaturesService {
 
     await this.redis.hset(
       this.HISTORY_SYNC_KEY,
-      this.historyField(userId, dto.storyId, dto.chapterId),
+      this.historyField(userId, dto.storyId, dto.chapterId, dto.variantId),
       JSON.stringify(payload),
     );
 
@@ -622,6 +673,7 @@ export class UserFeaturesService {
         userId: true,
         storyId: true,
         chapterId: true,
+        variantId: true,
       },
     });
 
@@ -632,7 +684,7 @@ export class UserFeaturesService {
     await this.prisma.listeningHistory.delete({ where: { id: historyId } });
 
     if (this.redisEnabled && this.redis) {
-      const field = this.historyField(userId, existing.storyId, existing.chapterId);
+      const field = this.historyField(userId, existing.storyId, existing.chapterId, existing.variantId || undefined);
       await Promise.all([
         this.redis.hdel(this.HISTORY_SYNC_KEY, field),
         this.redis.hdel(this.HISTORY_PROCESSING_KEY, field),
@@ -692,9 +744,10 @@ export class UserFeaturesService {
         writes.push(
           this.prisma.listeningHistory.upsert({
             where: {
-              userId_chapterId: {
+              userId_chapterId_variantId: {
                 userId: parsedKey.userId,
                 chapterId: parsedKey.chapterId,
+                variantId: (parsedKey.variantId ?? null) as any,
               },
             },
             update: {
@@ -706,6 +759,7 @@ export class UserFeaturesService {
               userId: parsedKey.userId,
               storyId: parsedKey.storyId,
               chapterId: parsedKey.chapterId,
+              variantId: parsedKey.variantId || null,
               progressSeconds: parsedPayload.progressSeconds,
               lastListenedAt: new Date(parsedPayload.lastListenedAt),
             },

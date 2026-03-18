@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
@@ -70,6 +70,20 @@ export type ChapterFormValues = {
     storyId?: string;
 };
 
+export type ChapterSubmitPayload = {
+    chapterNumber: number;
+    title: string;
+    description?: string;
+    content?: string;
+    r2AudioUrl?: string;
+    thumbnailUrl?: string;
+    youtubeVideoId?: string;
+    audioDuration?: number;
+    accessType: 'free' | 'timed' | 'vip';
+    storyId?: string;
+    language?: string;
+};
+
 interface ChapterFormProps {
     initialData?: Partial<ChapterFormValues> & {
         r2AudioUrl?: string;
@@ -88,7 +102,7 @@ interface ChapterFormProps {
         audioUrlEn?: string;
     };
     selectedLocale?: string;
-    onSubmit: (data: ChapterFormValues) => Promise<void>;
+    onSubmit: (data: ChapterSubmitPayload) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
 }
@@ -181,6 +195,13 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         initialAudio.vi = initialData.r2AudioUrl;
     }
 
+    const safeString = (value: unknown, fallback = ''): string =>
+        typeof value === 'string' ? value : fallback;
+    const safeNumber = (value: unknown, fallback = 0): number =>
+        typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+    const safeAccessType = (value: unknown): 'free' | 'timed' | 'vip' =>
+        value === 'timed' || value === 'vip' ? value : 'free';
+
     const {
         register,
         handleSubmit,
@@ -190,20 +211,21 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
     } = useForm<ChapterFormValues>({
         resolver: zodResolver(chapterSchema) as any,
         defaultValues: {
-            chapterNumber: 1,
-            titleVi: initialData?.titleVi || initialTitle.vi,
-            titleEn: initialData?.titleEn || initialTitle.en,
-            descriptionVi: initialData?.descriptionVi || initialDescription.vi,
-            descriptionEn: initialData?.descriptionEn || initialDescription.en,
-            contentVi: initialData?.contentVi || initialContent.vi,
-            contentEn: initialData?.contentEn || initialContent.en,
-            audioUrlVi: initialData?.audioUrlVi || initialAudio.vi,
-            audioUrlEn: initialData?.audioUrlEn || initialAudio.en,
-            thumbnailUrl: initialData?.thumbnailUrl || '',
-            youtubeVideoId: '',
-            audioDuration: 0,
-            accessType: 'free',
-            ...initialData,
+            chapterNumber: safeNumber(initialData?.chapterNumber, 1),
+            titleVi: safeString(initialData?.titleVi, initialTitle.vi),
+            titleEn: safeString(initialData?.titleEn, initialTitle.en),
+            descriptionVi: safeString(initialData?.descriptionVi, initialDescription.vi),
+            descriptionEn: safeString(initialData?.descriptionEn, initialDescription.en),
+            contentVi: safeString(initialData?.contentVi, initialContent.vi),
+            contentEn: safeString(initialData?.contentEn, initialContent.en),
+            audioUrlVi: safeString(initialData?.audioUrlVi, initialAudio.vi),
+            audioUrlEn: safeString(initialData?.audioUrlEn, initialAudio.en),
+            thumbnailUrl: safeString(initialData?.thumbnailUrl),
+            youtubeVideoId: safeString(initialData?.youtubeVideoId),
+            audioDuration: safeNumber(initialData?.audioDuration, 0),
+            accessType: safeAccessType(initialData?.accessType),
+            storyId: safeString(initialData?.storyId),
+            unlocksAt: safeString(initialData?.unlocksAt),
         },
     });
 
@@ -497,9 +519,101 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         );
     };
 
+    const handleFormSubmit = async (values: ChapterFormValues) => {
+        const cleanText = (value?: string) => {
+            const trimmed = value?.trim();
+            return trimmed ? trimmed : undefined;
+        };
+
+        const chapterNumber = Number(values.chapterNumber);
+        if (!Number.isFinite(chapterNumber)) {
+            alert('Chapter number is invalid.');
+            return;
+        }
+
+        const titleVi = cleanText(values.titleVi);
+        const titleEn = cleanText(values.titleEn);
+        const descriptionVi = cleanText(values.descriptionVi);
+        const descriptionEn = cleanText(values.descriptionEn);
+        const contentVi = cleanText(values.contentVi);
+        const contentEn = cleanText(values.contentEn);
+        const audioVi = cleanText(values.audioUrlVi);
+        const audioEn = cleanText(values.audioUrlEn);
+
+        const title = selectedLocale === 'en' ? (titleEn || titleVi) : (titleVi || titleEn);
+        if (!title) {
+            alert('Please enter at least one chapter title.');
+            return;
+        }
+        if (title.length > 300) {
+            alert('Chapter title is too long (max 300 characters).');
+            return;
+        }
+
+        const description = selectedLocale === 'en' ? (descriptionEn || descriptionVi) : (descriptionVi || descriptionEn);
+        const content = selectedLocale === 'en' ? (contentEn || contentVi) : (contentVi || contentEn);
+        const r2AudioUrl = selectedLocale === 'en' ? (audioEn || audioVi) : (audioVi || audioEn);
+        const thumbnailUrl = cleanText(values.thumbnailUrl);
+        const youtubeInput = cleanText(values.youtubeVideoId);
+        const youtubeVideoId = youtubeInput ? cleanText(extractYoutubeId(youtubeInput)) : undefined;
+
+        if (description && description.length > 2000) {
+            alert('Chapter description is too long (max 2000 characters).');
+            return;
+        }
+        if (content && content.length > 1000000) {
+            alert('Chapter content is too long (max 1000000 characters).');
+            return;
+        }
+        if (r2AudioUrl && r2AudioUrl.length > 500) {
+            alert('Audio URL is too long (max 500 characters).');
+            return;
+        }
+        if (thumbnailUrl && thumbnailUrl.length > 500) {
+            alert('Thumbnail URL is too long (max 500 characters).');
+            return;
+        }
+        if (youtubeVideoId && youtubeVideoId.length > 20) {
+            alert('YouTube value is invalid. Please use a valid YouTube URL or video ID.');
+            return;
+        }
+
+        const payload: ChapterSubmitPayload = {
+            chapterNumber,
+            title,
+            description,
+            content,
+            r2AudioUrl,
+            thumbnailUrl,
+            youtubeVideoId,
+            audioDuration:
+                typeof values.audioDuration === 'number' && !Number.isNaN(values.audioDuration)
+                    ? values.audioDuration
+                    : undefined,
+            accessType: values.accessType,
+            storyId: cleanText(values.storyId),
+            language: selectedLocale,
+        };
+
+        await onSubmit(payload);
+    };
+
+    const handleFormError = (formErrors: FieldErrors<ChapterFormValues>) => {
+        const firstError = Object.values(formErrors).find((error) => {
+            if (!error || typeof error !== 'object') return false;
+            return 'message' in error;
+        }) as { message?: unknown } | undefined;
+
+        const message =
+            typeof firstError?.message === 'string'
+                ? firstError.message
+                : 'Invalid form data. Please check your inputs.';
+        alert(message);
+    };
+
     return (
         <form
-            onSubmit={handleSubmit((data) => onSubmit(data))}
+            onSubmit={handleSubmit(handleFormSubmit, handleFormError)}
             className="flex flex-col gap-6"
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

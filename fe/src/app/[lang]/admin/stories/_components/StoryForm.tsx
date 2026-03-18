@@ -40,6 +40,7 @@ const storySchema = z.object({
     redditUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
     whatsappUrl: z.string().url('URL không hợp lệ').optional().or(z.literal('')),
     isRecommended: z.boolean().optional(),
+    isInteractive: z.boolean().optional(),
     language: z.string().optional(),
 }).refine((data) => data.titleVi || data.titleEn, {
     message: 'Phải có ít nhất một tiêu đề (Tiếng Việt hoặc English)',
@@ -51,6 +52,24 @@ const storySchema = z.object({
 
 
 export type StoryFormValues = z.infer<typeof storySchema>;
+export type StorySubmitPayload = {
+    title: string;
+    slug: string;
+    description?: string;
+    thumbnailUrl?: string;
+    authorId: string;
+    status: 'ongoing' | 'completed';
+    categoryIds: number[];
+    audioUrl?: string;
+    facebookGroupUrl?: string;
+    twitterUrl?: string;
+    instagramUrl?: string;
+    redditUrl?: string;
+    whatsappUrl?: string;
+    isRecommended?: boolean;
+    isInteractive?: boolean;
+    chapterIds?: string[];
+};
 
 interface Category {
     id: number;
@@ -78,7 +97,7 @@ interface Author {
 interface StoryFormProps {
     initialData?: Partial<StoryFormValues> & { id?: string };
     selectedLocale?: string;
-    onSubmit: (data: StoryFormValues) => Promise<void>;
+    onSubmit: (data: StorySubmitPayload) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
 }
@@ -130,6 +149,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
             instagramUrl: '',
             redditUrl: '',
             whatsappUrl: '',
+            isInteractive: false,
             ...(initialData
                 ? {
                     titleVi: initialData.titleVi,
@@ -148,6 +168,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     redditUrl: initialData.redditUrl,
                     whatsappUrl: initialData.whatsappUrl,
                     isRecommended: initialData.isRecommended,
+                    isInteractive: initialData.isInteractive,
                     language: initialData.language,
                 }
                 : {}),
@@ -233,19 +254,40 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
 
     const handleFormSubmit = async (values: StoryFormValues) => {
         try {
-            let finalData: StoryFormValues & { chapterIds?: string[] } = {
-                titleVi: values.titleVi,
-                titleEn: values.titleEn,
-                slug: values.slug,
-                descriptionVi: values.descriptionVi,
-                descriptionEn: values.descriptionEn,
+            const cleanText = (value?: string) => {
+                const trimmed = value?.trim();
+                return trimmed ? trimmed : undefined;
+            };
+
+            const titleVi = cleanText(values.titleVi);
+            const titleEn = cleanText(values.titleEn);
+            const descriptionVi = cleanText(values.descriptionVi);
+            const descriptionEn = cleanText(values.descriptionEn);
+
+            const title = isEnglishLocale ? (titleEn || titleVi) : (titleVi || titleEn);
+            if (!title) {
+                alert('Vui lòng nhập ít nhất một tiêu đề truyện.');
+                return;
+            }
+
+            const description = isEnglishLocale ? (descriptionEn || descriptionVi) : (descriptionVi || descriptionEn);
+
+            const finalData: StorySubmitPayload = {
+                title,
+                slug: values.slug.trim(),
+                description,
                 thumbnailUrl: values.thumbnailUrl || undefined,
                 authorId: values.authorId,
                 status: values.status,
                 categoryIds: values.categoryIds,
                 audioUrl: values.audioUrl || undefined,
                 facebookGroupUrl: values.facebookGroupUrl || undefined,
+                twitterUrl: values.twitterUrl || undefined,
+                instagramUrl: values.instagramUrl || undefined,
+                redditUrl: values.redditUrl || undefined,
+                whatsappUrl: values.whatsappUrl || undefined,
                 isRecommended: values.isRecommended,
+                isInteractive: values.isInteractive,
             };
 
             // Include selected chapter IDs for new stories
@@ -253,7 +295,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                 finalData.chapterIds = selectedChapterIds;
             }
 
-            await onSubmit(finalData as StoryFormValues);
+            await onSubmit(finalData);
         } catch (error) {
             console.error('Failed to submit story:', error);
             alert('Có lỗi xảy ra khi lưu truyện. Vui lòng thử lại.');
@@ -359,14 +401,26 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
 
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
-                        <label className="flex cursor-pointer items-center justify-between gap-4">
-                            <div>
-                                <p className="text-sm font-black uppercase tracking-wider text-slate-700">Đề xuất ở trang đọc</p>
-                                <p className="mt-1 text-xs font-medium text-slate-500">Bật để truyện xuất hiện trong slider "Có thể bạn sẽ thích".</p>
-                            </div>
-                            <input type="checkbox" {...register('isRecommended')} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                        </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                            <label className="flex cursor-pointer items-center justify-between gap-4">
+                                <div>
+                                    <p className="text-sm font-black uppercase tracking-wider text-slate-700">Đề xuất ở trang đọc</p>
+                                    <p className="mt-1 text-xs font-medium text-slate-500">Bật để truyện xuất hiện trong slider "Có thể bạn sẽ thích".</p>
+                                </div>
+                                <input type="checkbox" {...register('isRecommended')} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                            </label>
+                        </div>
+
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+                            <label className="flex cursor-pointer items-center justify-between gap-4">
+                                <div>
+                                    <p className="text-sm font-black uppercase tracking-wider text-amber-900">Là Truyện Tương Tác</p>
+                                    <p className="mt-1 text-xs font-medium text-amber-700">Bật nếu truyện này sẽ cho phép người chơi rẽ nhánh.</p>
+                                </div>
+                                <input type="checkbox" {...register('isInteractive')} className="h-5 w-5 rounded border-amber-300 text-amber-600 focus:ring-amber-500" />
+                            </label>
+                        </div>
                     </div>
 
                     {/* Hàng 3: Chọn tác giả nguyên 1 hàng (Searchable Dropdown) */}

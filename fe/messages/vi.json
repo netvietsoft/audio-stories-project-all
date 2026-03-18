@@ -12,6 +12,8 @@
     "trending": "Trending",
     "memberRanking": "BXH Hội Viên",
     "ranking": "Bảng xếp hạng",
+    "storyRanking": "BXH Truyện",
+    "interactiveStories": "Truyện tương tác",
     "searchPlaceholder": "Tìm truyện...",
     "topUp": "Nạp tiền",
     "notifications": "Thông báo",
@@ -148,7 +150,8 @@
     "readListen": "Đọc/Nghe",
     "unlockVip": "VIP",
     "unlockTimed": "Hẹn giờ",
-    "unlockOpened": "Đã mở khóa"
+    "unlockOpened": "Đã mở khóa",
+    "interactiveStoryBadge": "Truyện tương tác"
   },
   "StoryChapterClient": {
     "loadingReader": "Đang tải module đọc truyện...",
@@ -222,7 +225,13 @@
     "collapseReviews": "Thu gọn còn 5 đánh giá",
     "ongoing": "Đang ra",
     "completed": "Hoàn thành",
-    "updating": "Đang cập nhật"
+    "updating": "Đang cập nhật",
+    "variantSelectionTitle": "Lựa chọn diễn biến",
+    "variantSelectionSubtitle": "Hãy chọn một hướng đi để tiếp tục câu chuyện",
+    "unlockVariant": "Mở khóa biến thể",
+    "unlockVariantDescription": "Bạn đang mở khóa biến thể: {title}",
+    "unlockVariantPrice": "Phí mở khóa: {price} credits.",
+    "unlockNow": "Mở khóa ngay"
   },
   "StoryPage": {
     "notFound": "Không tìm thấy truyện",
@@ -263,6 +272,10 @@
     "week": "Tuần",
     "month": "Tháng",
     "all": "Tất cả"
+  },
+  "InteractivePage": {
+    "title": "Truyện tương tác",
+    "subtitle": "Khám phá những câu chuyện với nhiều diễn biến và kết thúc khác nhau dựa trên lựa chọn của bạn."
   },
   "RankingPage": {
     "title": "Bảng xếp hạng",

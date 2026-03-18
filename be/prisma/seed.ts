@@ -257,6 +257,7 @@ async function main() {
     { vi: 'Tiên Nghịch', en: 'Renegade Immortal' },
     { vi: 'Nhất Niệm Vĩnh Hằng', en: 'A Will Eternal' },
     { vi: 'Tinh Thần Biến', en: 'Stellar Transformations' },
+    { vi: 'Truyện Tương Tác Demo', en: 'Interactive Story Demo', isInteractive: true },
   ];
 
   const stories = [] as Awaited<ReturnType<typeof prisma.story.upsert>>[];
@@ -292,6 +293,7 @@ async function main() {
             totalViews: BigInt(200000 + i * 45000),
             isFeatured: i < 3,
             isRecommended: i % 2 === 0,
+            isInteractive: (storyData as any).isInteractive || false,
             featuredOrder: i < 3 ? i + 1 : null,
             description: descriptionVi,
           },
@@ -307,6 +309,7 @@ async function main() {
             totalViews: BigInt(200000 + i * 45000),
             isFeatured: i < 3,
             isRecommended: i % 2 === 0,
+            isInteractive: (storyData as any).isInteractive || false,
             featuredOrder: i < 3 ? i + 1 : null,
             description: descriptionVi,
           },
@@ -344,6 +347,7 @@ async function main() {
             totalViews: BigInt(180000 + i * 40000),
             isFeatured: i < 3,
             isRecommended: i % 2 === 1,
+            isInteractive: (storyData as any).isInteractive || false,
             featuredOrder: i < 3 ? i + 6 : null,
             description: descriptionEn,
           },
@@ -359,6 +363,7 @@ async function main() {
             totalViews: BigInt(180000 + i * 40000),
             isFeatured: i < 3,
             isRecommended: i % 2 === 1,
+            isInteractive: (storyData as any).isInteractive || false,
             featuredOrder: i < 3 ? i + 6 : null,
             description: descriptionEn,
           },
@@ -413,6 +418,7 @@ async function main() {
           audioDuration: 540 + chapterNumber * 12,
           accessType,
           unlocksAt,
+          isInteractive: (storyData as any).isInteractive && chapterNumber === 1 ? true : false,
         },
         create: {
           storyId: storyVi.id,
@@ -427,6 +433,7 @@ async function main() {
           audioDuration: 540 + chapterNumber * 12,
           accessType,
           unlocksAt,
+          isInteractive: (storyData as any).isInteractive && chapterNumber === 1 ? true : false,
         },
       });
 
@@ -476,6 +483,7 @@ async function main() {
           audioDuration: 540 + chapterNumber * 12,
           accessType,
           unlocksAt,
+          isInteractive: (storyData as any).isInteractive && chapterNumber === 1 ? true : false,
         },
         create: {
           storyId: storyEn.id,
@@ -490,6 +498,7 @@ async function main() {
           audioDuration: 540 + chapterNumber * 12,
           accessType,
           unlocksAt,
+          isInteractive: (storyData as any).isInteractive && chapterNumber === 1 ? true : false,
         },
       });
 
@@ -502,6 +511,47 @@ async function main() {
       where: { id: storyEn.id },
       data: { totalChapters: chapterTotal },
     });
+
+    if ((storyData as any).isInteractive) {
+      const firstChapterVi = await prisma.chapter.findFirst({
+        where: { storyId: storyVi.id, chapterNumber: 1 },
+      });
+
+      if (firstChapterVi) {
+        console.log(`Seeding variants for ${titleVi} Chapter 1...`);
+        const variants = [
+          { title: 'Path A: The Silent Approach', unlockPrice: 0, content: 'You choose to sneak in...' },
+          { title: 'Path B: The Direct Confrontation', unlockPrice: 100, content: 'You charge forward!' },
+          { title: 'Path C: The Secret Alliance', unlockPrice: 200, content: 'You talk to the guard...' },
+        ];
+
+        for (let j = 0; j < variants.length; j++) {
+          await (prisma.chapterVariant as any).upsert({
+            where: {
+              id: `${firstChapterVi.id.slice(0, 32)}-v${j}`,
+            },
+            update: {
+              title: variants[j].title,
+              unlockPrice: variants[j].unlockPrice,
+              content: variants[j].content,
+              orderIndex: j,
+              audioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${j + 1}.mp3`,
+              audioDuration: 300 + j * 60,
+            },
+            create: {
+              id: `${firstChapterVi.id.slice(0, 32)}-v${j}`,
+              chapterId: firstChapterVi.id,
+              title: variants[j].title,
+              unlockPrice: variants[j].unlockPrice,
+              content: variants[j].content,
+              orderIndex: j,
+              audioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${j + 1}.mp3`,
+              audioDuration: 300 + j * 60,
+            },
+          });
+        }
+      }
+    }
   }
 
   console.log('Seeding reviews...');
@@ -584,22 +634,20 @@ async function main() {
     });
 
     if (chapterId) {
-      await prisma.listeningHistory.upsert({
+      await (prisma.listeningHistory as any).deleteMany({
         where: {
-          userId_chapterId: {
-            userId: user.id,
-            chapterId,
-          },
+          userId: user.id,
+          chapterId,
+          variantId: null,
         },
-        update: {
-          storyId: historyStory.id,
-          progressSeconds: 120 + i * 35,
-          lastListenedAt: new Date(Date.now() - i * 3600 * 1000),
-        },
-        create: {
+      });
+
+      await (prisma.listeningHistory as any).create({
+        data: {
           userId: user.id,
           storyId: historyStory.id,
           chapterId,
+          variantId: null,
           progressSeconds: 120 + i * 35,
           lastListenedAt: new Date(Date.now() - i * 3600 * 1000),
         },

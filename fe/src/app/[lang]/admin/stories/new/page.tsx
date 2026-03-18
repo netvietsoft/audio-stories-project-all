@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Newspaper, ChevronLeft } from 'lucide-react';
 import Link from '@/components/shared/LocalizedLink';
 import { StoryForm } from '../_components/StoryForm';
-import type { StoryFormValues } from '../_components/StoryForm';
+import type { StorySubmitPayload } from '../_components/StoryForm';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { revalidateStoriesCache } from '@/app/[lang]/admin/_actions/revalidate';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
@@ -16,6 +16,7 @@ export default function NewStoryPage() {
     const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
     const initialLocale = searchParams.get('lang') || 'vi';
+    const isInteractive = searchParams.get('isInteractive') === 'true';
     const [selectedLocale, setSelectedLocale] = useState(initialLocale);
     const { languages } = useAdminLanguages();
 
@@ -25,7 +26,7 @@ export default function NewStoryPage() {
         }
     }, [languages, selectedLocale]);
 
-    const handleSubmit = async (data: StoryFormValues) => {
+    const handleSubmit = async (data: StorySubmitPayload) => {
         setIsLoading(true);
         try {
             // Add language field based on selected locale
@@ -76,6 +77,7 @@ export default function NewStoryPage() {
 
             {/* Form */}
             <StoryForm
+                initialData={{ isInteractive }}
                 selectedLocale={selectedLocale}
                 onSubmit={handleSubmit}
                 onCancel={() => router.push('/admin/stories')}

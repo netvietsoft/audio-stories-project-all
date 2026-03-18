@@ -1,4 +1,4 @@
-import { IsInt, IsString, IsUUID, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 
 export class SyncHistoryDto {
   @IsString()
@@ -12,4 +12,9 @@ export class SyncHistoryDto {
   @IsInt()
   @Min(0)
   progressSeconds: number;
+
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  variantId?: string;
 }

@@ -5,7 +5,7 @@ import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { BookOpen, ChevronDown, Clock3, Facebook, Globe, Headphones, ListMusic, Lock, Play, PlayCircle, Share2, Star } from "lucide-react";
+import { BookOpen, ChevronDown, Clock3, Facebook, Globe, Headphones, ListMusic, Lock, Play, PlayCircle, Share2, Star, Zap } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
@@ -43,6 +43,7 @@ type StoryDetail = {
   author?: { name: string };
   categories: { category: { id: number; name: string; slug: string } }[];
   chapters: ChapterItem[];
+  isInteractive?: boolean;
 };
 
 const formatDuration = (seconds?: number | null) => {
@@ -202,6 +203,11 @@ export default function StoryDetailClient() {
               }`}>
                 {story.status === "completed" ? t("statusCompleted") : t("statusOngoing")}
               </span>
+              {story.isInteractive && (
+                <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
+                  {t("interactiveStoryBadge")}
+                </span>
+              )}
             </div>
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("language")}</p>

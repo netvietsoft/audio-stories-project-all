@@ -7,7 +7,7 @@ import { ChevronLeft, Loader2, Newspaper } from "lucide-react";
 
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
 import { revalidateStoriesCache } from "@/app/[lang]/admin/_actions/revalidate";
-import { StoryForm, type StoryFormValues } from "../_components/StoryForm";
+import { StoryForm, type StoryFormValues, type StorySubmitPayload } from "../_components/StoryForm";
 
 export default function EditStoryPage() {
   const router = useRouter();
@@ -52,6 +52,7 @@ export default function EditStoryPage() {
           redditUrl: story.redditUrl || "",
           whatsappUrl: story.whatsappUrl || "",
           isRecommended: !!story.isRecommended,
+          isInteractive: !!story.isInteractive,
         });
       } catch (error) {
         console.error("Failed to fetch story:", error);
@@ -63,7 +64,7 @@ export default function EditStoryPage() {
     fetchStory();
   }, [storyId]);
 
-  const handleSubmit = async (data: StoryFormValues) => {
+  const handleSubmit = async (data: StorySubmitPayload) => {
     if (!storyId) return;
 
     setIsSubmitting(true);

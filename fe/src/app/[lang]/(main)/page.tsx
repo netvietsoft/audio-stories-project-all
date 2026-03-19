@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
+import axios from "axios";
 import { useLocale, useTranslations } from "next-intl";
 import { Headphones, Heart, PlayCircle } from "lucide-react";
 
@@ -232,13 +233,31 @@ export default function HomePage() {
     const loadPersonalized = async () => {
       setIsPersonalizedLoading(true);
       try {
-        const [favoriteRes, historyRes] = await Promise.all([
+        const [favoriteRes, historyRes] = await Promise.allSettled([
           apiClient.get<FavoriteResponse>("/favorites", { params: { page: 1, limit: 3, sort: "latest" } }),
           apiClient.get<HistoryResponse>("/history", { params: { page: 1, limit: 3 } }),
         ]);
 
-        setFavoriteStories(favoriteRes.data.data || []);
-        setHistoryItems(historyRes.data.data || []);
+        const hasUnauthorized = [favoriteRes, historyRes].some(
+          (result) => result.status === "rejected" && axios.isAxiosError(result.reason) && result.reason.response?.status === 401,
+        );
+
+        if (hasUnauthorized) {
+          setFavoriteStories([]);
+          setHistoryItems([]);
+          return;
+        }
+
+        const nextFavorites = favoriteRes.status === "fulfilled" ? (favoriteRes.value.data.data || []) : [];
+        const nextHistory = historyRes.status === "fulfilled" ? (historyRes.value.data.data || []) : [];
+
+        setFavoriteStories(nextFavorites);
+        setHistoryItems(nextHistory);
+
+        const firstError = [favoriteRes, historyRes].find((result) => result.status === "rejected");
+        if (firstError && firstError.status === "rejected") {
+          console.error("Failed to load personalized home data", firstError.reason);
+        }
       } catch (error) {
         console.error("Failed to load personalized home data", error);
       } finally {

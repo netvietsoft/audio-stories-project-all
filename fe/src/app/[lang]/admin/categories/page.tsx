@@ -33,6 +33,15 @@ interface Category {
     };
 }
 
+type CategoryFormInput = {
+    name: string;
+    nameVi?: string;
+    nameEn?: string;
+    slug: string;
+    description?: string;
+    iconUrl?: string;
+};
+
 export default function CategoriesPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -63,7 +72,7 @@ export default function CategoriesPage() {
 
     useEffect(() => {
         fetchCategories();
-    }, [page, searchTerm]);
+    }, [page, searchTerm, selectedLocale]);
 
     const fetchCategories = async () => {
         setIsLoading(true);
@@ -71,6 +80,7 @@ export default function CategoriesPage() {
             const params = new URLSearchParams({
                 page: page.toString(),
                 limit: limit.toString(),
+                language: selectedLocale,
                 ...(searchTerm ? { search: searchTerm } : {}),
             });
             const res = await apiClient.get(`/categories?${params.toString()}`);
@@ -149,14 +159,42 @@ export default function CategoriesPage() {
         setSelectedIds(next);
     };
 
-    const handleSubmit = async (data: any) => {
+    const handleSubmit = async (data: CategoryFormInput) => {
         setIsSubmitting(true);
         try {
+            const cleanText = (value?: string) => {
+                const trimmed = value?.trim();
+                return trimmed ? trimmed : undefined;
+            };
+
+            const nameVi = cleanText(data.nameVi);
+            const nameEn = cleanText(data.nameEn);
+            const fallbackName = cleanText(data.name);
+            const name =
+                selectedLocale === 'en'
+                    ? (nameEn || nameVi || fallbackName)
+                    : (nameVi || nameEn || fallbackName);
+
+            if (!name) {
+                alert('Vui lòng nhập tên danh mục.');
+                return;
+            }
+
+            const basePayload = {
+                name,
+                slug: data.slug.trim(),
+                description: cleanText(data.description),
+                iconUrl: cleanText(data.iconUrl),
+            };
+
             if (editingCategory) {
-                await apiClient.patch(`/categories/${editingCategory.id}`, data);
+                await apiClient.patch(`/categories/${editingCategory.id}`, basePayload);
                 fetchCategories(); // Refetch to get updated list
             } else {
-                await apiClient.post('/categories', data);
+                await apiClient.post('/categories', {
+                    ...basePayload,
+                    language: selectedLocale,
+                });
                 setPage(1); // Go to first page to see new category
                 fetchCategories();
             }

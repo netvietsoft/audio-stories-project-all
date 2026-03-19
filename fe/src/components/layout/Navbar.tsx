@@ -70,6 +70,7 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [isRankingOpen, setIsRankingOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
@@ -82,6 +83,7 @@ export default function Navbar() {
 
   // Refs
   const categoryMenuRef = useRef<HTMLDivElement>(null);
+  const rankingMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const notifMenuRef = useRef<HTMLDivElement>(null);
@@ -151,6 +153,9 @@ export default function Navbar() {
     const handleClickOutside = (event: MouseEvent) => {
       if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target as Node)) {
         setIsCategoryOpen(false);
+      }
+      if (rankingMenuRef.current && !rankingMenuRef.current.contains(event.target as Node)) {
+        setIsRankingOpen(false);
       }
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
@@ -306,8 +311,36 @@ export default function Navbar() {
                 </div>
                 <Link href="/new" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("new")}</Link>
                 <Link href="/trending" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("trending")}</Link>
-                <Link href="/ranking" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("ranking")}</Link>
-                <Link href="/vinh-danh" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("memberRanking")}</Link>
+                <Link href="/interactive" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("interactiveStories")}</Link>
+                <div
+                  ref={rankingMenuRef}
+                  className="relative"
+                >
+                  <button 
+                    onClick={() => setIsRankingOpen(!isRankingOpen)}
+                    className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                  >
+                    BXH <ChevronDown className="ml-1 h-4 w-4" />
+                  </button>
+                  {isRankingOpen && (
+                    <div className="absolute top-full left-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 mt-1">
+                      <Link 
+                        href="/ranking" 
+                        onClick={() => setIsRankingOpen(false)}
+                        className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        {t("ranking")}
+                      </Link>
+                      <Link 
+                        href="/vinh-danh" 
+                        onClick={() => setIsRankingOpen(false)}
+                        className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        {t("memberRanking")}
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </nav>
             </div>
 
@@ -751,18 +784,39 @@ export default function Navbar() {
                       </div>
                       <span className="text-sm tracking-tight">{t("popular")}</span>
                     </Link>
-                    <Link href="/ranking" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all">
+                    <Link href="/interactive" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all">
                       <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-                        <Trophy className="w-5 h-5" />
+                        <Sparkles className="w-5 h-5" />
                       </div>
-                      <span className="text-sm tracking-tight">{t("ranking")}</span>
+                      <span className="text-sm tracking-tight">{t("interactiveStories")}</span>
                     </Link>
-                    <Link href="/vinh-danh" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all">
-                      <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
-                        <Trophy className="w-5 h-5" />
-                      </div>
-                      <span className="text-sm tracking-tight">{t("hallOfFame")}</span>
-                    </Link>
+                    
+                    {/* BXH Dropdown */}
+                    <div className="space-y-1">
+                      <button 
+                        onClick={() => setIsRankingOpen(!isRankingOpen)}
+                        className="group flex items-center justify-between w-full px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
+                            <Trophy className="w-5 h-5" />
+                          </div>
+                          <span className="text-sm tracking-tight">BXH</span>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 transition-transform ${isRankingOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {isRankingOpen && (
+                        <div className="ml-14 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                          <Link href="/ranking" onClick={closeMobileMenu} className="block px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all">
+                            {t("ranking")}
+                          </Link>
+                          <Link href="/vinh-danh" onClick={closeMobileMenu} className="block px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all">
+                            {t("memberRanking")}
+                          </Link>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

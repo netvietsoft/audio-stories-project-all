@@ -16,7 +16,7 @@ import {
     Check,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
-import { ChapterForm } from '../stories/[id]/chapters/_components/ChapterForm';
+import { ChapterForm, type ChapterSubmitPayload } from '../stories/[id]/chapters/_components/ChapterForm';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
@@ -203,59 +203,22 @@ export default function ChaptersGlobalPage() {
         }
     };
 
-    const handleSubmit = async (data: {
-        chapterNumber: number;
-        titleVi: string;
-        titleEn: string;
-        descriptionVi?: string;
-        descriptionEn?: string;
-        contentVi?: string;
-        contentEn?: string;
-        audioUrlVi?: string;
-        audioUrlEn?: string;
-        thumbnailUrl?: string;
-        youtubeVideoId?: string;
-        audioDuration?: number;
-        accessType: 'free' | 'timed' | 'vip';
-        storyId?: string;
-        unlocksAt?: string;
-        language?: string;
-    }) => {
+    const handleSubmit = async (data: ChapterSubmitPayload) => {
         setIsSubmitting(true);
         try {
+            const payload: ChapterSubmitPayload = {
+                ...data,
+                thumbnailUrl: data.thumbnailUrl || undefined,
+                youtubeVideoId: data.youtubeVideoId || undefined,
+                r2AudioUrl: data.r2AudioUrl || undefined,
+                storyId: data.storyId || undefined,
+                language: selectedLocale,
+            };
+
             if (editingChapter) {
-                const updatePayload = {
-                    chapterNumber: data.chapterNumber,
-                    titleVi: data.titleVi,
-                    titleEn: data.titleEn,
-                    descriptionVi: data.descriptionVi || undefined,
-                    descriptionEn: data.descriptionEn || undefined,
-                    contentVi: data.contentVi || undefined,
-                    contentEn: data.contentEn || undefined,
-                    audioUrlVi: data.audioUrlVi || undefined,
-                    audioUrlEn: data.audioUrlEn || undefined,
-                    thumbnailUrl: data.thumbnailUrl || undefined,
-                    youtubeVideoId: data.youtubeVideoId || undefined,
-                    audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
-                    accessType: data.accessType,
-                    language: selectedLocale,
-                };
-                await apiClient.patch(`/chapters/${editingChapter.id}`, updatePayload);
+                await apiClient.patch(`/chapters/${editingChapter.id}`, payload);
             } else {
-                const createPayload = {
-                    ...data,
-                    descriptionVi: data.descriptionVi || undefined,
-                    descriptionEn: data.descriptionEn || undefined,
-                    contentVi: data.contentVi || undefined,
-                    contentEn: data.contentEn || undefined,
-                    audioUrlVi: data.audioUrlVi || undefined,
-                    audioUrlEn: data.audioUrlEn || undefined,
-                    thumbnailUrl: data.thumbnailUrl || undefined,
-                    youtubeVideoId: data.youtubeVideoId || undefined,
-                    audioDuration: typeof data.audioDuration === 'number' ? data.audioDuration : undefined,
-                    language: selectedLocale,
-                };
-                await apiClient.post(`/chapters`, createPayload);
+                await apiClient.post(`/chapters`, payload);
             }
             setIsModalOpen(false);
             fetchChapters();

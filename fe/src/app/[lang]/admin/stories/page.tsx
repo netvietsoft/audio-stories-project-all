@@ -103,6 +103,7 @@ export default function StoriesPage() {
                 page: page.toString(),
                 limit: '20',
                 lang: selectedLocale,
+                isInteractive: 'false',
                 ...(filterStatus !== 'all' ? { status: filterStatus } : {}),
                 ...(searchTerm ? { search: searchTerm } : {}),
             });

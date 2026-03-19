@@ -23,6 +23,11 @@ export class ChaptersService {
         return this.prisma.chapter.findMany({
             where: { storyId, deletedAt: null },
             orderBy: { chapterNumber: 'asc' },
+            include: {
+                _count: {
+                    select: { variants: true },
+                },
+            },
         });
     }
 

@@ -12,6 +12,8 @@
     "trending": "Trending",
     "memberRanking": "Member Ranking",
     "ranking": "Ranking",
+    "storyRanking": "Story Ranking",
+    "interactiveStories": "Interactive Stories",
     "searchPlaceholder": "Search stories...",
     "topUp": "Top Up",
     "notifications": "Notifications",
@@ -148,7 +150,8 @@
     "readListen": "Read/Listen",
     "unlockVip": "VIP",
     "unlockTimed": "Timed",
-    "unlockOpened": "Unlocked"
+    "unlockOpened": "Unlocked",
+    "interactiveStoryBadge": "Interactive Story"
   },
   "StoryChapterClient": {
     "loadingReader": "Loading reading module...",
@@ -222,7 +225,13 @@
     "collapseReviews": "Collapse back to 5 reviews",
     "ongoing": "Ongoing",
     "completed": "Completed",
-    "updating": "Updating"
+    "updating": "Updating",
+    "variantSelectionTitle": "Story Paths",
+    "variantSelectionSubtitle": "Choose a path to continue the story",
+    "unlockVariant": "Unlock Variant",
+    "unlockVariantDescription": "You are unlocking variant: {title}",
+    "unlockVariantPrice": "Unlock fee: {price} credits.",
+    "unlockNow": "Unlock Now"
   },
   "StoryPage": {
     "notFound": "Story not found",
@@ -263,6 +272,10 @@
     "week": "Week",
     "month": "Month",
     "all": "All"
+  },
+  "InteractivePage": {
+    "title": "Interactive Stories",
+    "subtitle": "Discover stories with multiple plots and endings based on your choices."
   },
   "RankingPage": {
     "title": "Rankings",

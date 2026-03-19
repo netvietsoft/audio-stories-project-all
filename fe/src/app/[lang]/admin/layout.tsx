@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from '@/components/shared/LocalizedLink';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift } from 'lucide-react';
+import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift, Zap } from 'lucide-react';
 
 import { useState, useEffect } from 'react';
 import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
@@ -110,6 +110,7 @@ export default function AdminLayout({
         { href: '/admin', label: 'Dashboard', icon: Home },
         { href: '/admin/users', label: 'Quản lý Người dùng', icon: Users },
         { href: '/admin/stories', label: 'Quản lý Truyện', icon: Newspaper },
+        { href: '/admin/interactive-stories', label: 'Truyện Tương Tác', icon: Zap },
         { href: '/admin/chapters', label: 'Quản lý Chương', icon: Music },
         { href: '/admin/categories', label: 'Quản lý Danh mục', icon: LayoutGrid },
         { href: '/admin/authors', label: 'Quản lý Tác giả', icon: UserCircle },

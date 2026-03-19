@@ -28,6 +28,9 @@ import {
   VolumeX,
   Smile,
   Gift,
+  Zap,
+  Clock3,
+  ArrowRight,
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
@@ -36,10 +39,29 @@ import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscr
 import { getLocaleLabel, getLocalizedValue, getRequestedLocaleValue } from "@/lib/story-localization";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
+import { useAuth } from "@/auth/auth-provider";
 
 const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
 
 const RecommendedSlider = dynamic(() => import("@/components/story/RecommendedSlider"));
+
+type ChapterVariant = {
+  id: string;
+  id_old?: string; // For backward compatibility if needed
+  title: string;
+  titleVi?: string | null;
+  titleEn?: string | null;
+  audioUrl?: string | null;
+  audioUrlVi?: string | null;
+  audioUrlEn?: string | null;
+  audioDuration: number | null;
+  unlockPrice: number;
+  orderIndex: number;
+  isDefault: boolean;
+  content?: string | null;
+  nextChapterId?: string | null;
+  nextVariantId?: string | null;
+};
 
 type ChapterItem = {
   id: string;
@@ -61,6 +83,8 @@ type ChapterItem = {
   audioDuration: number | null;
   accessType: "free" | "timed" | "vip";
   unlocksAt: string | null;
+  isInteractive?: boolean;
+  variants?: ChapterVariant[];
 };
 
 type StoryListItem = {
@@ -101,6 +125,7 @@ type StoryDetail = {
     };
   }>;
   chapters: ChapterItem[];
+  isInteractive?: boolean;
 };
 
 type RecommendedResponse = {
@@ -259,13 +284,19 @@ export default function StoryChapterClient() {
   const [showTopupAction, setShowTopupAction] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const user = useUserStore((state) => state.user);
+  const { refreshProfile } = useAuth();
 
-  // Gift states
+  // Variant states
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [unlockedVariantIds, setUnlockedVariantIds] = useState<string[]>([]);
+  const [variants, setVariants] = useState<ChapterVariant[]>([]);
+  const [isUnlocking, setIsUnlocking] = useState(false);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [giftAmount, setGiftAmount] = useState("");
   const [giftMessage, setGiftMessage] = useState("");
   const [isGiftingCredits, setIsGiftingCredits] = useState(false);
   const [giftError, setGiftError] = useState("");
+  const [isVariantDropdownOpen, setIsVariantDropdownOpen] = useState(false);
 
   const setUser = useUserStore((state) => state.setUser);
 
@@ -349,10 +380,13 @@ export default function StoryChapterClient() {
         const detail = detailRes.data;
         const normalizedDetail: StoryDetail = {
           ...detail,
+          isInteractive: detail.isInteractive,
           title: getLocalizedValue(locale, detail.titleVi, detail.titleEn, detail.title),
           description: getLocalizedValue(locale, detail.descriptionVi, detail.descriptionEn, detail.description),
           chapters: (detail.chapters || []).map((chapter) => ({
             ...chapter,
+            isInteractive: chapter.isInteractive,
+            variants: chapter.variants || [],
             title: getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title),
             description: getLocalizedValue(locale, chapter.descriptionVi, chapter.descriptionEn, chapter.description || ""),
             content: getLocalizedValue(locale, chapter.contentVi, chapter.contentEn, chapter.content || ""),
@@ -376,6 +410,12 @@ export default function StoryChapterClient() {
 
         if (selected) {
           setSelectedChapterId(selected.id);
+          setVariants(selected.variants || []);
+          // Auto-select default variant
+          const defaultVar = (selected.variants || []).find((v: ChapterVariant) => v.isDefault);
+          if (defaultVar) {
+            setSelectedVariantId(defaultVar.id);
+          }
           if (!pickedBySlug && fallbackChapter) {
             router.replace(chapterHref(normalizedDetail.slug, fallbackChapter.chapterNumber));
           }
@@ -401,6 +441,24 @@ export default function StoryChapterClient() {
     if (!story) return;
     void loadReviews(story.id, reviewSort, 1, false);
   }, [loadReviews, reviewSort, story]);
+
+  useEffect(() => {
+    if (!selectedChapterId || !user) {
+      setUnlockedVariantIds([]);
+      return;
+    }
+
+    const fetchUnlocked = async () => {
+      try {
+        const res = await apiClient.get<string[]>(`/chapters/${selectedChapterId}/unlocked-variants`);
+        setUnlockedVariantIds(res.data || []);
+      } catch (error) {
+        console.error("Failed to fetch unlocked variants:", error);
+      }
+    };
+
+    void fetchUnlocked();
+  }, [selectedChapterId, user]);
 
   useEffect(
     () => () => {
@@ -482,6 +540,11 @@ export default function StoryChapterClient() {
     return story.chapters.find((chapter) => chapter.id === selectedChapterId) || story.chapters[0] || null;
   }, [selectedChapterId, story]);
 
+  const selectedVariant = useMemo(() => {
+    if (!selectedVariantId) return null;
+    return variants.find((v) => v.id === selectedVariantId) || null;
+  }, [selectedVariantId, variants]);
+
   const isVipActive = useMemo(() => {
     if (!user) return false;
     if ((user.vipTier || 0) <= 0) return false;
@@ -529,9 +592,17 @@ export default function StoryChapterClient() {
     );
   }, [chapterQuery, story, t]);
 
-  const selectedChapterTitle = selectedChapter
-    ? getLocalizedValue(locale, selectedChapter.titleVi, selectedChapter.titleEn, selectedChapter.title)
-    : "";
+  const selectedChapterTitle = useMemo(() => {
+    const baseTitle = selectedChapter
+      ? getLocalizedValue(locale, selectedChapter.titleVi, selectedChapter.titleEn, selectedChapter.title)
+      : "";
+    if (selectedVariant) {
+      const variantTitle = getLocalizedValue(locale, selectedVariant.titleVi, selectedVariant.titleEn, selectedVariant.title);
+      return `${baseTitle} - ${variantTitle}`;
+    }
+    return baseTitle;
+  }, [locale, selectedChapter, selectedVariant]);
+
   const selectedChapterDescription = selectedChapter
     ? getRequestedLocaleValue(
       locale,
@@ -540,7 +611,7 @@ export default function StoryChapterClient() {
       !selectedChapter.descriptionVi && !selectedChapter.descriptionEn ? selectedChapter.description : "",
     )
     : "";
-  const selectedChapterContent = selectedChapter
+  const selectedChapterContentRaw = selectedChapter
     ? getRequestedLocaleValue(
       locale,
       selectedChapter.contentVi,
@@ -548,14 +619,31 @@ export default function StoryChapterClient() {
       !selectedChapter.contentVi && !selectedChapter.contentEn ? selectedChapter.content : "",
     )
     : "";
-  const selectedChapterAudioUrl = selectedChapter
-    ? getRequestedLocaleValue(
-      locale,
-      selectedChapter.audioUrlVi,
-      selectedChapter.audioUrlEn,
-      !selectedChapter.audioUrlVi && !selectedChapter.audioUrlEn ? selectedChapter.r2AudioUrl : "",
-    )
-    : "";
+  
+  const contentParts = selectedChapterContentRaw.split('[DIEN_BIEN]');
+  const hasInlineChoice = contentParts.length > 1;
+  const contentBeforeChoice = contentParts[0];
+  const contentAfterChoice = contentParts.slice(1).join('[DIEN_BIEN]');
+
+  const selectedChapterAudioUrl = useMemo(() => {
+    if (selectedVariant) {
+      return getRequestedLocaleValue(
+        locale,
+        selectedVariant.audioUrlVi,
+        selectedVariant.audioUrlEn,
+        !selectedVariant.audioUrlVi && !selectedVariant.audioUrlEn ? selectedVariant.audioUrl : "",
+      ) || "";
+    }
+    if (selectedChapter) {
+      return getRequestedLocaleValue(
+        locale,
+        selectedChapter.audioUrlVi,
+        selectedChapter.audioUrlEn,
+        !selectedChapter.audioUrlVi && !selectedChapter.audioUrlEn ? selectedChapter.r2AudioUrl : "",
+      ) || "";
+    }
+    return "";
+  }, [locale, selectedChapter, selectedVariant]);
   const localePendingLabel = getLocaleLabel(locale);
   const translationPendingMessage = locale === "en"
     ? `This story does not have an ${localePendingLabel} version for this chapter yet. We will update it as soon as possible.`
@@ -627,8 +715,9 @@ export default function StoryChapterClient() {
   }, [currentTrack?.id, story]);
 
   const playChapter = useCallback(
-    async (chapter: ChapterItem, selectedStory: StoryDetail, autoPlay = true) => {
+    async (chapter: ChapterItem, selectedStory: StoryDetail, autoPlay = true, variantId?: string) => {
       setSelectedChapterId(chapter.id);
+      const vId = variantId || selectedVariantId;
 
       const isTimedLocked =
         chapter.accessType === "timed" &&
@@ -643,6 +732,11 @@ export default function StoryChapterClient() {
         setIsUnlockModalOpen(true);
         return;
       }
+
+      // If variant is requested but was not provided as arg, use state
+      const targetVariant = variantId
+        ? (chapter.variants?.find(v => v.id === variantId))
+        : (chapter.id === selectedChapterId ? selectedVariant : null);
 
       const mappedQueue = selectedStory.chapters.map((item) => ({
         id: item.id,
@@ -661,18 +755,33 @@ export default function StoryChapterClient() {
         coverUrl: item.thumbnailUrl || selectedStory.thumbnailUrl || undefined,
       }));
 
-      const chapterAudioUrl = getRequestedLocaleValue(
-        locale,
-        chapter.audioUrlVi,
-        chapter.audioUrlEn,
-        !chapter.audioUrlVi && !chapter.audioUrlEn ? chapter.r2AudioUrl : "",
-      ) || "";
+      let chapterAudioUrl = "";
+      let chapterTitle = t("chapterTitle", { number: chapter.chapterNumber, title: chapter.title });
+
+      if (targetVariant) {
+        chapterAudioUrl = getRequestedLocaleValue(
+          locale,
+          targetVariant.audioUrlVi,
+          targetVariant.audioUrlEn,
+          !targetVariant.audioUrlVi && !targetVariant.audioUrlEn ? targetVariant.audioUrl : "",
+        ) || "";
+        const variantTitle = getLocalizedValue(locale, targetVariant.titleVi, targetVariant.titleEn, targetVariant.title);
+        chapterTitle = `${chapterTitle} - ${variantTitle}`;
+      } else {
+        chapterAudioUrl = getRequestedLocaleValue(
+          locale,
+          chapter.audioUrlVi,
+          chapter.audioUrlEn,
+          !chapter.audioUrlVi && !chapter.audioUrlEn ? chapter.r2AudioUrl : "",
+        ) || "";
+      }
 
       const track = {
         id: chapter.id,
         storyId: selectedStory.id,
         chapterId: chapter.id,
-        title: t("chapterTitle", { number: chapter.chapterNumber, title: chapter.title }),
+        variantId: targetVariant?.id,
+        title: chapterTitle,
         storySlug: selectedStory.slug,
         chapterNumber: chapter.chapterNumber,
         author: selectedStory.author?.name,
@@ -695,18 +804,73 @@ export default function StoryChapterClient() {
         togglePlay(false);
       }
     },
-    [isVipActive, locale, playTrack, setQueue, setTrack, t, togglePlay],
+    [isVipActive, locale, playTrack, selectedChapterId, selectedVariant, selectedVariantId, setQueue, setTrack, t, togglePlay],
   );
 
   const goToChapter = useCallback(
     (chapter: ChapterItem, autoPlay = false) => {
       if (!story) return;
       setIsChapterMenuOpen(false);
+      if (chapter.id !== selectedChapterId) {
+        setSelectedVariantId(null);
+        setVariants(chapter.variants || []);
+        // Auto-select default variant
+        const defaultVar = (chapter.variants || []).find((v) => v.isDefault);
+        if (defaultVar) {
+          setSelectedVariantId(defaultVar.id);
+        }
+      }
       router.push(chapterHref(story.slug, chapter.chapterNumber));
       void playChapter(chapter, story, autoPlay);
     },
-    [playChapter, router, story],
+    [playChapter, router, selectedChapterId, setVariants, setSelectedVariantId, story],
   );
+
+  const handleSelectVariant = useCallback(
+    async (variant: ChapterVariant) => {
+      if (!selectedChapter || !story) return;
+
+      const isFree = variant.unlockPrice <= 0;
+      const isUnlocked = unlockedVariantIds.includes(variant.id);
+
+      if (!isFree && !isUnlocked && !isVipActive) {
+        setSelectedVariantId(variant.id);
+        setUnlockError("");
+        setShowTopupAction(false);
+        setIsUnlockModalOpen(true);
+        return;
+      }
+
+      setSelectedVariantId(variant.id);
+      void playChapter(selectedChapter, story, true, variant.id);
+    },
+    [isVipActive, playChapter, selectedChapter, story, unlockedVariantIds, setSelectedVariantId],
+  );
+
+  const handleUnlockVariant = useCallback(async () => {
+    if (!selectedVariant || !selectedChapterId) return;
+
+    setIsUnlocking(true);
+    setUnlockError("");
+    try {
+      await apiClient.post(`/chapter-variants/${selectedVariant.id}/unlock`);
+      setUnlockedVariantIds((prev) => [...prev, selectedVariant.id]);
+      setIsUnlockModalOpen(false);
+      void refreshProfile();
+      if (story && selectedChapter) {
+        void playChapter(selectedChapter, story, true, selectedVariant.id);
+      }
+    } catch (error: any) {
+      console.error("Failed to unlock variant:", error);
+      const msg = error.response?.data?.message || "Lỗi khi mở khoá biến thể";
+      setUnlockError(msg);
+      if (msg.includes("credit") || msg.toLowerCase().includes("balance")) {
+        setShowTopupAction(true);
+      }
+    } finally {
+      setIsUnlocking(false);
+    }
+  }, [selectedVariant, selectedChapterId, story, selectedChapter, playChapter, setUnlockedVariantIds, setIsUnlockModalOpen, setUnlockError, setShowTopupAction, setIsUnlocking, apiClient]);
 
   const playByIndex = useCallback(
     (index: number, autoPlay = true) => {
@@ -726,6 +890,8 @@ export default function StoryChapterClient() {
       return;
     }
 
+    // Interactive branching is handled via manual button, not auto-jump
+
     if (isShuffle) {
       const randomIndex = Math.floor(Math.random() * story.chapters.length);
       playByIndex(randomIndex);
@@ -738,7 +904,7 @@ export default function StoryChapterClient() {
     }
 
     playByIndex(activeChapterIndex + 1);
-  }, [activeChapterIndex, goToChapter, isShuffle, playByIndex, repeatMode, selectedChapter, story]);
+  }, [activeChapterIndex, goToChapter, isShuffle, playByIndex, repeatMode, selectedChapter, selectedVariant, story]);
 
   const playPrev = useCallback(() => {
     if (!story || !story.chapters.length) return;
@@ -834,6 +1000,7 @@ export default function StoryChapterClient() {
     setUnlockError("");
     setShowTopupAction(false);
     setIsUnlockModalOpen(false);
+    void refreshProfile();
   };
 
   const handleGiftCredits = async () => {
@@ -866,10 +1033,7 @@ export default function StoryChapterClient() {
       });
 
       // Update user credits
-      setUser({
-        ...user,
-        credits: (user.credits ?? 0) - amount,
-      });
+      void refreshProfile();
 
       // Reset form and close modal
       setGiftAmount("");
@@ -1066,6 +1230,112 @@ export default function StoryChapterClient() {
           {/* RIGHT STICKY SIDEBAR */}
           <div className="lg:col-start-2 lg:row-start-1 lg:row-end-6 relative lg:sticky lg:top-24 h-fit flex flex-col gap-3 z-10">
 
+            {/* Side Panel 1.5: Variant Selection (Interactive Stories) - Moved Inline if hasInlineChoice */}
+            {variants.length > 0 && !hasInlineChoice && (
+              <section className="rounded-2xl border border-gray-300 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/30">
+                <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-gray-900 dark:text-gray-100">
+                  ⚡ {t("variantSelectionTitle")}
+                </h2>
+
+                {!selectedVariantId ? (
+                  <div className="space-y-2">
+                    {variants.map((v) => {
+                      const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
+
+                      return (
+                        <button
+                          key={v.id}
+                          onClick={() => handleSelectVariant(v)}
+                          className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border transition-all border-gray-200 bg-white/50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
+                        >
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className="text-sm font-bold truncate text-gray-700 dark:text-gray-300">
+                              {getLocalizedValue(locale, v.titleVi, v.titleEn, v.title)}
+                            </p>
+                            <p className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
+                              <Clock3 className="h-3 w-3" /> {formatDuration(v.audioDuration)}
+                            </p>
+                          </div>
+
+                          {!isUnlocked && (
+                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-black">
+                              <Lock className="h-3 w-3" />
+                              {v.unlockPrice}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-300 bg-white dark:bg-gray-800/60 shadow-md">
+                      <div 
+                        onClick={() => handleSelectVariant(selectedVariant!)}
+                        className="flex-1 min-w-0 text-left cursor-pointer"
+                      >
+                        <p className="text-sm font-bold truncate text-amber-900 dark:text-amber-100">
+                          {getLocalizedValue(locale, selectedVariant?.titleVi, selectedVariant?.titleEn, selectedVariant?.title || "")}
+                        </p>
+                        <p className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
+                          <Clock3 className="h-3 w-3" /> {formatDuration(selectedVariant?.audioDuration)}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => setIsVariantDropdownOpen(!isVariantDropdownOpen)}
+                        className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-white flex-shrink-0"
+                      >
+                        <ChevronDown className={`h-3 w-3 transition-transform ${isVariantDropdownOpen ? "rotate-180" : ""}`} />
+                      </button>
+                    </div>
+
+                    {isVariantDropdownOpen && (
+                      <div className="space-y-2">
+                        {variants.filter(v => v.id !== selectedVariantId).map((v) => {
+                          const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
+
+                          return (
+                            <button
+                              key={v.id}
+                              onClick={() => {
+                                handleSelectVariant(v);
+                                setIsVariantDropdownOpen(false);
+                              }}
+                              className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border transition-all border-gray-200 bg-white/50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
+                            >
+                              <div className="flex-1 min-w-0 text-left">
+                                <p className="text-sm font-bold truncate text-gray-700 dark:text-gray-300">
+                                  {getLocalizedValue(locale, v.titleVi, v.titleEn, v.title)}
+                                </p>
+                                <p className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
+                                  <Clock3 className="h-3 w-3" /> {formatDuration(v.audioDuration)}
+                                </p>
+                              </div>
+
+                              {!isUnlocked && (
+                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-black">
+                                  <Lock className="h-3 w-3" />
+                                  {v.unlockPrice}
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!selectedVariantId && (
+                  <p className="mt-3 text-[11px] text-center text-amber-700 dark:text-amber-400 font-medium italic">
+                    {t("variantSelectionSubtitle")}
+                  </p>
+                )}
+              </section>
+            )}
+
+
             {/* Side Panel 1: Chapter List */}
             <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
               <h2 className="mb-3 flex items-center justify-between text-base font-semibold text-gray-900 dark:text-gray-100">
@@ -1104,6 +1374,31 @@ export default function StoryChapterClient() {
                     className="mb-2 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
                   />
                   <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
+                    {/* Branch navigation option */}
+                    {selectedVariant?.nextChapterId && (() => {
+                      const targetChapter = story.chapters.find((c) => c.id === selectedVariant.nextChapterId);
+                      if (!targetChapter) return null;
+                      return (
+                        <button
+                          onClick={() => {
+                            goToChapter(targetChapter, true);
+                            // Auto-select the specific variant if set
+                            if (selectedVariant.nextVariantId) {
+                              setSelectedVariantId(selectedVariant.nextVariantId);
+                            }
+                          }}
+                          className="w-full rounded-lg px-3 py-2.5 text-left text-xs transition mb-2 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/20 border border-emerald-300 dark:border-emerald-800 hover:from-emerald-100 hover:to-green-100 dark:hover:from-emerald-900/50 dark:hover:to-green-900/40"
+                        >
+                          <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-0.5 flex items-center gap-1">
+                            <ArrowRight className="h-3 w-3" />
+                            {locale === "en" ? "Continue the story" : "Tiếp tục câu chuyện"}
+                          </p>
+                          <span className="line-clamp-1 font-bold text-emerald-900 dark:text-emerald-100">
+                            {locale === "en" ? "Chapter" : "Chương"} {targetChapter.chapterNumber}: {getLocalizedValue(locale, targetChapter.titleVi, targetChapter.titleEn, targetChapter.title)}
+                          </span>
+                        </button>
+                      );
+                    })()}
                     {filteredChapters.map((chapter) => {
                       const isCurrent = chapter.id === selectedChapter.id;
                       return (
@@ -1353,16 +1648,151 @@ export default function StoryChapterClient() {
           <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readText")}</h2>
             <div className="mt-5">
-              {selectedChapterContent ? (
-                <StoryReader
-                  chapterId={selectedChapter.id}
-                  content={selectedChapterContent}
-                  adInterval={700}
-                  isLocked={chapterIsLocked}
-                  previewChars={500}
-                  lockLabel={lockReasonLabel}
-                  onUnlockRequest={openUnlockModal}
-                />
+              {selectedChapterContentRaw ? (
+                hasInlineChoice ? (
+                  <div className="space-y-8">
+                    <StoryReader
+                      chapterId={`${selectedChapter.id}-part1`}
+                      content={contentBeforeChoice}
+                      adInterval={700}
+                      isLocked={chapterIsLocked}
+                      previewChars={500}
+                      lockLabel={lockReasonLabel}
+                      onUnlockRequest={openUnlockModal}
+                    />
+
+                    {/* Inline Variant Selection */}
+                    <div className="rounded-2xl  relative">
+                      
+                      <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100">
+                        {t("variantSelectionTitle")}
+                      </h3>
+
+                      {!selectedVariantId ? (
+                        <div className="grid gap-3">
+                          {variants.map((v) => {
+                            const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
+
+                            return (
+                              <button
+                                key={v.id}
+                                onClick={() => handleSelectVariant(v)}
+                                className="flex flex-col items-start gap-3 p-4 rounded-xl border transition-all border-gray-200 bg-white/50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
+                              >
+                                <div className="w-full flex items-start justify-between gap-3">
+                                  <p className="text-base font-bold flex-1 text-left text-gray-800 dark:text-gray-200">
+                                    {getLocalizedValue(locale, v.titleVi, v.titleEn, v.title)}
+                                  </p>
+                                  
+                                  {!isUnlocked && (
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black">
+                                      <Lock className="h-3 w-3" />
+                                      {v.unlockPrice}
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                                  <Clock3 className="h-3.5 w-3.5 opacity-70" /> {formatDuration(v.audioDuration)}
+                                </p>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex flex-col items-start gap-3 p-4 rounded-xl border border-gray-300 bg-white dark:bg-gray-800/60 shadow-md">
+                            <div className="w-full flex items-start justify-between gap-3">
+                              <div 
+                                onClick={() => handleSelectVariant(selectedVariant!)}
+                                className="flex-1 text-left cursor-pointer"
+                              >
+                                <p className="text-base font-bold text-amber-900 dark:text-amber-100">
+                                  {getLocalizedValue(locale, selectedVariant?.titleVi, selectedVariant?.titleEn, selectedVariant?.title || "")}
+                                </p>
+                              </div>
+                              
+                              <button
+                                onClick={() => setIsVariantDropdownOpen(!isVariantDropdownOpen)}
+                                className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white flex-shrink-0"
+                              >
+                                <ChevronDown className={`h-4 w-4 transition-transform ${isVariantDropdownOpen ? "rotate-180" : ""}`} />
+                              </button>
+                            </div>
+                            <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                              <Clock3 className="h-3.5 w-3.5 opacity-70" /> {formatDuration(selectedVariant?.audioDuration)}
+                            </p>
+                          </div>
+
+                          {isVariantDropdownOpen && (
+                            <div className="grid gap-3">
+                              {variants.filter(v => v.id !== selectedVariantId).map((v) => {
+                                const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
+
+                                return (
+                                  <button
+                                    key={v.id}
+                                    onClick={() => {
+                                      handleSelectVariant(v);
+                                      setIsVariantDropdownOpen(false);
+                                    }}
+                                    className="flex flex-col items-start gap-3 p-4 rounded-xl border transition-all border-gray-200 bg-white/50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
+                                  >
+                                    <div className="w-full flex items-start justify-between gap-3">
+                                      <p className="text-base font-bold flex-1 text-left text-gray-800 dark:text-gray-200">
+                                        {getLocalizedValue(locale, v.titleVi, v.titleEn, v.title)}
+                                      </p>
+                                      
+                                      {!isUnlocked && (
+                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black">
+                                          <Lock className="h-3 w-3" />
+                                          {v.unlockPrice}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                                      <Clock3 className="h-3.5 w-3.5 opacity-70" /> {formatDuration(v.audioDuration)}
+                                    </p>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Content after choice */}
+                    {selectedVariant && selectedVariant.content && (
+                      <StoryReader
+                        chapterId={`variant-${selectedVariant.id}`}
+                        content={`[DIEN_BIEN] ${selectedVariant.content}`}
+                        adInterval={700}
+                        isLocked={false}
+                        previewChars={500}
+                      />
+                    )}
+
+                    {contentAfterChoice.trim() && selectedVariantId && (
+                      <StoryReader
+                        chapterId={`${selectedChapter.id}-part2`}
+                        content={contentAfterChoice}
+                        adInterval={700}
+                        isLocked={false}
+                        previewChars={500}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <StoryReader
+                    chapterId={selectedChapter.id}
+                    content={selectedChapterContentRaw}
+                    adInterval={700}
+                    isLocked={chapterIsLocked}
+                    previewChars={500}
+                    lockLabel={lockReasonLabel}
+                    onUnlockRequest={openUnlockModal}
+                  />
+                )
               ) : (
                 <div className="rounded-2xl border border-dashed border-blue-200 bg-blue-50/70 px-4 py-5 text-sm leading-7 text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-200">
                   {translationPendingMessage}
@@ -1624,16 +2054,24 @@ export default function StoryChapterClient() {
         <RecommendedSlider stories={recommendedStories} />
 
         {isUnlockModalOpen ? (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4">
+          <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/60 p-4 pt-20 overflow-y-auto">
             <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-900">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Mở khóa chương</h3>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{lockReasonLabel}</p>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                {selectedVariant ? t("unlockVariant") : t("chapterLocked")}
+              </h3>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                Mở VIP {VIP_UNLOCK_DAYS} ngay với <b>{VIP_UNLOCK_COST.toLocaleString("vi-VN")}</b> credits.
+                {selectedVariant
+                  ? t("unlockVariantDescription", { title: getLocalizedValue(locale, selectedVariant.titleVi, selectedVariant.titleEn, selectedVariant.title) })
+                  : lockReasonLabel}
+              </p>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                {selectedVariant
+                  ? t("unlockVariantPrice", { price: selectedVariant.unlockPrice.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })
+                  : t("buyVipInfo", { days: VIP_UNLOCK_DAYS, cost: VIP_UNLOCK_COST.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
               </p>
 
               <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800">
-                Số dư hiện tại: <b>{Number(user?.credits ?? 0).toLocaleString("vi-VN")}</b> credits
+                {t("yourBalance", { balance: Number(user?.credits ?? 0).toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
               </div>
 
               {unlockError ? <p className="mt-3 text-sm font-medium text-red-600">{unlockError}</p> : null}
@@ -1643,21 +2081,22 @@ export default function StoryChapterClient() {
                   onClick={() => setIsUnlockModalOpen(false)}
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                 >
-                  Hủy
+                  {t("cancel")}
                 </button>
                 {showTopupAction ? (
                   <button
                     onClick={() => router.push(`/${currentLang}/profile`)}
                     className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700"
                   >
-                    <CreditCard className="h-4 w-4" /> Di den trang mua credits
+                    <CreditCard className="h-4 w-4" /> {t("topUp")}
                   </button>
                 ) : null}
                 <button
-                  onClick={handleBuyVip}
-                  className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  disabled={isUnlocking}
+                  onClick={selectedVariant ? handleUnlockVariant : handleBuyVip}
+                  className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Mua VIP
+                  {isUnlocking ? "..." : (selectedVariant ? t("unlockNow") : t("buyVip"))}
                 </button>
               </div>
             </div>

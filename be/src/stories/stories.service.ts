@@ -192,6 +192,7 @@ export class StoriesService {
         thumbnailUrl: true,
         status: true,
         totalViews: true,
+        isInteractive: true,
         author: {
           select: {
             id: true,
@@ -252,7 +253,8 @@ export class StoriesService {
         }
         : {}),
       ...(query.authorId ? { authorId: query.authorId } : {}),
-      ...(trendWindowStart ? { updatedAt: { gte: trendWindowStart } } : {}),
+      ...(query.trendWindow !== undefined && query.trendWindow !== 'all' && trendWindowStart ? { updatedAt: { gte: trendWindowStart } } : {}),
+      ...(query.isInteractive !== undefined ? { isInteractive: query.isInteractive } : {}),
     } as any; // Cast the entire where object to any
 
     const orderBy: Prisma.StoryOrderByWithRelationInput =
@@ -284,6 +286,7 @@ export class StoriesService {
           thumbnailUrl: true,
           status: true,
           totalViews: true,
+          isInteractive: true,
           averageRating: true,
           title: true,
           createdAt: true,
@@ -398,7 +401,7 @@ export class StoriesService {
     const limit = query.limit ?? 20;
 
     const where: Prisma.StoryWhereInput = {
-      // Don't filter by deletedAt in admin - show all stories including soft deleted
+      deletedAt: null, // Don't show soft-deleted stories in the active list
       ...(query.status ? { status: query.status as StoryStatus } : {}),
       ...(query.lang ? { language: query.lang } : {}),
       ...(query.search
@@ -409,6 +412,7 @@ export class StoriesService {
           ],
         }
         : {}),
+      ...(query.isInteractive !== undefined ? { isInteractive: query.isInteractive } : {}),
     } as any;
 
     const isAll = query.all === 'true';
@@ -555,6 +559,22 @@ export class StoriesService {
             r2AudioUrl: true,
             accessType: true,
             unlocksAt: true,
+            isInteractive: true,
+            variants: {
+              where: { deletedAt: null },
+              orderBy: { orderIndex: 'asc' },
+              select: {
+                id: true,
+                title: true,
+                audioUrl: true,
+                audioDuration: true,
+                unlockPrice: true,
+                nextChapterId: true,
+                nextVariantId: true,
+                isDefault: true,
+                content: true,
+              },
+            },
           } as any,
         },
       },

@@ -57,6 +57,10 @@ export class CreateStoryDto {
     isRecommended?: boolean;
 
     @IsOptional()
+    @IsBoolean()
+    isInteractive?: boolean;
+
+    @IsOptional()
     @IsArray()
     @IsInt({ each: true })
     categoryIds?: number[];

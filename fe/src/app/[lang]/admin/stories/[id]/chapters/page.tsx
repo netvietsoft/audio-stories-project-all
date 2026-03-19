@@ -552,7 +552,23 @@ export default function StoryChaptersPage() {
 
             <div className="p-8">
               <ChapterForm
-                initialData={editingChapter}
+                initialData={editingChapter ? {
+                  chapterNumber: editingChapter.chapterNumber,
+                  titleVi: editingChapter.title,
+                  titleEn: editingChapter.title,
+                  thumbnailUrl: editingChapter.thumbnailUrl ?? undefined,
+                  descriptionVi: editingChapter.description ?? undefined,
+                  descriptionEn: editingChapter.description ?? undefined,
+                  contentVi: editingChapter.content ?? undefined,
+                  contentEn: editingChapter.content ?? undefined,
+                  r2AudioUrl: editingChapter.r2AudioUrl ?? undefined,
+                  audioUrlVi: editingChapter.r2AudioUrl ?? undefined,
+                  audioUrlEn: editingChapter.r2AudioUrl ?? undefined,
+                  youtubeVideoId: editingChapter.youtubeVideoId ?? undefined,
+                  audioDuration: editingChapter.audioDuration ?? undefined,
+                  accessType: editingChapter.accessType ?? 'free',
+                  storyId: editingChapter.storyId ?? undefined,
+                } : undefined}
                 selectedLocale={storyLanguage === 'en' ? 'en' : 'vi'}
                 onSubmit={handleUpdateChapter}
                 onCancel={() => {

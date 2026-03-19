@@ -60,7 +60,7 @@ export default function InteractiveStoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-500 to-orange-600 p-8 text-white shadow-xl">
+      <div className="relative rounded-3xl p-8 text-black dark:text-white shadow-xl">
         <div className="relative z-10 max-w-2xl">
           <h1 className="text-4xl font-black">{t("title")}</h1>
           <p className="mt-2 text-lg font-medium opacity-90">{t("subtitle")}</p>

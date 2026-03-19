@@ -78,8 +78,8 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-        <div className="flex flex-col items-center justify-center text-center h-full p-8 rounded-2xl bg-gradient-to-b from-yellow-500/20 to-gray-800/40 border border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
-          <Crown className="text-yellow-400 w-12 h-12 mb-2 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]" />
+        <div className="flex flex-col items-center justify-center text-center h-full p-8 rounded-2xl bg-gradient-to-b from-yellow-50 to-yellow-100 border border-yellow-300 shadow-lg">
+          <Crown className="text-yellow-500 w-12 h-12 mb-2 drop-shadow-[0_0_8px_rgba(234,179,8,0.3)]" />
           <Image
             src={topOne.avatarUrl || "https://api.dicebear.com/9.x/adventurer/svg?seed=TopContributor"}
             alt={topOne.displayName || "Top Contributor"}
@@ -88,9 +88,9 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
             className="w-32 h-32 rounded-full border-4 border-yellow-500 object-cover mb-4"
             unoptimized
           />
-          <p className="text-3xl font-bold text-white">{topOne.displayName || "Top Contributor"}</p>
-          <p className="text-yellow-400 font-medium text-sm tracking-widest uppercase mt-1">{t("top", { rank: 1 })}</p>
-          <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 mt-4">
+          <p className="text-3xl font-bold text-gray-900">{topOne.displayName || "Top Contributor"}</p>
+          <p className="text-yellow-600 font-medium text-sm tracking-widest uppercase mt-1">{t("top", { rank: 1 })}</p>
+          <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 to-yellow-700 mt-4">
             {Number(topOne.credits || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")} {t("creditsLabel")}
           </p>
         </div>
@@ -99,15 +99,15 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
           {topFive.map((user, index) => {
             const rank = index + 2;
             const rankClass = rank === 2
-              ? "text-[#C0C0C0]"
+              ? "text-gray-400 dark:text-[#C0C0C0]"
               : rank === 3
-                ? "text-[#CD7F32]"
+                ? "text-amber-600 dark:text-[#CD7F32]"
                 : "text-gray-500";
 
             return (
               <div
                 key={user.id}
-                className="flex items-center gap-4 p-4 rounded-xl bg-gray-800/40 hover:bg-gray-800/60 transition-colors"
+                className="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-gray-800/40 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors border border-gray-200 dark:border-transparent shadow-sm"
               >
                 <span className={`text-xl font-bold w-6 text-center ${rankClass}`}>{rank}</span>
                 <Image
@@ -119,8 +119,8 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
                   unoptimized
                 />
                 <div className="flex flex-col flex-1">
-                  <p className="text-base font-semibold text-white">{user.displayName || "Contributor"}</p>
-                  <p className="text-sm text-gray-400">{Number(user.credits || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")} {t("creditsLabel")}</p>
+                  <p className="text-base font-semibold text-gray-900 dark:text-white">{user.displayName || "Contributor"}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{Number(user.credits || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")} {t("creditsLabel")}</p>
                 </div>
               </div>
             );

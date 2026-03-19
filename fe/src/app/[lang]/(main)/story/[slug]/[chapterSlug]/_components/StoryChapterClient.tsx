@@ -296,6 +296,7 @@ export default function StoryChapterClient() {
   const [giftMessage, setGiftMessage] = useState("");
   const [isGiftingCredits, setIsGiftingCredits] = useState(false);
   const [giftError, setGiftError] = useState("");
+  const [isVariantDropdownOpen, setIsVariantDropdownOpen] = useState(false);
 
   const setUser = useUserStore((state) => state.setUser);
 
@@ -1231,48 +1232,100 @@ export default function StoryChapterClient() {
 
             {/* Side Panel 1.5: Variant Selection (Interactive Stories) - Moved Inline if hasInlineChoice */}
             {variants.length > 0 && !hasInlineChoice && (
-              <section className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
-                <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-amber-900 dark:text-amber-100">
-                  {t("variantSelectionTitle")}
+              <section className="rounded-2xl border border-gray-300 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/30">
+                <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-gray-900 dark:text-gray-100">
+                  ⚡ {t("variantSelectionTitle")}
                 </h2>
 
-                <div className="space-y-2">
-                  {variants.map((v) => {
-                    const isSelected = selectedVariantId === v.id;
-                    const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
+                {!selectedVariantId ? (
+                  <div className="space-y-2">
+                    {variants.map((v) => {
+                      const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
 
-                    return (
-                      <button
-                        key={v.id}
-                        onClick={() => handleSelectVariant(v)}
-                        className={`w-full flex items-center justify-between gap-3 p-3 rounded-xl border-2 transition-all ${isSelected
-                            ? "border-amber-500 bg-white dark:bg-amber-900/40 shadow-md scale-[1.02]"
-                            : "border-transparent bg-white/50 dark:bg-gray-800/50 hover:border-amber-300 dark:hover:border-amber-800"
-                          }`}
+                      return (
+                        <button
+                          key={v.id}
+                          onClick={() => handleSelectVariant(v)}
+                          className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border transition-all border-gray-200 bg-white/50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
+                        >
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className="text-sm font-bold truncate text-gray-700 dark:text-gray-300">
+                              {getLocalizedValue(locale, v.titleVi, v.titleEn, v.title)}
+                            </p>
+                            <p className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
+                              <Clock3 className="h-3 w-3" /> {formatDuration(v.audioDuration)}
+                            </p>
+                          </div>
+
+                          {!isUnlocked && (
+                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-black">
+                              <Lock className="h-3 w-3" />
+                              {v.unlockPrice}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-300 bg-white dark:bg-gray-800/60 shadow-md">
+                      <div 
+                        onClick={() => handleSelectVariant(selectedVariant!)}
+                        className="flex-1 min-w-0 text-left cursor-pointer"
                       >
-                        <div className="flex-1 min-w-0 text-left">
-                          <p className={`text-sm font-bold truncate ${isSelected ? "text-amber-900 dark:text-amber-100" : "text-gray-700 dark:text-gray-300"}`}>
-                            {getLocalizedValue(locale, v.titleVi, v.titleEn, v.title)}
-                          </p>
-                          <p className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
-                            <Clock3 className="h-3 w-3" /> {formatDuration(v.audioDuration)}
-                          </p>
-                        </div>
+                        <p className="text-sm font-bold truncate text-amber-900 dark:text-amber-100">
+                          {getLocalizedValue(locale, selectedVariant?.titleVi, selectedVariant?.titleEn, selectedVariant?.title || "")}
+                        </p>
+                        <p className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
+                          <Clock3 className="h-3 w-3" /> {formatDuration(selectedVariant?.audioDuration)}
+                        </p>
+                      </div>
 
-                        {!isUnlocked ? (
-                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-black">
-                            <Lock className="h-3 w-3" />
-                            {v.unlockPrice}
-                          </div>
-                        ) : isSelected ? (
-                          <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-white">
-                            <Play className="h-3 w-3 fill-current" />
-                          </div>
-                        ) : null}
+                      <button
+                        onClick={() => setIsVariantDropdownOpen(!isVariantDropdownOpen)}
+                        className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center text-white flex-shrink-0"
+                      >
+                        <ChevronDown className={`h-3 w-3 transition-transform ${isVariantDropdownOpen ? "rotate-180" : ""}`} />
                       </button>
-                    );
-                  })}
-                </div>
+                    </div>
+
+                    {isVariantDropdownOpen && (
+                      <div className="space-y-2">
+                        {variants.filter(v => v.id !== selectedVariantId).map((v) => {
+                          const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
+
+                          return (
+                            <button
+                              key={v.id}
+                              onClick={() => {
+                                handleSelectVariant(v);
+                                setIsVariantDropdownOpen(false);
+                              }}
+                              className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border transition-all border-gray-200 bg-white/50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
+                            >
+                              <div className="flex-1 min-w-0 text-left">
+                                <p className="text-sm font-bold truncate text-gray-700 dark:text-gray-300">
+                                  {getLocalizedValue(locale, v.titleVi, v.titleEn, v.title)}
+                                </p>
+                                <p className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
+                                  <Clock3 className="h-3 w-3" /> {formatDuration(v.audioDuration)}
+                                </p>
+                              </div>
+
+                              {!isUnlocked && (
+                                <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-black">
+                                  <Lock className="h-3 w-3" />
+                                  {v.unlockPrice}
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {!selectedVariantId && (
                   <p className="mt-3 text-[11px] text-center text-amber-700 dark:text-amber-400 font-medium italic">
@@ -1609,66 +1662,117 @@ export default function StoryChapterClient() {
                     />
 
                     {/* Inline Variant Selection */}
-                    <div className="rounded-2xl border-2 border-amber-200 bg-amber-50/50 p-6 dark:border-amber-800/60 dark:bg-amber-900/20 shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
+                    <div className="rounded-2xl  relative">
                       
-                      <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-amber-900 dark:text-amber-100">
-                        ⚡ {t("variantSelectionTitle")}
+                      <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-gray-100">
+                        {t("variantSelectionTitle")}
                       </h3>
 
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {variants.map((v) => {
-                          const isSelected = selectedVariantId === v.id;
-                          const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
+                      {!selectedVariantId ? (
+                        <div className="grid gap-3">
+                          {variants.map((v) => {
+                            const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
 
-                          return (
-                            <button
-                              key={v.id}
-                              onClick={() => handleSelectVariant(v)}
-                              className={`flex flex-col items-start gap-3 p-4 rounded-xl border-2 transition-all ${isSelected
-                                  ? "border-amber-500 bg-white dark:bg-amber-900/40 shadow-md scale-[1.02]"
-                                  : "border-amber-100 bg-white/50 dark:border-amber-900/30 dark:bg-gray-800/50 hover:border-amber-300 dark:hover:border-amber-800"
-                                }`}
-                            >
-                              <div className="w-full flex items-start justify-between gap-3">
-                                <p className={`text-base font-bold flex-1 text-left ${isSelected ? "text-amber-900 dark:text-amber-100" : "text-gray-800 dark:text-gray-200"}`}>
-                                  {getLocalizedValue(locale, v.titleVi, v.titleEn, v.title)}
+                            return (
+                              <button
+                                key={v.id}
+                                onClick={() => handleSelectVariant(v)}
+                                className="flex flex-col items-start gap-3 p-4 rounded-xl border transition-all border-gray-200 bg-white/50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
+                              >
+                                <div className="w-full flex items-start justify-between gap-3">
+                                  <p className="text-base font-bold flex-1 text-left text-gray-800 dark:text-gray-200">
+                                    {getLocalizedValue(locale, v.titleVi, v.titleEn, v.title)}
+                                  </p>
+                                  
+                                  {!isUnlocked && (
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black">
+                                      <Lock className="h-3 w-3" />
+                                      {v.unlockPrice}
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                                  <Clock3 className="h-3.5 w-3.5 opacity-70" /> {formatDuration(v.audioDuration)}
                                 </p>
-                                
-                                {!isUnlocked ? (
-                                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black">
-                                    <Lock className="h-3 w-3" />
-                                    {v.unlockPrice}
-                                  </div>
-                                ) : isSelected ? (
-                                  <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white flex-shrink-0">
-                                    <Play className="h-3 w-3 fill-current" />
-                                  </div>
-                                ) : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="flex flex-col items-start gap-3 p-4 rounded-xl border border-gray-300 bg-white dark:bg-gray-800/60 shadow-md">
+                            <div className="w-full flex items-start justify-between gap-3">
+                              <div 
+                                onClick={() => handleSelectVariant(selectedVariant!)}
+                                className="flex-1 text-left cursor-pointer"
+                              >
+                                <p className="text-base font-bold text-amber-900 dark:text-amber-100">
+                                  {getLocalizedValue(locale, selectedVariant?.titleVi, selectedVariant?.titleEn, selectedVariant?.title || "")}
+                                </p>
                               </div>
-                              <p className="text-xs text-gray-500 flex items-center gap-1.5">
-                                <Clock3 className="h-3.5 w-3.5 opacity-70" /> {formatDuration(v.audioDuration)}
-                              </p>
-                            </button>
-                          );
-                        })}
-                      </div>
+                              
+                              <button
+                                onClick={() => setIsVariantDropdownOpen(!isVariantDropdownOpen)}
+                                className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white flex-shrink-0"
+                              >
+                                <ChevronDown className={`h-4 w-4 transition-transform ${isVariantDropdownOpen ? "rotate-180" : ""}`} />
+                              </button>
+                            </div>
+                            <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                              <Clock3 className="h-3.5 w-3.5 opacity-70" /> {formatDuration(selectedVariant?.audioDuration)}
+                            </p>
+                          </div>
+
+                          {isVariantDropdownOpen && (
+                            <div className="grid gap-3">
+                              {variants.filter(v => v.id !== selectedVariantId).map((v) => {
+                                const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
+
+                                return (
+                                  <button
+                                    key={v.id}
+                                    onClick={() => {
+                                      handleSelectVariant(v);
+                                      setIsVariantDropdownOpen(false);
+                                    }}
+                                    className="flex flex-col items-start gap-3 p-4 rounded-xl border transition-all border-gray-200 bg-white/50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
+                                  >
+                                    <div className="w-full flex items-start justify-between gap-3">
+                                      <p className="text-base font-bold flex-1 text-left text-gray-800 dark:text-gray-200">
+                                        {getLocalizedValue(locale, v.titleVi, v.titleEn, v.title)}
+                                      </p>
+                                      
+                                      {!isUnlocked && (
+                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black">
+                                          <Lock className="h-3 w-3" />
+                                          {v.unlockPrice}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                                      <Clock3 className="h-3.5 w-3.5 opacity-70" /> {formatDuration(v.audioDuration)}
+                                    </p>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Content after choice */}
                     {selectedVariant && selectedVariant.content && (
-                      <div className="rounded-xl border-l-4 border-amber-400 bg-amber-50/30 p-6 dark:border-amber-600 dark:bg-amber-900/10">
-                        <StoryReader
-                          chapterId={`variant-${selectedVariant.id}`}
-                          content={selectedVariant.content}
-                          adInterval={700}
-                          isLocked={false}
-                          previewChars={500}
-                        />
-                      </div>
+                      <StoryReader
+                        chapterId={`variant-${selectedVariant.id}`}
+                        content={`[DIEN_BIEN] ${selectedVariant.content}`}
+                        adInterval={700}
+                        isLocked={false}
+                        previewChars={500}
+                      />
                     )}
 
-                    {contentAfterChoice.trim() && (
+                    {contentAfterChoice.trim() && selectedVariantId && (
                       <StoryReader
                         chapterId={`${selectedChapter.id}-part2`}
                         content={contentAfterChoice}

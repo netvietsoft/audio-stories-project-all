@@ -273,16 +273,7 @@ export default function AdminLayout({
 
                             <div className="p-6 border-t border-slate-100 space-y-4">
                                 <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 shrink-0 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
-                                            A
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-slate-800">Admin</p>
-                                            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Quản trị viên</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 flex">
                                         <button
                                             onClick={handleLogout}
                                             disabled={isLoggingOut}
@@ -293,7 +284,6 @@ export default function AdminLayout({
                                             ) : (
                                                 <>
                                                     <LogOut className="w-4 h-4" />
-                                                    <span>Đăng xuất</span>
                                                 </>
                                             )}
                                         </button>
@@ -304,7 +294,6 @@ export default function AdminLayout({
                                             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-xl transition-all active:scale-[0.98]"
                                         >
                                             <Home className="w-4 h-4" />
-                                            <span>Về trang chủ</span>
                                         </Link>
                                     </div>
                                 </div>

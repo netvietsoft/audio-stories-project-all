@@ -1,0 +1,84 @@
+
+> web-truyen-audio@0.1.0 build
+> next build
+
+▲ Next.js 16.1.0 (Turbopack)
+- Environments: .env
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 10.2s
+  Running TypeScript ...
+  Collecting page data using 5 workers ...
+  Generating static pages using 5 workers (0/12) ...
+  Generating static pages using 5 workers (3/12) 
+  Generating static pages using 5 workers (6/12) 
+  Generating static pages using 5 workers (9/12) 
+✓ Generating static pages using 5 workers (12/12) in 214.6ms
+  Finalizing page optimization ...
+
+Route (app)                              Revalidate  Expire
+┌ ○ /_not-found
+├ ƒ /[lang]
+├ ƒ /[lang]/about
+├ ƒ /[lang]/admin
+├ ƒ /[lang]/admin/authors
+├ ƒ /[lang]/admin/categories
+├ ƒ /[lang]/admin/chapters
+├ ƒ /[lang]/admin/chapters/[id]
+├ ƒ /[lang]/admin/comment-reports
+├ ƒ /[lang]/admin/comments
+├ ƒ /[lang]/admin/gifts
+├ ƒ /[lang]/admin/interactive-stories
+├ ƒ /[lang]/admin/languages
+├ ƒ /[lang]/admin/login
+├ ƒ /[lang]/admin/memberships
+├ ƒ /[lang]/admin/packages
+├ ƒ /[lang]/admin/settings
+├ ƒ /[lang]/admin/stories
+├ ƒ /[lang]/admin/stories/[id]
+├ ƒ /[lang]/admin/stories/[id]/chapters
+├ ƒ /[lang]/admin/stories/new
+├ ƒ /[lang]/admin/transactions
+├ ƒ /[lang]/admin/users
+├ ƒ /[lang]/admin/users/[id]
+├ ƒ /[lang]/auth/google/callback
+├ ƒ /[lang]/dmca
+├ ƒ /[lang]/explore
+├ ƒ /[lang]/forgot-password
+├ ƒ /[lang]/interactive
+├ ƒ /[lang]/new
+├ ƒ /[lang]/notifications
+├ ƒ /[lang]/privacy
+├ ƒ /[lang]/profile
+├ ƒ /[lang]/profile/favorites
+├ ƒ /[lang]/profile/history
+├ ƒ /[lang]/profile/settings
+├ ƒ /[lang]/profile/transactions
+├ ƒ /[lang]/ranking
+├ ƒ /[lang]/search
+├ ƒ /[lang]/stories
+├ ƒ /[lang]/stories/[slug]
+├ ƒ /[lang]/story/[slug]
+├ ƒ /[lang]/story/[slug]/[chapterSlug]
+├ ƒ /[lang]/terms
+├ ƒ /[lang]/topup
+├ ƒ /[lang]/topup/success
+├ ƒ /[lang]/trending
+├ ƒ /[lang]/vinh-danh
+├ ƒ /api/avatar/delete
+├ ƒ /api/chapter-audio/delete
+├ ƒ /api/chapter-thumbnail/delete
+├ ƒ /api/public/stories/explore
+├ ƒ /api/uploadthing
+├ ƒ /auth/google/callback
+├ ○ /icon.svg
+├ ○ /robots.txt
+└ ○ /sitemap.xml                                 1h      1y
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

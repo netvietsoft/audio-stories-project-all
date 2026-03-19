@@ -19,6 +19,7 @@ import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { ChapterForm, type ChapterSubmitPayload } from '../stories/[id]/chapters/_components/ChapterForm';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
+import { useRouter } from 'next/navigation';
 
 interface Chapter {
     id: string;
@@ -49,6 +50,7 @@ interface Chapter {
 }
 
 export default function ChaptersGlobalPage() {
+    const router = useRouter();
     const getLocalizedText = (value: unknown, localeKey = 'vi'): string => {
         if (typeof value === 'string') return value;
         if (value && typeof value === 'object') {
@@ -151,8 +153,7 @@ export default function ChaptersGlobalPage() {
     };
 
     const handleEdit = (chapter: Chapter) => {
-        setEditingChapter(chapter);
-        setIsModalOpen(true);
+        router.push(`/${selectedLocale}/admin/chapters/${chapter.id}`);
     };
 
     const handleDelete = async (id: string) => {
@@ -520,10 +521,10 @@ export default function ChaptersGlobalPage() {
                         <div className="p-8 border-b border-slate-100 flex items-center justify-between shrink-0">
                             <div>
                                 <h2 className="text-2xl font-black text-slate-900">
-                                    {editingChapter ? 'Chá»‰nh sá»­a ChÆ°Æ¡ng' : 'ThÃªm ChÆ°Æ¡ng Má»›i'}
+                                    Thêm Chương Mới
                                 </h2>
                                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
-                                    {getLocalizedText(editingChapter?.story?.title, selectedLocale) || 'ChÆ°Æ¡ng Ä‘á»™c láº­p'}
+                                    Chương độc lập
                                 </p>
                             </div>
                             <button

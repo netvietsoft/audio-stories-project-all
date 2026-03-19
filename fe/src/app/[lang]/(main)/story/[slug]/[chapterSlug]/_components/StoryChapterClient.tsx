@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { isAxiosError } from "axios";
 import Link from "@/components/shared/LocalizedLink";
 import dynamic from "next/dynamic";
@@ -300,6 +301,7 @@ export default function StoryChapterClient() {
   const [giftError, setGiftError] = useState("");
   const [isVariantDropdownOpen, setIsVariantDropdownOpen] = useState(false);
   const [pendingVariantId, setPendingVariantId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   const setUser = useUserStore((state) => state.setUser);
 
@@ -347,6 +349,11 @@ export default function StoryChapterClient() {
     },
     [loadReviews, reviewSort],
   );
+
+  // Initialize mounted flag for portal rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!slug) return;
@@ -2074,161 +2081,166 @@ export default function StoryChapterClient() {
 
         <RecommendedSlider stories={recommendedStories} />
 
-        {isUnlockModalOpen ? (
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setIsUnlockModalOpen(false);
-                setPendingVariantId(null);
-              }
-            }}
-          >
-            <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-900">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {pendingVariantId ? t("unlockVariant") : t("chapterLocked")}
-              </h3>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                {pendingVariantId
-                  ? (() => {
-                      const variant = variants.find(v => v.id === pendingVariantId);
-                      return variant ? t("unlockVariantDescription", { title: getLocalizedValue(locale, variant.titleVi, variant.titleEn, variant.title) }) : "";
-                    })()
-                  : lockReasonLabel}
-              </p>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                {pendingVariantId
-                  ? (() => {
-                      const variant = variants.find(v => v.id === pendingVariantId);
-                      return variant ? t("unlockVariantPrice", { price: variant.unlockPrice.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") }) : "";
-                    })()
-                  : t("buyVipInfo", { days: VIP_UNLOCK_DAYS, cost: VIP_UNLOCK_COST.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
-              </p>
-
-              <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800">
-                {t("yourBalance", { balance: Number(user?.credits ?? 0).toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
-              </div>
-
-              {unlockError ? <p className="mt-3 text-sm font-medium text-red-600">{unlockError}</p> : null}
-
-              <div className="mt-4 flex flex-wrap justify-end gap-2">
-                <button
-                  onClick={() => {
+        {mounted && createPortal(
+          <>
+            {isUnlockModalOpen ? (
+              <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) {
                     setIsUnlockModalOpen(false);
                     setPendingVariantId(null);
-                  }}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                >
-                  {t("cancel")}
-                </button>
-                {showTopupAction ? (
-                  <button
-                    onClick={() => router.push(`/${currentLang}/profile`)}
-                    className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700"
-                  >
-                    <CreditCard className="h-4 w-4" /> {t("topUp")}
-                  </button>
-                ) : null}
-                <button
-                  disabled={isUnlocking}
-                  onClick={pendingVariantId ? handleUnlockVariant : handleBuyVip}
-                  className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {isUnlocking ? "..." : (pendingVariantId ? t("unlockNow") : t("buyVip"))}
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
+                  }
+                }}
+              >
+                <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-900 max-h-[90vh] overflow-y-auto">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    {pendingVariantId ? t("unlockVariant") : t("chapterLocked")}
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    {pendingVariantId
+                      ? (() => {
+                          const variant = variants.find(v => v.id === pendingVariantId);
+                          return variant ? t("unlockVariantDescription", { title: getLocalizedValue(locale, variant.titleVi, variant.titleEn, variant.title) }) : "";
+                        })()
+                      : lockReasonLabel}
+                  </p>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                    {pendingVariantId
+                      ? (() => {
+                          const variant = variants.find(v => v.id === pendingVariantId);
+                          return variant ? t("unlockVariantPrice", { price: variant.unlockPrice.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") }) : "";
+                        })()
+                      : t("buyVipInfo", { days: VIP_UNLOCK_DAYS, cost: VIP_UNLOCK_COST.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
+                  </p>
 
-        {/* Gift Modal */}
-        {isGiftModalOpen ? (
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setIsGiftModalOpen(false);
-                setGiftAmount("");
-                setGiftMessage("");
-                setGiftError("");
-              }
-            }}
-          >
-            <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-900 my-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
-                    <Gift className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t("giftModalTitle")}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{t("giftModalDescription")}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      {t("giftAmount")}
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={giftAmount}
-                      onChange={(e) => setGiftAmount(e.target.value)}
-                      className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                      placeholder={t("giftAmountPlaceholder")}
-                    />
-                    <div className="mt-3 flex justify-center flex-wrap gap-2">
-                      {[1, 3, 5, 10, 20, 50, 100].map((amount) => (
-                        <button
-                          key={amount}
-                          onClick={() => setGiftAmount(String(amount))}
-                          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${giftAmount === String(amount)
-                            ? "border-pink-500 bg-pink-500 text-white shadow-md shadow-pink-500/20"
-                            : "border-gray-200 bg-white text-gray-700 hover:border-pink-200 hover:bg-pink-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-pink-900/40 dark:hover:bg-pink-900/20"
-                            }`}
-                        >
-                          <img src="/icons/coin.png" alt="coin" className="h-4 w-4" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                          <span>{amount}</span>
-                        </button>
-                      ))}
-                    </div>
+                  <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800">
+                    {t("yourBalance", { balance: Number(user?.credits ?? 0).toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
                   </div>
 
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-4 py-3 text-sm">
-                    <p className="text-gray-600 dark:text-gray-300">
-                      {t("yourBalance", { balance: Number(user?.credits ?? 0).toLocaleString() })}
-                    </p>
-                  </div>
+                  {unlockError ? <p className="mt-3 text-sm font-medium text-red-600">{unlockError}</p> : null}
 
-                  {giftError ? (
-                    <p className="text-sm font-medium text-red-600 dark:text-red-400">{giftError}</p>
-                  ) : null}
-
-                  <div className="flex gap-3 pt-2">
+                  <div className="mt-4 flex flex-wrap justify-end gap-2">
                     <button
                       onClick={() => {
-                        setIsGiftModalOpen(false);
-                        setGiftAmount("");
-                        setGiftMessage("");
-                        setGiftError("");
+                        setIsUnlockModalOpen(false);
+                        setPendingVariantId(null);
                       }}
-                      className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
                       {t("cancel")}
                     </button>
+                    {showTopupAction ? (
+                      <button
+                        onClick={() => router.push(`/${currentLang}/profile`)}
+                        className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700"
+                      >
+                        <CreditCard className="h-4 w-4" /> {t("topUp")}
+                      </button>
+                    ) : null}
                     <button
-                      onClick={handleGiftCredits}
-                      disabled={isGiftingCredits}
-                      className="flex-1 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isUnlocking}
+                      onClick={pendingVariantId ? handleUnlockVariant : handleBuyVip}
+                      className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {isGiftingCredits ? "..." : t("giftConfirm")}
+                      {isUnlocking ? "..." : (pendingVariantId ? t("unlockNow") : t("buyVip"))}
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-        ) : null}
+            ) : null}
+
+            {/* Gift Modal */}
+            {isGiftModalOpen ? (
+              <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                onClick={(e) => {
+                  if (e.target === e.currentTarget) {
+                    setIsGiftModalOpen(false);
+                    setGiftAmount("");
+                    setGiftMessage("");
+                    setGiftError("");
+                  }
+                }}
+              >
+                <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-900 max-h-[90vh] overflow-y-auto">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
+                        <Gift className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{t("giftModalTitle")}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{t("giftModalDescription")}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                          {t("giftAmount")}
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={giftAmount}
+                          onChange={(e) => setGiftAmount(e.target.value)}
+                          className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                          placeholder={t("giftAmountPlaceholder")}
+                        />
+                        <div className="mt-3 flex justify-center flex-wrap gap-2">
+                          {[1, 3, 5, 10, 20, 50, 100].map((amount) => (
+                            <button
+                              key={amount}
+                              onClick={() => setGiftAmount(String(amount))}
+                              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${giftAmount === String(amount)
+                                ? "border-pink-500 bg-pink-500 text-white shadow-md shadow-pink-500/20"
+                                : "border-gray-200 bg-white text-gray-700 hover:border-pink-200 hover:bg-pink-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-pink-900/40 dark:hover:bg-pink-900/20"
+                                }`}
+                            >
+                              <img src="/icons/coin.png" alt="coin" className="h-4 w-4" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                              <span>{amount}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-4 py-3 text-sm">
+                        <p className="text-gray-600 dark:text-gray-300">
+                          {t("yourBalance", { balance: Number(user?.credits ?? 0).toLocaleString() })}
+                        </p>
+                      </div>
+
+                      {giftError ? (
+                        <p className="text-sm font-medium text-red-600 dark:text-red-400">{giftError}</p>
+                      ) : null}
+
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          onClick={() => {
+                            setIsGiftModalOpen(false);
+                            setGiftAmount("");
+                            setGiftMessage("");
+                            setGiftError("");
+                          }}
+                          className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        >
+                          {t("cancel")}
+                        </button>
+                        <button
+                          onClick={handleGiftCredits}
+                          disabled={isGiftingCredits}
+                          className="flex-1 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-pink-500/30 hover:shadow-xl hover:shadow-pink-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isGiftingCredits ? "..." : t("giftConfirm")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            ) : null}
+          </>,
+          document.body
+        )}
       </div>
     </div>
   );

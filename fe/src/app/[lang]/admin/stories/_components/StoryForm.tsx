@@ -356,7 +356,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
     const selectedAuthor = authors.find(a => a.id === selectedAuthorId);
 
     return (
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8 max-w-4xl mx-auto">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8 w-full">
 
             <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-8 space-y-8">
@@ -592,18 +592,10 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     </div>
 
                     {/* Hàng 5: Quản lý chương */}
-                    <div className="space-y-4" ref={chapterRef}>
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Chương</label>
-                            {initialData?.id ? (
-                                <Link
-                                    href={`/admin/stories/${initialData.id}/chapters`}
-                                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                    title="Quản lý / Thêm chương"
-                                >
-                                    <Plus className="w-5 h-5 text-blue-600" />
-                                </Link>
-                            ) : (
+                    {!initialData?.id && (
+                        <div className="space-y-4" ref={chapterRef}>
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Chương</label>
                                 <Link
                                     href="/admin/chapters"
                                     className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
@@ -611,58 +603,45 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 >
                                     <Plus className="w-5 h-5 text-blue-600" />
                                 </Link>
-                            )}
-                        </div>
-                        <div className="relative">
-                            <button
-                                type="button"
-                                onClick={() => setIsChapterOpen(!isChapterOpen)}
-                                className="w-full bg-slate-50 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between min-h-[56px]"
-                            >
-                                <div className="flex flex-wrap gap-2">
-                                    {selectedChapterIds.length > 0 ? (
-                                        <span className="text-slate-700">
-                                            {initialData?.id 
-                                                ? `Đã có ${chapters.length} chương` 
-                                                : `Đã chọn ${selectedChapterIds.length} chương`}
-                                        </span>
-                                    ) : (
-                                        <span className="text-slate-400">
-                                            {initialData?.id ? 'Xem danh sách chương' : 'Chọn chương có sẵn'}
-                                        </span>
-                                    )}
-                                </div>
-                                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${isChapterOpen ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            {isChapterOpen && (
-                                <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                    <div className="p-4 border-b border-slate-100">
-                                        <div className="relative">
-                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                            <input
-                                                type="text"
-                                                autoFocus
-                                                placeholder="Tìm theo tên hoặc số chương..."
-                                                className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
-                                                value={chapterSearch}
-                                                onChange={(e) => setChapterSearch(e.target.value)}
-                                            />
-                                        </div>
+                            </div>
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsChapterOpen(!isChapterOpen)}
+                                    className="w-full bg-slate-50 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between min-h-[56px]"
+                                >
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedChapterIds.length > 0 ? (
+                                            <span className="text-slate-700">
+                                                Đã chọn {selectedChapterIds.length} chương
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400">
+                                                Chọn chương có sẵn
+                                            </span>
+                                        )}
                                     </div>
-                                    <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                                        {filteredChapters.length > 0 ? (
-                                            filteredChapters.map((chap: Chapter) => (
-                                                initialData?.id ? (
-                                                    <Link
-                                                        key={chap.id}
-                                                        href={`/admin/stories/${initialData.id}/chapters`}
-                                                        className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center justify-between group block"
-                                                    >
-                                                        <span>Chương {chap.chapterNumber}: {selectedLocale === 'en' ? chap.titleEn || chap.title : chap.titleVi || chap.title}</span>
-                                                        <Music className="w-4 h-4 text-slate-300 group-hover:text-indigo-600" />
-                                                    </Link>
-                                                ) : (
+                                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${isChapterOpen ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {isChapterOpen && (
+                                    <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="p-4 border-b border-slate-100">
+                                            <div className="relative">
+                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                <input
+                                                    type="text"
+                                                    autoFocus
+                                                    placeholder="Tìm theo tên hoặc số chương..."
+                                                    className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                                                    value={chapterSearch}
+                                                    onChange={(e) => setChapterSearch(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                            {filteredChapters.length > 0 ? (
+                                                filteredChapters.map((chap: Chapter) => (
                                                     <button
                                                         key={chap.id}
                                                         type="button"
@@ -674,47 +653,45 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                             <Check className="w-4 h-4 text-indigo-600" />
                                                         )}
                                                     </button>
-                                                )
-                                            ))
-                                        ) : (
-                                            <div className="px-6 py-4 text-sm font-medium text-slate-400 italic">
-                                                {initialData?.id 
-                                                    ? 'Không tìm thấy chương nào' 
-                                                    : 'Không có chương chưa gán. Vui lòng tạo chương mới tại trang Quản lý Chương.'}
+                                                ))
+                                            ) : (
+                                                <div className="px-6 py-4 text-sm font-medium text-slate-400 italic">
+                                                    Không có chương chưa gán. Vui lòng tạo chương mới tại trang Quản lý Chương.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Display selected chapters for new story */}
+                            {selectedChapters.length > 0 && (
+                                <div className="mt-4 space-y-2">
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Các chương đã chọn:</p>
+                                    <div className="space-y-2">
+                                        {selectedChapters.map((chap) => (
+                                            <div
+                                                key={chap.id}
+                                                className="flex items-center justify-between bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5"
+                                            >
+                                                <span className="text-sm font-bold text-indigo-900">
+                                                    Chương {chap.chapterNumber}: {selectedLocale === 'en' ? chap.titleEn || chap.title : chap.titleVi || chap.title}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleChapterToggle(chap.id)}
+                                                    className="p-1 text-indigo-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                                                    title="Bỏ chọn"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
                                             </div>
-                                        )}
+                                        ))}
                                     </div>
                                 </div>
                             )}
                         </div>
-                        
-                        {/* Display selected chapters for new story */}
-                        {!initialData?.id && selectedChapters.length > 0 && (
-                            <div className="mt-4 space-y-2">
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Các chương đã chọn:</p>
-                                <div className="space-y-2">
-                                    {selectedChapters.map((chap) => (
-                                        <div
-                                            key={chap.id}
-                                            className="flex items-center justify-between bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5"
-                                        >
-                                            <span className="text-sm font-bold text-indigo-900">
-                                                Chương {chap.chapterNumber}: {selectedLocale === 'en' ? chap.titleEn || chap.title : chap.titleVi || chap.title}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleChapterToggle(chap.id)}
-                                                className="p-1 text-indigo-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
-                                                title="Bỏ chọn"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    )}
 
                     <div className="space-y-2">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">

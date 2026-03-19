@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { MessageSquare, Send, X } from "lucide-react";
+import DOMPurify from "dompurify";
 
 import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
@@ -146,10 +147,30 @@ type StoryReaderProps = {
 const splitParagraphs = (chapterId: string, content: string | null | undefined): ParagraphItem[] => {
   if (!content) return [];
 
-  const parts = content
-    .split(/\n\s*\n/)
-    .map((part) => part.trim().replace(/^\[Paragraph\s*\d+\]\s*/i, "").replace(/\[.*?\]/g, "").trim())
-    .filter(Boolean);
+  let parts: string[] = [];
+  
+  // Try to split by common block tags if content looks like HTML
+  const trimmed = content.trim();
+  // First, check if there are <hr> markers (inserted by admin auto-split feature)
+  if (content.toLowerCase().includes('<hr') || content.toLowerCase().includes('<hr/>') || content.toLowerCase().includes('<hr />')) {
+    parts = content
+      .split(/<hr\s*\/?>/gi)
+      .map(p => p.trim())
+      .filter(p => p.length > 0);
+  } else if (trimmed.startsWith('<') && trimmed.includes('</p>')) {
+    // Fallback 1: Use a simple split by paragraph closing tag
+    parts = content
+      .split('</p>')
+      .map(p => p.trim())
+      .filter(p => p.length > 0)
+      .map(p => p + '</p>');
+  } else {
+    // Fallback 2: Plain text split by double newlines
+    parts = content
+      .split(/\n\s*\n/)
+      .map((part) => part.trim().replace(/^\[Paragraph\s*\d+\]\s*/i, "").replace(/\[.*?\]/g, "").trim())
+      .filter(Boolean);
+  }
 
   return parts.map((part, index) => ({
     id: `${chapterId}-p-${index}`,
@@ -476,11 +497,14 @@ export default function StoryReader({
 
   if (isLocked) {
     return (
-      <div className={`relative overflow-hidden pr-0 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
+      <div className={`relative overflow-hidden min-w-0 pr-0 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
         {previewParagraphs.length ? (
           previewParagraphs.map((paragraph) => (
             <div key={paragraph.id} className="mb-6">
-              <p className="text-lg leading-loose text-gray-800 dark:text-gray-100">{paragraph.content}</p>
+              <div 
+                className="text-lg leading-loose text-gray-800 dark:text-gray-100 overflow-hidden break-words [&_img]:max-w-full [&_img]:h-auto [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(paragraph.content) }}
+              />
             </div>
           ))
         ) : (
@@ -507,7 +531,7 @@ export default function StoryReader({
   }
 
   return (
-    <div className={`relative overflow-visible pr-0 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
+    <div className={`relative overflow-x-hidden min-w-0 pr-0 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
       {flowItems.map((item) => {
         if (item.type === "paragraph") {
           const { paragraph } = item;
@@ -516,7 +540,10 @@ export default function StoryReader({
 
           return (
             <div key={paragraph.id} className="group relative mb-6 overflow-visible rounded-lg px-4 py-2 -mx-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
-              <p className="text-lg leading-loose text-gray-800 dark:text-gray-100">{paragraph.content}</p>
+              <div 
+                className="text-lg leading-loose text-gray-800 dark:text-gray-100 overflow-hidden break-words [&_img]:max-w-full [&_img]:h-auto [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(paragraph.content) }}
+              />
 
               <button
                 onClick={() => openCommentPopup(paragraph.id, paragraph.index)}

@@ -1667,9 +1667,9 @@ export default function StoryChapterClient() {
           </div>{/* END RIGHT STICKY SIDEBAR */}
 
           {/* Chapter Content / Text Reader */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
+          <section className="overflow-hidden min-w-0 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readText")}</h2>
-            <div className="mt-5">
+            <div className="mt-5 min-w-0">
               {selectedChapterContentRaw ? (
                 hasInlineChoice ? (
                   <div className="space-y-8">

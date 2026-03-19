@@ -8,6 +8,7 @@ import { ChevronLeft, Loader2, Newspaper } from "lucide-react";
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
 import { revalidateStoriesCache } from "@/app/[lang]/admin/_actions/revalidate";
 import { StoryForm, type StoryFormValues, type StorySubmitPayload } from "../_components/StoryForm";
+import StoryChapterManager from "./_components/StoryChapterManager";
 
 export default function EditStoryPage() {
   const router = useRouter();
@@ -91,38 +92,35 @@ export default function EditStoryPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="mb-2 flex items-center gap-4">
-            <Link
-              href={`/${currentLang}/admin/stories`}
-              className="rounded-xl border border-slate-200 bg-white p-2 text-slate-400 transition-all hover:bg-slate-50 hover:text-indigo-600 active:scale-95"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Link>
-            <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight text-slate-900">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-200">
-                <Newspaper className="h-6 w-6 text-white" />
-              </div>
-              Chỉnh Sửa Truyện
-            </h1>
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 w-full max-w-4xl mx-auto">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="mb-2 flex items-center gap-4">
+              <Link
+                href={`/${currentLang}/admin/stories`}
+                className="rounded-xl border border-slate-200 bg-white p-2 text-slate-400 transition-all hover:bg-slate-50 hover:text-indigo-600 active:scale-95"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Link>
+              <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight text-slate-900">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-200">
+                  <Newspaper className="h-6 w-6 text-white" />
+                </div>
+                Chỉnh Sửa Truyện
+              </h1>
+            </div>
           </div>
-          <p className="ml-16 font-medium text-slate-500">Cập nhật thông tin truyện với nội dung đa ngôn ngữ.</p>
         </div>
-        {/* Locale Selector - Hidden on Edit Page per user request */}
-        {/* <div className="flex items-center gap-2 bg-white rounded-xl border-2 border-slate-200 p-1">
-          ...
-        </div> */}
-      </div>
 
-      <StoryForm
-        initialData={initialData}
-        selectedLocale={selectedLocale}
-        onSubmit={handleSubmit}
-        onCancel={() => router.push(`/${currentLang}/admin/stories`)}
-        isLoading={isSubmitting}
-      />
+        <StoryForm
+          initialData={initialData}
+          selectedLocale={selectedLocale}
+          onSubmit={handleSubmit}
+          onCancel={() => router.push(`/${currentLang}/admin/stories`)}
+          isLoading={isSubmitting}
+        />
+      </div>
     </div>
   );
 }

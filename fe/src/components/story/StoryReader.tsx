@@ -148,7 +148,7 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
 
   const parts = content
     .split(/\n\s*\n/)
-    .map((part) => part.trim().replace(/^\[Paragraph\s*\d+\]\s*/i, "").trim())
+    .map((part) => part.trim().replace(/^\[Paragraph\s*\d+\]\s*/i, "").replace(/\[.*?\]/g, "").trim())
     .filter(Boolean);
 
   return parts.map((part, index) => ({

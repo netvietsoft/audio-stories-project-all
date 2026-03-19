@@ -39,6 +39,7 @@ import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscr
 import { getLocaleLabel, getLocalizedValue, getRequestedLocaleValue } from "@/lib/story-localization";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
 import { useAuth } from "@/auth/auth-provider";
 
 const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
@@ -285,6 +286,7 @@ export default function StoryChapterClient() {
   const [isLoading, setIsLoading] = useState(true);
   const user = useUserStore((state) => state.user);
   const { refreshProfile } = useAuth();
+  const openLogin = useAuthModalStore((state) => state.openLogin);
 
   // Variant states
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
@@ -297,6 +299,7 @@ export default function StoryChapterClient() {
   const [isGiftingCredits, setIsGiftingCredits] = useState(false);
   const [giftError, setGiftError] = useState("");
   const [isVariantDropdownOpen, setIsVariantDropdownOpen] = useState(false);
+  const [pendingVariantId, setPendingVariantId] = useState<string | null>(null);
 
   const setUser = useUserStore((state) => state.setUser);
 
@@ -834,7 +837,13 @@ export default function StoryChapterClient() {
       const isUnlocked = unlockedVariantIds.includes(variant.id);
 
       if (!isFree && !isUnlocked && !isVipActive) {
-        setSelectedVariantId(variant.id);
+        // Check if user is logged in
+        if (!user) {
+          openLogin();
+          return;
+        }
+
+        setPendingVariantId(variant.id);
         setUnlockError("");
         setShowTopupAction(false);
         setIsUnlockModalOpen(true);
@@ -844,21 +853,27 @@ export default function StoryChapterClient() {
       setSelectedVariantId(variant.id);
       void playChapter(selectedChapter, story, true, variant.id);
     },
-    [isVipActive, playChapter, selectedChapter, story, unlockedVariantIds, setSelectedVariantId],
+    [isVipActive, playChapter, selectedChapter, story, unlockedVariantIds, user, openLogin],
   );
 
   const handleUnlockVariant = useCallback(async () => {
-    if (!selectedVariant || !selectedChapterId) return;
+    const variantToUnlock = pendingVariantId 
+      ? variants.find(v => v.id === pendingVariantId)
+      : selectedVariant;
+      
+    if (!variantToUnlock || !selectedChapterId) return;
 
     setIsUnlocking(true);
     setUnlockError("");
     try {
-      await apiClient.post(`/chapter-variants/${selectedVariant.id}/unlock`);
-      setUnlockedVariantIds((prev) => [...prev, selectedVariant.id]);
+      await apiClient.post(`/chapter-variants/${variantToUnlock.id}/unlock`);
+      setUnlockedVariantIds((prev) => [...prev, variantToUnlock.id]);
+      setSelectedVariantId(variantToUnlock.id);
       setIsUnlockModalOpen(false);
+      setPendingVariantId(null);
       void refreshProfile();
       if (story && selectedChapter) {
-        void playChapter(selectedChapter, story, true, selectedVariant.id);
+        void playChapter(selectedChapter, story, true, variantToUnlock.id);
       }
     } catch (error: any) {
       console.error("Failed to unlock variant:", error);
@@ -870,7 +885,7 @@ export default function StoryChapterClient() {
     } finally {
       setIsUnlocking(false);
     }
-  }, [selectedVariant, selectedChapterId, story, selectedChapter, playChapter, setUnlockedVariantIds, setIsUnlockModalOpen, setUnlockError, setShowTopupAction, setIsUnlocking, apiClient]);
+  }, [pendingVariantId, variants, selectedVariant, selectedChapterId, story, selectedChapter, playChapter, refreshProfile]);
 
   const playByIndex = useCallback(
     (index: number, autoPlay = true) => {
@@ -1806,7 +1821,13 @@ export default function StoryChapterClient() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("giftChapter")}</h2>
               <button
-                onClick={() => setIsGiftModalOpen(true)}
+                onClick={() => {
+                  if (!user) {
+                    openLogin();
+                    return;
+                  }
+                  setIsGiftModalOpen(true);
+                }}
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-pink-500/30 transition-all hover:shadow-xl hover:shadow-pink-500/40 active:scale-95"
               >
                 <Gift className="h-5 w-5" />
@@ -2054,19 +2075,33 @@ export default function StoryChapterClient() {
         <RecommendedSlider stories={recommendedStories} />
 
         {isUnlockModalOpen ? (
-          <div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/60 p-4 pt-20 overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setIsUnlockModalOpen(false);
+                setPendingVariantId(null);
+              }
+            }}
+          >
             <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-900">
               <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                {selectedVariant ? t("unlockVariant") : t("chapterLocked")}
+                {pendingVariantId ? t("unlockVariant") : t("chapterLocked")}
               </h3>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                {selectedVariant
-                  ? t("unlockVariantDescription", { title: getLocalizedValue(locale, selectedVariant.titleVi, selectedVariant.titleEn, selectedVariant.title) })
+                {pendingVariantId
+                  ? (() => {
+                      const variant = variants.find(v => v.id === pendingVariantId);
+                      return variant ? t("unlockVariantDescription", { title: getLocalizedValue(locale, variant.titleVi, variant.titleEn, variant.title) }) : "";
+                    })()
                   : lockReasonLabel}
               </p>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                {selectedVariant
-                  ? t("unlockVariantPrice", { price: selectedVariant.unlockPrice.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })
+                {pendingVariantId
+                  ? (() => {
+                      const variant = variants.find(v => v.id === pendingVariantId);
+                      return variant ? t("unlockVariantPrice", { price: variant.unlockPrice.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") }) : "";
+                    })()
                   : t("buyVipInfo", { days: VIP_UNLOCK_DAYS, cost: VIP_UNLOCK_COST.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
               </p>
 
@@ -2078,7 +2113,10 @@ export default function StoryChapterClient() {
 
               <div className="mt-4 flex flex-wrap justify-end gap-2">
                 <button
-                  onClick={() => setIsUnlockModalOpen(false)}
+                  onClick={() => {
+                    setIsUnlockModalOpen(false);
+                    setPendingVariantId(null);
+                  }}
                   className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                 >
                   {t("cancel")}
@@ -2093,10 +2131,10 @@ export default function StoryChapterClient() {
                 ) : null}
                 <button
                   disabled={isUnlocking}
-                  onClick={selectedVariant ? handleUnlockVariant : handleBuyVip}
+                  onClick={pendingVariantId ? handleUnlockVariant : handleBuyVip}
                   className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {isUnlocking ? "..." : (selectedVariant ? t("unlockNow") : t("buyVip"))}
+                  {isUnlocking ? "..." : (pendingVariantId ? t("unlockNow") : t("buyVip"))}
                 </button>
               </div>
             </div>
@@ -2106,7 +2144,7 @@ export default function StoryChapterClient() {
         {/* Gift Modal */}
         {isGiftModalOpen ? (
           <div
-            className="fixed inset-0 z-[70] bg-black/60 p-4 overflow-y-auto"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-y-auto"
             onClick={(e) => {
               if (e.target === e.currentTarget) {
                 setIsGiftModalOpen(false);
@@ -2116,8 +2154,7 @@ export default function StoryChapterClient() {
               }
             }}
           >
-            <div className="min-h-screen flex items-center justify-center py-8">
-              <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-900">
+            <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-900 my-8">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
                     <Gift className="h-6 w-6 text-white" />
@@ -2191,7 +2228,6 @@ export default function StoryChapterClient() {
                 </div>
               </div>
             </div>
-          </div>
         ) : null}
       </div>
     </div>

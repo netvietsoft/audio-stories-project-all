@@ -53,7 +53,7 @@ export default function NewStoryPage() {
                     <div className="flex items-center gap-4 mb-2">
                         <button
                             onClick={() => router.back()}
-                            className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 rounded-xl hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+                            className="rounded-xl bg-white p-2 text-slate-400 shadow-sm transition-all hover:bg-slate-50 hover:text-indigo-600 active:scale-95"
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>

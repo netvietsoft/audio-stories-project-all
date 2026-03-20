@@ -129,7 +129,7 @@ export default function AdminLayout({
 
 
     return (
-        <div className="flex h-screen bg-[#F8FAFC] dark:bg-slate-950">
+        <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
             {/* Sidebar */}
             <aside
                 className={`bg-white dark:bg-slate-900 flex flex-col hidden md:flex transition-all duration-300 relative ${isCollapsed ? 'w-20' : 'w-72'}`}
@@ -206,7 +206,7 @@ export default function AdminLayout({
             {/* Main Content */}
             <main className="flex-1 h-screen overflow-y-auto w-full transition-all duration-300">
                 {/* Mobile Header */}
-                <div className="md:hidden h-20 bg-white dark:bg-slate-900 flex items-center justify-between px-6">
+                <div className="md:hidden h-20 bg-blue-50 dark:bg-slate-900 flex items-center justify-between px-6">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
@@ -237,7 +237,7 @@ export default function AdminLayout({
                         ></div>
 
                         {/* Sheet */}
-                        <aside className="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
+                        <aside className="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-blue-50 shadow-2xl flex flex-col animate-in slide-in-from-left duration-300 dark:bg-slate-900">
                             <div className="h-20 flex items-center justify-between px-6">
                                 <span className="font-bold text-xl text-indigo-600 flex items-center gap-2">
                                     <Shield className="w-6 h-6" />

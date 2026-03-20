@@ -153,7 +153,7 @@ export default function StoryDetailClient() {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-col md:flex-row gap-6 items-start w-full bg-gray-50 dark:bg-gray-900/80 p-4 md:p-6 rounded-xl">
+      <section className="flex w-full flex-col items-start gap-6 rounded-xl bg-white p-4 dark:bg-gray-900 md:flex-row md:p-6">
         <div className="relative w-full md:w-[280px] lg:w-[320px] shrink-0 aspect-square rounded-lg overflow-hidden shadow-xl">
           <Image
             src={story.thumbnailUrl || "https://placehold.co/600x600?text=No+Cover"}
@@ -384,14 +384,14 @@ export default function StoryDetailClient() {
         </div>
       </section>
 
-      <section className="rounded-2xl bg-purple-50 p-5 dark:bg-purple-950/30">
+      <section className="rounded-2xl bg-white p-5 dark:bg-gray-900">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("introTitle")}</h2>
         <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
           {storyDescription || t("introUpdating")}
         </p>
       </section>
 
-      <section className="rounded-2xl bg-orange-50 p-5 dark:bg-orange-950/30">
+      <section className="rounded-2xl bg-white p-5 dark:bg-gray-900">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="inline-flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
             <ListMusic className="h-5 w-5" /> {t("chapterList")}
@@ -400,7 +400,7 @@ export default function StoryDetailClient() {
         </div>
 
         {story.chapters.length === 0 ? (
-          <div className="rounded-2xl bg-blue-50 p-4 dark:bg-blue-950/30">
+          <div className="rounded-2xl bg-white p-4 dark:bg-gray-900">
             <p className="font-semibold">{t("chaptersPendingTitle")}</p>
             <p className="mt-1">{t("chaptersPendingBody", { language: locale === "en" ? t("languageEn") : t("languageVi") })}</p>
           </div>

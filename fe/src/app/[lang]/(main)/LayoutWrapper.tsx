@@ -9,7 +9,7 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
 
     return (
         <main
-            className={`flex-1 w-full pb-24 ${isFullWidth ? "" : "max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 py-8"
+            className={`flex-1 w-full bg-slate-50 pb-24 dark:bg-slate-950 ${isFullWidth ? "" : "max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 py-8"
                 }`}
         >
             {children}

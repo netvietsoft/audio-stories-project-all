@@ -100,7 +100,7 @@ export default function EditStoryPage() {
             <div className="mb-2 flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="rounded-xl border border-slate-200 bg-white p-2 text-slate-400 transition-all hover:bg-slate-50 hover:text-indigo-600 active:scale-95"
+                className="rounded-xl bg-white p-2 text-slate-400 transition-all hover:bg-slate-50 hover:text-indigo-600 active:scale-95"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>

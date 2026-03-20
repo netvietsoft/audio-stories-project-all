@@ -326,7 +326,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                         <input
                             {...register(isEnglishLocale ? 'titleEn' : 'titleVi')}
                             placeholder={isEnglishLocale ? 'Enter story title in English' : 'Nhập tên truyện tiếng Việt'}
-                            className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                            className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                         />
                         {!isEnglishLocale && errors.titleVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleVi.message}</p>}
                         {isEnglishLocale && errors.titleEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleEn.message}</p>}
@@ -339,7 +339,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             <input
                                 {...register('slug')}
                                 placeholder="ten-truyen-slug..."
-                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                             />
                             {errors.slug && <p className="text-xs font-bold text-red-500 ml-2">{errors.slug.message}</p>}
                         </div>
@@ -349,7 +349,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             <div className="relative">
                                 <select
                                     {...register('status')}
-                                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                                    className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
                                 >
                                     <option value="ongoing">Đang ra (Ongoing)</option>
                                     <option value="completed">Hoàn thành (Completed)</option>
@@ -361,7 +361,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4">
+                        <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
                             <label className="flex cursor-pointer items-center justify-between gap-4">
                                 <div>
                                     <p className="text-sm font-black uppercase tracking-wider text-slate-700">Đề xuất ở trang đọc</p>
@@ -399,7 +399,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             <button
                                 type="button"
                                 onClick={() => setIsAuthorOpen(!isAuthorOpen)}
-                                className="w-full bg-slate-50 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between"
+                                className="w-full bg-white text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between"
                             >
                                 <span className={selectedAuthor ? 'text-slate-900' : 'text-slate-400'}>
                                     {selectedAuthor ? selectedAuthor.name : 'Chọn tác giả'}
@@ -416,7 +416,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                 type="text"
                                                 autoFocus
                                                 placeholder="Tìm tên tác giả..."
-                                                className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                                                className="w-full bg-white border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
                                                 value={authorSearch}
                                                 onChange={(e) => setAuthorSearch(e.target.value)}
                                             />
@@ -433,7 +433,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                         setIsAuthorOpen(false);
                                                         setAuthorSearch('');
                                                     }}
-                                                    className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center justify-between group"
+                                                    className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-white hover:text-indigo-600 transition-colors flex items-center justify-between group"
                                                 >
                                                     {a.name}
                                                     {selectedAuthorId === a.id && <Check className="w-4 h-4 text-indigo-600" />}
@@ -468,7 +468,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             <button
                                 type="button"
                                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                                className="w-full bg-slate-50 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between min-h-[56px]"
+                                className="w-full bg-white text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between min-h-[56px]"
                             >
                                 <div className="flex flex-wrap gap-2">
                                     {selectedCategoryIds.length > 0 ? (
@@ -519,7 +519,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                 type="text"
                                                 autoFocus
                                                 placeholder="Tìm thể loại..."
-                                                className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                                                className="w-full bg-white border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
                                                 value={categorySearch}
                                                 onChange={(e) => setCategorySearch(e.target.value)}
                                             />
@@ -532,7 +532,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                     key={cat.id}
                                                     type="button"
                                                     onClick={() => handleCategoryToggle(cat.id)}
-                                                    className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center justify-between group"
+                                                    className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-white hover:text-indigo-600 transition-colors flex items-center justify-between group"
                                                 >
                                                     {selectedLocale === 'en' ? cat.nameEn || cat.name : cat.nameVi || cat.name}
                                                     {selectedCategoryIds.includes(cat.id) && <Check className="w-4 h-4 text-indigo-600" />}
@@ -567,7 +567,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 <button
                                     type="button"
                                     onClick={() => setIsChapterOpen(!isChapterOpen)}
-                                    className="w-full bg-slate-50 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between min-h-[56px]"
+                                    className="w-full bg-white text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between min-h-[56px]"
                                 >
                                     <div className="flex flex-wrap gap-2">
                                         {selectedChapterIds.length > 0 ? (
@@ -592,7 +592,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                     type="text"
                                                     autoFocus
                                                     placeholder="Tìm theo tên hoặc số chương..."
-                                                    className="w-full bg-slate-50 border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                                                    className="w-full bg-white border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
                                                     value={chapterSearch}
                                                     onChange={(e) => setChapterSearch(e.target.value)}
                                                 />
@@ -605,7 +605,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                         key={chap.id}
                                                         type="button"
                                                         onClick={() => handleChapterToggle(chap.id)}
-                                                        className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors flex items-center justify-between group"
+                                                        className="w-full text-left px-6 py-3.5 text-sm font-bold text-slate-600 hover:bg-white hover:text-indigo-600 transition-colors flex items-center justify-between group"
                                                     >
                                                         <span>Chương {chap.chapterNumber}: {selectedLocale === 'en' ? chap.titleEn || chap.title : chap.titleVi || chap.title}</span>
                                                         {selectedChapterIds.includes(chap.id) && (
@@ -660,7 +660,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             {...register(isEnglishLocale ? 'descriptionEn' : 'descriptionVi')}
                             rows={5}
                             placeholder={isEnglishLocale ? 'Enter English description...' : 'Nhập giới thiệu tiếng Việt...'}
-                            className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                            className="w-full bg-white border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
                         />
                         {!isEnglishLocale && errors.descriptionVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionVi.message}</p>}
                         {isEnglishLocale && errors.descriptionEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionEn.message}</p>}
@@ -676,7 +676,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             {...register('facebookGroupUrl')}
                             type="url"
                             placeholder="https://www.facebook.com/groups/..."
-                            className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                            className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                         />
                         {errors.facebookGroupUrl && <p className="text-xs font-bold text-red-500 ml-2">{errors.facebookGroupUrl.message}</p>}
                     </div>
@@ -692,7 +692,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 {...register('twitterUrl')}
                                 type="url"
                                 placeholder="https://twitter.com/..."
-                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                             />
                             {errors.twitterUrl && <p className="text-xs font-bold text-red-500 ml-2">{errors.twitterUrl.message}</p>}
                         </div>
@@ -706,7 +706,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 {...register('instagramUrl')}
                                 type="url"
                                 placeholder="https://instagram.com/..."
-                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                             />
                             {errors.instagramUrl && <p className="text-xs font-bold text-red-500 ml-2">{errors.instagramUrl.message}</p>}
                         </div>
@@ -720,7 +720,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 {...register('redditUrl')}
                                 type="url"
                                 placeholder="https://reddit.com/r/..."
-                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                             />
                             {errors.redditUrl && <p className="text-xs font-bold text-red-500 ml-2">{errors.redditUrl.message}</p>}
                         </div>
@@ -734,7 +734,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 {...register('whatsappUrl')}
                                 type="url"
                                 placeholder="https://chat.whatsapp.com/..."
-                                className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                             />
                             {errors.whatsappUrl && <p className="text-xs font-bold text-red-500 ml-2">{errors.whatsappUrl.message}</p>}
                         </div>
@@ -780,7 +780,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                             return {
                                                 width: "100%",
                                                 minHeight: "160px",
-                                                backgroundColor: "#f8fafc", // bg-slate-50
+                                                backgroundColor: "#f8fafc", // bg-white
                                                 border: "2px dashed #e2e8f0", // border-slate-200
                                                 borderRadius: "24px",
                                                 display: "flex",
@@ -827,7 +827,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
 
 
                 {/* Footer Actions */}
-                <div className="p-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
+                <div className="p-8 bg-white border-t border-slate-100 flex items-center justify-end gap-4">
                     <button
                         type="button"
                         onClick={onCancel}

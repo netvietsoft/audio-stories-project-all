@@ -106,7 +106,7 @@ export default function StoryFilterBar({
   const selectedSort = sortOptions.find((s) => s.value === value.sort);
 
   return (
-    <div className="rounded-2xl bg-blue-50 p-6 dark:bg-blue-950/30 shadow-sm">
+    <div className="rounded-2xl bg-white p-6 shadow-sm dark:bg-gray-900">
       <h2 className="mb-4 text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
         {t("quickFilter")}
       </h2>

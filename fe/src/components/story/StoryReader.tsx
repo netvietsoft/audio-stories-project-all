@@ -172,56 +172,29 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
   if (!content) return [];
 
   let parts: string[] = [];
-<<<<<<< HEAD
-  
-  // Priority 1: Check for [doan1], [doan2], etc. markers
   const doanRegex = /\[doan\d+\]/gi;
   if (doanRegex.test(content)) {
-    // Split by [doanX] markers and filter out the markers themselves
     parts = content
       .split(doanRegex)
-      .map(p => p.trim())
-      .filter(p => p.length > 0);
-  }
-  // Priority 2: Check for <hr> markers (inserted by admin auto-split feature)
-  else if (content.toLowerCase().includes('<hr') || content.toLowerCase().includes('<hr/>') || content.toLowerCase().includes('<hr />')) {
+      .map((part) => part.trim())
+      .filter(Boolean);
+  } else if (/<hr\s*\/?>/i.test(content)) {
     parts = content
       .split(/<hr\s*\/?>/gi)
-      .map(p => p.trim())
-      .filter(p => p.length > 0);
-  }
-  // Priority 3: Try to split by common block tags if content looks like HTML
-  else {
-    const trimmed = content.trim();
-    if (trimmed.startsWith('<') && trimmed.includes('</p>')) {
-      // Fallback 1: Use a simple split by paragraph closing tag
-      parts = content
-        .split('</p>')
-        .map(p => p.trim())
-        .filter(p => p.length > 0)
-        .map(p => p + '</p>');
-    } else {
-      // Fallback 2: Plain text split by double newlines
-      parts = content
-        .split(/\n\s*\n/)
-        .map((part) => part.trim().replace(/^\[Paragraph\s*\d+\]\s*/i, "").replace(/\[.*?\]/g, "").trim())
-        .filter(Boolean);
-    }
-  }
-=======
-
-  if (content.includes('<') && content.includes('>') && typeof window !== 'undefined') {
+      .map((part) => part.trim())
+      .filter(Boolean);
+  } else if (content.includes("<") && content.includes(">") && typeof window !== "undefined") {
     try {
       const parser = new DOMParser();
-      const doc = parser.parseFromString(content, 'text/html');
-      const pNodes = Array.from(doc.querySelectorAll('p'));
+      const doc = parser.parseFromString(content, "text/html");
+      const pNodes = Array.from(doc.querySelectorAll("p"));
 
       if (pNodes.length > 0) {
         parts = pNodes
-          .map((node) => (node.textContent || '').trim())
+          .map((node) => (node.textContent || "").trim())
           .filter(Boolean);
       } else {
-        const plainText = (doc.body?.textContent || '').replace(/\r/g, '').trim();
+        const plainText = (doc.body?.textContent || "").replace(/\r/g, "").trim();
         parts = plainText.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
       }
     } catch {
@@ -231,16 +204,15 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
 
   if (parts.length === 0) {
     parts = content
-      .replace(/<[^>]*>/g, '\n')
+      .replace(/<[^>]*>/g, "\n")
       .split(/\n\s*\n|\n/)
       .map((part) => part.trim())
       .filter(Boolean);
   }
 
   parts = parts
-    .map((part) => part.replace(/^\[Paragraph\s*\d+\]\s*/i, '').replace(/^\[Đoạn\s*\d+\]\s*/i, '').replace(/\[.*?\]/g, '').trim())
+    .map((part) => part.replace(/^\[Paragraph\s*\d+\]\s*/i, "").replace(/^\[Đoạn\s*\d+\]\s*/i, "").replace(/\[.*?\]/g, "").trim())
     .filter(Boolean);
->>>>>>> ac01270 (feat: add banner management functionality with create, edit, and delete capabilities)
 
   return parts.map((part, index) => ({
     id: `${chapterId}-p-${index}`,
@@ -351,15 +323,6 @@ export default function StoryReader({
       | { type: "ad"; id: string; ad: AdvertisementItem }
     > = [];
 
-<<<<<<< HEAD
-    // Simply add all paragraphs without ads/CTAs
-    paragraphs.forEach((paragraph) => {
-      items.push({ type: "paragraph", paragraph });
-    });
-
-    return items;
-  }, [paragraphs]);
-=======
     let accumulatedWords = 0;
     let nextBreakAt = insertionFrequency;
     let adIndex = 0;
@@ -383,7 +346,6 @@ export default function StoryReader({
 
     return items;
   }, [activeAds, insertionFrequency, paragraphs]);
->>>>>>> ac01270 (feat: add banner management functionality with create, edit, and delete capabilities)
 
   const normalizeComments = (rawComments: ParagraphCommentsResponse["comments"] = []): InlineComment[] => {
     return rawComments.map((item) => ({
@@ -640,7 +602,7 @@ export default function StoryReader({
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-white dark:to-gray-900" />
 
-        <div className="absolute inset-x-3 bottom-3 z-10 rounded-xl border border-amber-200 bg-white/95 p-4 text-sm shadow-lg backdrop-blur dark:border-amber-900/60 dark:bg-gray-900/95">
+        <div className="absolute inset-x-3 bottom-3 z-10 rounded-xl bg-white/95 p-4 text-sm shadow-lg backdrop-blur dark:bg-gray-900/95">
           <p className="font-semibold text-amber-700 dark:text-amber-300">Nội dung bị khóa</p>
           <p className="mt-1 text-gray-600 dark:text-gray-300">
             {lockLabel || "Cần mở khóa VIP để đọc toàn bộ chương này."}
@@ -685,7 +647,7 @@ export default function StoryReader({
           margin-bottom: 0;
         }
       `}</style>
-      <div className={`relative overflow-x-hidden min-w-0 pr-0 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
+      <div className={`relative overflow-x-hidden min-w-0 rounded-2xl bg-slate-50 p-4 pr-0 sm:pr-10 lg:pr-14 dark:bg-slate-900/40 ${isProd ? "select-none" : ""}`}>
       {flowItems.map((item) => {
         if (item.type === "paragraph") {
           const { paragraph } = item;
@@ -695,7 +657,7 @@ export default function StoryReader({
           return (
             <div key={paragraph.id} className="group relative mb-6 overflow-visible rounded-lg transition-colors">
               <div 
-                className="story-paragraph-content text-lg leading-relaxed text-gray-800 dark:text-gray-100 px-4 py-2 -mx-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                className="story-paragraph-content -mx-2 rounded-xl bg-white px-4 py-3 text-lg leading-relaxed text-gray-800 transition-colors hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800/80"
                 style={{ 
                   wordBreak: "normal",
                   overflowWrap: "break-word",
@@ -717,7 +679,7 @@ export default function StoryReader({
               </button>
 
               {isOpen && (
-                <div className="mt-3 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+                <div className="mt-3 rounded-lg bg-white p-3 shadow-sm dark:bg-gray-900">
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Bình luận đoạn #{paragraph.index + 1}</p>
                     <div className="flex items-center gap-2">
@@ -907,26 +869,6 @@ export default function StoryReader({
           );
         }
 
-<<<<<<< HEAD
-        // Ads and CTAs are disabled
-        // if (item.type === "ad") {
-        //   return (
-        //     <div key={item.id} className="mb-8 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
-        //       <p className="text-[11px] font-semibold uppercase tracking-wide">Sponsored</p>
-        //       <p className="mt-1">Quảng cáo: Nâng cấp Premium để mở khóa audio chất lượng cao và nghe không giới hạn.</p>
-        //     </div>
-        //   );
-        // }
-
-        // return (
-        //   <div key={item.id} className="mb-8 rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-sm text-blue-900 dark:border-blue-900/60 dark:bg-blue-900/20 dark:text-blue-200">
-        //     <p className="text-[11px] font-semibold uppercase tracking-wide">Gợi ý cho bạn</p>
-        //     <p className="mt-1">Tiếp tục chương sau để mở khóa đoạn cao trào và nhận thưởng 20 credits.</p>
-        //   </div>
-        // );
-
-        return null;
-=======
         if (item.type === "ad") {
           const isExternal = /^https?:\/\//i.test(item.ad.targetUrl);
           const adHref = isExternal
@@ -937,23 +879,23 @@ export default function StoryReader({
 
           return (
             <div key={item.id} className="mb-8 flex justify-center">
-              <article className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-orange-50/70 p-3 shadow-sm dark:bg-orange-950/20">
-                <span className="absolute right-3 top-2 text-[10px] font-bold uppercase tracking-wider text-orange-500/80">
+              <article className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white p-3 shadow-sm dark:bg-gray-900">
+                <span className="absolute right-3 top-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {locale === 'en' ? 'Sponsored' : 'Tài trợ'}
                 </span>
                 <div className="flex items-center gap-3">
-                  <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-white dark:bg-gray-900">
+                  <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-gray-800">
                     <img src={item.ad.imageUrl} alt={item.ad.title} className="h-full w-full object-cover" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-orange-600 dark:text-orange-300">{item.ad.partnerName}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">{item.ad.partnerName}</p>
                     <h3 className="mt-1 line-clamp-2 text-sm font-bold text-gray-900 dark:text-gray-100">{item.ad.title}</h3>
                     <div className="mt-2">
                       <a
                         href={adHref}
                         target={isExternal ? '_blank' : undefined}
                         rel={isExternal ? 'noreferrer' : undefined}
-                        className="inline-flex items-center rounded-full bg-orange-500 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-white transition hover:bg-orange-600"
+                        className="inline-flex items-center rounded-full bg-blue-600 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-white transition hover:bg-blue-700"
                       >
                         {locale === 'en' ? 'Shop now' : 'Mua ngay'}
                       </a>
@@ -964,7 +906,6 @@ export default function StoryReader({
             </div>
           );
         }
->>>>>>> ac01270 (feat: add banner management functionality with create, edit, and delete capabilities)
       })}
 
       {/* Report Modal */}

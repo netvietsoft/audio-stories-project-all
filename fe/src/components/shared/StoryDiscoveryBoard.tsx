@@ -162,7 +162,7 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
   const leaderboardStories = stories.slice(0, 5);
 
   return (
-    <div className="rounded-2xl bg-purple-50 p-4 dark:bg-purple-950/30">
+    <div className="rounded-2xl bg-white p-4 dark:bg-gray-900">
       {stories.length ? (
         <div className="mt-4 grid grid-cols-1 items-stretch gap-8 lg:grid-cols-3">
 

@@ -459,7 +459,7 @@ export default function HomePage() {
 
       {accessToken ? (
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl bg-blue-50 p-5 shadow-sm dark:bg-blue-950/30">
+          <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-gray-900">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("continueTitle")}</h2>
@@ -522,7 +522,7 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="rounded-3xl bg-pink-50 p-5 shadow-sm dark:bg-pink-950/30">
+          <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-gray-900">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("favoritesListTitle")}</h2>
@@ -608,7 +608,7 @@ export default function HomePage() {
             {t("viewAll")}
           </Link>
         </div>
-        <div className="bg-gray-50 dark:bg-gray-900/70 rounded-2xl p-4">
+        <div className="rounded-2xl bg-white p-4 dark:bg-gray-900">
           <StoryListView chapters={newestChapters} isLoading={isLoading} />
         </div>
       </section>

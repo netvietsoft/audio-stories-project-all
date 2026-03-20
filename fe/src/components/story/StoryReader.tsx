@@ -892,7 +892,12 @@ export default function StoryReader({
 
           return (
             <div key={item.id} className="mb-8 flex justify-center">
-              <article className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white p-3 shadow-sm dark:bg-gray-900">
+              <a
+                href={adHref}
+                target={isExternal ? '_blank' : undefined}
+                rel={isExternal ? 'noreferrer' : undefined}
+                className="group relative block w-full max-w-2xl overflow-hidden rounded-2xl bg-white p-3 shadow-sm transition hover:shadow-md dark:bg-gray-900"
+              >
                 <span className="absolute right-3 top-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {locale === 'en' ? 'Sponsored' : 'Tài trợ'}
                 </span>
@@ -904,18 +909,13 @@ export default function StoryReader({
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">{item.ad.partnerName}</p>
                     <h3 className="mt-1 line-clamp-2 text-sm font-bold text-gray-900 dark:text-gray-100">{item.ad.title}</h3>
                     <div className="mt-2">
-                      <a
-                        href={adHref}
-                        target={isExternal ? '_blank' : undefined}
-                        rel={isExternal ? 'noreferrer' : undefined}
-                        className="inline-flex items-center rounded-full bg-blue-600 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-white transition hover:bg-blue-700"
-                      >
+                      <span className="inline-flex items-center rounded-full bg-blue-600 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-white transition group-hover:bg-blue-700">
                         {locale === 'en' ? 'Shop now' : 'Mua ngay'}
-                      </a>
+                      </span>
                     </div>
                   </div>
                 </div>
-              </article>
+              </a>
             </div>
           );
         }

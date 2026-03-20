@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { Loader2, Megaphone, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
 import Link from '@/components/shared/LocalizedLink';
 
-import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { adminApiClient as apiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { useAdminStore } from '@/stores/admin-store';
 
 type AdItem = {
   id: string;
@@ -21,6 +24,8 @@ type ToastState = {
 } | null;
 
 export default function AdsPage() {
+  const router = useRouter();
+  const params = useParams<{ lang?: string }>();
   const [items, setItems] = useState<AdItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -36,13 +41,29 @@ export default function AdsPage() {
     }, 2400);
   };
 
+  const handleUnauthorized = () => {
+    useAdminStore.getState().clearAuth();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('adminLoggedIn');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY);
+      localStorage.removeItem(ADMIN_REFRESH_TOKEN_KEY);
+    }
+    const lang = params?.lang === 'en' ? 'en' : 'vi';
+    router.push(`/${lang}/admin/login`);
+  };
+
   const fetchAds = async () => {
     setIsLoading(true);
     try {
       const response = await apiClient.get('/ads');
       setItems(Array.isArray(response.data?.data) ? response.data.data : []);
     } catch (error) {
-      console.error('Failed to fetch ads:', error);
+      if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
+        handleUnauthorized();
+      } else {
+        console.error('Failed to fetch ads:', error);
+      }
       setItems([]);
     } finally {
       setIsLoading(false);
@@ -62,7 +83,11 @@ export default function AdsPage() {
         const parsed = Number(rawValue);
         setFrequencyValue(Number.isFinite(parsed) && parsed > 0 ? String(Math.floor(parsed)) : '1000');
       } catch (error) {
-        console.error('Failed to fetch ad insertion frequency config:', error);
+        if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
+          handleUnauthorized();
+        } else {
+          console.error('Failed to fetch ad insertion frequency config:', error);
+        }
         setFrequencyValue('1000');
       } finally {
         setIsLoadingFrequency(false);

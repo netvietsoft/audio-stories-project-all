@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, Loader2, Megaphone } from 'lucide-react';
 import Link from '@/components/shared/LocalizedLink';
@@ -13,20 +14,41 @@ type AdDetail = AdFormValues & { id: string };
 export default function EditAdPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const id = params?.id;
+  const rawId = params?.id;
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
+  const normalizedId = id ? decodeURIComponent(id).trim() : '';
 
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialData, setInitialData] = useState<AdDetail | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!normalizedId) return;
 
     const fetchAd = async () => {
       setIsPageLoading(true);
       try {
-        const response = await apiClient.get(`/ads/${id}`);
-        setInitialData(response.data);
+        const safeId = encodeURIComponent(normalizedId);
+        const endpoints = [`/ads/${safeId}`, `/ads/admin/${safeId}`];
+
+        let data: AdDetail | null = null;
+        for (const endpoint of endpoints) {
+          try {
+            const response = await apiClient.get(endpoint);
+            data = (response.data?.data ?? response.data) as AdDetail;
+            break;
+          } catch (error) {
+            if (!axios.isAxiosError(error) || error.response?.status !== 404) {
+              throw error;
+            }
+          }
+        }
+
+        if (!data) {
+          throw new Error('Advertisement not found.');
+        }
+
+        setInitialData(data);
       } catch (error) {
         console.error('Failed to fetch ad detail:', error);
         alert('Không thể tải thông tin quảng cáo.');
@@ -36,17 +58,37 @@ export default function EditAdPage() {
     };
 
     void fetchAd();
-  }, [id]);
+  }, [normalizedId]);
 
   const handleSubmit = async (payload: AdFormValues) => {
-    if (!id) return;
+    if (!normalizedId) return;
 
     setIsSubmitting(true);
     try {
-      await apiClient.patch(`/ads/${id}`, {
+      const safeId = encodeURIComponent(normalizedId);
+      const requestBody = {
         ...payload,
         isActive: payload.isActive ?? true,
-      });
+      };
+      const endpoints = [`/ads/${safeId}`, `/ads/admin/${safeId}`];
+
+      let updated = false;
+      for (const endpoint of endpoints) {
+        try {
+          await apiClient.patch(endpoint, requestBody);
+          updated = true;
+          break;
+        } catch (error) {
+          if (!axios.isAxiosError(error) || error.response?.status !== 404) {
+            throw error;
+          }
+        }
+      }
+
+      if (!updated) {
+        throw new Error('Advertisement update endpoint not found.');
+      }
+
       router.push('/admin/ads');
     } catch (error) {
       console.error('Failed to update ad:', error);

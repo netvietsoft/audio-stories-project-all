@@ -7,7 +7,8 @@ import { ChevronLeft, Loader2, Newspaper } from "lucide-react";
 
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
 import { revalidateStoriesCache } from "@/app/[lang]/admin/_actions/revalidate";
-import { StoryForm, type StoryFormValues, type StorySubmitPayload } from "../_components/StoryForm";
+import { StoryForm, type StoryFormValues } from "../_components/StoryForm";
+import type { StorySubmitPayload } from "@/types/admin";
 import StoryChapterManager from "./_components/StoryChapterManager";
 
 export default function EditStoryPage() {

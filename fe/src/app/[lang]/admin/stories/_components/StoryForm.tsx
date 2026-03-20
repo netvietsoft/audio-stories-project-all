@@ -22,6 +22,7 @@ import Link from '@/components/shared/LocalizedLink';
 
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { UploadButton } from '@/lib/uploadthing';
+import type { Category, Chapter, Author, StorySubmitPayload } from '@/types/admin';
 
 const storySchema = z.object({
     titleVi: z.string().optional(),
@@ -50,49 +51,7 @@ const storySchema = z.object({
     path: ['descriptionVi'],
 });
 
-
 export type StoryFormValues = z.infer<typeof storySchema>;
-export type StorySubmitPayload = {
-    title: string;
-    slug: string;
-    description?: string;
-    thumbnailUrl?: string;
-    authorId: string;
-    status: 'ongoing' | 'completed';
-    categoryIds: number[];
-    audioUrl?: string;
-    facebookGroupUrl?: string;
-    twitterUrl?: string;
-    instagramUrl?: string;
-    redditUrl?: string;
-    whatsappUrl?: string;
-    isRecommended?: boolean;
-    isInteractive?: boolean;
-    chapterIds?: string[];
-};
-
-interface Category {
-    id: number;
-    name: string;
-    nameVi?: string;
-    nameEn?: string;
-    language?: string;
-}
-
-interface Chapter {
-    id: string;
-    chapterNumber: number;
-    title: string;
-    titleVi?: string;
-    titleEn?: string;
-    storyId?: string | null;
-    language?: string;
-}
-
-interface Author {
-    id: string;
-    name: string;
-}
 
 interface StoryFormProps {
     initialData?: Partial<StoryFormValues> & { id?: string };

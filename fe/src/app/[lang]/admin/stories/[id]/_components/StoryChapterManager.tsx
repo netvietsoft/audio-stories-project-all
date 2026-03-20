@@ -17,41 +17,7 @@ import {
 } from "lucide-react";
 
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
-
-interface Chapter {
-  id: string;
-  chapterNumber: number;
-  title: string;
-  description?: string | null;
-  content?: string | null;
-  r2AudioUrl?: string | null;
-  thumbnailUrl?: string | null;
-  youtubeVideoId?: string | null;
-  audioDuration?: number | null;
-  accessType?: 'free' | 'timed' | 'vip';
-  language?: string | null;
-  createdAt: string;
-  storyId?: string | null;
-  variants?: Variant[];
-  _count?: {
-    variants: number;
-  };
-}
-
-interface Variant {
-  id: string;
-  title: string;
-  description?: string;
-  content?: string;
-  audioUrl?: string;
-  r2AudioUrl?: string;
-  audioDuration?: number;
-  unlockPrice: number;
-  orderIndex: number;
-  nextChapterId?: string | null;
-  nextVariantId?: string | null;
-  isDefault?: boolean;
-}
+import type { Chapter, Variant } from "@/types/admin";
 
 type VariantUpdatePayload = {
   title?: string;

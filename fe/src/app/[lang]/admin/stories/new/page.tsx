@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Newspaper, ChevronLeft } from 'lucide-react';
 import Link from '@/components/shared/LocalizedLink';
 import { StoryForm } from '../_components/StoryForm';
-import type { StorySubmitPayload } from '../_components/StoryForm';
+import type { StorySubmitPayload } from '@/types/admin';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { revalidateStoriesCache } from '@/app/[lang]/admin/_actions/revalidate';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';

@@ -18,6 +18,7 @@ import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import { useRouter } from 'next/navigation';
+import type { Chapter } from '@/types/admin';
 
 
 

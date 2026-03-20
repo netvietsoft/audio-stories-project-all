@@ -235,8 +235,8 @@ export default function GlobalPlayer() {
         : undefined;
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/85 px-3 py-2 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/85 sm:px-4 transition-transform duration-300 ${isVisible ? "translate-y-0" : "translate-y-full"}`}>
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-3">
+    <div className={`fixed bottom-0 left-0 right-0 z-50 bg-gray-50/90 px-3 py-2 backdrop-blur-md dark:bg-gray-900/85 sm:px-4 transition-transform duration-300 ${isVisible ? "translate-y-0" : "translate-y-full"}`}>
+      <div className="mx-auto flex w-full max-w-[1920px] items-center gap-3">
         {chapterHref ? (
           <Link href={chapterHref} className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 transition hover:bg-gray-100/80 dark:hover:bg-gray-800/70">
             <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800">

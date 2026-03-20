@@ -129,20 +129,20 @@ export default function AdminLayout({
 
 
     return (
-        <div className="flex h-screen bg-[#F8FAFC]">
+        <div className="flex h-screen bg-[#F8FAFC] dark:bg-slate-950">
             {/* Sidebar */}
             <aside
-                className={`bg-white border-r border-slate-200 flex flex-col hidden md:flex transition-all duration-300 relative ${isCollapsed ? 'w-20' : 'w-72'}`}
+                className={`bg-white dark:bg-slate-900 flex flex-col hidden md:flex transition-all duration-300 relative ${isCollapsed ? 'w-20' : 'w-72'}`}
             >
                 {/* Toggle Button */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-24 bg-white border border-slate-200 rounded-full p-1.5 hover:bg-slate-50 transition-colors shadow-sm z-10"
+                    className="absolute -right-3 top-24 bg-white dark:bg-slate-800 rounded-full p-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm z-10"
                 >
                     {isCollapsed ? <ChevronRight className="w-4 h-4 text-slate-600" /> : <ChevronLeft className="w-4 h-4 text-slate-600" />}
                 </button>
 
-                <div className={`h-20 flex items-center border-b border-slate-100 transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'px-8'}`}>
+                <div className={`h-20 flex items-center transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'px-8'}`}>
                     <Link href="/" className="font-bold text-2xl text-indigo-600 flex items-center gap-2 overflow-hidden">
                         <Shield className="w-7 h-7 shrink-0" />
                         {!isCollapsed && <span className="whitespace-nowrap opacity-100 transition-opacity duration-300">Admin Panel</span>}
@@ -178,7 +178,7 @@ export default function AdminLayout({
                                 onClick={handleLogout}
                                 disabled={isLoggingOut}
                                 title={isCollapsed ? 'Đăng xuất' : ''}
-                                className={`w-full flex items-center justify-center text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50 ${isCollapsed ? 'p-2' : 'gap-2 px-4 py-2.5'}`}
+                                className={`w-full flex items-center justify-center text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50 ${isCollapsed ? 'p-2' : 'gap-2 px-4 py-2.5'}`}
                             >
                                 {isLoggingOut ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -193,7 +193,7 @@ export default function AdminLayout({
                             <Link
                                 href="/"
                                 title={isCollapsed ? 'Về trang chủ' : ''}
-                                className={`w-full flex items-center justify-center text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-xl transition-all active:scale-[0.98] ${isCollapsed ? 'p-2' : 'gap-2 px-4 py-2.5'}`}
+                                className={`w-full flex items-center justify-center text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all active:scale-[0.98] ${isCollapsed ? 'p-2' : 'gap-2 px-4 py-2.5'}`}
                             >
                                 <Home className="w-4 h-4 shrink-0" />
                                 {!isCollapsed && <span>Về trang chủ</span>}
@@ -206,7 +206,7 @@ export default function AdminLayout({
             {/* Main Content */}
             <main className="flex-1 h-screen overflow-y-auto w-full transition-all duration-300">
                 {/* Mobile Header */}
-                <div className="md:hidden h-20 bg-white border-b border-slate-200 flex items-center justify-between px-6">
+                <div className="md:hidden h-20 bg-white dark:bg-slate-900 flex items-center justify-between px-6">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
@@ -238,7 +238,7 @@ export default function AdminLayout({
 
                         {/* Sheet */}
                         <aside className="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
-                            <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100">
+                            <div className="h-20 flex items-center justify-between px-6">
                                 <span className="font-bold text-xl text-indigo-600 flex items-center gap-2">
                                     <Shield className="w-6 h-6" />
                                     Admin Panel
@@ -273,13 +273,22 @@ export default function AdminLayout({
                                 })}
                             </nav>
 
-                            <div className="p-6 border-t border-slate-100 space-y-4">
-                                <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4">
-                                    <div className="space-y-3 flex">
+                            <div className="p-6 space-y-4">
+                                <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-10 h-10 shrink-0 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
+                                            A
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-800">Admin</p>
+                                            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Quản trị viên</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
                                         <button
                                             onClick={handleLogout}
                                             disabled={isLoggingOut}
-                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50"
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50"
                                         >
                                             {isLoggingOut ? (
                                                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -293,7 +302,7 @@ export default function AdminLayout({
                                         <Link
                                             href="/"
                                             onClick={() => setIsMobileMenuOpen(false)}
-                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-xl transition-all active:scale-[0.98]"
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all active:scale-[0.98]"
                                         >
                                             <Home className="w-4 h-4" />
                                         </Link>
@@ -304,8 +313,8 @@ export default function AdminLayout({
                     </div>
                 )}
 
-                <div className="p-6 md:p-10">
-                    {children}
+                <div className="p-6 md:p-8 xl:p-10">
+                    <div className="mx-auto w-full max-w-[1920px]">{children}</div>
                 </div>
             </main>
         </div>

@@ -153,7 +153,7 @@ export default function StoryDetailClient() {
 
   return (
     <div className="space-y-6">
-      <section className="flex flex-col md:flex-row gap-6 items-start w-full bg-white dark:bg-gray-900 p-4 md:p-6 rounded-xl border border-gray-200 dark:border-gray-800">
+      <section className="flex flex-col md:flex-row gap-6 items-start w-full bg-gray-50 dark:bg-gray-900/80 p-4 md:p-6 rounded-xl">
         <div className="relative w-full md:w-[280px] lg:w-[320px] shrink-0 aspect-square rounded-lg overflow-hidden shadow-xl">
           <Image
             src={story.thumbnailUrl || "https://placehold.co/600x600?text=No+Cover"}
@@ -220,7 +220,7 @@ export default function StoryDetailClient() {
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center gap-5 py-3 border-t border-b border-gray-200 dark:border-gray-700 text-sm">
+          <div className="flex items-center gap-5 py-3 rounded-xl bg-white/80 px-3 dark:bg-gray-950/50 text-sm">
             <span className="inline-flex items-center gap-1.5">
               <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
               <span className="font-semibold text-gray-900 dark:text-white">{Number(story.averageRating).toFixed(1)}</span>
@@ -264,9 +264,9 @@ export default function StoryDetailClient() {
                 size="md"
                 icon="heart"
                 label={t("favorite")}
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold border shadow-sm transition-colors w-full sm:flex-1"
-                activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
-                inactiveClassName="border-gray-300 bg-white text-black hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                className="flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold shadow-sm transition-colors w-full sm:flex-1"
+                activeClassName="bg-red-500 text-white hover:bg-red-600"
+                inactiveClassName="bg-white text-black hover:bg-red-50 hover:text-red-600 dark:bg-gray-900 dark:text-white dark:hover:bg-red-900/20 dark:hover:text-red-300"
               />
             </div>
 
@@ -279,9 +279,9 @@ export default function StoryDetailClient() {
                   icon="heart"
                   label={t("favorite")}
                   labelClassName="sr-only"
-                  className="h-11 w-11 justify-center rounded-full border"
-                  activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
-                  inactiveClassName="border-gray-300 bg-white text-black hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                  className="h-11 w-11 justify-center rounded-full"
+                  activeClassName="bg-red-500 text-white hover:bg-red-600"
+                  inactiveClassName="bg-white text-black hover:bg-red-50 hover:text-red-600 dark:bg-gray-900 dark:text-white dark:hover:bg-red-900/20 dark:hover:text-red-300"
                 />
 
                 <StoryUpdateSubscriptionButton
@@ -295,7 +295,7 @@ export default function StoryDetailClient() {
                   onClick={() => {
                     void onShare();
                   }}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-gray-300 bg-white text-black shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-blue-800/60 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-black shadow-sm transition-colors hover:bg-blue-50 hover:text-blue-700 dark:bg-gray-900 dark:text-white dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
                   aria-label={t("share")}
                   title={t("share")}
                 >
@@ -384,14 +384,14 @@ export default function StoryDetailClient() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+      <section className="rounded-2xl bg-purple-50 p-5 dark:bg-purple-950/30">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("introTitle")}</h2>
         <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
           {storyDescription || t("introUpdating")}
         </p>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+      <section className="rounded-2xl bg-orange-50 p-5 dark:bg-orange-950/30">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="inline-flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
             <ListMusic className="h-5 w-5" /> {t("chapterList")}
@@ -400,7 +400,7 @@ export default function StoryDetailClient() {
         </div>
 
         {story.chapters.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-blue-200 bg-blue-50/70 px-4 py-5 text-sm text-blue-800 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-200">
+          <div className="rounded-2xl bg-blue-50 p-4 dark:bg-blue-950/30">
             <p className="font-semibold">{t("chaptersPendingTitle")}</p>
             <p className="mt-1">{t("chaptersPendingBody", { language: locale === "en" ? t("languageEn") : t("languageVi") })}</p>
           </div>
@@ -413,7 +413,7 @@ export default function StoryDetailClient() {
               <Link
                 key={chapter.id}
                 href={chapterHref(story.slug, chapter.chapterNumber)}
-                className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 px-4 py-3 transition hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <div className="min-w-0">
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">

@@ -346,7 +346,7 @@ export default function HomePage() {
     <div className="space-y-12">
 
       {/* ─── Hero Banner ─────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 text-white">
+      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white">
         {activeHero ? (
           <Image
             src={activeHero.imageUrl || "https://placehold.co/1600x500?text=Hot+Story"}
@@ -459,7 +459,7 @@ export default function HomePage() {
 
       {accessToken ? (
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-3xl bg-blue-50 p-5 shadow-sm dark:bg-blue-950/30">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("continueTitle")}</h2>
@@ -490,7 +490,7 @@ export default function HomePage() {
                     <Link
                       key={item.id}
                       href={`/story/${item.story.slug}/chuong-${item.chapter.chapterNumber}`}
-                      className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+                      className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-slate-700"
                     >
                       <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
                         <Image
@@ -516,13 +516,13 @@ export default function HomePage() {
                 })}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-gray-800/50 dark:text-slate-400">
                 {t("continueEmpty")}
               </div>
             )}
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-3xl bg-pink-50 p-5 shadow-sm dark:bg-pink-950/30">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("favoritesListTitle")}</h2>
@@ -552,7 +552,7 @@ export default function HomePage() {
                     <Link
                       key={story.id}
                       href={`/story/${story.slug}`}
-                      className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:bg-white dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+                      className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-slate-800 dark:hover:bg-slate-700"
                     >
                       <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
                         <Image
@@ -575,7 +575,7 @@ export default function HomePage() {
                 })}
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+              <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-gray-800/50 dark:text-slate-400">
                 {t("favoritesEmpty")}
               </div>
             )}
@@ -608,7 +608,7 @@ export default function HomePage() {
             {t("viewAll")}
           </Link>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4">
+        <div className="bg-gray-50 dark:bg-gray-900/70 rounded-2xl p-4">
           <StoryListView chapters={newestChapters} isLoading={isLoading} />
         </div>
       </section>

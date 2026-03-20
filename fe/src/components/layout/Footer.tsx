@@ -6,8 +6,8 @@ export default async function Footer() {
   const t = await getTranslations("Footer");
 
   return (
-    <footer className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 border-t border-gray-200 dark:border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Cột 1: Logo và giới thiệu */}
           <div className="space-y-4">
@@ -189,7 +189,7 @@ export default async function Footer() {
         </div>
 
         {/* Dòng bản quyền */}
-        <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
+        <div className="mt-12 pt-8 bg-white/70 rounded-2xl px-4 dark:bg-gray-900/40">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center md:text-left">
               &copy; {new Date().getFullYear()} AudioTruyen. {t("rightsReserved")}

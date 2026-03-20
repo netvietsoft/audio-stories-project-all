@@ -82,7 +82,7 @@ export default function StoryCard({ story, className, variant = "default" }: Sto
     return (
       <Link
         href={`/story/${story.slug}`}
-        className={`block rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900/60 p-2.5 group hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-none transition-all duration-300 ${className || ""}`}
+        className={`block rounded-xl bg-gray-50 dark:bg-gray-900/60 p-2.5 group hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-none transition-all duration-300 ${className || ""}`}
       >
         <div className="relative overflow-hidden rounded-lg">
           <Image
@@ -110,7 +110,7 @@ export default function StoryCard({ story, className, variant = "default" }: Sto
           {story.author?.name || t("updating")}
         </p>
 
-        <div className="mt-2 flex items-center justify-between border-t border-slate-100 dark:border-gray-800 pt-2">
+        <div className="mt-2 flex items-center justify-between bg-white/70 dark:bg-gray-900/70 rounded-lg px-2 py-2">
           <span className="line-clamp-1 text-sm font-medium text-blue-400">{latestChapterLabel}</span>
           <span className="ml-2 shrink-0 text-xs text-slate-400 dark:text-gray-500">
             {formatTimeAgo(story.latestChapterCreatedAt || story.updatedAt || story.createdAt)}

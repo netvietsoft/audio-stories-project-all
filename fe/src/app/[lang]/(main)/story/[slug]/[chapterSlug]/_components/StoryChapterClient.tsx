@@ -1202,10 +1202,10 @@ export default function StoryChapterClient() {
 
   return (
     <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-4 sm:px-6 lg:px-10 2xl:px-14">
-      <div className="mx-auto w-full max-w-[1720px] space-y-8">
+      <div className="mx-auto w-full max-w-[1920px] space-y-8">
         <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_560px] lg:items-start">
           {/* Story Info */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
+          <section className="rounded-2xl bg-gray-50 p-5 dark:bg-gray-900/70 lg:col-start-1 lg:col-end-2 lg:row-start-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
 
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
@@ -1243,7 +1243,7 @@ export default function StoryChapterClient() {
           </section>
 
           {/* Chapter Introduction */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-2">
+          <section className="rounded-2xl bg-gray-50 p-5 dark:bg-gray-900/70 lg:col-start-1 lg:col-end-2 lg:row-start-2">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("chapterIntro")}</h2>
             <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
               {selectedChapterDescription || translationPendingMessage}
@@ -1255,7 +1255,7 @@ export default function StoryChapterClient() {
 
             {/* Side Panel 1.5: Variant Selection (Interactive Stories) - Moved Inline if hasInlineChoice */}
             {variants.length > 0 && !hasInlineChoice && (
-              <section className="rounded-2xl border border-gray-300 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/30">
+              <section className="rounded-2xl bg-blue-50 p-4 dark:bg-blue-950/30">
                 <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-gray-900 dark:text-gray-100">
                   ⚡ {t("variantSelectionTitle")}
                 </h2>
@@ -1360,7 +1360,7 @@ export default function StoryChapterClient() {
 
 
             {/* Side Panel 1: Chapter List */}
-            <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+            <section className="rounded-2xl bg-gray-50 p-4 dark:bg-gray-900/70">
               <h2 className="mb-3 flex items-center justify-between text-base font-semibold text-gray-900 dark:text-gray-100">
                 <span className="inline-flex items-center gap-2"><ListMusic className="h-4 w-4" /> {t("currentChapter")}
                 </span>
@@ -1369,7 +1369,7 @@ export default function StoryChapterClient() {
 
               <button
                 onClick={() => setIsChapterMenuOpen((prev) => !prev)}
-                className="flex w-full items-center justify-between rounded-lg border border-gray-300 px-3 py-2 text-left hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                className="flex w-full items-center justify-between rounded-lg border border-blue-300 px-3 py-2 text-left hover:bg-blue-50 dark:border-blue-700 dark:hover:bg-blue-900/30"
               >
                 <div className="min-w-0">
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{selectedChapterTitle}</p>
@@ -1389,12 +1389,12 @@ export default function StoryChapterClient() {
               ) : null}
 
               {isChapterMenuOpen ? (
-                <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-2 dark:border-gray-700 dark:bg-gray-900/70">
+                <div className="mt-3 rounded-xl bg-gray-100 p-2 dark:bg-gray-800">
                   <input
                     value={chapterQuery}
                     onChange={(event) => setChapterQuery(event.target.value)}
                     placeholder={t("searchChapterPlaceholder")}
-                    className="mb-2 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                    className="mb-2 w-full rounded-md bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                   />
                   <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
                     {/* Branch navigation option */}
@@ -1443,7 +1443,7 @@ export default function StoryChapterClient() {
             </section>
 
             {/* Side Panel 2: Audio Player */}
-            <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+            <section className="rounded-2xl bg-gray-50 p-4 dark:bg-gray-900/70">
               <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("audioPlayer")}</h2>
 
               <div className="mt-4 grid gap-3 md:grid-cols-[120px_minmax(0,1fr)] lg:grid-cols-[136px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
@@ -1562,7 +1562,7 @@ export default function StoryChapterClient() {
 
                     <button
                       onClick={() => setShowSettings((prev) => !prev)}
-                      className="rounded-full border border-gray-300 p-2 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                      className="rounded-full bg-gray-100 p-2 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
                     >
                       <Settings2 className="h-4 w-4" />
                     </button>
@@ -1572,7 +1572,7 @@ export default function StoryChapterClient() {
 
               <div className="mt-3 space-y-3">
                 {showSettings ? (
-                  <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                  <div className="rounded-xl bg-blue-50 p-3 shadow-sm dark:bg-blue-950/30">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t("playbackSpeed")}</p>
                     <div className="mt-2 grid grid-cols-5 gap-2">
                       {[0.75, 1, 1.25, 1.5, 2].map((rate) => (
@@ -1597,7 +1597,7 @@ export default function StoryChapterClient() {
                           {minute}p
                         </button>
                       ))}
-                      <button onClick={() => setSleepTimer(null)} className="rounded-md border border-red-300 px-2 py-1 text-xs text-red-600 dark:border-red-800 dark:text-red-300">
+                      <button onClick={() => setSleepTimer(null)} className="rounded-md bg-red-50 px-2 py-1 text-xs text-red-600 dark:bg-red-900/30 dark:text-red-300">
                         {t("cancelSleepTimer")}
                       </button>
                     </div>
@@ -1608,7 +1608,7 @@ export default function StoryChapterClient() {
                         min={1}
                         value={customMinutes}
                         onChange={(event) => setCustomMinutes(event.target.value)}
-                        className="w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
+                        className="w-full rounded-md bg-white px-2 py-1 text-xs dark:bg-gray-800"
                         placeholder={t("customMinutesPlaceholder")}
                       />
                       <button
@@ -1635,10 +1635,11 @@ export default function StoryChapterClient() {
             </section>
 
             {/* Side Panel 3: YouTube Player */}
-            <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+            {selectedChapter.youtubeVideoId ? (
+            <section className="rounded-2xl bg-gray-50 p-4 dark:bg-gray-900/80">
               <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("youtubePlayer")}</h2>
               {chapterIsLocked ? (
-                <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
+                <div className="rounded-xl bg-amber-50/70 p-4 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
                   <p className="inline-flex items-center gap-1 font-semibold"><Lock className="h-4 w-4" /> {t("chapterLocked")}</p>
                   <p className="mt-1">{lockReasonLabel}</p>
                   <button
@@ -1648,8 +1649,8 @@ export default function StoryChapterClient() {
                     {t("unlockYoutube")}
                   </button>
                 </div>
-              ) : selectedChapter.youtubeVideoId ? (
-                <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+              ) : (
+                <div className="overflow-hidden rounded-xl bg-white dark:bg-gray-950/70">
                   <iframe
                     title="YouTube audio"
                     className="aspect-video w-full"
@@ -1658,17 +1659,14 @@ export default function StoryChapterClient() {
                     allowFullScreen
                   />
                 </div>
-              ) : (
-                <div className="rounded-xl bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-800/40 dark:text-gray-300">
-                  {t("noYoutubeVideo")}
-                </div>
               )}
             </section>
+            ) : null}
 
           </div>{/* END RIGHT STICKY SIDEBAR */}
 
           {/* Chapter Content / Text Reader */}
-          <section className="overflow-hidden min-w-0 rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
+          <section className="rounded-2xl bg-gray-50 p-5 dark:bg-gray-900/70 lg:col-start-1 lg:col-end-2 lg:row-start-3">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readText")}</h2>
             <div className="mt-5 min-w-0">
               {selectedChapterContentRaw ? (
@@ -1700,7 +1698,7 @@ export default function StoryChapterClient() {
                               <button
                                 key={v.id}
                                 onClick={() => handleSelectVariant(v)}
-                                className="flex flex-col items-start gap-3 p-4 rounded-xl border transition-all border-gray-200 bg-white/50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
+                                className="flex flex-col items-start gap-3 p-4 rounded-xl transition-all bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800"
                               >
                                 <div className="w-full flex items-start justify-between gap-3">
                                   <p className="text-base font-bold flex-1 text-left text-gray-800 dark:text-gray-200">
@@ -1825,7 +1823,7 @@ export default function StoryChapterClient() {
           </section>
 
           {/* Gift Section */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-4">
+          <section className="rounded-2xl bg-pink-50 p-5 dark:bg-pink-950/30 lg:col-start-1 lg:col-end-2 lg:row-start-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("giftChapter")}</h2>
               <button
@@ -1845,11 +1843,11 @@ export default function StoryChapterClient() {
           </section>
 
           {/* Reviews */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-5">
+          <section className="rounded-2xl bg-orange-50 p-5 dark:bg-orange-950/30 lg:col-start-1 lg:col-end-2 lg:row-start-5">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readerReviews")}</h2>
 
-            <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr]">
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+            <div className="mt-4 grid gap-4 lg:grid-cols-[280px_1fr] bg-gray-50 dark:bg-gray-900/70 rounded-2xl p-5">
+              <div className="rounded-xl bg-white dark:bg-gray-800 p-4">
                 <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {Number(ratingStats?.averageRating || 0).toFixed(1)}
                 </p>
@@ -1876,7 +1874,7 @@ export default function StoryChapterClient() {
               </div>
 
               <div className="space-y-3">
-                <div className="rounded-xl border border-gray-200 p-3 dark:border-gray-700">
+                <div className="rounded-xl bg-white dark:bg-gray-800 p-3 text-sm">
                   <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("writeReview")}</p>
                   <div className="mt-2 flex items-center gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -1906,7 +1904,7 @@ export default function StoryChapterClient() {
                       <Smile className="h-4 w-4" />
                     </button>
                     {showEmojiPicker ? (
-                      <div className="absolute bottom-10 right-2 z-10 flex gap-1 rounded-md border border-gray-200 bg-white p-1 shadow dark:border-gray-700 dark:bg-gray-900">
+                      <div className="absolute bottom-10 right-2 z-10 flex gap-1 rounded-md bg-white p-1 shadow dark:bg-gray-800">
                         {["😍", "🔥", "👏", "💯", "❤️"].map((emoji) => (
                           <button
                             key={emoji}

@@ -78,7 +78,7 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-        <div className="flex flex-col items-center justify-center text-center h-full p-8 rounded-2xl bg-gradient-to-b from-yellow-50 to-yellow-100 border border-yellow-300 shadow-lg">
+        <div className="flex flex-col items-center justify-center text-center h-full p-8 rounded-2xl bg-gradient-to-b from-yellow-50 to-yellow-100 shadow-lg">
           <Crown className="text-yellow-500 w-12 h-12 mb-2 drop-shadow-[0_0_8px_rgba(234,179,8,0.3)]" />
           <Image
             src={topOne.avatarUrl || "https://api.dicebear.com/9.x/adventurer/svg?seed=TopContributor"}
@@ -107,7 +107,7 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
             return (
               <div
                 key={user.id}
-                className="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-gray-800/40 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors border border-gray-200 dark:border-transparent shadow-sm"
+                className="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-gray-800/40 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors shadow-sm"
               >
                 <span className={`text-xl font-bold w-6 text-center ${rankClass}`}>{rank}</span>
                 <Image
@@ -162,12 +162,12 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
   const leaderboardStories = stories.slice(0, 5);
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+    <div className="rounded-2xl bg-purple-50 p-4 dark:bg-purple-950/30">
       {stories.length ? (
         <div className="mt-4 grid grid-cols-1 items-stretch gap-8 lg:grid-cols-3">
 
           {/* ── Left: Featured story card (spans 2 cols on lg) ── */}
-          <div className="flex h-full flex-col gap-6 rounded-xl bg-gray-50 p-4 dark:bg-gray-800/40 md:flex-row lg:col-span-2">
+          <div className="flex h-full flex-col gap-6 rounded-xl p-4 md:flex-row lg:col-span-2">
             {activeStory ? (
               <>
                 {/* Thumbnail – fixed width, aligned to top */}
@@ -293,7 +293,7 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
 
         </div>
       ) : (
-        <div className="mt-4 rounded-2xl border border-dashed border-gray-300 p-6 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300">
+        <div className="mt-4 rounded-2xl bg-gray-100 p-6 text-sm text-gray-600 dark:bg-gray-800/50 dark:text-gray-300">
           {tHome("noData")}
         </div>
       )}

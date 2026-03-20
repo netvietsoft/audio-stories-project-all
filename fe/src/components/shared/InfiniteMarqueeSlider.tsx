@@ -58,8 +58,9 @@ export default function InfiniteMarqueeSlider({
   }
 
   const displayStories = stories.slice(0, limit);
-  // Duplicate stories to create the seamless loop
-  const duplicatedStories = [...displayStories, ...displayStories];
+  // Repeat stories multiple times to ensure we always fill the viewport and have a seamless loop
+  // Using 4x repetition as a safe default for small lists (e.g. 5-6 stories)
+  const repeatedStories = [...displayStories, ...displayStories, ...displayStories, ...displayStories];
 
   return (
     <div className="relative w-full group/slider">
@@ -87,7 +88,7 @@ export default function InfiniteMarqueeSlider({
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <div className="animate-marquee flex gap-4">
-          {duplicatedStories.map((story, idx) => (
+          {repeatedStories.map((story, idx) => (
             <div
               key={`${story.id}-${idx}`}
               className="w-[130px] sm:w-[150px] md:w-[170px] lg:w-[190px] shrink-0 group transition-transform duration-300 hover:scale-105 hover:-translate-y-1"

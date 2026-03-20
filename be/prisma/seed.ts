@@ -256,6 +256,12 @@ async function main() {
     { name: 'Romance', slug: 'romance', language: 'en', description: 'Romantic stories' },
     { name: 'Huyền Huyễn', slug: 'huyen-huyen', language: 'vi', description: 'Phiêu lưu kỳ ảo' },
     { name: 'Fantasy', slug: 'fantasy', language: 'en', description: 'Fantasy adventure' },
+    { name: 'Action', slug: 'action', language: 'vi', description: 'Hành động kịch tính' },
+    { name: 'Action', slug: 'action', language: 'en', description: 'Action-packed stories' },
+    { name: 'Xuyên Không', slug: 'xuyen-khong', language: 'vi', description: 'Du hành thời gian và không gian' },
+    { name: 'Isekai', slug: 'isekai', language: 'en', description: 'Otherworld travel' },
+    { name: 'Shounen', slug: 'shounen', language: 'vi', description: 'Truyện dành cho thiếu niên' },
+    { name: 'Shounen', slug: 'shounen', language: 'en', description: 'Boys\' adventure and battle' },
   ];
 
   const categories = [] as any[];
@@ -306,6 +312,18 @@ async function main() {
     { vi: 'Nhất Niệm Vĩnh Hằng', en: 'A Will Eternal' },
     { vi: 'Tinh Thần Biến', en: 'Stellar Transformations' },
     { vi: 'Truyện Tương Tác Demo', en: 'Interactive Story Demo', isInteractive: true },
+    { vi: 'Võ Luyện Đỉnh Phong', en: 'Martial Peak' },
+    { vi: 'Toàn Chức Pháp Sư', en: 'Versatile Mage' },
+    { vi: 'Tuyệt Thế Đường Môn', en: 'Soul Land 2' },
+    { vi: 'Vũ Động Càn Khôn', en: 'Wu Dong Qian Kun' },
+    { vi: 'Thế Giới Hoàn Mỹ', en: 'Perfect World' },
+    { vi: 'Chuông Gió', en: 'Wind Chime' },
+    { vi: 'Đạo Quân', en: 'Daoist Lord' },
+    { vi: 'Đại Chúa Tể', en: 'The Great Ruler' },
+    { vi: 'Linh Chu', en: 'Spirit Boat' },
+    { vi: 'Kiếm Đạo Độc Tôn', en: 'Sword Dao Alone' },
+    { vi: 'Ngã Dục Phong Thiên', en: 'I Shall Seal the Heavens' },
+    { vi: 'Đế Bá', en: 'Emperor\'s Domination' },
   ];
 
   const stories = [] as Awaited<ReturnType<typeof prisma.story.upsert>>[];

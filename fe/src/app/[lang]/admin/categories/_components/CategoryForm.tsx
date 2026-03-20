@@ -13,8 +13,6 @@ import {
 
 const categorySchema = z.object({
     name: z.string().min(1, 'Tên danh mục không được để trống'),
-    nameVi: z.string().optional(),
-    nameEn: z.string().optional(),
     slug: z.string().min(1, 'Slug không được để trống'),
     description: z.string().optional(),
     iconUrl: z.string().optional(),
@@ -40,8 +38,6 @@ export const CategoryForm = ({ initialData, onSubmit, onCancel, isLoading }: Cat
         resolver: zodResolver(categorySchema),
         defaultValues: {
             name: '',
-            nameVi: '',
-            nameEn: '',
             slug: '',
             description: '',
             iconUrl: '',
@@ -89,25 +85,6 @@ export const CategoryForm = ({ initialData, onSubmit, onCancel, isLoading }: Cat
                 {errors.slug && <p className="text-xs font-bold text-red-500 ml-2">{errors.slug.message}</p>}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tên tiếng Việt (nameVi)</label>
-                    <input
-                        {...register('nameVi')}
-                        placeholder="Nhập tên tiếng Việt..."
-                        className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tên tiếng Anh (nameEn)</label>
-                    <input
-                        {...register('nameEn')}
-                        placeholder="Input English name..."
-                        className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                    />
-                </div>
-            </div>
 
             <div className="space-y-2">
                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Mô tả</label>

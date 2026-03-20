@@ -23,8 +23,6 @@ import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 interface Category {
     id: number;
     name: string;
-    nameVi: string | null;
-    nameEn: string | null;
     slug: string;
     description: string | null;
     iconUrl: string | null;
@@ -35,8 +33,6 @@ interface Category {
 
 type CategoryFormInput = {
     name: string;
-    nameVi?: string;
-    nameEn?: string;
     slug: string;
     description?: string;
     iconUrl?: string;
@@ -60,8 +56,7 @@ export default function CategoriesPage() {
     const limit = 12;
 
     const getLocalizedName = (cat: Category) => {
-        if (selectedLocale === 'en') return cat.nameEn || cat.name;
-        return cat.nameVi || cat.name;
+        return cat.name;
     };
 
     useEffect(() => {
@@ -167,13 +162,7 @@ export default function CategoriesPage() {
                 return trimmed ? trimmed : undefined;
             };
 
-            const nameVi = cleanText(data.nameVi);
-            const nameEn = cleanText(data.nameEn);
-            const fallbackName = cleanText(data.name);
-            const name =
-                selectedLocale === 'en'
-                    ? (nameEn || nameVi || fallbackName)
-                    : (nameVi || nameEn || fallbackName);
+            const name = cleanText(data.name);
 
             if (!name) {
                 alert('Vui lòng nhập tên danh mục.');
@@ -330,8 +319,8 @@ export default function CategoriesPage() {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-slate-900">{getLocalizedName(cat)}</p>
-                                                    <p className="text-xs text-slate-400 font-medium">{cat.name}</p>
+                                                    <p className="text-sm font-black text-slate-900">{cat.name}</p>
+                                                    <p className="text-xs text-slate-400 font-medium">{cat.slug}</p>
                                                 </div>
                                             </div>
                                         </td>
@@ -405,7 +394,7 @@ export default function CategoriesPage() {
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-sm font-black leading-5 text-slate-900 break-words">{getLocalizedName(cat)}</p>
+                                                <p className="text-sm font-black leading-5 text-slate-900 break-words">{cat.name}</p>
                                                 <p className="mt-1 text-xs font-medium text-slate-400 break-all">{cat.slug}</p>
                                                 <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1">
                                                     <BookOpen className="w-3 h-3 text-indigo-500" />
@@ -498,8 +487,6 @@ export default function CategoriesPage() {
                             <CategoryForm
                                 initialData={editingCategory ? {
                                     name: editingCategory.name,
-                                    nameVi: editingCategory.nameVi ?? undefined,
-                                    nameEn: editingCategory.nameEn ?? undefined,
                                     slug: editingCategory.slug,
                                     description: editingCategory.description ?? undefined,
                                     iconUrl: editingCategory.iconUrl ?? undefined,

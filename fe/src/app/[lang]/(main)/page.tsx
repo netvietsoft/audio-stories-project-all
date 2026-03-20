@@ -162,6 +162,9 @@ export default function HomePage() {
   const [newestChapters, setNewestChapters] = useState<any[]>([]);
   const [popularStories, setPopularStories] = useState<StoryItem[]>([]);
   const [trendingStories, setTrendingStories] = useState<StoryItem[]>([]);
+  const [actionStories, setActionStories] = useState<StoryItem[]>([]);
+  const [xuyenKhongStories, setXuyenKhongStories] = useState<StoryItem[]>([]);
+  const [shounenStories, setShounenStories] = useState<StoryItem[]>([]);
   const [topCategories, setTopCategories] = useState<CategoryItem[]>([]);
   const [allCategories, setAllCategories] = useState<CategoryItem[]>([]);
   const [authors, setAuthors] = useState<AuthorItem[]>([]);
@@ -277,8 +280,25 @@ export default function HomePage() {
         const catFb = catFallbackRes.status === "fulfilled"
           ? (catFallbackRes.value as Array<any>).map((c) => ({ ...c, storiesCount: 0 }))
           : [];
-        setTopCategories(catTop.length ? catTop : catFb);
+        const allCats = catTop.length ? catTop : catFb;
+        setTopCategories(allCats);
         setAllCategories(catFb);
+
+        // Fetch category stories
+        const findCatId = (slug: string) => allCats.find(c => c.slug === slug)?.id;
+        const actionId = findCatId('action');
+        const xuyenKhongId = findCatId('xuyen-khong');
+        const shounenId = findCatId('shounen');
+
+        const [actionRes, xuyenKhongRes, shounenRes] = await Promise.allSettled([
+          actionId ? fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, categoryId: actionId }) : Promise.resolve({ data: [] }),
+          xuyenKhongId ? fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, categoryId: xuyenKhongId }) : Promise.resolve({ data: [] }),
+          shounenId ? fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, categoryId: shounenId }) : Promise.resolve({ data: [] }),
+        ]);
+
+        setActionStories(actionRes.status === "fulfilled" ? (actionRes.value.data || []) : []);
+        setXuyenKhongStories(xuyenKhongRes.status === "fulfilled" ? (xuyenKhongRes.value.data || []) : []);
+        setShounenStories(shounenRes.status === "fulfilled" ? (shounenRes.value.data || []) : []);
 
         setAuthors(authorRes.status === "fulfilled" ? authorRes.value : []);
         setHallContributors(hallRes.status === "fulfilled" ? hallRes.value : []);
@@ -626,6 +646,51 @@ export default function HomePage() {
         </div>
         <InfiniteMarqueeSlider stories={popularStories} isLoading={isLoading} />
       </section>
+
+      {/* ─── Truyện Action ─ */}
+      {actionStories.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("actionTitle")}</h2>
+            </div>
+            <Link href={`/explore?categoryId=${allCategories.find(c => c.slug === 'action')?.id}`} className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              {t("viewAll")}
+            </Link>
+          </div>
+          <InfiniteMarqueeSlider stories={actionStories} isLoading={isLoading} />
+        </section>
+      )}
+
+      {/* ─── Truyện Xuyên Không ─ */}
+      {xuyenKhongStories.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("xuyenKhongTitle")}</h2>
+            </div>
+            <Link href={`/explore?categoryId=${allCategories.find(c => c.slug === 'xuyen-khong')?.id}`} className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              {t("viewAll")}
+            </Link>
+          </div>
+          <InfiniteMarqueeSlider stories={xuyenKhongStories} isLoading={isLoading} />
+        </section>
+      )}
+
+      {/* ─── Truyện Shounen ─ */}
+      {shounenStories.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("shounenTitle")}</h2>
+            </div>
+            <Link href={`/explore?categoryId=${allCategories.find(c => c.slug === 'shounen')?.id}`} className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              {t("viewAll")}
+            </Link>
+          </div>
+          <InfiniteMarqueeSlider stories={shounenStories} isLoading={isLoading} />
+        </section>
+      )}
 
       {/* ─── Hall of Fame ─────────────────────────────────────────── */}
       <section className="space-y-4">

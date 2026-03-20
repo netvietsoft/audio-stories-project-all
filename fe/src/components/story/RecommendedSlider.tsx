@@ -45,8 +45,8 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
     return null;
   }
 
-  // Duplicate stories to create the seamless loop
-  const duplicatedStories = [...stories, ...stories];
+  // Repeat stories multiple times to ensure we always fill the viewport and have a seamless loop
+  const repeatedStories = [...stories, ...stories, ...stories, ...stories];
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
@@ -79,7 +79,7 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           <div className="animate-marquee flex gap-4">
-            {duplicatedStories.map((story, idx) => (
+            {repeatedStories.map((story, idx) => (
               <div key={`${story.id}-${idx}`} className="w-[180px] sm:w-[210px] shrink-0 group transition-transform duration-300 hover:scale-105 hover:-translate-y-1">
                 <StoryCard story={story} className="h-full w-full" />
               </div>

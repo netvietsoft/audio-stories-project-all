@@ -1201,8 +1201,7 @@ export default function StoryChapterClient() {
   }
 
   return (
-    <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-2 md:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-[1920px] space-y-6 md:space-y-8">
+    <div className="w-full space-y-6 md:space-y-8">
         <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_560px] lg:items-start">
           {/* Story Info */}
           <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
@@ -2240,7 +2239,6 @@ export default function StoryChapterClient() {
           </>,
           document.body
         )}
-      </div>
     </div>
   );
 }

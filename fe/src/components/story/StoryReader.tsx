@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MessageSquare, Send, X } from "lucide-react";
 import DOMPurify from "dompurify";
+import { useLocale } from "next-intl";
 
 import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
@@ -29,6 +30,15 @@ type ParagraphItem = {
   id: string;
   index: number;
   content: string;
+};
+
+type AdvertisementItem = {
+  id: string;
+  partnerName: string;
+  title: string;
+  imageUrl: string;
+  targetUrl: string;
+  isActive: boolean;
 };
 
 type ParagraphCommentsResponse = {
@@ -162,6 +172,7 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
   if (!content) return [];
 
   let parts: string[] = [];
+<<<<<<< HEAD
   
   // Priority 1: Check for [doan1], [doan2], etc. markers
   const doanRegex = /\[doan\d+\]/gi;
@@ -197,6 +208,39 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
         .filter(Boolean);
     }
   }
+=======
+
+  if (content.includes('<') && content.includes('>') && typeof window !== 'undefined') {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, 'text/html');
+      const pNodes = Array.from(doc.querySelectorAll('p'));
+
+      if (pNodes.length > 0) {
+        parts = pNodes
+          .map((node) => (node.textContent || '').trim())
+          .filter(Boolean);
+      } else {
+        const plainText = (doc.body?.textContent || '').replace(/\r/g, '').trim();
+        parts = plainText.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
+      }
+    } catch {
+      parts = [];
+    }
+  }
+
+  if (parts.length === 0) {
+    parts = content
+      .replace(/<[^>]*>/g, '\n')
+      .split(/\n\s*\n|\n/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+  }
+
+  parts = parts
+    .map((part) => part.replace(/^\[Paragraph\s*\d+\]\s*/i, '').replace(/^\[Đoạn\s*\d+\]\s*/i, '').replace(/\[.*?\]/g, '').trim())
+    .filter(Boolean);
+>>>>>>> ac01270 (feat: add banner management functionality with create, edit, and delete capabilities)
 
   return parts.map((part, index) => ({
     id: `${chapterId}-p-${index}`,
@@ -205,15 +249,23 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
   }));
 };
 
+const countWords = (text: string) => {
+  const normalized = text.trim();
+  if (!normalized) return 0;
+  return normalized.split(/\s+/).length;
+};
+
 export default function StoryReader({
   chapterId,
   content,
-  adInterval = 700,
+  adInterval = 1000,
   isLocked = false,
   previewChars = 500,
   lockLabel,
   onUnlockRequest,
 }: StoryReaderProps) {
+  const locale = useLocale();
+  const [insertionFrequency, setInsertionFrequency] = useState<number>(adInterval || 1000);
   const [openParagraphId, setOpenParagraphId] = useState<string | null>(null);
   const [paragraphDrafts, setParagraphDrafts] = useState<Record<string, string>>({});
   const [replyTargetByParagraph, setReplyTargetByParagraph] = useState<Record<string, string | null>>({});
@@ -224,6 +276,7 @@ export default function StoryReader({
   const [commentSort, setCommentSort] = useState<CommentSort>("newest");
   const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState("");
+  const [activeAds, setActiveAds] = useState<AdvertisementItem[]>([]);
   
   const user = useUserStore((state) => state.user);
   const openLogin = useAuthModalStore((state) => state.openLogin);
@@ -258,13 +311,47 @@ export default function StoryReader({
     return splitParagraphs(chapterId, preview);
   }, [chapterId, content, previewChars]);
 
+  useEffect(() => {
+    const fetchActiveAds = async () => {
+      try {
+        const response = await apiClient.get<{ data?: AdvertisementItem[] }>('/ads/active', {
+          params: { limit: 10 },
+        });
+        setActiveAds(Array.isArray(response.data?.data) ? response.data.data : []);
+      } catch {
+        setActiveAds([]);
+      }
+    };
+
+    void fetchActiveAds();
+  }, []);
+
+  useEffect(() => {
+    const fetchInsertionFrequency = async () => {
+      try {
+        const response = await apiClient.get('/settings/ad_insertion_frequency');
+        const rawValue = response?.data?.value;
+        const parsed = Number(rawValue);
+        if (Number.isFinite(parsed) && parsed > 0) {
+          setInsertionFrequency(Math.floor(parsed));
+          return;
+        }
+        setInsertionFrequency(1000);
+      } catch {
+        setInsertionFrequency(1000);
+      }
+    };
+
+    void fetchInsertionFrequency();
+  }, []);
+
   const flowItems = useMemo(() => {
     const items: Array<
       | { type: "paragraph"; paragraph: ParagraphItem }
-      | { type: "ad"; id: string }
-      | { type: "cta"; id: string }
+      | { type: "ad"; id: string; ad: AdvertisementItem }
     > = [];
 
+<<<<<<< HEAD
     // Simply add all paragraphs without ads/CTAs
     paragraphs.forEach((paragraph) => {
       items.push({ type: "paragraph", paragraph });
@@ -272,6 +359,31 @@ export default function StoryReader({
 
     return items;
   }, [paragraphs]);
+=======
+    let accumulatedWords = 0;
+    let nextBreakAt = insertionFrequency;
+    let adIndex = 0;
+
+    paragraphs.forEach((paragraph) => {
+      items.push({ type: "paragraph", paragraph });
+      accumulatedWords += countWords(paragraph.content);
+
+      while (accumulatedWords >= nextBreakAt && activeAds.length > 0) {
+        const ad = activeAds[adIndex % activeAds.length];
+        if (!ad) break;
+        items.push({
+          type: 'ad',
+          id: `${paragraph.id}-slot-${nextBreakAt}`,
+          ad,
+        });
+        adIndex += 1;
+        nextBreakAt += insertionFrequency;
+      }
+    });
+
+    return items;
+  }, [activeAds, insertionFrequency, paragraphs]);
+>>>>>>> ac01270 (feat: add banner management functionality with create, edit, and delete capabilities)
 
   const normalizeComments = (rawComments: ParagraphCommentsResponse["comments"] = []): InlineComment[] => {
     return rawComments.map((item) => ({
@@ -795,6 +907,7 @@ export default function StoryReader({
           );
         }
 
+<<<<<<< HEAD
         // Ads and CTAs are disabled
         // if (item.type === "ad") {
         //   return (
@@ -813,6 +926,45 @@ export default function StoryReader({
         // );
 
         return null;
+=======
+        if (item.type === "ad") {
+          const isExternal = /^https?:\/\//i.test(item.ad.targetUrl);
+          const adHref = isExternal
+            ? item.ad.targetUrl
+            : item.ad.targetUrl.startsWith('/')
+              ? item.ad.targetUrl
+              : `/${item.ad.targetUrl}`;
+
+          return (
+            <div key={item.id} className="mb-8 flex justify-center">
+              <article className="relative w-full max-w-2xl overflow-hidden rounded-2xl bg-orange-50/70 p-3 shadow-sm dark:bg-orange-950/20">
+                <span className="absolute right-3 top-2 text-[10px] font-bold uppercase tracking-wider text-orange-500/80">
+                  {locale === 'en' ? 'Sponsored' : 'Tài trợ'}
+                </span>
+                <div className="flex items-center gap-3">
+                  <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-white dark:bg-gray-900">
+                    <img src={item.ad.imageUrl} alt={item.ad.title} className="h-full w-full object-cover" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-orange-600 dark:text-orange-300">{item.ad.partnerName}</p>
+                    <h3 className="mt-1 line-clamp-2 text-sm font-bold text-gray-900 dark:text-gray-100">{item.ad.title}</h3>
+                    <div className="mt-2">
+                      <a
+                        href={adHref}
+                        target={isExternal ? '_blank' : undefined}
+                        rel={isExternal ? 'noreferrer' : undefined}
+                        className="inline-flex items-center rounded-full bg-orange-500 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-white transition hover:bg-orange-600"
+                      >
+                        {locale === 'en' ? 'Shop now' : 'Mua ngay'}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </div>
+          );
+        }
+>>>>>>> ac01270 (feat: add banner management functionality with create, edit, and delete capabilities)
       })}
 
       {/* Report Modal */}

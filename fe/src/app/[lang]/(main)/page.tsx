@@ -114,6 +114,36 @@ type HallResponse = {
   data: HallContributor[];
 };
 
+type BannerItem = {
+  id: string;
+  titleVi: string;
+  titleEn: string;
+  subtitleVi?: string | null;
+  subtitleEn?: string | null;
+  imageUrl: string;
+  targetUrl: string;
+  order: number;
+  isActive: boolean;
+  story?: {
+    id: string;
+    slug: string;
+    title: string;
+  } | null;
+};
+
+type BannerResponse = {
+  data: BannerItem[];
+};
+
+type HeroSlide = {
+  id: string;
+  title: string;
+  subtitle: string;
+  imageUrl: string;
+  href: string;
+  isExternal?: boolean;
+};
+
 const NEW_LIMIT = 5;
 const POPULAR_LIMIT = 8;
 
@@ -136,6 +166,7 @@ export default function HomePage() {
   const [allCategories, setAllCategories] = useState<CategoryItem[]>([]);
   const [authors, setAuthors] = useState<AuthorItem[]>([]);
   const [hallContributors, setHallContributors] = useState<HallContributor[]>([]);
+  const [heroBanners, setHeroBanners] = useState<BannerItem[]>([]);
   const [favoriteStories, setFavoriteStories] = useState<FavoriteItem[]>([]);
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [isPersonalizedLoading, setIsPersonalizedLoading] = useState(false);
@@ -152,13 +183,47 @@ export default function HomePage() {
     return (trendingStories.length ? trendingStories : newestStories).slice(0, 5);
   }, [trendingStories, newestStories]);
 
+  const heroSlides = useMemo<HeroSlide[]>(() => {
+    if (heroBanners.length > 0) {
+      return heroBanners.map((banner) => {
+        const isExternal = /^https?:\/\//i.test(banner.targetUrl);
+        const normalizedTarget = isExternal
+          ? banner.targetUrl
+          : banner.targetUrl.startsWith('/')
+            ? banner.targetUrl
+            : `/${banner.targetUrl}`;
+
+        return {
+          id: banner.id,
+          title: getLocalizedValue(locale, banner.titleVi, banner.titleEn, banner.titleVi),
+          subtitle: getLocalizedValue(locale, banner.subtitleVi, banner.subtitleEn, ''),
+          imageUrl: banner.imageUrl,
+          href: normalizedTarget,
+          isExternal,
+        };
+      });
+    }
+
+    return heroStories.map((story) => ({
+      id: story.id,
+      title: story.title,
+      subtitle: t('heroFeatured', { title: story.title }),
+      imageUrl: story.thumbnailUrl || 'https://placehold.co/1600x500?text=Hot+Story',
+      href: `/story/${story.slug}`,
+      isExternal: false,
+    }));
+  }, [heroBanners, heroStories, locale, t]);
+
   useEffect(() => {
-    if (!heroStories.length) return;
+    if (!heroSlides.length) return;
+
+    setHeroIndex((prev) => (prev >= heroSlides.length ? 0 : prev));
+
     const timer = setInterval(() => {
-      setHeroIndex((prev) => (prev + 1) % heroStories.length);
+      setHeroIndex((prev) => (prev + 1) % heroSlides.length);
     }, 4500);
     return () => clearInterval(timer);
-  }, [heroStories.length]);
+  }, [heroSlides.length]);
 
   useEffect(() => {
     const loadHome = async () => {
@@ -173,6 +238,7 @@ export default function HomePage() {
           catFallbackRes,
           authorRes,
           hallRes,
+          bannersRes,
         ] = await Promise.allSettled([
           fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
           apiClient.get("/chapters/latest", { params: { limit: 12 } }).then((r) => r.data || []).catch(() => []),
@@ -196,6 +262,10 @@ export default function HomePage() {
             .get<HallResponse>("/stories/hall-of-fame", { params: { limit: 6 } })
             .then((r) => r.data?.data || [])
             .catch(() => []),
+          apiClient
+            .get<BannerResponse>("/banners", { params: { active: true, lang } })
+            .then((r) => r.data?.data || [])
+            .catch(() => []),
         ]);
 
         setNewestStories(newestRes.status === "fulfilled" ? (newestRes.value.data || []) : []);
@@ -212,6 +282,7 @@ export default function HomePage() {
 
         setAuthors(authorRes.status === "fulfilled" ? authorRes.value : []);
         setHallContributors(hallRes.status === "fulfilled" ? hallRes.value : []);
+        setHeroBanners(bannersRes.status === "fulfilled" ? bannersRes.value : []);
       } catch (error) {
         console.error(t("loadError"), error);
       } finally {
@@ -268,7 +339,7 @@ export default function HomePage() {
     void loadPersonalized();
   }, [accessToken]);
 
-  const activeHero = heroStories[heroIndex];
+  const activeHero = heroSlides[heroIndex];
   const discoveryFeaturedStories = (trendingStories.length ? trendingStories : popularStories).slice(0, 7);
 
   return (
@@ -278,7 +349,7 @@ export default function HomePage() {
       <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-slate-900 text-white">
         {activeHero ? (
           <Image
-            src={activeHero.thumbnailUrl || "https://placehold.co/1600x500?text=Hot+Story"}
+            src={activeHero.imageUrl || "https://placehold.co/1600x500?text=Hot+Story"}
             alt={activeHero.title}
             fill
             sizes="100vw"
@@ -288,9 +359,9 @@ export default function HomePage() {
         ) : null}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-800/40 pointer-events-none" />
 
-        {heroStories.length > 1 && (
+        {heroSlides.length > 1 && (
           <button
-            onClick={() => setHeroIndex((prev) => (prev === heroStories.length - 1 ? 0 : prev + 1))}
+            onClick={() => setHeroIndex((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1))}
             className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/10 p-3 backdrop-blur-sm transition-all hover:bg-white/20 hover:scale-110"
             aria-label="Next slide"
           >
@@ -307,20 +378,31 @@ export default function HomePage() {
             <br className="hidden md:block" /> {t("heroTitleLine2")}
           </h1>
           <p className="mt-3 max-w-2xl text-sm text-slate-200 md:text-base">
-            {activeHero ? t("heroFeatured", { title: activeHero.title }) : t("heroFallback")}
+            {activeHero ? (activeHero.subtitle || t("heroFeatured", { title: activeHero.title })) : t("heroFallback")}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href={activeHero ? `/story/${activeHero.slug}` : "/explore"} className="rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-300 transition-colors">
-              {t("listenNow")}
-            </Link>
+            {activeHero?.isExternal ? (
+              <a
+                href={activeHero.href}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-300 transition-colors"
+              >
+                {t("listenNow")}
+              </a>
+            ) : (
+              <Link href={activeHero ? activeHero.href : "/explore"} className="rounded-full bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-300 transition-colors">
+                {t("listenNow")}
+              </Link>
+            )}
             <Link href="/trending" className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold hover:bg-white/10 transition-colors">
               {t("viewTrending")}
             </Link>
           </div>
           <div className="mt-6 flex gap-2">
-            {heroStories.map((story, idx) => (
+            {heroSlides.map((slide, idx) => (
               <button
-                key={story.id}
+                key={slide.id}
                 onClick={() => setHeroIndex(idx)}
                 className={`h-2.5 rounded-full transition-all ${idx === heroIndex ? "w-10 bg-amber-300" : "w-2.5 bg-white/40"}`}
                 aria-label={`hero-${idx + 1}`}

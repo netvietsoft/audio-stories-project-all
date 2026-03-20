@@ -12,6 +12,54 @@ async function main() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
+  const buildLongChapterContent = (language: 'vi' | 'en', title: string, chapterNumber: number) => {
+    const viSentences = [
+      `Trong ${title}, chương ${chapterNumber} mở ra một nhịp thở mới của thế giới tu luyện và những mối liên kết chưa từng được hé lộ.`,
+      'Nhân vật chính quan sát từng biến động nhỏ của linh khí, tự nhắc mình rằng một sai lầm nhỏ cũng có thể đổi lấy cái giá rất lớn.',
+      'Giữa màn đêm dày, tiếng bước chân vang lên như nhịp trống, báo hiệu một cuộc đối đầu không ai muốn nhưng không thể tránh.',
+      'Hắn nhớ lại những lời dặn của sư phụ, giữ tâm trí tỉnh táo để phân biệt đâu là cơ hội và đâu là cạm bẫy.',
+      'Khi cánh cửa cổ mở ra, một luồng áp lực vô hình phủ xuống, khiến mọi người phải lùi lại để điều hòa hô hấp.',
+      'Mỗi lựa chọn ở thời khắc này đều dẫn đến một tương lai khác, và tương lai nào cũng đòi hỏi bản lĩnh lẫn sự hy sinh.',
+      'Những ký ức cũ trỗi dậy, vừa tiếp thêm động lực vừa tạo thành gánh nặng trong từng bước tiến về phía trước.',
+      'Trong khoảnh khắc ngắn ngủi, hắn hiểu rằng sức mạnh thật sự không chỉ đến từ cảnh giới mà còn từ khả năng giữ lời hứa.',
+      'Không gian rung nhẹ như có ai đó đang quan sát từ xa, nhưng không một ai biết kẻ đứng sau tấm màn ấy là ai.',
+      'Kết thúc đoạn đường này, hành trình vẫn chưa hề dễ dàng hơn, chỉ là hắn đã học được cách bình tĩnh trước bão tố.',
+    ];
+
+    const enSentences = [
+      `In ${title}, chapter ${chapterNumber} opens with a new pulse of the cultivation world and hidden connections waiting to surface.`,
+      'The protagonist studies every tiny fluctuation of spiritual energy, reminding himself that one careless choice can cost everything.',
+      'Under the heavy night sky, distant footsteps echo like drums, announcing a conflict nobody wants yet nobody can avoid.',
+      'He remembers his master\'s advice and keeps his mind steady, separating real opportunities from well-designed traps.',
+      'When the ancient gate opens, a silent pressure floods the chamber and forces everyone to breathe with caution.',
+      'Each decision in this moment creates a different future, and every future demands courage as well as sacrifice.',
+      'Old memories return, offering motivation while also becoming a weight on every step forward.',
+      'For a brief instant, he realizes true strength is not only about power level but about keeping promises under pressure.',
+      'The air trembles as if someone is watching from far away, yet no one can name the figure behind the curtain.',
+      'By the end of this stretch, the journey is not easier, but he has learned how to stay calm inside the storm.',
+    ];
+
+    const sentences = language === 'vi' ? viSentences : enSentences;
+    const targetWords = 3000 + ((chapterNumber * 131) % 1701);
+    const paragraphs: string[] = [];
+    let words = 0;
+    let sentenceIndex = 0;
+
+    while (words < targetWords) {
+      const paragraphLines: string[] = [];
+      for (let i = 0; i < 6; i += 1) {
+        const sentence = sentences[sentenceIndex % sentences.length]!;
+        paragraphLines.push(sentence);
+        words += sentence.split(/\s+/).length;
+        sentenceIndex += 1;
+        if (words >= targetWords) break;
+      }
+      paragraphs.push(paragraphLines.join(' '));
+    }
+
+    return paragraphs.join('\n\n');
+  };
+
   console.log('Seeding roles...');
 
   const userRole = await prisma.role.upsert({
@@ -263,13 +311,6 @@ async function main() {
   const stories = [] as Awaited<ReturnType<typeof prisma.story.upsert>>[];
   const firstChapterByStory = new Map<string, string>();
 
-  const paragraphTemplates = [
-    'Night covered the mountain and spirit energy was flowing quickly around the valley.',
-    'He opened his eyes and felt his cultivation pulse move faster than before.',
-    'A strange pressure arrived from afar and the whole canyon became silent.',
-    'He held his sword and decided to move forward despite uncertain outcome.',
-  ];
-
   for (let i = 0; i < storySeed.length; i += 1) {
     const storyData = storySeed[i]!;
     
@@ -384,11 +425,7 @@ async function main() {
     const chapterTotal = 15;
     for (let chapterNumber = 1; chapterNumber <= chapterTotal; chapterNumber += 1) {
       const chapterSeed = i * 20 + chapterNumber;
-      const paragraphCount = 3 + (chapterNumber % 2);
-      const content = Array.from({ length: paragraphCount }, (_, idx) => {
-        const template = paragraphTemplates[(chapterNumber + idx) % paragraphTemplates.length]!;
-        return `[Đoạn ${idx + 1}] ${template}`;
-      }).join('\n\n');
+      const content = buildLongChapterContent('vi', titleVi, chapterNumber);
 
       const chapterTitle = `Chương ${chapterNumber}: Chuyển động linh lực`;
       const chapterDescription = `Giới thiệu chương ${chapterNumber} của ${titleVi}`;
@@ -449,11 +486,7 @@ async function main() {
 
     for (let chapterNumber = 1; chapterNumber <= chapterTotal; chapterNumber += 1) {
       const chapterSeed = i * 20 + chapterNumber + 100;
-      const paragraphCount = 3 + (chapterNumber % 2);
-      const content = Array.from({ length: paragraphCount }, (_, idx) => {
-        const template = paragraphTemplates[(chapterNumber + idx) % paragraphTemplates.length]!;
-        return `[Paragraph ${idx + 1}] ${template}`;
-      }).join('\n\n');
+      const content = buildLongChapterContent('en', titleEn, chapterNumber);
 
       const chapterTitle = `Chapter ${chapterNumber}: Spirit Shift`;
       const chapterDescription = `Chapter ${chapterNumber} introduction of ${titleEn}`;
@@ -655,12 +688,68 @@ async function main() {
     }
   }
 
+  console.log('Seeding advertisements...');
+
+  const adSeeds = [
+    {
+      partnerName: 'Shopee',
+      title: 'Tai nghe Bluetooth chống ồn cho người mê audio story',
+      imageUrl: 'https://images.unsplash.com/photo-1545127398-14699f92334b?auto=format&fit=crop&w=900&q=80',
+      targetUrl: 'https://shopee.vn/',
+      isActive: true,
+    },
+    {
+      partnerName: 'Lazada',
+      title: 'Loa mini pin trâu, âm trầm mạnh cho phòng ngủ',
+      imageUrl: 'https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=900&q=80',
+      targetUrl: 'https://www.lazada.vn/',
+      isActive: true,
+    },
+    {
+      partnerName: 'Tiki',
+      title: 'Combo sách fantasy + bookmark phiên bản giới hạn',
+      imageUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=900&q=80',
+      targetUrl: 'https://tiki.vn/',
+      isActive: true,
+    },
+    {
+      partnerName: 'FPT Shop',
+      title: 'Máy đọc sách màn e-ink, đọc lâu không mỏi mắt',
+      imageUrl: 'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80',
+      targetUrl: 'https://fptshop.com.vn/',
+      isActive: true,
+    },
+    {
+      partnerName: 'CellphoneS',
+      title: 'Pin sạc dự phòng dung lượng lớn cho hành trình dài',
+      imageUrl: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=900&q=80',
+      targetUrl: 'https://cellphones.com.vn/',
+      isActive: false,
+    },
+  ];
+
+  await prisma.advertisement.deleteMany({});
+  await prisma.advertisement.createMany({ data: adSeeds });
+
+  console.log('Seeding system configs...');
+
+  await prisma.systemConfig.upsert({
+    where: { key: 'ad_insertion_frequency' },
+    update: { value: '1000' },
+    create: {
+      key: 'ad_insertion_frequency',
+      value: '1000',
+    },
+  });
+
   console.log('✅ Seed completed!');
   console.log(`📊 Summary:`);
   console.log(`   - ${categories.length} categories (${categories.filter(c => c.language === 'vi').length} VI, ${categories.filter(c => c.language === 'en').length} EN)`);
   console.log(`   - ${stories.length} stories (${stories.filter(s => s.language === 'vi').length} VI, ${stories.filter(s => s.language === 'en').length} EN)`);
   console.log(`   - ${stories.length * 15} chapters total`);
   console.log(`   - ${seededUsers.length} demo users`);
+  console.log(`   - ${adSeeds.length} advertisements`);
+  console.log('   - 1 system config (ad_insertion_frequency)');
 }
 
 main()

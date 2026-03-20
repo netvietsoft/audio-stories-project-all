@@ -8,6 +8,14 @@ import { UpdateSettingDto } from './dto/update-setting.dto';
 export class SettingsService {
     constructor(private readonly prisma: PrismaService) { }
 
+    private parseConfigValue(raw: string) {
+        const num = Number(raw);
+        if (Number.isFinite(num) && Number.isInteger(num)) {
+            return num;
+        }
+        return raw;
+    }
+
     async findAll() {
         const settings = await this.prisma.siteSetting.findMany({
             orderBy: { key: 'asc' },
@@ -123,5 +131,50 @@ export class SettingsService {
         return this.prisma.siteSetting.delete({
             where: { key },
         });
+    }
+
+    async getSystemConfigByKey(key: string) {
+        let config = await this.prisma.systemConfig.findUnique({
+            where: { key },
+        });
+
+        // Safety fallback for first run when full seed fails or is skipped.
+        if (!config && key === 'ad_insertion_frequency') {
+            config = await this.prisma.systemConfig.create({
+                data: {
+                    key,
+                    value: '1000',
+                },
+            });
+        }
+
+        if (!config) {
+            throw new NotFoundException(`System config with key "${key}" not found`);
+        }
+
+        return {
+            key: config.key,
+            value: this.parseConfigValue(config.value),
+            updatedAt: config.updatedAt,
+        };
+    }
+
+    async updateSystemConfigByKey(key: string, value: number) {
+        const config = await this.prisma.systemConfig.upsert({
+            where: { key },
+            update: {
+                value: String(value),
+            },
+            create: {
+                key,
+                value: String(value),
+            },
+        });
+
+        return {
+            key: config.key,
+            value: this.parseConfigValue(config.value),
+            updatedAt: config.updatedAt,
+        };
     }
 }

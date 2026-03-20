@@ -27,6 +27,8 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { UploadModule } from './upload/upload.module';
 import { LanguagesModule } from './languages/languages.module';
+import { BannersModule } from './banners/banners.module';
+import { AdsModule } from './ads/ads.module';
 
 @Module({
   imports: [
@@ -81,6 +83,8 @@ import { LanguagesModule } from './languages/languages.module';
     NotificationsModule,
     UploadModule,
     LanguagesModule,
+    BannersModule,
+    AdsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { MessageSquare, Send, X } from "lucide-react";
+import { AlertTriangle, Heart, Lightbulb, Reply, Send, ThumbsUp, X } from "lucide-react";
 import DOMPurify from "dompurify";
 import { useLocale } from "next-intl";
 
 import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
 import { useAuthModalStore } from "@/stores/auth-modal-store";
+import SegmentCommentButton from "@/components/story/SegmentCommentButton";
 
 type InlineComment = {
   id: string;
@@ -625,7 +626,6 @@ export default function StoryReader({
         .story-paragraph-content {
           line-height: 1.8;
         }
-        .story-paragraph-content,
         .story-paragraph-content * {
           color: inherit !important;
           background-color: transparent !important;
@@ -647,36 +647,36 @@ export default function StoryReader({
           margin-bottom: 0;
         }
       `}</style>
-      <div className={`relative overflow-x-hidden min-w-0 rounded-2xl bg-slate-50 p-4 pr-0 sm:pr-10 lg:pr-14 dark:bg-slate-900/40 ${isProd ? "select-none" : ""}`}>
+      <div className={`relative min-w-0 overflow-x-hidden ${isProd ? "select-none" : ""}`}>
       {flowItems.map((item) => {
         if (item.type === "paragraph") {
           const { paragraph } = item;
           const comments = paragraphComments[paragraph.id] || [];
           const isOpen = openParagraphId === paragraph.id;
+          const paragraphCount = paragraphCommentCounts[paragraph.index] || 0;
 
           return (
-            <div key={paragraph.id} className="group relative mb-6 overflow-visible rounded-lg transition-colors">
-              <div 
-                className="story-paragraph-content -mx-2 rounded-xl bg-white px-4 py-3 text-lg leading-relaxed text-gray-800 transition-colors hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800/80"
-                style={{ 
-                  wordBreak: "normal",
-                  overflowWrap: "break-word",
-                }}
-                dangerouslySetInnerHTML={{ __html: sanitizeStoryContent(paragraph.content) }}
-              />
-
-              <button
-                onClick={() => openCommentPopup(paragraph.id, paragraph.index)}
-                className={`absolute bottom-0 right-0 inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 transition-all duration-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 sm:bottom-auto sm:top-1/2 sm:-right-12 sm:-translate-y-1/2 ${
-                  (paragraphCommentCounts[paragraph.index] || 0) > 0
-                    ? "opacity-40 group-hover:opacity-100"
-                    : "opacity-0 group-hover:opacity-100"
-                }`}
-                aria-label={`Bình luận đoạn ${paragraph.index + 1}`}
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                <span>{paragraphCommentCounts[paragraph.index] || 0}</span>
-              </button>
+            <div key={paragraph.id} className="group mb-4 overflow-visible rounded-lg transition-colors md:mb-6">
+              <div className="relative">
+                <div
+                  className="story-paragraph-content rounded-lg px-1 py-1.5 text-lg leading-relaxed text-gray-800 transition-colors group-hover:bg-gray-50 sm:px-1.5 sm:py-2 md:px-2 md:py-2.5 dark:text-gray-100 dark:group-hover:bg-gray-800/70"
+                  style={{
+                    wordBreak: "normal",
+                    overflowWrap: "break-word",
+                  }}
+                >
+                  <span dangerouslySetInnerHTML={{ __html: sanitizeStoryContent(paragraph.content) }} />
+                  <span className="ml-2 inline-flex align-middle">
+                    <SegmentCommentButton
+                      inline
+                      lang={locale}
+                      paragraphId={paragraph.index}
+                      count={paragraphCount}
+                      onClick={() => openCommentPopup(paragraph.id, paragraph.index)}
+                    />
+                  </span>
+                </div>
+              </div>
 
               {isOpen && (
                 <div className="mt-3 rounded-lg bg-white p-3 shadow-sm dark:bg-gray-900">
@@ -732,24 +732,33 @@ export default function StoryReader({
                               <p className="mt-1 text-gray-600 dark:text-gray-300">{comment.content}</p>
                             </div>
                           </div>
-                          <div className="mt-2 flex flex-wrap gap-2 text-[11px] ml-10">
+                          <div className="mt-2 ml-10 flex flex-wrap items-center gap-2 text-[11px]">
                             <button
                               onClick={() => void toggleReaction(comment.id, "helpful", paragraph.id)}
-                              className="rounded-full border border-gray-300 px-2 py-0.5 hover:bg-white dark:border-gray-700 dark:hover:bg-gray-700"
+                              className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                              aria-label={`Hữu ích ${comment.reactions?.helpful || 0}`}
+                              title="Hữu ích"
                             >
-                              Hữu ích {comment.reactions?.helpful || 0}
+                              <Lightbulb className="h-3.5 w-3.5" />
+                              <span className="ml-1 text-[10px] font-semibold leading-none">{comment.reactions?.helpful || 0}</span>
                             </button>
                             <button
                               onClick={() => void toggleReaction(comment.id, "like", paragraph.id)}
-                              className="rounded-full border border-gray-300 px-2 py-0.5 hover:bg-white dark:border-gray-700 dark:hover:bg-gray-700"
+                              className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                              aria-label={`Thích ${comment.reactions?.like || 0}`}
+                              title="Thích"
                             >
-                              Thích {comment.reactions?.like || 0}
+                              <ThumbsUp className="h-3.5 w-3.5" />
+                              <span className="ml-1 text-[10px] font-semibold leading-none">{comment.reactions?.like || 0}</span>
                             </button>
                             <button
                               onClick={() => void toggleReaction(comment.id, "love", paragraph.id)}
-                              className="rounded-full border border-gray-300 px-2 py-0.5 hover:bg-white dark:border-gray-700 dark:hover:bg-gray-700"
+                              className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                              aria-label={`Yêu thích ${comment.reactions?.love || 0}`}
+                              title="Yêu thích"
                             >
-                              Yêu thích {comment.reactions?.love || 0}
+                              <Heart className="h-3.5 w-3.5" />
+                              <span className="ml-1 text-[10px] font-semibold leading-none">{comment.reactions?.love || 0}</span>
                             </button>
                             <button
                               onClick={() =>
@@ -758,15 +767,19 @@ export default function StoryReader({
                                   [paragraph.id]: comment.id,
                                 }))
                               }
-                              className="rounded-full border border-blue-300 px-2 py-0.5 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                              aria-label="Trả lời"
+                              title="Trả lời"
                             >
-                              Trả lời
+                              <Reply className="h-3.5 w-3.5" />
                             </button>
                             <button
                               onClick={() => void handleReportComment(comment.id)}
-                              className="rounded-full border border-red-300 px-2 py-0.5 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/20"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/20"
+                              aria-label="Báo xấu"
+                              title="Báo xấu"
                             >
-                              Báo xấu
+                              <AlertTriangle className="h-3.5 w-3.5" />
                             </button>
                           </div>
 

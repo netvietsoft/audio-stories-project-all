@@ -32,6 +32,7 @@ import {
   Zap,
   Clock3,
   ArrowRight,
+  Coins,
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
@@ -1707,8 +1708,8 @@ export default function StoryChapterClient() {
                                   </p>
                                   
                                   {!isUnlocked && (
-                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black">
-                                      <Lock className="h-3 w-3" />
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-black">
+                                      <Coins className="h-3 w-3" />
                                       {v.unlockPrice}
                                     </div>
                                   )}
@@ -1765,8 +1766,8 @@ export default function StoryChapterClient() {
                                       </p>
                                       
                                       {!isUnlocked && (
-                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black">
-                                          <Lock className="h-3 w-3" />
+                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-black">
+                                          <Coins className="h-3 w-3" />
                                           {v.unlockPrice}
                                         </div>
                                       )}
@@ -1787,7 +1788,7 @@ export default function StoryChapterClient() {
                     {selectedVariant && selectedVariant.content && (
                       <StoryReader
                         chapterId={`variant-${selectedVariant.id}`}
-                        content={`[DIEN_BIEN] ${selectedVariant.content}`}
+                        content={selectedVariant.content}
                         adInterval={700}
                         isLocked={false}
                         previewChars={500}

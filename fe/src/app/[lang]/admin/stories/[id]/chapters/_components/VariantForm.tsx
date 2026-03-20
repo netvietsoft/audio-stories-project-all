@@ -15,7 +15,8 @@ import {
     Check,
     BookOpen,
     Layers,
-    Star
+    Star,
+    Plus
 } from 'lucide-react';
 
 import { UploadButton } from '@/lib/uploadthing';
@@ -151,20 +152,26 @@ export const VariantForm = ({
         await onSubmit(sanitizedData);
     };
 
-    const formatBrackets = () => {
+    const addParagraph = () => {
         const content = watch('content') || '';
-        if (!content) return;
-
-        let formatted = content;
-        if (content.includes('<')) {
-            // HTML mode (Quill)
-            formatted = content.replace(/([^>\s])\s*\[/g, '$1<br>[');
-        } else {
-            // Text mode
-            formatted = content.replace(/([^\n])\s*\[/g, '$1\n[');
-        }
-
-        setValue('content', formatted, { shouldDirty: true });
+        
+        // Find all existing [doanX] markers
+        const doanMatches = content.match(/\[doan(\d+)\]/gi) || [];
+        
+        // Get the highest number
+        let maxNumber = 0;
+        doanMatches.forEach(match => {
+            const num = parseInt(match.match(/\d+/)?.[0] || '0');
+            if (num > maxNumber) maxNumber = num;
+        });
+        
+        // Next number
+        const nextNumber = maxNumber + 1;
+        const newMarker = `[doan${nextNumber}]`;
+        
+        // Add marker at the end
+        const updatedContent = content ? `${content}\n${newMarker} ` : `${newMarker} `;
+        setValue('content', updatedContent, { shouldDirty: true });
     };
 
     const quillModules = {
@@ -376,11 +383,11 @@ export const VariantForm = ({
                     </div>
                     <button
                         type="button"
-                        onClick={formatBrackets}
-                        className="text-[10px] font-black text-indigo-600 hover:text-white hover:bg-indigo-600 bg-indigo-50 px-4 py-1.5 rounded-full transition-all flex items-center gap-2 uppercase tracking-widest border border-indigo-100"
+                        onClick={addParagraph}
+                        className="text-[10px] font-black text-emerald-600 hover:text-white hover:bg-emerald-600 bg-emerald-50 px-4 py-2 rounded-full transition-all flex items-center gap-2 uppercase tracking-widest border border-emerald-100"
                     >
-                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 group-hover:bg-white animate-pulse" />
-                        Định dạng []
+                        <Plus className="w-3.5 h-3.5" />
+                        Thêm đoạn
                     </button>
                 </div>
                 <div className="flex-1 flex flex-col min-h-[400px]">

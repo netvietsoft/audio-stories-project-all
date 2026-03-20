@@ -7,7 +7,6 @@ import {
     Edit2,
     Trash2,
     Loader2,
-    X,
     Music,
     ChevronLeft,
     ChevronRight,
@@ -16,39 +15,18 @@ import {
     Check,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
-import { ChapterForm, type ChapterSubmitPayload } from '../stories/[id]/chapters/_components/ChapterForm';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import { useRouter } from 'next/navigation';
 
-interface Chapter {
+
+
+interface StoryOption {
     id: string;
-    chapterNumber: number;
-    title: string;
+    title?: unknown;
     titleVi?: string;
     titleEn?: string;
-    description: string | null;
-    descriptionVi?: string | null;
-    descriptionEn?: string | null;
-    content: string | null;
-    contentVi?: string | null;
-    contentEn?: string | null;
-    audioUrlVi?: string | null;
-    audioUrlEn?: string | null;
-    r2AudioUrl: string | null;
-    thumbnailUrl?: string | null;
-    youtubeVideoId: string | null;
-    audioDuration: number | null;
-    accessType: 'free' | 'timed' | 'vip';
-    storyId: string | null;
-    createdAt: string;
-    story?: {
-        title: string;
-        titleVi?: string;
-        titleEn?: string;
-    };
 }
-
 export default function ChaptersGlobalPage() {
     const router = useRouter();
     const getLocalizedText = (value: unknown, localeKey = 'vi'): string => {
@@ -68,9 +46,6 @@ export default function ChaptersGlobalPage() {
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [page, setPage] = useState(1);
     const [filterAccess, setFilterAccess] = useState('all');
     const [filterStoryId, setFilterStoryId] = useState('all');
@@ -78,7 +53,7 @@ export default function ChaptersGlobalPage() {
     const { languages } = useAdminLanguages();
     const [selectedChapters, setSelectedChapters] = useState<Set<string>>(new Set());
     const [isDeletingBulk, setIsDeletingBulk] = useState(false);
-    const [stories, setStories] = useState<any[]>([]);
+    const [stories, setStories] = useState<StoryOption[]>([]);
     const [isStoryFilterOpen, setIsStoryFilterOpen] = useState(false);
     const [storySearch, setStorySearch] = useState('');
     const storyFilterRef = React.useRef<HTMLDivElement>(null);
@@ -148,8 +123,7 @@ export default function ChaptersGlobalPage() {
     };
 
     const handleCreate = () => {
-        setEditingChapter(null);
-        setIsModalOpen(true);
+        router.push(`/${selectedLocale}/admin/chapters/new`);
     };
 
     const handleEdit = (chapter: Chapter) => {
@@ -201,35 +175,6 @@ export default function ChaptersGlobalPage() {
             setSelectedChapters(new Set());
         } else {
             setSelectedChapters(new Set(chapters.map(c => c.id)));
-        }
-    };
-
-    const handleSubmit = async (data: ChapterSubmitPayload) => {
-        setIsSubmitting(true);
-        try {
-            const payload: ChapterSubmitPayload = {
-                ...data,
-                thumbnailUrl: data.thumbnailUrl || undefined,
-                youtubeVideoId: data.youtubeVideoId || undefined,
-                r2AudioUrl: data.r2AudioUrl || undefined,
-                storyId: data.storyId || undefined,
-                language: selectedLocale,
-            };
-
-            if (editingChapter) {
-                await apiClient.patch(`/chapters/${editingChapter.id}`, payload);
-            } else {
-                await apiClient.post(`/chapters`, payload);
-            }
-            setIsModalOpen(false);
-            fetchChapters();
-        } catch (error) {
-            console.error('Failed to save chapter:', error);
-            const apiMessage = (error as any)?.response?.data?.message;
-            const detail = Array.isArray(apiMessage) ? apiMessage.join(', ') : apiMessage;
-            alert(detail ? `KhÃ´ng thá»ƒ lÆ°u chÆ°Æ¡ng: ${detail}` : 'KhÃ´ng thá»ƒ lÆ°u chÆ°Æ¡ng. Vui lÃ²ng kiá»ƒm tra dá»¯ liá»‡u vÃ  thá»­ láº¡i.');
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -513,54 +458,6 @@ export default function ChaptersGlobalPage() {
                     </div>
                 )}
             </div>
-
-            {/* Modal for Create/Edit */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white w-[90vw] max-w-7xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
-                        <div className="p-8 border-b border-slate-100 flex items-center justify-between shrink-0">
-                            <div>
-                                <h2 className="text-2xl font-black text-slate-900">
-                                    Thêm Chương Mới
-                                </h2>
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">
-                                    Chương độc lập
-                                </p>
-                            </div>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <div className="p-8 overflow-y-auto custom-scrollbar">
-                            <ChapterForm
-                                initialData={editingChapter ? {
-                                    chapterNumber: editingChapter.chapterNumber,
-                                    titleVi: editingChapter.titleVi || editingChapter.title,
-                                    titleEn: editingChapter.titleEn || '',
-                                    descriptionVi: editingChapter.descriptionVi || editingChapter.description || '',
-                                    descriptionEn: editingChapter.descriptionEn || '',
-                                    contentVi: editingChapter.contentVi || editingChapter.content || '',
-                                    contentEn: editingChapter.contentEn || '',
-                                    audioUrlVi: editingChapter.audioUrlVi || editingChapter.r2AudioUrl || '',
-                                    audioUrlEn: editingChapter.audioUrlEn || '',
-                                    r2AudioUrl: editingChapter.r2AudioUrl ?? undefined,
-                                    thumbnailUrl: editingChapter.thumbnailUrl ?? undefined,
-                                    youtubeVideoId: editingChapter.youtubeVideoId ?? undefined,
-                                    audioDuration: editingChapter.audioDuration ?? 0,
-                                    accessType: editingChapter.accessType,
-                                } : {}}
-                                selectedLocale={selectedLocale}
-                                onSubmit={handleSubmit}
-                                onCancel={() => setIsModalOpen(false)}
-                                isLoading={isSubmitting}
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

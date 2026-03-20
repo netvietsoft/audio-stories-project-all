@@ -144,6 +144,20 @@ type StoryReaderProps = {
   onUnlockRequest?: () => void;
 };
 
+const normalizeStoryContent = (rawHtml: string) =>
+  rawHtml
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\u00A0/g, " ")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/([A-Za-zÀ-ỹ0-9])\s*<br\s*\/?>\s*([A-Za-zÀ-ỹ0-9])/g, "$1 $2")
+    .replace(/([A-Za-zÀ-ỹ0-9])\s*\r?\n\s*([A-Za-zÀ-ỹ0-9])/g, "$1 $2");
+
+const sanitizeStoryContent = (rawHtml: string) =>
+  DOMPurify.sanitize(normalizeStoryContent(rawHtml), {
+    FORBID_TAGS: ["style", "script", "iframe", "object", "embed"],
+    FORBID_ATTR: ["style", "class", "id", "color", "bgcolor"],
+  });
+
 const splitParagraphs = (chapterId: string, content: string | null | undefined): ParagraphItem[] => {
   if (!content) return [];
 
@@ -251,30 +265,13 @@ export default function StoryReader({
       | { type: "cta"; id: string }
     > = [];
 
-    let accumulatedChars = 0;
-    let nextBreakAt = adInterval;
-
-    paragraphs.forEach((paragraph, paragraphIndex) => {
+    // Simply add all paragraphs without ads/CTAs
+    paragraphs.forEach((paragraph) => {
       items.push({ type: "paragraph", paragraph });
-      accumulatedChars += paragraph.content.length;
-
-      while (accumulatedChars >= nextBreakAt) {
-        const isCta = Math.floor(nextBreakAt / adInterval) % 2 === 0;
-        items.push({
-          type: isCta ? "cta" : "ad",
-          id: `${paragraph.id}-slot-${nextBreakAt}`,
-        });
-        nextBreakAt += adInterval;
-      }
-
-      if ((paragraphIndex + 1) % 6 === 0) {
-        // Keep a gentle rhythm for very short paragraphs where character threshold is not reached.
-        items.push({ type: "cta", id: `${paragraph.id}-fallback-cta` });
-      }
     });
 
     return items;
-  }, [adInterval, paragraphs]);
+  }, [paragraphs]);
 
   const normalizeComments = (rawComments: ParagraphCommentsResponse["comments"] = []): InlineComment[] => {
     return rawComments.map((item) => ({
@@ -514,9 +511,14 @@ export default function StoryReader({
           previewParagraphs.map((paragraph) => (
             <div key={paragraph.id} className="mb-6">
               <div 
-                className="text-lg leading-loose text-gray-800 dark:text-gray-100 overflow-hidden [&_img]:max-w-full [&_img]:h-auto [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
-                style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(paragraph.content) }}
+                className="text-lg leading-relaxed text-gray-800 dark:text-gray-100"
+                style={{ 
+                  wordBreak: "normal",
+                  overflowWrap: "break-word",
+                  whiteSpace: "normal",
+                  wordSpacing: "normal",
+                }}
+                dangerouslySetInnerHTML={{ __html: sanitizeStoryContent(paragraph.content) }}
               />
             </div>
           ))
@@ -544,7 +546,34 @@ export default function StoryReader({
   }
 
   return (
-    <div className={`relative overflow-x-hidden min-w-0 pr-0 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
+    <>
+      <style jsx>{`
+        .story-paragraph-content {
+          line-height: 1.8;
+        }
+        .story-paragraph-content,
+        .story-paragraph-content * {
+          color: inherit !important;
+          background-color: transparent !important;
+          font-family: inherit !important;
+          letter-spacing: normal !important;
+          word-break: normal !important;
+          overflow-wrap: break-word !important;
+          line-break: auto;
+          hyphens: manual;
+        }
+        .story-paragraph-content p {
+          margin: 0.5em 0;
+          line-height: inherit;
+        }
+        .story-paragraph-content p:first-child {
+          margin-top: 0;
+        }
+        .story-paragraph-content p:last-child {
+          margin-bottom: 0;
+        }
+      `}</style>
+      <div className={`relative overflow-x-hidden min-w-0 pr-0 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
       {flowItems.map((item) => {
         if (item.type === "paragraph") {
           const { paragraph } = item;
@@ -552,16 +581,19 @@ export default function StoryReader({
           const isOpen = openParagraphId === paragraph.id;
 
           return (
-            <div key={paragraph.id} className="group relative mb-6 overflow-visible rounded-lg px-4 py-2 -mx-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
+            <div key={paragraph.id} className="group relative mb-6 overflow-visible rounded-lg transition-colors">
               <div 
-                className="text-lg leading-loose text-gray-800 dark:text-gray-100 overflow-hidden [&_img]:max-w-full [&_img]:h-auto [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
-                style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(paragraph.content) }}
+                className="story-paragraph-content text-lg leading-relaxed text-gray-800 dark:text-gray-100 px-4 py-2 -mx-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                style={{ 
+                  wordBreak: "normal",
+                  overflowWrap: "break-word",
+                }}
+                dangerouslySetInnerHTML={{ __html: sanitizeStoryContent(paragraph.content) }}
               />
 
               <button
                 onClick={() => openCommentPopup(paragraph.id, paragraph.index)}
-                className={`absolute bottom-0 right-0 inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white/90 px-2 py-1 text-xs text-slate-600 transition-all duration-200 hover:bg-white dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-300 sm:bottom-auto sm:top-1/2 sm:-right-12 sm:-translate-y-1/2 ${
+                className={`absolute bottom-0 right-0 inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 transition-all duration-200 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 sm:bottom-auto sm:top-1/2 sm:-right-12 sm:-translate-y-1/2 ${
                   (paragraphCommentCounts[paragraph.index] || 0) > 0
                     ? "opacity-40 group-hover:opacity-100"
                     : "opacity-0 group-hover:opacity-100"
@@ -763,21 +795,24 @@ export default function StoryReader({
           );
         }
 
-        if (item.type === "ad") {
-          return (
-            <div key={item.id} className="mb-8 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
-              <p className="text-[11px] font-semibold uppercase tracking-wide">Sponsored</p>
-              <p className="mt-1">Quảng cáo: Nâng cấp Premium để mở khóa audio chất lượng cao và nghe không giới hạn.</p>
-            </div>
-          );
-        }
+        // Ads and CTAs are disabled
+        // if (item.type === "ad") {
+        //   return (
+        //     <div key={item.id} className="mb-8 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
+        //       <p className="text-[11px] font-semibold uppercase tracking-wide">Sponsored</p>
+        //       <p className="mt-1">Quảng cáo: Nâng cấp Premium để mở khóa audio chất lượng cao và nghe không giới hạn.</p>
+        //     </div>
+        //   );
+        // }
 
-        return (
-          <div key={item.id} className="mb-8 rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-sm text-blue-900 dark:border-blue-900/60 dark:bg-blue-900/20 dark:text-blue-200">
-            <p className="text-[11px] font-semibold uppercase tracking-wide">Gợi ý cho bạn</p>
-            <p className="mt-1">Tiếp tục chương sau để mở khóa đoạn cao trào và nhận thưởng 20 credits.</p>
-          </div>
-        );
+        // return (
+        //   <div key={item.id} className="mb-8 rounded-xl border border-blue-200 bg-blue-50/80 p-4 text-sm text-blue-900 dark:border-blue-900/60 dark:bg-blue-900/20 dark:text-blue-200">
+        //     <p className="text-[11px] font-semibold uppercase tracking-wide">Gợi ý cho bạn</p>
+        //     <p className="mt-1">Tiếp tục chương sau để mở khóa đoạn cao trào và nhận thưởng 20 credits.</p>
+        //   </div>
+        // );
+
+        return null;
       })}
 
       {/* Report Modal */}
@@ -824,6 +859,7 @@ export default function StoryReader({
         </div>
       )}
     </div>
+    </>
   );
 }
 

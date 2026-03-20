@@ -1201,11 +1201,11 @@ export default function StoryChapterClient() {
   }
 
   return (
-    <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-4 sm:px-6 lg:px-10 2xl:px-14">
-      <div className="mx-auto w-full max-w-[1920px] space-y-8">
+    <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-2 md:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1920px] space-y-6 md:space-y-8">
         <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_560px] lg:items-start">
           {/* Story Info */}
-          <section className="rounded-2xl bg-white p-5 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
+          <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
 
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
@@ -1243,7 +1243,7 @@ export default function StoryChapterClient() {
           </section>
 
           {/* Chapter Introduction */}
-          <section className="rounded-2xl bg-white p-5 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-2">
+          <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-2">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("chapterIntro")}</h2>
             <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
               {selectedChapterDescription || translationPendingMessage}
@@ -1255,7 +1255,7 @@ export default function StoryChapterClient() {
 
             {/* Side Panel 1.5: Variant Selection (Interactive Stories) - Moved Inline if hasInlineChoice */}
             {variants.length > 0 && !hasInlineChoice && (
-              <section className="rounded-2xl bg-white p-4 dark:bg-gray-900">
+              <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900">
                 <h2 className="mb-3 flex items-center gap-2 text-base font-bold text-gray-900 dark:text-gray-100">
                   ⚡ {t("variantSelectionTitle")}
                 </h2>
@@ -1360,7 +1360,7 @@ export default function StoryChapterClient() {
 
 
             {/* Side Panel 1: Chapter List */}
-            <section className="rounded-2xl bg-white p-4 dark:bg-gray-900">
+            <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900">
               <h2 className="mb-3 flex items-center justify-between text-base font-semibold text-gray-900 dark:text-gray-100">
                 <span className="inline-flex items-center gap-2"><ListMusic className="h-4 w-4" /> {t("currentChapter")}
                 </span>
@@ -1443,7 +1443,7 @@ export default function StoryChapterClient() {
             </section>
 
             {/* Side Panel 2: Audio Player */}
-            <section className="rounded-2xl bg-white p-4 dark:bg-gray-900">
+            <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900">
               <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("audioPlayer")}</h2>
 
               <div className="mt-4 grid gap-3 md:grid-cols-[120px_minmax(0,1fr)] lg:grid-cols-[136px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
@@ -1636,7 +1636,7 @@ export default function StoryChapterClient() {
 
             {/* Side Panel 3: YouTube Player */}
             {selectedChapter.youtubeVideoId ? (
-            <section className="rounded-2xl bg-white p-4 dark:bg-gray-900">
+            <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900">
               <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("youtubePlayer")}</h2>
               {chapterIsLocked ? (
                 <div className="rounded-xl bg-amber-50/70 p-4 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
@@ -1666,7 +1666,7 @@ export default function StoryChapterClient() {
           </div>{/* END RIGHT STICKY SIDEBAR */}
 
           {/* Chapter Content / Text Reader */}
-          <section className="rounded-2xl bg-white p-5 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
+          <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readText")}</h2>
             <div className="mt-5 min-w-0">
               {selectedChapterContentRaw ? (
@@ -1815,7 +1815,7 @@ export default function StoryChapterClient() {
                   />
                 )
               ) : (
-                <div className="rounded-2xl bg-white px-4 py-5 text-sm leading-7 text-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                <div className="rounded-2xl bg-white px-3 py-4 sm:px-4 sm:py-5 text-sm leading-7 text-gray-700 dark:bg-gray-900 dark:text-gray-200">
                   {translationPendingMessage}
                 </div>
               )}
@@ -1823,7 +1823,7 @@ export default function StoryChapterClient() {
           </section>
 
           {/* Gift Section */}
-          <section className="rounded-2xl bg-white p-5 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-4">
+          <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("giftChapter")}</h2>
               <button
@@ -1843,10 +1843,10 @@ export default function StoryChapterClient() {
           </section>
 
           {/* Reviews */}
-          <section className="rounded-2xl bg-white p-5 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-5">
+          <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-5">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readerReviews")}</h2>
 
-            <div className="mt-4 grid gap-4 rounded-2xl bg-slate-50 p-5 dark:bg-gray-950 lg:grid-cols-[280px_1fr]">
+            <div className="mt-4 grid gap-3 md:gap-4 rounded-2xl bg-slate-50 p-3 sm:p-4 md:p-6 dark:bg-gray-950 lg:grid-cols-[280px_1fr]">
               <div className="rounded-xl bg-white dark:bg-gray-800 p-4">
                 <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {Number(ratingStats?.averageRating || 0).toFixed(1)}

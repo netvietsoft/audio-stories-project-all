@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Bookmark, Heart } from "lucide-react";
-import { useParams, usePathname, useRouter } from "next/navigation";
 
 import { useUserStore } from "@/stores/user-store";
 import { useFavoriteStore } from "@/stores/favorite-store";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
 
 type FavoriteButtonProps = {
   storyId: string;
@@ -32,9 +32,7 @@ export default function FavoriteButton({
   const hydrate = useFavoriteStore((state) => state.hydrate);
   const toggle = useFavoriteStore((state) => state.toggle);
   const isFavorite = useFavoriteStore((state) => state.isFavorite(storyId));
-  const params = useParams<{ lang?: string }>();
-  const pathname = usePathname();
-  const router = useRouter();
+  const openLogin = useAuthModalStore((state) => state.openLogin);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -59,9 +57,7 @@ export default function FavoriteButton({
         if (isSubmitting) return;
 
         if (!user) {
-          const lang = params?.lang === "en" ? "en" : "vi";
-          const redirect = pathname || "/";
-          router.push(`/${lang}/login?redirect=${encodeURIComponent(redirect)}`);
+          openLogin();
           return;
         }
 

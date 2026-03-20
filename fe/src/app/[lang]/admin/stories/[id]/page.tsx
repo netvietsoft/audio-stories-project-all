@@ -72,7 +72,7 @@ export default function EditStoryPage() {
     try {
       await apiClient.patch(`/stories/${storyId}`, data);
       await revalidateStoriesCache();
-      router.push(`/${currentLang}/admin/stories`);
+      router.back();
     } catch (error) {
       console.error("Failed to update story:", error);
       const apiMessage = (error as any)?.response?.data?.message;
@@ -97,12 +97,12 @@ export default function EditStoryPage() {
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-4">
-              <Link
-                href={`/${currentLang}/admin/stories`}
+              <button
+                onClick={() => router.back()}
                 className="rounded-xl border border-slate-200 bg-white p-2 text-slate-400 transition-all hover:bg-slate-50 hover:text-indigo-600 active:scale-95"
               >
                 <ChevronLeft className="h-5 w-5" />
-              </Link>
+              </button>
               <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight text-slate-900">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-200">
                   <Newspaper className="h-6 w-6 text-white" />
@@ -117,7 +117,7 @@ export default function EditStoryPage() {
           initialData={initialData}
           selectedLocale={selectedLocale}
           onSubmit={handleSubmit}
-          onCancel={() => router.push(`/${currentLang}/admin/stories`)}
+          onCancel={() => router.back()}
           isLoading={isSubmitting}
         />
       </div>

@@ -522,6 +522,15 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         onPaste={handleContentPaste(lang)}
                         className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 resize-none"
                     />
+                    <p className="text-xs text-slate-500 ml-2 flex items-start gap-2">
+                        <Scissors className="w-3 h-3 mt-0.5 shrink-0" />
+                        <span>
+                            {lang === 'vi' 
+                                ? 'Để chia đoạn văn, sử dụng [doan1], [doan2], [doan3]... Ví dụ: "Nội dung đoạn 1 [doan2] Nội dung đoạn 2 [doan3] Nội dung đoạn 3"'
+                                : 'To split paragraphs, use [doan1], [doan2], [doan3]... Example: "Paragraph 1 content [doan2] Paragraph 2 content [doan3] Paragraph 3 content"'
+                            }
+                        </span>
+                    </p>
                 </div>
             </div>
         );

@@ -36,7 +36,7 @@ export default function NewStoryPage() {
             };
             await apiClient.post('/stories', submitData);
             await revalidateStoriesCache();
-            router.push('/admin/stories');
+            router.back();
         } catch (error) {
             console.error('Failed to create story:', error);
             // In a real app, show a toast notification here
@@ -51,12 +51,12 @@ export default function NewStoryPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <div className="flex items-center gap-4 mb-2">
-                        <Link
-                            href="/admin/stories"
+                        <button
+                            onClick={() => router.back()}
                             className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-indigo-600 rounded-xl hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
                         >
                             <ChevronLeft className="w-5 h-5" />
-                        </Link>
+                        </button>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
                             <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
                                 <Newspaper className="w-6 h-6 text-white" />
@@ -80,7 +80,7 @@ export default function NewStoryPage() {
                 initialData={{ isInteractive }}
                 selectedLocale={selectedLocale}
                 onSubmit={handleSubmit}
-                onCancel={() => router.push('/admin/stories')}
+                onCancel={() => router.back()}
                 isLoading={isLoading}
             />
         </div>

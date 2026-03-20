@@ -149,27 +149,39 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
 
   let parts: string[] = [];
   
-  // Try to split by common block tags if content looks like HTML
-  const trimmed = content.trim();
-  // First, check if there are <hr> markers (inserted by admin auto-split feature)
-  if (content.toLowerCase().includes('<hr') || content.toLowerCase().includes('<hr/>') || content.toLowerCase().includes('<hr />')) {
+  // Priority 1: Check for [doan1], [doan2], etc. markers
+  const doanRegex = /\[doan\d+\]/gi;
+  if (doanRegex.test(content)) {
+    // Split by [doanX] markers and filter out the markers themselves
+    parts = content
+      .split(doanRegex)
+      .map(p => p.trim())
+      .filter(p => p.length > 0);
+  }
+  // Priority 2: Check for <hr> markers (inserted by admin auto-split feature)
+  else if (content.toLowerCase().includes('<hr') || content.toLowerCase().includes('<hr/>') || content.toLowerCase().includes('<hr />')) {
     parts = content
       .split(/<hr\s*\/?>/gi)
       .map(p => p.trim())
       .filter(p => p.length > 0);
-  } else if (trimmed.startsWith('<') && trimmed.includes('</p>')) {
-    // Fallback 1: Use a simple split by paragraph closing tag
-    parts = content
-      .split('</p>')
-      .map(p => p.trim())
-      .filter(p => p.length > 0)
-      .map(p => p + '</p>');
-  } else {
-    // Fallback 2: Plain text split by double newlines
-    parts = content
-      .split(/\n\s*\n/)
-      .map((part) => part.trim().replace(/^\[Paragraph\s*\d+\]\s*/i, "").replace(/\[.*?\]/g, "").trim())
-      .filter(Boolean);
+  }
+  // Priority 3: Try to split by common block tags if content looks like HTML
+  else {
+    const trimmed = content.trim();
+    if (trimmed.startsWith('<') && trimmed.includes('</p>')) {
+      // Fallback 1: Use a simple split by paragraph closing tag
+      parts = content
+        .split('</p>')
+        .map(p => p.trim())
+        .filter(p => p.length > 0)
+        .map(p => p + '</p>');
+    } else {
+      // Fallback 2: Plain text split by double newlines
+      parts = content
+        .split(/\n\s*\n/)
+        .map((part) => part.trim().replace(/^\[Paragraph\s*\d+\]\s*/i, "").replace(/\[.*?\]/g, "").trim())
+        .filter(Boolean);
+    }
   }
 
   return parts.map((part, index) => ({
@@ -502,7 +514,8 @@ export default function StoryReader({
           previewParagraphs.map((paragraph) => (
             <div key={paragraph.id} className="mb-6">
               <div 
-                className="text-lg leading-loose text-gray-800 dark:text-gray-100 overflow-hidden break-words [&_img]:max-w-full [&_img]:h-auto [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+                className="text-lg leading-loose text-gray-800 dark:text-gray-100 overflow-hidden [&_img]:max-w-full [&_img]:h-auto [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+                style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(paragraph.content) }}
               />
             </div>
@@ -541,7 +554,8 @@ export default function StoryReader({
           return (
             <div key={paragraph.id} className="group relative mb-6 overflow-visible rounded-lg px-4 py-2 -mx-4 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
               <div 
-                className="text-lg leading-loose text-gray-800 dark:text-gray-100 overflow-hidden break-words [&_img]:max-w-full [&_img]:h-auto [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+                className="text-lg leading-loose text-gray-800 dark:text-gray-100 overflow-hidden [&_img]:max-w-full [&_img]:h-auto [&_table]:max-w-full [&_table]:overflow-x-auto [&_pre]:max-w-full [&_pre]:overflow-x-auto"
+                style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(paragraph.content) }}
               />
 

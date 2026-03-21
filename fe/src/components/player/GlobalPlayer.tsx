@@ -4,7 +4,7 @@ import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronUp, Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, X } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
 import { useAudioStore } from "@/stores/audio-store";
@@ -204,24 +204,25 @@ export default function GlobalPlayer() {
   }, [currentTime, duration]);
 
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const [isExpandedMobile, setIsExpandedMobile] = useState(false);
+  const lastScrollYRef = useRef(0);
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
-      if (currentScrollY > lastScrollY && currentScrollY > 80) {
+
+      if (currentScrollY > lastScrollYRef.current + 2 && currentScrollY > 80) {
         setIsVisible(false);
-      } else {
+      } else if (currentScrollY < lastScrollYRef.current - 2 || currentScrollY <= 80) {
         setIsVisible(true);
       }
-      
-      setLastScrollY(currentScrollY);
+
+      lastScrollYRef.current = currentScrollY;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   if (!mounted || !currentTrack) {
     return null;
@@ -235,7 +236,7 @@ export default function GlobalPlayer() {
         : undefined;
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 z-50 bg-gray-50/90 px-3 py-2 backdrop-blur-md dark:bg-gray-900/85 sm:px-4 transition-transform duration-300 ${isVisible ? "translate-y-0" : "translate-y-full"}`}>
+    <div className={`fixed bottom-0 left-0 right-0 z-50 bg-gray-50/90 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-md dark:bg-gray-900/85 sm:px-4 transition-all duration-300 ${isVisible ? "translate-y-0 opacity-100" : "translate-y-[72%] opacity-70"}`}>
       <div className="mx-auto flex w-full max-w-[1920px] items-center gap-3">
         {chapterHref ? (
           <Link href={chapterHref} className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 transition hover:bg-gray-100/80 dark:hover:bg-gray-800/70">
@@ -291,6 +292,28 @@ export default function GlobalPlayer() {
           </div>
         )}
 
+        <div className="flex items-center gap-1 sm:hidden">
+          <button onClick={playPrev} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+            <SkipBack className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => togglePlay(!isPlaying)}
+            className="rounded-full bg-blue-600 p-2.5 text-white hover:bg-blue-700"
+          >
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+          </button>
+          <button onClick={playNext} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+            <SkipForward className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setIsExpandedMobile((prev) => !prev)}
+            className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+            aria-label={t("audioProgress")}
+          >
+            <ChevronUp className={`h-4 w-4 transition-transform ${isExpandedMobile ? "rotate-180" : ""}`} />
+          </button>
+        </div>
+
         <div className="hidden items-center gap-2 sm:flex">
           <button onClick={playPrev} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
             <SkipBack className="h-4 w-4" />
@@ -321,7 +344,7 @@ export default function GlobalPlayer() {
           <span className="text-xs text-gray-500 dark:text-gray-400">{formatDuration(duration)}</span>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="hidden items-center gap-1 sm:flex">
           <button
             onClick={cycleSpeed}
             className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
@@ -357,6 +380,64 @@ export default function GlobalPlayer() {
           </button>
         </div>
       </div>
+
+      {isExpandedMobile ? (
+        <div className="mt-2 rounded-xl bg-white/85 p-2 dark:bg-gray-800/80 sm:hidden">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">{formatDuration(currentTime)}</span>
+            <input
+              type="range"
+              min={0}
+              max={duration || 0}
+              step={1}
+              value={Math.min(currentTime, duration || 0)}
+              onChange={(event) => seekTo(Number(event.target.value))}
+              className="w-full accent-blue-600"
+              aria-label={t("audioProgress")}
+            />
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">{formatDuration(duration)}</span>
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => toggleMute()}
+                className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </button>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                onChange={(event) => setVolume(Number(event.target.value))}
+                className="w-24 accent-blue-600"
+                aria-label={t("volume")}
+              />
+              <button
+                onClick={cycleSpeed}
+                className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                title={t("speedTitle")}
+              >
+                {playbackRate}x
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                void syncHistory(true);
+                togglePlay(false);
+                setTrack(null);
+              }}
+              className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800 md:hidden">
         <div className="h-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />

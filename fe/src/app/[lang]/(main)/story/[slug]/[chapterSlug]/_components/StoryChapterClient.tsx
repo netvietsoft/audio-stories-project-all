@@ -8,6 +8,7 @@ import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
+  ChevronLeft,
   ChevronDown,
   CreditCard,
   ListMusic,
@@ -550,6 +551,16 @@ export default function StoryChapterClient() {
     if (!story) return null;
     return story.chapters.find((chapter) => chapter.id === selectedChapterId) || story.chapters[0] || null;
   }, [selectedChapterId, story]);
+
+  const previousChapter = useMemo(() => {
+    if (!story || activeChapterIndex <= 0) return null;
+    return story.chapters[activeChapterIndex - 1] || null;
+  }, [activeChapterIndex, story]);
+
+  const nextChapter = useMemo(() => {
+    if (!story || activeChapterIndex < 0 || activeChapterIndex >= story.chapters.length - 1) return null;
+    return story.chapters[activeChapterIndex + 1] || null;
+  }, [activeChapterIndex, story]);
 
   const selectedVariant = useMemo(() => {
     if (!selectedVariantId) return null;
@@ -1666,8 +1677,29 @@ export default function StoryChapterClient() {
 
           {/* Chapter Content / Text Reader */}
           <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readText")}</h2>
-            <div className="mt-5 min-w-0">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => previousChapter && goToChapter(previousChapter, true)}
+                disabled={!previousChapter}
+                className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                {locale === "en" ? "Previous chapter" : "Chương trước"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => nextChapter && goToChapter(nextChapter, true)}
+                disabled={!nextChapter}
+                className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                {locale === "en" ? "Next chapter" : "Chương tiếp"}
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="min-w-0">
               {selectedChapterContentRaw ? (
                 hasInlineChoice ? (
                   <div className="space-y-8">
@@ -1818,6 +1850,28 @@ export default function StoryChapterClient() {
                   {translationPendingMessage}
                 </div>
               )}
+
+              <div className="mt-6 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => previousChapter && goToChapter(previousChapter, true)}
+                  disabled={!previousChapter}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  {locale === "en" ? "Previous chapter" : "Chương trước"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => nextChapter && goToChapter(nextChapter, true)}
+                  disabled={!nextChapter}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                >
+                  {locale === "en" ? "Next chapter" : "Chương tiếp"}
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </section>
 

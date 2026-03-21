@@ -11,7 +11,8 @@ import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/Story
 import InfiniteMarqueeSlider from "@/components/shared/InfiniteMarqueeSlider";
 import StoryListView from "@/components/shared/StoryListView";
 import CategoryTabsSection from "@/components/story/CategoryTabsSection";
-import PopularStoriesGrid from "@/components/story/PopularStoriesGrid";
+import HighRatingStoriesGrid from "@/components/story/HighRatingStoriesGrid";
+import CompletedStoriesGrid from "@/components/story/CompletedStoriesGrid";
 import { InteractiveStoryShelf, TopContributorsLeaderboard } from "@/components/shared/StoryDiscoveryBoard";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
@@ -163,6 +164,7 @@ export default function HomePage() {
   const [newestStories, setNewestStories] = useState<StoryItem[]>([]);
   const [newestChapters, setNewestChapters] = useState<any[]>([]);
   const [popularStories, setPopularStories] = useState<StoryItem[]>([]);
+  const [completedStories, setCompletedStories] = useState<StoryItem[]>([]);
   const [trendingStories, setTrendingStories] = useState<StoryItem[]>([]);
   const [actionStories, setActionStories] = useState<StoryItem[]>([]);
   const [xuyenKhongStories, setXuyenKhongStories] = useState<StoryItem[]>([]);
@@ -239,6 +241,7 @@ export default function HomePage() {
           newestRes,
           newestChaptersRes,
           popularRes,
+          completedRes,
           trendingRes,
           catTopRes,
           catFallbackRes,
@@ -249,6 +252,7 @@ export default function HomePage() {
           fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
           apiClient.get("/chapters/latest", { params: { limit: 12 } }).then((r) => r.data || []).catch(() => []),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
+          fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating", status: "completed" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "views", trendWindow: "week" }),
           apiClient
             .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 20, lang } })
@@ -277,6 +281,7 @@ export default function HomePage() {
         setNewestStories(newestRes.status === "fulfilled" ? (newestRes.value.data || []) : []);
         setNewestChapters(newestChaptersRes.status === "fulfilled" ? newestChaptersRes.value : []);
         setPopularStories(popularRes.status === "fulfilled" ? (popularRes.value.data || []) : []);
+        setCompletedStories(completedRes.status === "fulfilled" ? (completedRes.value.data || []) : []);
         setTrendingStories(trendingRes.status === "fulfilled" ? (trendingRes.value.data || []) : []);
 
         const catTop = catTopRes.status === "fulfilled" ? catTopRes.value : [];
@@ -399,23 +404,28 @@ export default function HomePage() {
     <div className="space-y-12">
 
       {/* ─── Hero Banner ─────────────────────────────────────────── */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white">
+      <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-slate-950 text-white">
         {activeHero ? (
-          <Image
-            src={activeHero.imageUrl || "https://placehold.co/1600x500?text=Hot+Story"}
-            alt={activeHero.title}
-            fill
-            sizes="100vw"
-            priority
-            className="absolute inset-0 h-full w-full object-cover opacity-40"
-          />
+          <div className="absolute inset-y-0 left-1/2 w-2/3 -translate-x-1/2">
+            <Image
+              src={activeHero.imageUrl || "https://placehold.co/1600x500?text=Hot+Story"}
+              alt={activeHero.title}
+              fill
+              sizes="100vw"
+              priority
+              className="object-cover object-center"
+            />
+          </div>
         ) : null}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-slate-800/40 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-slate-950 via-slate-950/90 to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-slate-950 via-slate-950/90 to-transparent" />
+        </div>
 
         {heroSlides.length > 1 && (
           <button
             onClick={() => setHeroIndex((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1))}
-            className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/10 p-3 backdrop-blur-sm transition-all hover:bg-white/20 hover:scale-110"
+            className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/25 p-3 backdrop-blur-sm transition-all hover:bg-black/40 hover:scale-110"
             aria-label="Next slide"
           >
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -424,7 +434,7 @@ export default function HomePage() {
           </button>
         )}
 
-        <div className="relative z-10 px-6 py-10 md:px-10 md:py-14">
+        <div className="relative z-10 mx-auto w-full px-4 py-10 sm:px-6 md:px-8 lg:w-[70vw] lg:px-0 md:py-14">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">{t("heroBadge")}</p>
           <h1 className="mt-3 text-3xl font-black leading-tight md:text-5xl">
             {t("heroTitleLine1")}
@@ -666,19 +676,35 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── Truyện phổ biến (Grid 2 hàng x 4) ─ */}
+      {/* ─── Truyện Rating Cao (Grid 2 hàng x 4) ─ */}
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("popularTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t("popularSubtitle")}</p>
+            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "High-Rating Stories" : "Truyện Rating Cao"}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{locale === "en" ? "Top-rated stories from our collection" : "Những truyện được đánh giá cao nhất"}</p>
           </div>
           <Link href="/search?sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
             {t("viewAll")}
           </Link>
         </div>
-        <PopularStoriesGrid stories={popularStories} isLoading={isLoading} />
+        <HighRatingStoriesGrid stories={popularStories} isLoading={isLoading} />
       </section>
+
+      {/* ─── Truyện đã hoàn thành (Grid 2 hàng x 4) ─ */}
+      {completedStories.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "Completed Stories" : "Truyện Đã Hoàn Thành"}</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{locale === "en" ? "Finished series with excellent ratings" : "Những câu chuyện được hoàn chỉnh với đánh giá xuất sắc"}</p>
+            </div>
+            <Link href="/search?status=completed&sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              {t("viewAll")}
+            </Link>
+          </div>
+          <CompletedStoriesGrid stories={completedStories} isLoading={isLoading} />
+        </section>
+      )}
 
       {/* ─── Tabs thể loại (1 carousel duy nhất) ─ */}
       <CategoryTabsSection tabs={categoryTabs} isLoading={isLoading} />

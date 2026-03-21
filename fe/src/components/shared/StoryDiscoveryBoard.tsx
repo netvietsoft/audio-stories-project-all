@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "@/components/shared/LocalizedLink";
-import { Crown, Eye, Layers, Star, TrendingUp } from "lucide-react";
+import { Crown, Eye, Layers, Star } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import FavoriteButton from "@/components/shared/FavoriteButton";
 
@@ -144,91 +143,77 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
     authorFallback: tStoryDetail("authorUpdating"),
   };
 
-  const [activeStoryId, setActiveStoryId] = useState<string>(stories[0]?.id || "");
-
-  useEffect(() => {
-    if (!stories.length) {
-      setActiveStoryId("");
-      return;
-    }
-    setActiveStoryId((prev) => (stories.some((s) => s.id === prev) ? prev : (stories[0]?.id || "")));
-  }, [stories]);
-
-  const activeStory = useMemo(
-    () => stories.find((s) => s.id === activeStoryId) || stories[0],
-    [activeStoryId, stories],
-  );
-
-  const leaderboardStories = stories.slice(0, 5);
+  const topStory = stories[0];
+  const rankedStories = stories.slice(1, 5);
 
   return (
     <div className="rounded-2xl bg-white p-4 dark:bg-gray-900">
       {stories.length ? (
-        <div className="mt-4 grid grid-cols-1 items-stretch gap-8 lg:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:items-stretch">
 
-          {/* ── Left: Featured story card (spans 2 cols on lg) ── */}
-          <div className="flex h-full flex-col gap-6 rounded-xl p-4 md:flex-row lg:col-span-2">
-            {activeStory ? (
+          {/* Left: Top 1 */}
+          <div className="flex h-full flex-col gap-5 rounded-xl p-4 md:flex-row md:items-stretch">
+            {topStory ? (
               <>
                 {/* Thumbnail – fixed width, aligned to top */}
-                <div className="w-full shrink-0 self-start md:w-56 lg:w-64">
-                  <Link href={`/story/${activeStory.slug}`} className="block h-full">
+                <div className="w-full shrink-0 self-start md:h-full md:w-56 lg:w-64">
+                  <Link href={`/story/${topStory.slug}`} className="block h-full">
                     <Image
-                      src={activeStory.thumbnailUrl || "/icon.svg"}
-                      alt={getLocalizedValue(lang, activeStory.titleVi, activeStory.titleEn, activeStory.title)}
+                      src={topStory.thumbnailUrl || "/icon.svg"}
+                      alt={getLocalizedValue(lang, topStory.titleVi, topStory.titleEn, topStory.title)}
                       width={224}
                       height={299}
                       sizes="(max-width: 768px) 100vw, 256px"
-                      className="h-full w-full shrink-0 rounded-xl object-cover"
+                      className="aspect-[2/3] w-full shrink-0 rounded-xl object-cover md:aspect-auto md:h-full"
                     />
                   </Link>
                 </div>
 
                 {/* Content – title, author, stats, description, buttons */}
-                <div className="flex min-w-0 flex-1 flex-col py-1">
-                  <Link href={`/story/${activeStory.slug}`}>
+                <div className="flex h-full min-w-0 flex-1 flex-col py-1">
+                  <Link href={`/story/${topStory.slug}`}>
                     <h4 className="line-clamp-2 text-2xl font-extrabold leading-tight text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400 sm:text-[2rem]">
-                      {getLocalizedValue(lang, activeStory.titleVi, activeStory.titleEn, activeStory.title)}
+                      {getLocalizedValue(lang, topStory.titleVi, topStory.titleEn, topStory.title)}
                     </h4>
                   </Link>
 
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                    {activeStory.author?.name || labels.authorFallback}
+                    {topStory.author?.name || labels.authorFallback}
                   </p>
 
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-300">
-                    <p className="inline-flex items-center gap-1 whitespace-nowrap">
-                      <Layers className="h-3.5 w-3.5" />
-                      {labels.chapters}: {getChapterTotal(activeStory).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
+                    <p className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-blue-50 px-2.5 py-1.5 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                      <Eye className="h-4 w-4" />
+                      {Number(topStory.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
                     </p>
                     <p className="inline-flex items-center gap-1 whitespace-nowrap">
-                      <Eye className="h-3.5 w-3.5" />
-                      {labels.views}: {Number(activeStory.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
+                      <Layers className="h-3.5 w-3.5" />
+                      {labels.chapters}: {getChapterTotal(topStory).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
                     </p>
                     <p className="inline-flex items-center gap-1 whitespace-nowrap">
                       <Star className="h-3.5 w-3.5 text-amber-500" />
-                      {labels.rating}: {formatRating(activeStory.averageRating)}
+                      {labels.rating}: {formatRating(topStory.averageRating)}
                     </p>
                   </div>
 
-                  <p className="mt-2 line-clamp-6 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-500 dark:text-gray-400">
                     {getLocalizedValue(
                       lang,
-                      activeStory.descriptionVi,
-                      activeStory.descriptionEn,
-                      activeStory.description,
+                      topStory.descriptionVi,
+                      topStory.descriptionEn,
+                      topStory.description,
                     ) || labels.storyIntroFallback}
                   </p>
 
                   <div className="mt-auto flex items-center gap-2 pt-4">
                     <Link
-                      href={`/story/${activeStory.slug}`}
+                      href={`/story/${topStory.slug}`}
                       className="inline-flex items-center rounded-full bg-blue-600 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700"
                     >
                       {labels.readNow}
                     </Link>
                     <FavoriteButton
-                      storyId={activeStory.id}
+                      storyId={topStory.id}
                       size="sm"
                       icon="heart"
                       className="h-10 w-10 justify-center rounded-full p-0"
@@ -241,52 +226,63 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
             ) : null}
           </div>
 
-          {/* ── Right: Top-5 leaderboard list (1 col on lg) ── */}
-          <div className="flex h-full flex-col justify-between lg:col-span-1">
-            {leaderboardStories.map((story, idx) => {
+          {/* Right: Top 2 -> Top 5 */}
+          <div className="flex flex-col gap-3">
+            {rankedStories.map((story, idx) => {
               const storyTitle = getLocalizedValue(lang, story.titleVi, story.titleEn, story.title);
-              const isActive = story.id === activeStory?.id;
-              const rankColors = ["text-amber-400", "text-slate-300", "text-amber-600", "text-gray-400", "text-gray-400"];
+              const rank = idx + 2;
+              const rankColors = ["text-slate-400", "text-amber-600", "text-gray-400", "text-gray-400"];
 
               return (
-                <button
+                <Link
                   key={story.id}
-                  type="button"
-                  onClick={() => setActiveStoryId(story.id)}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg p-2 text-left transition-colors ${
-                    isActive
-                      ? "bg-blue-600/20 ring-1 ring-blue-500/40"
-                      : "hover:bg-gray-100 dark:hover:bg-gray-800/60"
-                  }`}
+                  href={`/story/${story.slug}`}
+                  className="flex items-start gap-3 rounded-xl p-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/60"
                 >
-                  <span className={`w-6 shrink-0 text-center text-xl font-bold tabular-nums ${rankColors[idx] ?? "text-gray-400"}`}>
-                    {idx + 1}
+                  <span className={`w-6 shrink-0 pt-1 text-center text-xl font-bold tabular-nums ${rankColors[idx] ?? "text-gray-400"}`}>
+                    {rank}
                   </span>
 
-                  <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded">
+                  <div className="relative h-24 w-16 shrink-0 overflow-hidden rounded-lg">
                     <Image
                       src={story.thumbnailUrl || "/icon.svg"}
                       alt={storyTitle}
                       fill
-                      sizes="48px"
+                      sizes="64px"
                       className="aspect-[3/4] object-cover"
                     />
                   </div>
 
                   <div className="flex min-w-0 flex-col flex-1">
-                    <span className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-white">
+                    <span className="line-clamp-2 text-sm font-semibold text-gray-900 dark:text-white">
                       {storyTitle}
                     </span>
-                    <span className="mt-0.5 text-xs text-gray-400">
-                      {Number(story.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN")} {labels.views.toLowerCase()}
+
+                    <span className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                      {story.author?.name || labels.authorFallback}
                     </span>
-                    <span className="mt-0.5 flex items-center gap-1 text-xs text-gray-400">
-                      <Star className="h-3 w-3 text-amber-500" />
-                      {formatRating(story.averageRating)}
+
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-blue-50 px-2 py-1 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                        <Eye className="h-3 w-3" />
+                        {Number(story.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
+                      </span>
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                        <Layers className="h-3 w-3" />
+                        {getChapterTotal(story).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
+                      </span>
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                        <Star className="h-3 w-3 text-amber-500" />
+                        {formatRating(story.averageRating)}
+                      </span>
+                    </div>
+
+                    <span className="mt-1 line-clamp-2 text-xs leading-5 text-gray-500 dark:text-gray-400">
+                      {getLocalizedValue(lang, story.descriptionVi, story.descriptionEn, story.description) || labels.storyIntroFallback}
                     </span>
+
                   </div>
-                  <TrendingUp className="h-4 w-4 shrink-0 text-green-400" />
-                </button>
+                </Link>
               );
             })}
           </div>

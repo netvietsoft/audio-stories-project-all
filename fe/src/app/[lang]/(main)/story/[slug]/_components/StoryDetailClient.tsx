@@ -153,8 +153,8 @@ export default function StoryDetailClient() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <section className="flex w-full flex-col items-start gap-3 rounded-xl bg-white p-3 sm:p-4 dark:bg-gray-900 md:flex-row md:gap-6 md:p-6">
-        <div className="relative w-full md:w-[280px] lg:w-[320px] shrink-0 aspect-square rounded-lg overflow-hidden shadow-xl">
+      <section className="flex w-full flex-col items-start gap-3 rounded-xl bg-white p-3 sm:p-4 dark:bg-gray-900 md:flex-row md:items-stretch md:gap-6 md:p-6">
+        <div className="relative w-full shrink-0 aspect-square overflow-hidden rounded-lg shadow-xl md:w-[280px] md:aspect-auto md:self-stretch lg:w-[320px]">
           <Image
             src={story.thumbnailUrl || "https://placehold.co/600x600?text=No+Cover"}
             alt={storyTitle}

@@ -55,3 +55,14 @@ body {
 .pause-on-hover:hover .animate-marquee {
   animation-play-state: paused;
 }
+
+/* Global rule per UI requirement: disable visible borders site-wide */
+*,
+*::before,
+*::after {
+  border-width: 0 !important;
+  border-style: none !important;
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}

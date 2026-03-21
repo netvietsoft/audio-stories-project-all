@@ -21,12 +21,16 @@ type Props = {
   stories: StoryItem[];
   isLoading?: boolean;
   limit?: number;
+  itemSize?: "default" | "featured";
+  cardVariant?: "default" | "featured";
 };
 
 export default function InfiniteMarqueeSlider({
   stories,
   isLoading = false,
   limit = 20,
+  itemSize = "default",
+  cardVariant = "default",
 }: Props) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -46,11 +50,16 @@ export default function InfiniteMarqueeSlider({
   };
 
   if (isLoading) {
+    const itemClass =
+      itemSize === "featured"
+        ? "w-[180px] sm:w-[210px] md:w-[230px] lg:w-[250px]"
+        : "w-[130px] sm:w-[150px] md:w-[170px] lg:w-[190px]";
+
     return (
       <div className="flex gap-4 overflow-hidden pb-4">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="w-[130px] sm:w-[150px] md:w-[170px] lg:w-[190px] shrink-0">
-            <div className="aspect-[3/4] animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
+          <div key={i} className={`${itemClass} shrink-0`}>
+            <div className="aspect-[2/3] animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
           </div>
         ))}
       </div>
@@ -58,6 +67,10 @@ export default function InfiniteMarqueeSlider({
   }
 
   const displayStories = stories.slice(0, limit);
+  const itemClass =
+    itemSize === "featured"
+      ? "w-[180px] sm:w-[210px] md:w-[230px] lg:w-[250px]"
+      : "w-[130px] sm:w-[150px] md:w-[170px] lg:w-[190px]";
   // Repeat stories multiple times to ensure we always fill the viewport and have a seamless loop
   // Using 4x repetition as a safe default for small lists (e.g. 5-6 stories)
   const repeatedStories = [...displayStories, ...displayStories, ...displayStories, ...displayStories];
@@ -91,9 +104,9 @@ export default function InfiniteMarqueeSlider({
           {repeatedStories.map((story, idx) => (
             <div
               key={`${story.id}-${idx}`}
-              className="w-[130px] sm:w-[150px] md:w-[170px] lg:w-[190px] shrink-0 group transition-transform duration-300 hover:scale-105 hover:-translate-y-1"
+              className={`${itemClass} shrink-0 group transition-transform duration-300 hover:scale-105 hover:-translate-y-1`}
             >
-              <StoryCard story={story} />
+              <StoryCard story={story} variant={cardVariant} />
             </div>
           ))}
         </div>

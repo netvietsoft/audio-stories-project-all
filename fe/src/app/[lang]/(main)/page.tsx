@@ -10,6 +10,8 @@ import { Headphones, Heart, PlayCircle } from "lucide-react";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import InfiniteMarqueeSlider from "@/components/shared/InfiniteMarqueeSlider";
 import StoryListView from "@/components/shared/StoryListView";
+import CategoryTabsSection from "@/components/story/CategoryTabsSection";
+import PopularStoriesGrid from "@/components/story/PopularStoriesGrid";
 import { InteractiveStoryShelf, TopContributorsLeaderboard } from "@/components/shared/StoryDiscoveryBoard";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
@@ -165,6 +167,7 @@ export default function HomePage() {
   const [actionStories, setActionStories] = useState<StoryItem[]>([]);
   const [xuyenKhongStories, setXuyenKhongStories] = useState<StoryItem[]>([]);
   const [shounenStories, setShounenStories] = useState<StoryItem[]>([]);
+  const [tienHiepStories, setTienHiepStories] = useState<StoryItem[]>([]);
   const [topCategories, setTopCategories] = useState<CategoryItem[]>([]);
   const [allCategories, setAllCategories] = useState<CategoryItem[]>([]);
   const [authors, setAuthors] = useState<AuthorItem[]>([]);
@@ -289,16 +292,19 @@ export default function HomePage() {
         const actionId = findCatId('action');
         const xuyenKhongId = findCatId('xuyen-khong');
         const shounenId = findCatId('shounen');
+        const tienHiepId = findCatId('tien-hiep');
 
-        const [actionRes, xuyenKhongRes, shounenRes] = await Promise.allSettled([
+        const [actionRes, xuyenKhongRes, shounenRes, tienHiepRes] = await Promise.allSettled([
           actionId ? fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, categoryId: actionId }) : Promise.resolve({ data: [] }),
           xuyenKhongId ? fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, categoryId: xuyenKhongId }) : Promise.resolve({ data: [] }),
           shounenId ? fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, categoryId: shounenId }) : Promise.resolve({ data: [] }),
+          tienHiepId ? fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, categoryId: tienHiepId }) : Promise.resolve({ data: [] }),
         ]);
 
         setActionStories(actionRes.status === "fulfilled" ? (actionRes.value.data || []) : []);
         setXuyenKhongStories(xuyenKhongRes.status === "fulfilled" ? (xuyenKhongRes.value.data || []) : []);
         setShounenStories(shounenRes.status === "fulfilled" ? (shounenRes.value.data || []) : []);
+        setTienHiepStories(tienHiepRes.status === "fulfilled" ? (tienHiepRes.value.data || []) : []);
 
         setAuthors(authorRes.status === "fulfilled" ? authorRes.value : []);
         setHallContributors(hallRes.status === "fulfilled" ? hallRes.value : []);
@@ -361,6 +367,33 @@ export default function HomePage() {
 
   const activeHero = heroSlides[heroIndex];
   const discoveryFeaturedStories = (trendingStories.length ? trendingStories : popularStories).slice(0, 7);
+  const categoryIdBySlug = new Map(allCategories.map((category) => [category.slug, category.id]));
+  const categoryTabs = [
+    {
+      key: "action",
+      label: t("actionTitle"),
+      stories: actionStories,
+      href: categoryIdBySlug.get("action") ? `/explore?categoryId=${categoryIdBySlug.get("action")}` : "/explore",
+    },
+    {
+      key: "xuyen-khong",
+      label: t("xuyenKhongTitle"),
+      stories: xuyenKhongStories,
+      href: categoryIdBySlug.get("xuyen-khong") ? `/explore?categoryId=${categoryIdBySlug.get("xuyen-khong")}` : "/explore",
+    },
+    {
+      key: "shounen",
+      label: t("shounenTitle"),
+      stories: shounenStories,
+      href: categoryIdBySlug.get("shounen") ? `/explore?categoryId=${categoryIdBySlug.get("shounen")}` : "/explore",
+    },
+    {
+      key: "tien-hiep",
+      label: t("tienHiepTitle"),
+      stories: tienHiepStories,
+      href: categoryIdBySlug.get("tien-hiep") ? `/explore?categoryId=${categoryIdBySlug.get("tien-hiep")}` : "/explore",
+    },
+  ].filter((tab) => tab.stories.length > 0);
 
   return (
     <div className="space-y-12">
@@ -633,7 +666,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── Truyện phổ biến (8 truyện: slider mobile, grid 8-col desktop) ─ */}
+      {/* ─── Truyện phổ biến (Grid 2 hàng x 4) ─ */}
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
@@ -644,53 +677,11 @@ export default function HomePage() {
             {t("viewAll")}
           </Link>
         </div>
-        <InfiniteMarqueeSlider stories={popularStories} isLoading={isLoading} />
+        <PopularStoriesGrid stories={popularStories} isLoading={isLoading} />
       </section>
 
-      {/* ─── Truyện Action ─ */}
-      {actionStories.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("actionTitle")}</h2>
-            </div>
-            <Link href={`/explore?categoryId=${allCategories.find(c => c.slug === 'action')?.id}`} className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-              {t("viewAll")}
-            </Link>
-          </div>
-          <InfiniteMarqueeSlider stories={actionStories} isLoading={isLoading} />
-        </section>
-      )}
-
-      {/* ─── Truyện Xuyên Không ─ */}
-      {xuyenKhongStories.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("xuyenKhongTitle")}</h2>
-            </div>
-            <Link href={`/explore?categoryId=${allCategories.find(c => c.slug === 'xuyen-khong')?.id}`} className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-              {t("viewAll")}
-            </Link>
-          </div>
-          <InfiniteMarqueeSlider stories={xuyenKhongStories} isLoading={isLoading} />
-        </section>
-      )}
-
-      {/* ─── Truyện Shounen ─ */}
-      {shounenStories.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("shounenTitle")}</h2>
-            </div>
-            <Link href={`/explore?categoryId=${allCategories.find(c => c.slug === 'shounen')?.id}`} className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-              {t("viewAll")}
-            </Link>
-          </div>
-          <InfiniteMarqueeSlider stories={shounenStories} isLoading={isLoading} />
-        </section>
-      )}
+      {/* ─── Tabs thể loại (1 carousel duy nhất) ─ */}
+      <CategoryTabsSection tabs={categoryTabs} isLoading={isLoading} />
 
       {/* ─── Hall of Fame ─────────────────────────────────────────── */}
       <section className="space-y-4">

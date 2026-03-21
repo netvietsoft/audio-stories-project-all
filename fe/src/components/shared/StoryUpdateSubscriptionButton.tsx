@@ -2,10 +2,10 @@
 
 import { BellRing, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useParams, usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { apiClient } from "@/lib/api/api-client";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
 import { useUserStore } from "@/stores/user-store";
 
 type Props = {
@@ -17,9 +17,7 @@ type Props = {
 export default function StoryUpdateSubscriptionButton({ storyId, className = "", labelClassName }: Props) {
   const t = useTranslations("StoryDetail");
   const user = useUserStore((state) => state.user);
-  const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams<{ lang?: string }>();
+  const openLogin = useAuthModalStore((state) => state.openLogin);
 
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -56,9 +54,7 @@ export default function StoryUpdateSubscriptionButton({ storyId, className = "",
 
   const handleClick = async () => {
     if (!user) {
-      const lang = params?.lang === "en" ? "en" : "vi";
-      const redirect = pathname || "/";
-      router.push(`/${lang}/login?redirect=${encodeURIComponent(redirect)}`);
+      openLogin();
       return;
     }
 
@@ -76,6 +72,7 @@ export default function StoryUpdateSubscriptionButton({ storyId, className = "",
   const activeClassName = isSubscribed
     ? "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600"
     : "border-gray-300 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-blue-200";
+  const buttonLabel = isSubscribed ? t("subscribedUpdates") : t("subscribeUpdates");
 
   return (
     <button
@@ -84,9 +81,10 @@ export default function StoryUpdateSubscriptionButton({ storyId, className = "",
       disabled={isLoading || isHydrating}
       className={`inline-flex items-center justify-center gap-2 rounded-full border px-6 py-2.5 text-sm font-semibold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${activeClassName} ${className}`}
       title={user ? t("subscribeHint") : t("subscribeLoginHint")}
+      aria-label={buttonLabel}
     >
-      {isLoading || isHydrating ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellRing className="h-4 w-4" />}
-      <span className={labelClassName}>{isSubscribed ? t("subscribedUpdates") : t("subscribeUpdates")}</span>
+      {isLoading || isHydrating ? <Loader2 className="h-[18px] w-[18px] shrink-0 animate-spin" /> : <BellRing className="h-[18px] w-[18px] shrink-0" />}
+      <span className={labelClassName}>{buttonLabel}</span>
     </button>
   );
 }

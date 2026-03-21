@@ -286,7 +286,7 @@ export default function StoryDetailClient() {
 
                 <StoryUpdateSubscriptionButton
                   storyId={story.id}
-                  labelClassName="sr-only"
+                  labelClassName="hidden"
                   className="h-11 w-11 justify-center rounded-full px-0"
                 />
 

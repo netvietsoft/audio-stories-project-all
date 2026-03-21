@@ -77,8 +77,8 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
   if (!topOne) return null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-        <div className="flex flex-col items-center justify-center text-center h-full p-8 rounded-2xl bg-gradient-to-b from-yellow-50 to-yellow-100 shadow-lg">
+    <div className="mx-auto grid max-w-[1320px] grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
+        <div className="flex h-full flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-yellow-50 to-yellow-100 p-8 text-center shadow-lg lg:col-span-5">
           <Crown className="text-yellow-500 w-12 h-12 mb-2 drop-shadow-[0_0_8px_rgba(234,179,8,0.3)]" />
           <Image
             src={topOne.avatarUrl || "https://api.dicebear.com/9.x/adventurer/svg?seed=TopContributor"}
@@ -95,7 +95,7 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
           </p>
         </div>
 
-        <div className="flex flex-col justify-between h-full gap-3">
+        <div className="flex h-full flex-col justify-between gap-3 lg:col-span-7 lg:items-center">
           {topFive.map((user, index) => {
             const rank = index + 2;
             const rankClass = rank === 2
@@ -107,7 +107,7 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
             return (
               <div
                 key={user.id}
-                className="flex items-center gap-4 p-4 rounded-xl bg-white dark:bg-gray-800/40 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors shadow-sm"
+                className="flex w-full items-center gap-4 rounded-xl bg-white p-4 shadow-sm transition-colors hover:bg-gray-50 dark:bg-gray-800/40 dark:hover:bg-gray-800/60 lg:max-w-2xl"
               >
                 <span className={`text-xl font-bold w-6 text-center ${rankClass}`}>{rank}</span>
                 <Image

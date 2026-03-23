@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -25,6 +25,7 @@ type RecommendedSliderProps = {
 export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
   const t = useTranslations("RecommendedSlider");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const scroll = (direction: "left" | "right") => {
     if (!scrollContainerRef.current) return;
@@ -41,6 +42,28 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
     });
   };
 
+  // Auto-scroll every 5 seconds, pause on hover
+  useEffect(() => {
+    if (isHovered) return;
+
+    const interval = setInterval(() => {
+      if (scrollContainerRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+        const isAtEnd = scrollLeft + clientWidth >= scrollWidth - 10;
+
+        if (isAtEnd) {
+          // Reset to beginning
+          scrollContainerRef.current.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          // Scroll to next
+          scrollContainerRef.current.scrollBy({ left: 400, behavior: "smooth" });
+        }
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isHovered]);
+
   if (!stories.length) {
     return null;
   }
@@ -54,7 +77,7 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("title")}</h3>
       </div>
 
-      <div className="relative w-full group/slider">
+      <div className="relative w-full group/slider" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
         {/* Left Arrow Button */}
         <button
           onClick={() => scroll("left")}
@@ -75,10 +98,10 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
 
         <div 
           ref={scrollContainerRef}
-          className="relative w-full overflow-x-auto overflow-y-hidden pb-1 pause-on-hover scrollbar-hide"
+          className="relative w-full overflow-x-auto overflow-y-hidden pb-1 scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          <div className="animate-marquee flex gap-4">
+          <div className="flex gap-4">
             {repeatedStories.map((story, idx) => (
               <div key={`${story.id}-${idx}`} className="w-[180px] sm:w-[210px] shrink-0 group transition-transform duration-300 hover:scale-105 hover:-translate-y-1">
                 <StoryCard story={story} className="h-full w-full" />

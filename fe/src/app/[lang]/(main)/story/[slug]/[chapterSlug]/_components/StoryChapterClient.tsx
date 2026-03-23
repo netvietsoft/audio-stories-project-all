@@ -1894,12 +1894,13 @@ export default function StoryChapterClient() {
               </button>
             </div>
           </section>
+        </div>
 
-          {/* Reviews */}
-          <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-5">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readerReviews")}</h2>
+        {/* Reviews - Full Width */}
+        <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readerReviews")}</h2>
 
-            <div className="mt-4 grid gap-3 md:gap-4 rounded-2xl bg-slate-50 p-3 sm:p-4 md:p-6 dark:bg-gray-950 lg:grid-cols-[280px_1fr]">
+          <div className="mt-4 grid gap-3 md:gap-4 rounded-2xl bg-slate-50 p-3 sm:p-4 md:p-6 dark:bg-gray-950 lg:grid-cols-[280px_1fr]">
               <div className="rounded-xl bg-white dark:bg-gray-800 p-4">
                 <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                   {Number(ratingStats?.averageRating || 0).toFixed(1)}
@@ -2129,7 +2130,6 @@ export default function StoryChapterClient() {
               </div>
             </div>
           </section>
-        </div>
 
         <RecommendedSlider stories={recommendedStories} />
 

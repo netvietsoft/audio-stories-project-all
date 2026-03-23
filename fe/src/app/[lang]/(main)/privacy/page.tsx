@@ -1,10 +1,6 @@
-import { isValidLocale } from "@/i18n";
-
-type PageProps = {
-  params: {
-    lang: string;
-  };
-};
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
 
 const content = {
   vi: {
@@ -99,7 +95,7 @@ const content = {
       <>
         <p>
           This Privacy Policy explains how AudioTruyen collects, processes, stores, and protects users' personal data
-          when accessing and using the service. We are committed to data protection based on transparency, data minimization,
+          when users access and use the service. We are committed to data protection based on transparency, data minimization,
           and respect for privacy rights.
         </p>
 
@@ -130,7 +126,7 @@ const content = {
         <h3>3.1 Authentication Security</h3>
         <p>
           User passwords are encrypted using appropriate security standards and are not stored in plain text.
-          Session authentication information is managed through secure token mechanisms (JWT) with token lifecycle controls.
+          Session authentication data is managed through secure token mechanisms (JWT) with token lifecycle controls.
         </p>
 
         <h3>3.2 Data and Infrastructure Protection</h3>
@@ -142,7 +138,7 @@ const content = {
         <h3>3.3 Commitment Not to Sell Data</h3>
         <p>
           AudioTruyen does not sell users' personal data to third parties. Data sharing (if any) occurs only when
-          necessary for service operation, legal compliance, or with valid user consent.
+          necessary for service operations, legal compliance, or with valid user consent.
         </p>
 
         <h2>4. Data Retention Period</h2>
@@ -178,9 +174,10 @@ const content = {
   },
 } as const;
 
-export default function PrivacyPage({ params }: PageProps) {
-  const locale = isValidLocale(params.lang) ? params.lang : "vi";
-  const t = content[locale];
+export default async function PrivacyPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const lang = resolvedParams.lang === "en" ? "en" : "vi";
+  const t = content[lang as keyof typeof content] || content.vi;
 
   return (
     <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">

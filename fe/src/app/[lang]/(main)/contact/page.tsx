@@ -1,10 +1,6 @@
-import { isValidLocale } from "@/i18n";
-
-type PageProps = {
-  params: {
-    lang: string;
-  };
-};
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
 
 const content = {
   vi: {
@@ -30,14 +26,14 @@ const content = {
   },
   en: {
     title: "Contact",
-    subtitle: "We are always ready to support and listen to your feedback.",
+    subtitle: "We are always here to support you and listen to your feedback.",
     infoTitle: "Contact Information",
     email: "Email",
     address: "Address",
     social: "Social Media",
     addressValue: "Floor 6, 123 Tran Hung Dao, District 1, Ho Chi Minh City",
-    followUs: "Follow us for latest updates",
-    formTitle: "Send a message",
+    followUs: "Follow us for the latest updates",
+    formTitle: "Send us a message",
     name: "Full name",
     subject: "Subject",
     message: "Message",
@@ -45,15 +41,16 @@ const content = {
     placeholders: {
       name: "Enter your full name",
       email: "Enter your email",
-      subject: "Topic you need help with",
+      subject: "What do you need help with?",
       message: "Describe your request in detail...",
     },
   },
 } as const;
 
-export default function ContactPage({ params }: PageProps) {
-  const locale = isValidLocale(params.lang) ? params.lang : "vi";
-  const t = content[locale];
+export default async function ContactPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const lang = resolvedParams.lang === "en" ? "en" : "vi";
+  const t = content[lang as keyof typeof content] || content.vi;
 
   return (
     <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">

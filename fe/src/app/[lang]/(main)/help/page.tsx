@@ -1,12 +1,8 @@
 import { CreditCard, LifeBuoy, ShieldAlert, UserRound } from "lucide-react";
 
-import { isValidLocale } from "@/i18n";
-
-type PageProps = {
-  params: {
-    lang: string;
-  };
-};
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
 
 const content = {
   vi: {
@@ -22,20 +18,21 @@ const content = {
   },
   en: {
     title: "Help Center",
-    subtitle: "Search quick guidance for any issue you are facing.",
+    subtitle: "Find quick guidance for any issue you are facing.",
     searchPlaceholder: "Search questions or support topics...",
     categories: [
       { title: "Account", description: "Login, security, profile updates", icon: UserRound },
-      { title: "Billing", description: "Top up credits, payment history, invoices", icon: CreditCard },
+      { title: "Billing", description: "Credit top-ups, payment history, and invoices", icon: CreditCard },
       { title: "Technical Issues", description: "Playback failures, loading errors", icon: LifeBuoy },
       { title: "Copyright", description: "DMCA reports and ownership claims", icon: ShieldAlert },
     ],
   },
 } as const;
 
-export default function HelpPage({ params }: PageProps) {
-  const locale = isValidLocale(params.lang) ? params.lang : "vi";
-  const t = content[locale];
+export default async function HelpPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const lang = resolvedParams.lang === "en" ? "en" : "vi";
+  const t = content[lang as keyof typeof content] || content.vi;
 
   return (
     <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">

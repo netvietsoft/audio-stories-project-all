@@ -1,10 +1,6 @@
-import { isValidLocale } from "@/i18n";
-
-type PageProps = {
-  params: {
-    lang: string;
-  };
-};
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
 
 const content = {
   vi: {
@@ -124,7 +120,7 @@ const content = {
         <h2>2. Platform Usage Rules</h2>
         <h3>2.1 Prohibited Conduct</h3>
         <ul>
-          <li>Using automated tools, bots, or scripts to collect/crawl audio and system data.</li>
+          <li>Using automated tools, bots, or scripts to collect or crawl audio and system data.</li>
           <li>Spamming comments, posting unauthorized advertising, or publishing disruptive content.</li>
           <li>
             Conducting system abuse such as vulnerability probing, denial-of-service attacks, or unauthorized interference
@@ -152,7 +148,7 @@ const content = {
 
         <h3>3.2 Reminder and Renewal Policy for VIP Plans</h3>
         <p>
-          For VIP/Membership plans, the system may send reminders before benefits expire. Depending on policy at each
+          For VIP/Membership plans, the system may send reminders before benefits expire. Depending on policy in each
           period, some plans may support auto-renewal if users proactively enable it and agree to an appropriate payment method.
         </p>
         <p>
@@ -169,7 +165,7 @@ const content = {
 
         <h3>4.2 User-Managed Personal Data</h3>
         <p>
-          We are not liable for damages arising from users disclosing login information, losing devices, accessing from
+          We are not liable for damages arising from users disclosing login information, losing devices, accessing services from
           insecure environments, or failing to follow basic security recommendations.
         </p>
 
@@ -204,9 +200,10 @@ const content = {
   },
 } as const;
 
-export default function TermsPage({ params }: PageProps) {
-  const locale = isValidLocale(params.lang) ? params.lang : "vi";
-  const t = content[locale];
+export default async function TermsPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const lang = resolvedParams.lang === "en" ? "en" : "vi";
+  const t = content[lang as keyof typeof content] || content.vi;
 
   return (
     <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">

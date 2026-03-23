@@ -1,10 +1,6 @@
-import { isValidLocale } from "@/i18n";
-
-type PageProps = {
-  params: {
-    lang: string;
-  };
-};
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
 
 const content = {
   vi: {
@@ -83,14 +79,14 @@ const content = {
     body: (
       <>
         <p>
-          AudioTruyen is an audio storytelling platform built to transform the world of text stories into an immersive,
+          AudioTruyen is an audio storytelling platform built to transform the world of written stories into an immersive,
           convenient, and sustainable listening experience for the story-loving community. We believe great content
           should be accessible in more flexible ways that fit modern lifestyles.
         </p>
 
         <h2>Vision</h2>
         <p>
-          To become a leading and trusted audio-story platform in Vietnam, where users can access a multi-genre content
+          To become a leading and trusted audio storytelling platform in Vietnam, where users can access a multi-genre content
           library with stable quality, optimized for multiple devices and suitable for many everyday listening contexts.
         </p>
 
@@ -106,7 +102,7 @@ const content = {
         <h3>1. Rich Library, Continuously Updated</h3>
         <p>
           The platform brings together many story genres to meet diverse listener needs, including popular content and
-          emerging trends. Data is organized systematically so users can easily search, discover, and follow favorite stories.
+          emerging trends. Content is organized systematically so users can easily search, discover, and follow favorite stories.
         </p>
 
         <h3>2. Stable Audio Quality</h3>
@@ -149,9 +145,10 @@ const content = {
   },
 } as const;
 
-export default function AboutPage({ params }: PageProps) {
-  const locale = isValidLocale(params.lang) ? params.lang : "vi";
-  const t = content[locale];
+export default async function AboutPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const lang = resolvedParams.lang === "en" ? "en" : "vi";
+  const t = content[lang as keyof typeof content] || content.vi;
 
   return (
     <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">

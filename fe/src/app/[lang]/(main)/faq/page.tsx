@@ -1,12 +1,8 @@
 import { ChevronDown } from "lucide-react";
 
-import { isValidLocale } from "@/i18n";
-
-type PageProps = {
-  params: {
-    lang: string;
-  };
-};
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
 
 const content = {
   vi: {
@@ -37,11 +33,11 @@ const content = {
   },
   en: {
     title: "Frequently Asked Questions",
-    subtitle: "Quick answers to common issues when using AudioTruyen.",
+    subtitle: "Quick answers to common questions when using AudioTruyen.",
     items: [
       {
         q: "How do I top up credits?",
-        a: "Go to Account > Billing, choose a suitable credit package, and complete payment following the instructions.",
+        a: "Go to Account > Billing, choose a suitable credit package, and complete the payment process by following the instructions.",
       },
       {
         q: "Can I download stories for offline listening?",
@@ -53,19 +49,20 @@ const content = {
       },
       {
         q: "Can I delete my account?",
-        a: "Yes. Submit a request via Contact or Help Center. We will verify and process it under our security policy.",
+        a: "Yes. Submit a request via Contact or Help Center. We will verify and process it according to our security policy.",
       },
       {
         q: "Why does audio playback fail on some chapters?",
-        a: "Please refresh the page, check your network, and clear browser cache. If it persists, send the chapter link to support.",
+        a: "Please refresh the page, check your network connection, and clear your browser cache. If the issue persists, send the chapter link to support.",
       },
     ],
   },
 } as const;
 
-export default function FaqPage({ params }: PageProps) {
-  const locale = isValidLocale(params.lang) ? params.lang : "vi";
-  const t = content[locale];
+export default async function FaqPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const lang = resolvedParams.lang === "en" ? "en" : "vi";
+  const t = content[lang as keyof typeof content] || content.vi;
 
   return (
     <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">

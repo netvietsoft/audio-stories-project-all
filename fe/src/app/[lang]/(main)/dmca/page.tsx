@@ -1,12 +1,8 @@
-import { isValidLocale } from "@/i18n";
+interface PageProps {
+  params: Promise<{ lang: string }>;
+}
 
-type PageProps = {
-  params: {
-    lang: string;
-  };
-};
-
-const supportEmail = "[Email Hỗ Trợ Bản Quyền]";
+const supportEmail = "support@audiotruyen.com";
 
 const content = {
   vi: {
@@ -108,7 +104,7 @@ const content = {
         <h2>2. Requirements for Submitting a Takedown Notice</h2>
         <p>
           The copyright owner or authorized representative must provide complete, truthful, and verifiable information.
-          A notice should include at minimum:
+          A notice should include, at minimum:
         </p>
         <ul>
           <li>Claimant identity details: full name, organization (if any), title, and contact address.</li>
@@ -131,7 +127,7 @@ const content = {
 
         <h3>Step 2: Verification</h3>
         <p>
-          We compare evidence, determine relevance of the reported content, and assess legal basis of the takedown request.
+          We review the evidence, determine the relevance of the reported content, and assess the legal basis of the takedown request.
         </p>
 
         <h3>Step 3: Enforcement</h3>
@@ -165,9 +161,10 @@ const content = {
   },
 } as const;
 
-export default function DmcaPage({ params }: PageProps) {
-  const locale = isValidLocale(params.lang) ? params.lang : "vi";
-  const t = content[locale];
+export default async function DmcaPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const lang = resolvedParams.lang === "en" ? "en" : "vi";
+  const t = content[lang as keyof typeof content] || content.vi;
 
   return (
     <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">

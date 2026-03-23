@@ -1680,22 +1680,22 @@ export default function StoryChapterClient() {
             <div className="mb-4 flex items-center justify-between gap-3">
               <button
                 type="button"
-                onClick={() => previousChapter && goToChapter(previousChapter, true)}
+                onClick={() => previousChapter && goToChapter(previousChapter, false)}
                 disabled={!previousChapter}
-                className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-5 w-5" />
                 {locale === "en" ? "Previous chapter" : "Chương trước"}
               </button>
 
               <button
                 type="button"
-                onClick={() => nextChapter && goToChapter(nextChapter, true)}
+                onClick={() => nextChapter && goToChapter(nextChapter, false)}
                 disabled={!nextChapter}
-                className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
               >
                 {locale === "en" ? "Next chapter" : "Chương tiếp"}
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-5 w-5" />
               </button>
             </div>
 
@@ -1854,22 +1854,22 @@ export default function StoryChapterClient() {
               <div className="mt-6 flex items-center justify-between gap-3">
                 <button
                   type="button"
-                  onClick={() => previousChapter && goToChapter(previousChapter, true)}
+                  onClick={() => previousChapter && goToChapter(previousChapter, false)}
                   disabled={!previousChapter}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-5 w-5" />
                   {locale === "en" ? "Previous chapter" : "Chương trước"}
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => nextChapter && goToChapter(nextChapter, true)}
+                  onClick={() => nextChapter && goToChapter(nextChapter, false)}
                   disabled={!nextChapter}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
                   {locale === "en" ? "Next chapter" : "Chương tiếp"}
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-5 w-5" />
                 </button>
               </div>
             </div>

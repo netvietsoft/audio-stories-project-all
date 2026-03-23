@@ -82,7 +82,7 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
         <button
           onClick={() => scroll("left")}
           className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-0 group-hover/slider:opacity-100 transition-opacity hover:bg-white dark:hover:bg-gray-800"
-          aria-label="Scroll left"
+          aria-label={t("scrollLeft")}
         >
           <ChevronLeft className="h-6 w-6 text-gray-700 dark:text-gray-300" />
         </button>
@@ -91,7 +91,7 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
         <button
           onClick={() => scroll("right")}
           className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-0 group-hover/slider:opacity-100 transition-opacity hover:bg-white dark:hover:bg-gray-800"
-          aria-label="Scroll right"
+          aria-label={t("scrollRight")}
         >
           <ChevronRight className="h-6 w-6 text-gray-700 dark:text-gray-300" />
         </button>

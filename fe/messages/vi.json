@@ -355,7 +355,10 @@
     "new": "Mới",
     "full": "Full",
     "ongoing": "Đang ra",
-    "updating": "Đang cập nhật"
+    "updating": "Đang cập nhật",
+    "chapterLabel": "Chương {number}: {title}",
+    "chapterNumber": "Chương {number}",
+    "latestChapterUpdating": "Chương mới đang cập nhật..."
   },
   "StoryListView": {
     "noChapters": "Chưa có chương nào",

@@ -73,10 +73,10 @@ export default function StoryCard({ story, className, variant = "default" }: Sto
     const chapterNum = story.latestChapterNumber;
     const chapterTitle = story.latestChapterTitle;
 
-    if (chapterNum && chapterTitle) return `Chương ${chapterNum}: ${chapterTitle}`;
-    if (chapterNum) return `Chương ${chapterNum}`;
+    if (chapterNum && chapterTitle) return t("chapterLabel", { number: chapterNum, title: chapterTitle });
+    if (chapterNum) return t("chapterNumber", { number: chapterNum });
     if (chapterTitle) return chapterTitle;
-    return locale === "en" ? "Latest chapter updating..." : "Chương mới đang cập nhật...";
+    return t("latestChapterUpdating");
   })();
 
   const viewsLabel = Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN");

@@ -355,7 +355,10 @@
     "new": "New",
     "full": "Full",
     "ongoing": "Ongoing",
-    "updating": "Updating"
+    "updating": "Updating",
+    "chapterLabel": "Chapter {number}: {title}",
+    "chapterNumber": "Chapter {number}",
+    "latestChapterUpdating": "Latest chapter updating..."
   },
   "StoryListView": {
     "noChapters": "No chapters yet",

@@ -1,20 +1,16 @@
-import type { Metadata } from "next";
+import { isValidLocale } from "@/i18n";
 
-const SITE_NAME = "[Tên Website]";
-
-export function generateMetadata(): Metadata {
-  return {
-    title: `Điều khoản dịch vụ | ${SITE_NAME}`,
-    description:
-      "Điều khoản dịch vụ quy định quyền, nghĩa vụ và giới hạn trách nhiệm khi sử dụng nền tảng nghe truyện audio.",
+type PageProps = {
+  params: {
+    lang: string;
   };
-}
+};
 
-export default function TermsPage() {
-  return (
-    <section className="mx-auto w-full max-w-4xl space-y-6 py-6 md:py-8">
-      <article className="prose max-w-none prose-slate dark:prose-invert">
-        <h1>Điều khoản Dịch vụ</h1>
+const content = {
+  vi: {
+    title: "Điều khoản Dịch vụ",
+    body: (
+      <>
         <p>
           Điều khoản Dịch vụ này quy định các nguyên tắc sử dụng nền tảng AudioTruyen. Khi đăng ký tài khoản,
           truy cập hoặc sử dụng bất kỳ tính năng nào của hệ thống, bạn xác nhận đã đọc, hiểu và đồng ý tuân thủ toàn
@@ -106,7 +102,120 @@ export default function TermsPage() {
           Nếu có thắc mắc liên quan đến Điều khoản Dịch vụ, người dùng vui lòng liên hệ bộ phận hỗ trợ của AudioTruyen
           qua các kênh được công bố chính thức trên nền tảng.
         </p>
-      </article>
-    </section>
+      </>
+    ),
+  },
+  en: {
+    title: "Terms of Service",
+    body: (
+      <>
+        <p>
+          These Terms of Service set out the rules for using the AudioTruyen platform. By registering an account,
+          accessing, or using any feature of the system, you acknowledge that you have read, understood, and agreed to
+          comply with all terms below.
+        </p>
+
+        <h2>1. Scope of Application</h2>
+        <p>
+          These terms apply to all users, including visitors, registered account holders, VIP members, and contributors
+          who participate in providing content on AudioTruyen.
+        </p>
+
+        <h2>2. Platform Usage Rules</h2>
+        <h3>2.1 Prohibited Conduct</h3>
+        <ul>
+          <li>Using automated tools, bots, or scripts to collect/crawl audio and system data.</li>
+          <li>Spamming comments, posting unauthorized advertising, or publishing disruptive content.</li>
+          <li>
+            Conducting system abuse such as vulnerability probing, denial-of-service attacks, or unauthorized interference
+            with APIs, databases, or operational infrastructure.
+          </li>
+          <li>
+            Impersonating identities, misrepresenting administrative authority, or using third-party accounts without permission.
+          </li>
+        </ul>
+
+        <h3>2.2 Enforcement Measures</h3>
+        <p>
+          AudioTruyen may apply measures such as warnings, feature restrictions, temporary suspension, or account
+          termination depending on violation severity. Where necessary, we may cooperate with competent authorities in
+          accordance with applicable law.
+        </p>
+
+        <h2>3. User Accounts and VIP/Membership Plans</h2>
+        <h3>3.1 Account Security Responsibility</h3>
+        <p>
+          Users are responsible for protecting login credentials, verification codes, and access devices. Activities
+          under an account are deemed to be performed by the account owner, unless unauthorized access is proven and
+          promptly reported to AudioTruyen.
+        </p>
+
+        <h3>3.2 Reminder and Renewal Policy for VIP Plans</h3>
+        <p>
+          For VIP/Membership plans, the system may send reminders before benefits expire. Depending on policy at each
+          period, some plans may support auto-renewal if users proactively enable it and agree to an appropriate payment method.
+        </p>
+        <p>
+          Users should proactively check plan status, payment history, and relevant information in their account area.
+          Any pricing or duration policy updates will be publicly announced before taking effect.
+        </p>
+
+        <h2>4. Disclaimer and Limitation of Liability</h2>
+        <h3>4.1 Service Continuity</h3>
+        <p>
+          AudioTruyen does not guarantee uninterrupted service 100% of the time. Service may be temporarily interrupted
+          due to scheduled maintenance, technical upgrades, infrastructure incidents, or objective factors beyond reasonable control.
+        </p>
+
+        <h3>4.2 User-Managed Personal Data</h3>
+        <p>
+          We are not liable for damages arising from users disclosing login information, losing devices, accessing from
+          insecure environments, or failing to follow basic security recommendations.
+        </p>
+
+        <h2>5. Intellectual Property</h2>
+        <p>
+          All audio content, text, images, icons, interfaces, and system data are owned by or lawfully licensed to
+          AudioTruyen and/or relevant licensing partners.
+        </p>
+        <ul>
+          <li>
+            Re-downloading, copying, distributing, or re-uploading audio content from the system to other platforms
+            (including but not limited to YouTube and Spotify) for commercial purposes is strictly prohibited without prior written consent.
+          </li>
+          <li>
+            Editing, clipping, or reusing content in ways that mislead users about publishing origin is strictly prohibited.
+          </li>
+        </ul>
+
+        <h2>6. Amendments</h2>
+        <p>
+          AudioTruyen may update these Terms of Service to reflect legal changes, operational model changes, or service
+          improvement needs. New versions take effect upon publication on the platform.
+        </p>
+
+        <h2>7. Contact</h2>
+        <p>
+          For questions regarding the Terms of Service, users may contact AudioTruyen support via official channels
+          published on the platform.
+        </p>
+      </>
+    ),
+  },
+} as const;
+
+export default function TermsPage({ params }: PageProps) {
+  const locale = isValidLocale(params.lang) ? params.lang : "vi";
+  const t = content[locale];
+
+  return (
+    <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">
+      <div className="mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
+        <div className="p-2 md:p-4">
+          <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">{t.title}</h1>
+          <div className="prose dark:prose-invert max-w-none text-gray-900 dark:text-gray-100">{t.body}</div>
+        </div>
+      </div>
+    </div>
   );
 }

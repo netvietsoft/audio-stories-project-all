@@ -1,20 +1,16 @@
-import type { Metadata } from "next";
+import { isValidLocale } from "@/i18n";
 
-const SITE_NAME = "AudioTruyen";
-
-export function generateMetadata(): Metadata {
-  return {
-    title: `Giới thiệu | ${SITE_NAME}`,
-    description:
-      "Giới thiệu về tầm nhìn, sứ mệnh và cam kết của nền tảng nghe truyện audio, hỗ trợ trải nghiệm giải trí mọi lúc mọi nơi.",
+type PageProps = {
+  params: {
+    lang: string;
   };
-}
+};
 
-export default function AboutPage() {
-  return (
-    <section className="mx-auto w-full max-w-4xl space-y-6 py-6 md:py-8">
-      <article className="prose max-w-none prose-slate dark:prose-invert">
-        <h1>Giới thiệu về AudioTruyen</h1>
+const content = {
+  vi: {
+    title: "Giới thiệu về AudioTruyen",
+    body: (
+      <>
         <p>
           AudioTruyen là nền tảng truyện âm thanh được xây dựng với định hướng chuyển hóa thế giới truyện chữ
           thành trải nghiệm nghe sống động, thuận tiện và bền vững cho cộng đồng yêu truyện. Chúng tôi tin rằng
@@ -79,7 +75,92 @@ export default function AboutPage() {
           Trân trọng cảm ơn cộng đồng đã đồng hành cùng AudioTruyen. Sự tin tưởng của bạn là động lực để chúng tôi
           cải thiện hệ thống mỗi ngày.
         </p>
-      </article>
-    </section>
+      </>
+    ),
+  },
+  en: {
+    title: "About AudioTruyen",
+    body: (
+      <>
+        <p>
+          AudioTruyen is an audio storytelling platform built to transform the world of text stories into an immersive,
+          convenient, and sustainable listening experience for the story-loving community. We believe great content
+          should be accessible in more flexible ways that fit modern lifestyles.
+        </p>
+
+        <h2>Vision</h2>
+        <p>
+          To become a leading and trusted audio-story platform in Vietnam, where users can access a multi-genre content
+          library with stable quality, optimized for multiple devices and suitable for many everyday listening contexts.
+        </p>
+
+        <h2>Mission</h2>
+        <p>
+          Our mission is to help users enjoy entertainment anytime, anywhere through a convenient listening experience,
+          from driving and bedtime to doing household tasks or commuting. AudioTruyen follows a product design approach
+          focused on usability, speed, and continuous synchronization.
+        </p>
+
+        <h2>Core Values and Highlights</h2>
+
+        <h3>1. Rich Library, Continuously Updated</h3>
+        <p>
+          The platform brings together many story genres to meet diverse listener needs, including popular content and
+          emerging trends. Data is organized systematically so users can easily search, discover, and follow favorite stories.
+        </p>
+
+        <h3>2. Stable Audio Quality</h3>
+        <p>
+          We prioritize clear pronunciation, balanced volume, and smooth playback so users can enjoy content comfortably
+          over long listening sessions.
+        </p>
+
+        <h3>3. Optimized Speed and Performance</h3>
+        <p>
+          AudioTruyen applies modern techniques such as PWA, caching mechanisms, and asset optimization to shorten
+          response time, reduce interruptions, and improve overall experience on both mobile and desktop.
+        </p>
+
+        <h3>4. Smart Multi-Device Listening History</h3>
+        <p>
+          The system stores listening progress and user history by account, enabling seamless cross-device sync and
+          helping users continue exactly where they left off.
+        </p>
+
+        <h2>Commitment to the Community</h2>
+        <p>
+          We consider user feedback a key foundation for every product decision. AudioTruyen is committed to continuous
+          listening, feature improvements, operational quality upgrades, and gradually completing a transparent, safe,
+          and sustainable content ecosystem.
+        </p>
+
+        <ul>
+          <li>Continuously upgrading infrastructure to improve speed and stability.</li>
+          <li>Strengthening content moderation and promoting respectful community discussion.</li>
+          <li>Improving user support and multi-channel feedback intake.</li>
+        </ul>
+
+        <p>
+          We sincerely thank our community for accompanying AudioTruyen. Your trust is our motivation to improve the
+          platform every day.
+        </p>
+      </>
+    ),
+  },
+} as const;
+
+export default function AboutPage({ params }: PageProps) {
+  const locale = isValidLocale(params.lang) ? params.lang : "vi";
+  const t = content[locale];
+
+  return (
+    <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">
+      <div className="mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
+        <div className="p-2 md:p-4">
+          <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">{t.title}</h1>
+          <div className="prose dark:prose-invert max-w-none text-gray-900 dark:text-gray-100">{t.body}</div>
+        </div>
+      </div>
+    </div>
   );
 }

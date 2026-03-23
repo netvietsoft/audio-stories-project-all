@@ -147,7 +147,7 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
   const rankedStories = stories.slice(1, 5);
 
   return (
-    <div className="rounded-2xl bg-white p-4 dark:bg-gray-900">
+    <div>
       {stories.length ? (
         <div className="mt-4 grid grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:items-stretch">
 

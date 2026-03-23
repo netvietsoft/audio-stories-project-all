@@ -1,20 +1,16 @@
-import type { Metadata } from "next";
+import { isValidLocale } from "@/i18n";
 
-const SITE_NAME = "AudioTruyen";
-
-export function generateMetadata(): Metadata {
-  return {
-    title: `Chính sách bảo mật | ${SITE_NAME}`,
-    description:
-      "Chính sách bảo mật mô tả cách thu thập, sử dụng, lưu trữ và bảo vệ dữ liệu người dùng trên nền tảng nghe truyện audio.",
+type PageProps = {
+  params: {
+    lang: string;
   };
-}
+};
 
-export default function PrivacyPage() {
-  return (
-    <section className="mx-auto w-full max-w-4xl space-y-6 py-6 md:py-8">
-      <article className="prose max-w-none prose-slate dark:prose-invert">
-        <h1>Chính sách Bảo mật</h1>
+const content = {
+  vi: {
+    title: "Chính sách Bảo mật",
+    body: (
+      <>
         <p>
           Chính sách Bảo mật này giải thích cách AudioTruyen thu thập, xử lý, lưu trữ và bảo vệ dữ liệu cá nhân của
           người dùng khi truy cập và sử dụng dịch vụ. Chúng tôi cam kết tiếp cận vấn đề bảo mật theo nguyên tắc minh
@@ -94,7 +90,106 @@ export default function PrivacyPage() {
           Mọi yêu cầu liên quan đến quyền dữ liệu cá nhân, người dùng vui lòng gửi thông tin qua kênh hỗ trợ chính thức
           của AudioTruyen để được xác minh và xử lý theo quy trình nội bộ.
         </p>
-      </article>
-    </section>
+      </>
+    ),
+  },
+  en: {
+    title: "Privacy Policy",
+    body: (
+      <>
+        <p>
+          This Privacy Policy explains how AudioTruyen collects, processes, stores, and protects users' personal data
+          when accessing and using the service. We are committed to data protection based on transparency, data minimization,
+          and respect for privacy rights.
+        </p>
+
+        <h2>1. Data We Collect</h2>
+        <h3>1.1 Basic Identity Data</h3>
+        <ul>
+          <li>Registered account email.</li>
+          <li>Display name and profile information voluntarily provided by users.</li>
+        </ul>
+
+        <h3>1.2 Platform Activity Data</h3>
+        <ul>
+          <li>Listening history, listening progress, and favorite content.</li>
+          <li>Ratings, comments, and content-related interactions.</li>
+          <li>Membership/VIP status and relevant transaction information as necessary.</li>
+        </ul>
+
+        <h2>2. Purpose of Data Use</h2>
+        <p>Data is processed to support core platform operations, including:</p>
+        <ul>
+          <li>Recommending stories based on each user's preferences and listening behavior.</li>
+          <li>Synchronizing listening history across phones, tablets, and desktops.</li>
+          <li>Sending account-related notifications, including VIP/Membership expiration reminders.</li>
+          <li>Improving service quality, performance optimization, and technical issue handling.</li>
+        </ul>
+
+        <h2>3. Data Protection Foundations</h2>
+        <h3>3.1 Authentication Security</h3>
+        <p>
+          User passwords are encrypted using appropriate security standards and are not stored in plain text.
+          Session authentication information is managed through secure token mechanisms (JWT) with token lifecycle controls.
+        </p>
+
+        <h3>3.2 Data and Infrastructure Protection</h3>
+        <p>
+          System data and media files are stored on cloud infrastructure with appropriate access-protection layers.
+          We implement monitoring, authorization, and technical controls to reduce unauthorized access risks.
+        </p>
+
+        <h3>3.3 Commitment Not to Sell Data</h3>
+        <p>
+          AudioTruyen does not sell users' personal data to third parties. Data sharing (if any) occurs only when
+          necessary for service operation, legal compliance, or with valid user consent.
+        </p>
+
+        <h2>4. Data Retention Period</h2>
+        <p>
+          Data is retained for as long as necessary to provide services, resolve disputes, comply with legal obligations,
+          and fulfill accounting or reporting duties under applicable regulations.
+        </p>
+
+        <h2>5. User Rights</h2>
+        <p>Users have rights related to personal data, including:</p>
+        <ul>
+          <li>Requesting access to and export of personal data held by the system.</li>
+          <li>Requesting correction of inaccurate or outdated data.</li>
+          <li>
+            Requesting permanent account deletion and complete listening history deletion, exercising the Right to Be Forgotten
+            within the scope permitted by law.
+          </li>
+        </ul>
+
+        <h2>6. Policy Updates</h2>
+        <p>
+          AudioTruyen may revise this Privacy Policy to reflect legal, technical, or service model changes.
+          Updated versions will be publicly published on the platform and become effective from the posting time.
+        </p>
+
+        <h2>7. Privacy Contact</h2>
+        <p>
+          For requests regarding personal data rights, users may submit information through AudioTruyen's official
+          support channels for verification and handling according to internal procedures.
+        </p>
+      </>
+    ),
+  },
+} as const;
+
+export default function PrivacyPage({ params }: PageProps) {
+  const locale = isValidLocale(params.lang) ? params.lang : "vi";
+  const t = content[locale];
+
+  return (
+    <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">
+      <div className="mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
+        <div className="p-2 md:p-4">
+          <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">{t.title}</h1>
+          <div className="prose dark:prose-invert max-w-none text-gray-900 dark:text-gray-100">{t.body}</div>
+        </div>
+      </div>
+    </div>
   );
 }

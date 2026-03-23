@@ -52,7 +52,7 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
         {[...Array(10)].map((_, i) => (
           <div
             key={i}
-            className="flex items-center gap-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 animate-pulse"
+            className="flex items-center gap-4 p-3 rounded-lg bg-transparent animate-pulse"
           >
             <div className="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-700 shrink-0" />
             <div className="flex-1 space-y-2">
@@ -97,15 +97,14 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
                 event.preventDefault();
               }
             }}
-            className={`flex items-center gap-4 p-3 rounded-lg transition-colors group ${
+            className={`group flex w-full items-center justify-between gap-4 bg-transparent py-2 ${
               hasStoryLink
-                ? "hover:bg-gray-50 dark:hover:bg-gray-800/30"
+                ? "bg-transparent"
                 : "opacity-80 cursor-not-allowed"
             }`}
           >
-            {/* Left: Thumbnail + Story Title */}
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-gray-200 dark:bg-gray-700">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="relative h-14 w-10 overflow-hidden rounded bg-gray-200 shadow-sm dark:bg-gray-700 shrink-0">
                 <Image
                   src={story?.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
                   alt={storyTitle}
@@ -113,25 +112,25 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
                   className="object-cover"
                 />
               </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              <div className="flex min-w-0 flex-col">
+                <h3 className="truncate text-sm font-semibold text-gray-900 transition-colors group-hover:text-blue-600 dark:text-gray-100 dark:group-hover:text-blue-400">
                   {storyTitle}
                 </h3>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                   {t("statusOngoing")}
                 </p>
               </div>
             </div>
 
-            {/* Center: Chapter Info */}
-            <div className="hidden md:block text-sm text-gray-600 dark:text-gray-400 w-64 truncate">
-              {t("chapterLabel", { number: chapter.chapterNumber, title: chapter.title })}
+            <div className="hidden min-w-0 flex-1 px-2 md:flex">
+              <p className="truncate text-sm text-gray-600 dark:text-gray-300">
+                {t("chapterLabel", { number: chapter.chapterNumber, title: chapter.title })}
+              </p>
             </div>
 
-            {/* Right: Time */}
-            <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 w-28 justify-end shrink-0">
+            <div className="flex shrink-0 items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
               <Clock className="w-3.5 h-3.5" />
-              <span>{formatTimeAgo(chapter.createdAt)}</span>
+              <span className="whitespace-nowrap">{formatTimeAgo(chapter.createdAt)}</span>
             </div>
           </Link>
         );

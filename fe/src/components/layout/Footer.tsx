@@ -1,9 +1,12 @@
 import Link from "@/components/shared/LocalizedLink";
+import { getLocale } from "next-intl/server";
 import { getTranslations } from "next-intl/server";
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
 
 export default async function Footer() {
   const t = await getTranslations("Footer");
+  const locale = await getLocale();
+  const withLang = (path: string) => `/${locale}${path === "/" ? "" : path}`;
 
   return (
     <footer className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
@@ -11,7 +14,7 @@ export default async function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Cột 1: Logo và giới thiệu */}
           <div className="space-y-4">
-            <Link href="/" className="inline-block">
+            <Link href={withLang("/")} className="inline-block">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
                 Netviet Audio
               </h2>
@@ -68,7 +71,7 @@ export default async function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link
-                  href="/stories"
+                  href={withLang("/stories")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t("allStories")}
@@ -76,7 +79,7 @@ export default async function Footer() {
               </li>
               <li>
                 <Link
-                  href="/categories"
+                  href={withLang("/categories")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t("categories")}
@@ -84,7 +87,7 @@ export default async function Footer() {
               </li>
               <li>
                 <Link
-                  href="/authors"
+                  href={withLang("/authors")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t("authors")}
@@ -92,7 +95,7 @@ export default async function Footer() {
               </li>
               <li>
                 <Link
-                  href="/hall-of-fame"
+                  href={withLang("/hall-of-fame")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t("hallOfFame")}
@@ -109,7 +112,7 @@ export default async function Footer() {
             <ul className="space-y-3">
               <li>
                 <Link
-                  href="/about"
+                  href={withLang("/about")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t("about")}
@@ -117,7 +120,7 @@ export default async function Footer() {
               </li>
               <li>
                 <Link
-                  href="/contact"
+                  href={withLang("/contact")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t("contact")}
@@ -125,7 +128,7 @@ export default async function Footer() {
               </li>
               <li>
                 <Link
-                  href="/faq"
+                  href={withLang("/faq")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t("faq")}
@@ -133,7 +136,7 @@ export default async function Footer() {
               </li>
               <li>
                 <Link
-                  href="/help"
+                  href={withLang("/help")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t("help")}
@@ -150,7 +153,7 @@ export default async function Footer() {
             <ul className="space-y-3 mb-6">
               <li>
                 <Link
-                  href="/terms"
+                  href={withLang("/terms")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t("terms")}
@@ -158,7 +161,7 @@ export default async function Footer() {
               </li>
               <li>
                 <Link
-                  href="/privacy"
+                  href={withLang("/privacy")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t("privacy")}
@@ -166,7 +169,7 @@ export default async function Footer() {
               </li>
               <li>
                 <Link
-                  href="/dmca"
+                  href={withLang("/dmca")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
                   {t("dmca")}

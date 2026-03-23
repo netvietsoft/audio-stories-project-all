@@ -1,21 +1,18 @@
-import type { Metadata } from "next";
+import { isValidLocale } from "@/i18n";
 
-const SITE_NAME = "AudioTruyen";
-const COPYRIGHT_SUPPORT_EMAIL = "[Email Hỗ Trợ Bản Quyền]";
-
-export function generateMetadata(): Metadata {
-  return {
-    title: `DMCA | ${SITE_NAME}`,
-    description:
-      "Chính sách DMCA mô tả quy trình thông báo vi phạm bản quyền và cam kết xử lý gỡ bỏ nội dung sau xác minh.",
+type PageProps = {
+  params: {
+    lang: string;
   };
-}
+};
 
-export default function DmcaPage() {
-  return (
-    <section className="mx-auto w-full max-w-4xl space-y-6 py-6 md:py-8">
-      <article className="prose max-w-none prose-slate dark:prose-invert">
-        <h1>Chính sách DMCA (Digital Millennium Copyright Act)</h1>
+const supportEmail = "[Email Hỗ Trợ Bản Quyền]";
+
+const content = {
+  vi: {
+    title: "Chính sách DMCA (Digital Millennium Copyright Act)",
+    body: (
+      <>
         <p>
           AudioTruyen tôn trọng quyền sở hữu trí tuệ của tác giả, nhà xuất bản, đơn vị phát hành và các chủ thể quyền
           liên quan. Chúng tôi cam kết tiếp nhận, xác minh và xử lý các khiếu nại bản quyền theo quy trình minh bạch,
@@ -82,13 +79,104 @@ export default function DmcaPage() {
 
         <h2>5. Thông tin liên hệ DMCA</h2>
         <p>
-          Mọi thông báo vi phạm bản quyền vui lòng gửi về: <strong>{COPYRIGHT_SUPPORT_EMAIL}</strong>
+          Mọi thông báo vi phạm bản quyền vui lòng gửi về: <strong>{supportEmail}</strong>
         </p>
         <p>
           Để đảm bảo thời gian xử lý nhanh, vui lòng ghi rõ tiêu đề email theo mẫu: <strong>[DMCA Notice] - Tên tác phẩm
           - Đường dẫn vi phạm</strong>.
         </p>
-      </article>
-    </section>
+      </>
+    ),
+  },
+  en: {
+    title: "DMCA Policy (Digital Millennium Copyright Act)",
+    body: (
+      <>
+        <p>
+          AudioTruyen respects the intellectual property rights of authors, publishers, distributors, and related rights
+          holders. We are committed to receiving, verifying, and handling copyright complaints through a transparent,
+          good-faith process aligned with international legal practice.
+        </p>
+
+        <h2>1. Content Disclaimer</h2>
+        <p>
+          Some content on the platform may be contributed by users or collaborators. AudioTruyen does not automatically
+          claim ownership over all third-party content. Upon receiving a valid copyright notice, we will proactively review
+          and apply appropriate measures.
+        </p>
+
+        <h2>2. Requirements for Submitting a Takedown Notice</h2>
+        <p>
+          The copyright owner or authorized representative must provide complete, truthful, and verifiable information.
+          A notice should include at minimum:
+        </p>
+        <ul>
+          <li>Claimant identity details: full name, organization (if any), title, and contact address.</li>
+          <li>Clear description of the copyrighted work allegedly infringed.</li>
+          <li>Original source link or lawful reference demonstrating ownership.</li>
+          <li>Specific URL on AudioTruyen containing the allegedly infringing content.</li>
+          <li>A good-faith statement that the complained use is not authorized by the rights holder.</li>
+          <li>
+            A statement under legal responsibility regarding accuracy of the complaint, with electronic signature or
+            authenticated signature of the rights holder/authorized representative.
+          </li>
+        </ul>
+
+        <h2>3. Copyright Complaint Handling Process</h2>
+        <h3>Step 1: Intake</h3>
+        <p>
+          The copyright team records the request, checks completeness, and may request additional information if the
+          submission is incomplete.
+        </p>
+
+        <h3>Step 2: Verification</h3>
+        <p>
+          We compare evidence, determine relevance of the reported content, and assess legal basis of the takedown request.
+        </p>
+
+        <h3>Step 3: Enforcement</h3>
+        <p>
+          If the complaint is valid, AudioTruyen will limit access to or remove infringing content within 48 to 72
+          business hours after verification is completed.
+        </p>
+
+        <h3>Step 4: Result Notification</h3>
+        <p>
+          We notify the claimant of the outcome through registered contact channels and retain records under internal
+          procedures for audit/reconciliation when necessary.
+        </p>
+
+        <h2>4. Response by the Reported Party</h2>
+        <p>
+          If content is temporarily removed due to a complaint, the reported party may submit a response with evidence
+          of lawful usage. AudioTruyen will review the response objectively before making a final decision.
+        </p>
+
+        <h2>5. DMCA Contact Information</h2>
+        <p>
+          Please send copyright infringement notices to: <strong>{supportEmail}</strong>
+        </p>
+        <p>
+          To help us process requests quickly, please use the email subject format: <strong>[DMCA Notice] - Work title
+          - Infringing URL</strong>.
+        </p>
+      </>
+    ),
+  },
+} as const;
+
+export default function DmcaPage({ params }: PageProps) {
+  const locale = isValidLocale(params.lang) ? params.lang : "vi";
+  const t = content[locale];
+
+  return (
+    <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">
+      <div className="mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
+        <div className="p-2 md:p-4">
+          <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">{t.title}</h1>
+          <div className="prose dark:prose-invert max-w-none text-gray-900 dark:text-gray-100">{t.body}</div>
+        </div>
+      </div>
+    </div>
   );
 }

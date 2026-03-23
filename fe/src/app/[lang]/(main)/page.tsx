@@ -660,19 +660,23 @@ export default function HomePage() {
         <InteractiveStoryShelf stories={discoveryFeaturedStories} />
       </section>
 
-      {/* ─── Truyện mới đăng (List view) ─────────────── */}
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("newestTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t("newestSubtitle")}</p>
+      {/* ─── Truyện mới đăng (Stripe layout) ─────────── */}
+      <section className="relative left-1/2 my-10 w-dvw -translate-x-1/2 bg-slate-100 py-12 dark:bg-slate-800/50">
+        <div className="mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
+          <div className="space-y-6">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("newestTitle")}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{t("newestSubtitle")}</p>
+              </div>
+              <Link href="/new" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                {t("viewAll")}
+              </Link>
+            </div>
+            <div className="bg-transparent">
+              <StoryListView chapters={newestChapters} isLoading={isLoading} />
+            </div>
           </div>
-          <Link href="/new" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-            {t("viewAll")}
-          </Link>
-        </div>
-        <div className="rounded-2xl bg-white p-4 dark:bg-gray-900">
-          <StoryListView chapters={newestChapters} isLoading={isLoading} />
         </div>
       </section>
 
@@ -707,7 +711,11 @@ export default function HomePage() {
       )}
 
       {/* ─── Tabs thể loại (1 carousel duy nhất) ─ */}
-      <CategoryTabsSection tabs={categoryTabs} isLoading={isLoading} />
+      <section className="relative left-1/2 my-10 w-dvw -translate-x-1/2 bg-slate-100 py-12 dark:bg-slate-800/50">
+        <div className="mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
+          <CategoryTabsSection tabs={categoryTabs} isLoading={isLoading} />
+        </div>
+      </section>
 
       {/* ─── Hall of Fame ─────────────────────────────────────────── */}
       <section className="space-y-4">

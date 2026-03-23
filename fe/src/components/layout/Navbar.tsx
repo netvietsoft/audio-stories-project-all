@@ -260,22 +260,22 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-blue-50/90 backdrop-blur-md dark:bg-slate-900/90">
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
-          <div className="flex items-center justify-between h-16">
+      <header className="sticky top-0 z-50 w-full overflow-x-clip bg-blue-50/90 backdrop-blur-md dark:bg-slate-900/90">
+        <div className="mx-auto w-full max-w-[1920px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
+          <div className="flex h-16 min-w-0 items-center justify-between gap-2">
 
             {/* LOGO & MENU CHÍNH (Desktop) */}
-            <div className="flex items-center gap-8">
-              <Link href="/" className="text-2xl font-bold whitespace-nowrap flex items-center gap-2">
+            <div className="flex min-w-0 flex-shrink items-center gap-2 lg:gap-8">
+              <Link href="/" className="flex min-w-0 flex-shrink-0 items-center gap-2 text-2xl font-bold">
                 <span className="sm:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-white text-xl shadow-md">
                   N
                 </span>
-                <span className="hidden sm:inline text-blue-600 dark:text-blue-400">Netviet Audio</span>
+                <span className="hidden sm:inline truncate flex-shrink text-blue-600 dark:text-blue-400">Netviet Audio</span>
               </Link>
 
 
               {/* Menu Desktop (Ẩn khi màn hình nhỏ hơn lg) */}
-              <nav className="hidden lg:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">
+              <nav className="hidden xl:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">
                 <Link href="/" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("home")}</Link>
                 <div
                   ref={categoryMenuRef}
@@ -345,8 +345,8 @@ export default function Navbar() {
             </div>
 
             {/* RIGHT SECTION */}
-            <div className="flex items-center gap-3">
-              <div className="hidden md:flex relative" ref={searchRef}>
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
+              <div className="relative mx-2 hidden flex-grow xl:flex max-w-sm md:max-w-md" ref={searchRef}>
                 <input
                   type="text"
                   value={searchQuery}
@@ -356,13 +356,13 @@ export default function Navbar() {
                     if (searchResults.length > 0) setShowSearchDropdown(true);
                   }}
                   placeholder={t("searchPlaceholder")}
-                  className="w-56 lg:w-72 xl:w-80 pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none transition-all"
+                  className="hidden xl:block w-full pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none transition-all"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
 
                 {/* Search Results Dropdown */}
                 {showSearchDropdown && searchQuery.trim() && (
-                  <div className="absolute top-full left-0 w-full min-w-[400px] mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-[100] max-h-[500px] overflow-y-auto">
+                  <div className="absolute top-full left-0 mt-2 w-full max-w-[90vw] md:min-w-[320px] lg:min-w-[400px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-[100] max-h-[500px] overflow-y-auto">
                     {isSearching ? (
                       <div className="px-4 py-8 text-center">
                         <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-blue-600 border-r-transparent"></div>
@@ -414,13 +414,21 @@ export default function Navbar() {
 
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
+                className="hidden xl:flex flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
               >
                 {mounted && theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
 
+              <button
+                onClick={() => router.push(`/${currentLang}/search`)}
+                className="xl:hidden flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
+                aria-label={t("searchPlaceholder")}
+              >
+                <Search className="h-5 w-5" />
+              </button>
+
               <div
-                className="hidden sm:block relative"
+                className="hidden lg:flex flex-shrink-0 relative"
                 ref={langMenuRef}
               >
                 <button 
@@ -461,13 +469,13 @@ export default function Navbar() {
                 )}
               </div>
 
-              <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
-                <Link href="/topup" className="hidden sm:flex items-center gap-1.5 whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 md:px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors">
+              <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
+                <Link href="/topup" className="hidden xl:flex items-center gap-1.5 whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 md:px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors">
                   <Coins className="h-4 w-4" /> <span className="hidden xl:inline">{t("topUp")}</span>
                 </Link>
 
                 {/* Chuông thông báo */}
-                <div className="relative" ref={notifMenuRef}>
+                <div className="relative hidden lg:flex flex-shrink-0" ref={notifMenuRef}>
                   <button
                     onClick={() => {
                       setIsNotifOpen(!isNotifOpen);
@@ -543,7 +551,7 @@ export default function Navbar() {
                   <>
                     <Link
                       href="/profile/favorites"
-                      className="flex items-center gap-1.5 p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      className="hidden lg:flex items-center gap-1.5 p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       aria-label={t("favorites")}
                     >
                       <Heart className="w-5 h-5" />
@@ -552,7 +560,7 @@ export default function Navbar() {
 
                     <Link
                       href="/profile/history"
-                      className="flex items-center gap-1.5 p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      className="hidden lg:flex items-center gap-1.5 p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       aria-label={t("listeningHistory")}
                     >
                       <History className="w-5 h-5" />
@@ -563,15 +571,15 @@ export default function Navbar() {
 
                 {/* Avatar Desktoop Only */}
                 {!user ? (
-                  <div className="hidden sm:flex items-center gap-2">
+                  <div className="flex flex-shrink-0 items-center gap-2">
                     <button 
                       onClick={openLogin}
-                      className="px-5 py-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm font-semibold"
+                      className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-xs sm:text-sm font-semibold"
                     >
                       {t("login")}
                     </button>
                   </div>
-                ) : (<div className="relative hidden sm:block" ref={userMenuRef}>
+                ) : (<div className="relative flex-shrink-0" ref={userMenuRef}>
                   <button
                     onClick={
                       () => {
@@ -604,21 +612,14 @@ export default function Navbar() {
                   )}
                 </div>)}
 
-                {/* Nút Hamburger cho mobile/tablet, nằm cạnh avatar */}
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
-                  className="sm:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 ml-1"
+                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 lg:hidden flex-shrink-0"
                   aria-label={t("openMenu")}
                 >
                   <Menu className="h-6 w-6" />
                 </button>
-                <button
-                  onClick={() => setIsMobileMenuOpen(true)}
-                  className="hidden sm:block lg:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300 ml-1"
-                  aria-label={t("openMenu")}
-                >
-                  <Menu className="h-6 w-6" />
-                </button>
+
               </div>
             </div>
           </div>
@@ -824,6 +825,13 @@ export default function Navbar() {
                   <div className="pt-2">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-4 ml-1">{t("account")}</p>
                     <div className="grid grid-cols-1 gap-1">
+                      <Link href="/notifications" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all">
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
+                          <Bell className="w-5 h-5" />
+                        </div>
+                        <span className="text-sm tracking-tight">{t("notifications")}</span>
+                      </Link>
+
                       <Link href="/topup" onClick={closeMobileMenu} className="group flex items-center justify-between px-4 py-4 rounded-3xl text-white font-black bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-200 dark:shadow-none transition-all active:scale-[0.98] mb-2">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-white">

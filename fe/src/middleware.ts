@@ -13,6 +13,28 @@ const authRoutes = [AUTH_LOGIN_PATH, "/register"];
 const localePrefixMatcher = /^\/(vi|en)(?=\/|$)/;
 const publicFileMatcher = /\.[^/]+$/;
 
+const detectLocaleFromHeaders = (request: NextRequest): "vi" | "en" => {
+    const country = request.headers.get("cf-ipcountry");
+    if (country) {
+        return country.toUpperCase() === "VN" ? "vi" : "en";
+    }
+
+    const acceptLanguage = (request.headers.get("accept-language") || "").toLowerCase();
+    if (!acceptLanguage) {
+        return "vi";
+    }
+
+    if (acceptLanguage.includes("vi")) {
+        return "vi";
+    }
+
+    if (acceptLanguage.includes("en")) {
+        return "en";
+    }
+
+    return "vi";
+};
+
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
@@ -20,6 +42,8 @@ export function middleware(request: NextRequest) {
     if (
         pathname.startsWith("/_next") ||
         pathname.startsWith("/api") ||
+        pathname === "/sitemap.xml" ||
+        pathname === "/robots.txt" ||
         publicFileMatcher.test(pathname)
     ) {
         return NextResponse.next();
@@ -29,19 +53,20 @@ export function middleware(request: NextRequest) {
 
     const prefixedLocale = pathname.match(localePrefixMatcher)?.[1];
     const localeFromCookie = request.cookies.get(localeCookieName)?.value;
-    const locale = isValidLocale(prefixedLocale)
-        ? prefixedLocale
-        : isValidLocale(localeFromCookie)
-          ? localeFromCookie
-          : defaultLocale;
+        const locale = isValidLocale(prefixedLocale)
+                ? prefixedLocale
+                : isValidLocale(localeFromCookie)
+                    ? localeFromCookie
+                    : defaultLocale;
 
     if (!prefixedLocale) {
+                const detectedLocale = detectLocaleFromHeaders(request);
         const redirectedUrl = request.nextUrl.clone();
         const cleanPathname = pathname === "/" ? "" : pathname;
-        redirectedUrl.pathname = `/${locale}${cleanPathname}`;
+                redirectedUrl.pathname = `/${detectedLocale}${cleanPathname}`;
         
         const response = NextResponse.redirect(redirectedUrl);
-        response.cookies.set(localeCookieName, locale, { path: "/" });
+                response.cookies.set(localeCookieName, detectedLocale, { path: "/" });
         return response;
     }
 

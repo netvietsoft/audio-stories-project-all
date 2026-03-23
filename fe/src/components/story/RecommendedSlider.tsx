@@ -20,12 +20,24 @@ type RecommendedStory = {
 
 type RecommendedSliderProps = {
   stories: RecommendedStory[];
+  lang?: string;
 };
 
-export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
+const content = {
+  vi: {
+    title: "Có thể bạn sẽ thích",
+  },
+  en: {
+    title: "You might also like",
+  },
+} as const;
+
+export default function RecommendedSlider({ stories, lang }: RecommendedSliderProps) {
   const t = useTranslations("RecommendedSlider");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const resolvedLang = lang === "en" ? "en" : "vi";
+  const localContent = content[resolvedLang];
 
   const scroll = (direction: "left" | "right") => {
     if (!scrollContainerRef.current) return;
@@ -74,7 +86,7 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("title")}</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{localContent.title || t("title")}</h3>
       </div>
 
       <div className="relative w-full group/slider" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
@@ -104,7 +116,7 @@ export default function RecommendedSlider({ stories }: RecommendedSliderProps) {
           <div className="flex gap-4">
             {repeatedStories.map((story, idx) => (
               <div key={`${story.id}-${idx}`} className="w-[180px] sm:w-[210px] shrink-0 group transition-transform duration-300 hover:scale-105 hover:-translate-y-1">
-                <StoryCard story={story} className="h-full w-full" />
+                <StoryCard story={story} className="h-full w-full" lang={resolvedLang} />
               </div>
             ))}
           </div>

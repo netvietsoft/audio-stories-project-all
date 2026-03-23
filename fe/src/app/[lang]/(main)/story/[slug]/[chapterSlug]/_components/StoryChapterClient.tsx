@@ -255,6 +255,7 @@ export default function StoryChapterClient() {
   const params = useParams<{ slug: string; chapterSlug: string }>();
   const router = useRouter();
   const locale = useLocale();
+  const currentLang = locale === "en" ? "en" : "vi";
   const t = useTranslations("StoryChapterClient");
   const slug = params?.slug;
   const chapterSlug = params?.chapterSlug;
@@ -366,6 +367,7 @@ export default function StoryChapterClient() {
           apiClient.get<RecommendedResponse>("/stories/recommended", {
             params: {
               limit: 12,
+              lang: currentLang,
             },
           }),
           apiClient.get<RatingStatsResponse>(`/stories/${slug}/rating-stats`),
@@ -2145,7 +2147,7 @@ export default function StoryChapterClient() {
 
         </section>
 
-        <RecommendedSlider stories={recommendedStories} />
+        <RecommendedSlider stories={recommendedStories} lang={currentLang} />
 
         {mounted && createPortal(
           <>

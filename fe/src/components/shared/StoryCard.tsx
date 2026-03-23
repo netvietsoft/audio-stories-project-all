@@ -40,33 +40,47 @@ type StoryCardProps = {
   story: StoryCardStory;
   className?: string;
   variant?: "default" | "newly-posted" | "featured" | "overlay";
+  lang?: string;
 };
 
-export default function StoryCard({ story, className, variant = "default" }: StoryCardProps) {
+const content = {
+  vi: {
+    statusOngoing: "Đang ra",
+    statusCompleted: "Full",
+  },
+  en: {
+    statusOngoing: "Ongoing",
+    statusCompleted: "Completed",
+  },
+} as const;
+
+export default function StoryCard({ story, className, variant = "default", lang }: StoryCardProps) {
   const t = useTranslations("StoryCard");
   const locale = useLocale();
-  const statusLabel = story.status === "completed" ? t("full") : t("ongoing");
+  const resolvedLang = lang === "en" ? "en" : (locale === "en" ? "en" : "vi");
+  const localContent = content[resolvedLang];
+  const statusLabel = story.status === "completed" ? localContent.statusCompleted : localContent.statusOngoing;
   const rating = Number(story.averageRating || 0).toFixed(1);
-  const localizedTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
-  const localizedDescription = getLocalizedValue(locale, story.descriptionVi, story.descriptionEn, story.description || "");
+  const localizedTitle = getLocalizedValue(resolvedLang, story.titleVi, story.titleEn, story.title);
+  const localizedDescription = getLocalizedValue(resolvedLang, story.descriptionVi, story.descriptionEn, story.description || "");
   const shortDescription = localizedDescription.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
   const formatTimeAgo = (dateString?: string | null) => {
-    if (!dateString) return locale === "en" ? "Just now" : "Vừa xong";
+    if (!dateString) return resolvedLang === "en" ? "Just now" : "Vừa xong";
 
     const now = new Date();
     const date = new Date(dateString);
     const diffInMs = now.getTime() - date.getTime();
-    if (!Number.isFinite(diffInMs) || diffInMs < 0) return locale === "en" ? "Just now" : "Vừa xong";
+    if (!Number.isFinite(diffInMs) || diffInMs < 0) return resolvedLang === "en" ? "Just now" : "Vừa xong";
 
     const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-    if (diffInHours < 1) return locale === "en" ? "Just now" : "Vừa xong";
-    if (diffInHours < 24) return locale === "en" ? `${diffInHours}h ago` : `${diffInHours} giờ trước`;
+    if (diffInHours < 1) return resolvedLang === "en" ? "Just now" : "Vừa xong";
+    if (diffInHours < 24) return resolvedLang === "en" ? `${diffInHours}h ago` : `${diffInHours} giờ trước`;
 
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7) return locale === "en" ? `${diffInDays}d ago` : `${diffInDays} ngày trước`;
+    if (diffInDays < 7) return resolvedLang === "en" ? `${diffInDays}d ago` : `${diffInDays} ngày trước`;
 
-    return date.toLocaleDateString(locale === "en" ? "en-US" : "vi-VN");
+    return date.toLocaleDateString(resolvedLang === "en" ? "en-US" : "vi-VN");
   };
 
   const latestChapterLabel = (() => {
@@ -79,7 +93,7 @@ export default function StoryCard({ story, className, variant = "default" }: Sto
     return t("latestChapterUpdating");
   })();
 
-  const viewsLabel = Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN");
+  const viewsLabel = Number(story.totalViews || 0).toLocaleString(resolvedLang === "en" ? "en-US" : "vi-VN");
   const statusClass =
     story.status === "completed"
       ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200"

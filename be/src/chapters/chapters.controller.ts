@@ -49,8 +49,11 @@ export class ChaptersController {
 
     @Public()
     @Get('chapters/latest')
-    getLatest(@Query('limit') limit?: string) {
-        return this.chaptersService.findLatest(Number(limit) || 12);
+    getLatest(
+        @Query('limit') limit?: string,
+        @Query('lang') lang?: string,
+    ) {
+        return this.chaptersService.findLatest(Number(limit) || 12, lang);
     }
 
     @Get('chapters')

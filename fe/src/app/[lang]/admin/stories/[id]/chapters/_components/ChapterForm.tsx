@@ -663,97 +663,6 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         handleI18nChange('content', lang, formatted);
     };
 
-    const autoSplitParagraphs = () => {
-        const content = watch(contentField) || '';
-        if (!content.trim()) return;
-
-        // Remove existing <hr> markers
-        const cleaned = content.replace(/<hr\s*\/?>/gi, '');
-
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = cleaned;
-
-        const WORDS_PER_PARAGRAPH = 300;
-        let currentWordCount = 0;
-        let totalWordCount = 0;
-        let splitCount = 0;
-
-        // Use TreeWalker to visit all text nodes
-        const walker = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT, null);
-        const textNodes: Text[] = [];
-        
-        // Collect all text nodes first
-        let currentNode = walker.nextNode();
-        while (currentNode) {
-            textNodes.push(currentNode as Text);
-            currentNode = walker.nextNode();
-        }
-
-        // Process text nodes and insert <hr> when threshold is reached
-        for (let i = 0; i < textNodes.length; i++) {
-            const node = textNodes[i];
-            if (!node) continue;
-            
-            const text = node.textContent || '';
-            const words = text.split(/(\s+)/); // split by whitespace but keep the whitespace tokens
-            
-            let newNodeText = '';
-            
-            for (let w = 0; w < words.length; w++) {
-                const token = words[w] || '';
-                newNodeText += token;
-                
-                if (token.trim().length > 0) {
-                    currentWordCount++;
-                    totalWordCount++;
-                    
-                    if (currentWordCount >= WORDS_PER_PARAGRAPH) {
-                        // Time to split! 
-                        // Update the current text node with the text collected so far
-                        node.textContent = newNodeText;
-                        
-                        // Insert <hr> after this text node's parent block (like after the <p>)
-                        // Or simply insert <hr> right here in the text flow, but ReactQuill might prefer it between blocks.
-                        // Inserting <hr> directly into the HTML will be parsed by Quill.
-                        
-                        // Create the rest of the text as a new text node and insert it after the <hr>
-                        const remainingText = words.slice(w + 1).join('');
-                        
-                        const hrNode = document.createElement('hr');
-                        const remainingNode = document.createTextNode(remainingText);
-                        
-                        // Insert hr and remaining text after current node
-                        if (node.parentNode) {
-                            const nextSibling = node.nextSibling;
-                            node.parentNode.insertBefore(hrNode, nextSibling);
-                            node.parentNode.insertBefore(remainingNode, nextSibling);
-                        }
-                        
-                        // Update our iteration to process the remaining node next
-                        textNodes.splice(i + 1, 0, remainingNode as Text);
-                        
-                        splitCount++;
-                        currentWordCount = 0;
-                        break; // Move to the next text node (which is the remaining parts we just inserted)
-                    }
-                }
-            }
-            
-            if (currentWordCount > 0 && currentWordCount < WORDS_PER_PARAGRAPH) {
-                // If we didn't split, make sure to update the node text just in case (though it should be the same)
-                node.textContent = newNodeText;
-            }
-        }
-
-        if (splitCount === 0) {
-            alert(`Nội dung chỉ có ${totalWordCount} từ, không cần chia đoạn.`);
-            return;
-        }
-
-        const result = tempDiv.innerHTML;
-        handleI18nChange('content', lang, result);
-        alert(`Đã chia thành ${splitCount + 1} đoạn (Tổng: ${totalWordCount} từ).`);
-    };
 
     return (
         <form
@@ -1086,14 +995,6 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         >
                             <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
                             Định dạng []
-                        </button>
-                        <button
-                            type="button"
-                            onClick={autoSplitParagraphs}
-                            className="text-[10px] font-black text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 uppercase tracking-wider border border-emerald-100/50"
-                        >
-                            <Scissors className="w-3 h-3" />
-                            Chia đoạn (~300 từ)
                         </button>
                     </div>
                     <div className="flex items-center gap-2">

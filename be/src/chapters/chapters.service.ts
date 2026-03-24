@@ -31,9 +31,13 @@ export class ChaptersService {
         });
     }
 
-    async findLatest(limit = 10) {
+    async findLatest(limit = 10, lang?: string) {
+        console.log("findLatest called with config:", { limit, lang });
         return this.prisma.chapter.findMany({
-            where: { deletedAt: null },
+            where: { 
+                deletedAt: null,
+                ...(lang ? { story: { language: lang } } : {}),
+            },
             take: limit,
             orderBy: { createdAt: 'desc' },
             include: {
@@ -41,6 +45,7 @@ export class ChaptersService {
                     select: {
                         title: true,
                         slug: true,
+                        language: true,
                         thumbnailUrl: true,
                         author: {
                             select: { name: true },

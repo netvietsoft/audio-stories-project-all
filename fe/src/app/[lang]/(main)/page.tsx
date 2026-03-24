@@ -250,7 +250,7 @@ export default function HomePage() {
           bannersRes,
         ] = await Promise.allSettled([
           fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
-          apiClient.get("/chapters/latest", { params: { limit: 12 } }).then((r) => r.data || []).catch(() => []),
+          apiClient.get("/chapters/latest", { params: { limit: 12, lang } }).then((r) => r.data || []).catch(() => []),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating", status: "completed" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "views", trendWindow: "week" }),

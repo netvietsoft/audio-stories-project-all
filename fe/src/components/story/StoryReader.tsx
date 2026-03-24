@@ -169,6 +169,12 @@ const sanitizeStoryContent = (rawHtml: string) =>
     FORBID_ATTR: ["style", "class", "id", "color", "bgcolor"],
   });
 
+const hasVisibleContent = (html: string) => {
+  if (!html) return false;
+  const stripped = html.replace(/<[^>]*>/g, "").trim();
+  return stripped.replace(/&nbsp;|\u00A0/g, "").trim().length > 0;
+};
+
 const splitParagraphs = (chapterId: string, content: string | null | undefined): ParagraphItem[] => {
   if (!content) return [];
 
@@ -178,12 +184,12 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
     parts = content
       .split(doanRegex)
       .map((part) => part.trim())
-      .filter(Boolean);
+      .filter(hasVisibleContent);
   } else if (/<hr\s*\/?>/i.test(content)) {
     parts = content
       .split(/<hr\s*\/?>/gi)
       .map((part) => part.trim())
-      .filter(Boolean);
+      .filter(hasVisibleContent);
   } else if (content.includes("<") && content.includes(">") && typeof window !== "undefined") {
     try {
       const parser = new DOMParser();
@@ -193,10 +199,10 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
       if (pNodes.length > 0) {
         parts = pNodes
           .map((node) => (node.textContent || "").trim())
-          .filter(Boolean);
+          .filter(hasVisibleContent);
       } else {
         const plainText = (doc.body?.textContent || "").replace(/\r/g, "").trim();
-        parts = plainText.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean);
+        parts = plainText.split(/\n\s*\n/).map((part) => part.trim()).filter(hasVisibleContent);
       }
     } catch {
       parts = [];
@@ -208,12 +214,12 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
       .replace(/<[^>]*>/g, "\n")
       .split(/\n\s*\n|\n/)
       .map((part) => part.trim())
-      .filter(Boolean);
+      .filter(hasVisibleContent);
   }
 
   parts = parts
     .map((part) => part.replace(/^\[Paragraph\s*\d+\]\s*/i, "").replace(/^\[Đoạn\s*\d+\]\s*/i, "").replace(/\[.*?\]/g, "").trim())
-    .filter(Boolean);
+    .filter(hasVisibleContent);
 
   return parts.map((part, index) => ({
     id: `${chapterId}-p-${index}`,

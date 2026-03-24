@@ -145,7 +145,7 @@ export const HybridImageUploader = ({
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-bold text-slate-700 uppercase tracking-tight">Click hoặc kéo ảnh vào</p>
-                    <p className="text-xs font-medium text-slate-500 mt-1">Hỗ trợ JPG, PNG (Tối đa 4MB)</p>
+                    <p className="text-xs font-medium text-slate-500 mt-1">Hỗ trợ JPG, PNG, WEBP (Tối đa 4MB)</p>
                   </div>
                 </div>
               );

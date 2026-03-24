@@ -311,10 +311,10 @@ export default function Navbar() {
                 </div>
                 <Link href="/new" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("new")}</Link>
                 <Link href="/trending" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("trending")}</Link>
-                <Link href="/interactive" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("interactiveStories")}</Link>
+                <Link href="/interactive" className="hidden 2xl:inline-flex px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("interactiveStories")}</Link>
                 <div
                   ref={rankingMenuRef}
-                  className="relative"
+                  className="hidden 2xl:block relative"
                 >
                   <button 
                     onClick={() => setIsRankingOpen(!isRankingOpen)}
@@ -346,7 +346,7 @@ export default function Navbar() {
 
             {/* RIGHT SECTION */}
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
-              <div className="relative mx-2 hidden flex-grow xl:flex max-w-sm md:max-w-md" ref={searchRef}>
+              <div className="relative mx-2 hidden flex-grow 2xl:flex max-w-sm md:max-w-md" ref={searchRef}>
                 <input
                   type="text"
                   value={searchQuery}
@@ -356,7 +356,7 @@ export default function Navbar() {
                     if (searchResults.length > 0) setShowSearchDropdown(true);
                   }}
                   placeholder={t("searchPlaceholder")}
-                  className="hidden xl:block w-full pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none transition-all"
+                  className="hidden 2xl:block w-full pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none transition-all"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
 
@@ -414,21 +414,21 @@ export default function Navbar() {
 
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="hidden xl:flex flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
+                className="hidden 2xl:flex flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
               >
                 {mounted && theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
 
               <button
                 onClick={() => router.push(`/${currentLang}/search`)}
-                className="xl:hidden flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
+                className="2xl:hidden flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
                 aria-label={t("searchPlaceholder")}
               >
                 <Search className="h-5 w-5" />
               </button>
 
               <div
-                className="hidden lg:flex flex-shrink-0 relative"
+                className="hidden 2xl:flex flex-shrink-0 relative"
                 ref={langMenuRef}
               >
                 <button 
@@ -475,7 +475,7 @@ export default function Navbar() {
                 </Link>
 
                 {/* Chuông thông báo */}
-                <div className="relative hidden lg:flex flex-shrink-0" ref={notifMenuRef}>
+                <div className="relative hidden 2xl:flex flex-shrink-0" ref={notifMenuRef}>
                   <button
                     onClick={() => {
                       setIsNotifOpen(!isNotifOpen);

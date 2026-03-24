@@ -43,9 +43,9 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
         {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="aspect-square animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
+          <div key={index} className="aspect-[2/3] animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
         ))}
       </div>
     );
@@ -62,7 +62,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
       {displayStories.map((story) => {
         const title = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
         const categoryName = story.categories?.[0]?.category?.name;
@@ -81,8 +81,8 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
                 alt={title}
                 width={320}
                 height={320}
-                sizes="(max-width: 640px) 45vw, (max-width: 1024px) 23vw, 18vw"
-                className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(max-width: 640px) 48vw, (max-width: 768px) 32vw, (max-width: 1024px) 24vw, 18vw"
+                className="aspect-[2/3] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10" />
@@ -104,7 +104,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
               />
 
               <div className="absolute inset-x-0 bottom-0 p-2.5 text-white sm:p-3">
-                <h3 className="line-clamp-1 text-sm font-extrabold leading-tight sm:text-base">{title}</h3>
+                <h3 className="line-clamp-1 truncate text-sm font-extrabold leading-tight">{title}</h3>
                 <p className="mt-0.5 line-clamp-1 text-xs text-white/85">{story.author?.name || t("updating")}</p>
 
                 <div className="mt-1.5 flex items-center justify-between gap-2 text-sm font-semibold sm:text-base">

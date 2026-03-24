@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { JsonLd } from "@/components/seo/JsonLd";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import StoryDetailClient from "./_components/StoryDetailClient";
 
 type StoryMeta = {
@@ -111,6 +112,10 @@ export default async function StoryPage({ params }: Props) {
     <>
       {audiobookSchema ? <JsonLd data={audiobookSchema} /> : null}
       <JsonLd data={breadcrumbSchema} />
+      <Breadcrumbs
+        lang={locale === "en" ? "en" : "vi"}
+        items={story ? [{ label: storyTitle }] : []}
+      />
       <StoryDetailClient />
     </>
   );

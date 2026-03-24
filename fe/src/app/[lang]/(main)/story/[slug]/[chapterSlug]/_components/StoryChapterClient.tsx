@@ -46,6 +46,7 @@ import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 import { useAuthModalStore } from "@/stores/auth-modal-store";
 import { useAuth } from "@/auth/auth-provider";
+import { useViewTracking } from "@/hooks/use-view-tracking";
 
 const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
 
@@ -546,6 +547,11 @@ export default function StoryChapterClient() {
   }, []);
 
   const chapterCount = useMemo(() => story?.chapters?.length ?? 0, [story?.chapters]);
+
+  useViewTracking({
+    storyId: story?.id,
+    chapterId: selectedChapterId,
+  });
 
   const activeChapterIndex = useMemo(() => {
     if (!story || !selectedChapterId) return -1;

@@ -29,6 +29,7 @@ import { UploadModule } from './upload/upload.module';
 import { LanguagesModule } from './languages/languages.module';
 import { BannersModule } from './banners/banners.module';
 import { AdsModule } from './ads/ads.module';
+import { TrackingModule } from './tracking/tracking.module';
 
 @Module({
   imports: [
@@ -85,6 +86,7 @@ import { AdsModule } from './ads/ads.module';
     LanguagesModule,
     BannersModule,
     AdsModule,
+    TrackingModule,
   ],
   controllers: [AppController],
   providers: [

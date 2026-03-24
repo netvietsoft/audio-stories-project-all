@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { JsonLd } from "@/components/seo/JsonLd";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import StoryChapterClient from "./_components/StoryChapterClient";
 
 type StoryMeta = {
@@ -106,6 +107,16 @@ export default async function StoryChapterPage({ params }: Props) {
   const { slug, chapterSlug } = await params;
   const story = await fetchStoryMeta(slug);
   const storyTitle = story ? localizedValue(locale, story.titleVi, story.titleEn, story.title) : "";
+  const chapterNum = chapterNumberFromSlug(chapterSlug);
+  const chapter = chapterNum
+    ? story?.chapters?.find((c) => c.chapterNumber === chapterNum)
+    : story?.chapters?.[0];
+  const chapterTitleValue = chapter
+    ? localizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)
+    : chapterSlug;
+  const chapterLabel = chapter
+    ? t("chapterTitle", { number: chapter.chapterNumber, title: chapterTitleValue })
+    : chapterSlug;
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -134,6 +145,15 @@ export default async function StoryChapterPage({ params }: Props) {
   return (
     <>
       <JsonLd data={breadcrumbSchema} />
+      <Breadcrumbs
+        lang={locale === "en" ? "en" : "vi"}
+        items={story
+          ? [
+              { label: storyTitle, href: `/story/${story.slug}` },
+              { label: chapterLabel },
+            ]
+          : []}
+      />
       <StoryChapterClient />
     </>
   );

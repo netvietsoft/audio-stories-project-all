@@ -11,6 +11,7 @@ import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
 import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscriptionButton";
 import { getLocalizedValue } from "@/lib/story-localization";
+import { useViewTracking } from "@/hooks/use-view-tracking";
 
 type ChapterItem = {
   id: string;
@@ -104,6 +105,11 @@ export default function StoryDetailClient() {
   }, [slug]);
 
   const firstChapter = useMemo(() => story?.chapters?.[0] || null, [story?.chapters]);
+  useViewTracking({
+    storyId: story?.id,
+    chapterId: firstChapter?.id || null,
+  });
+
   const storyTitle = getLocalizedValue(locale, story?.titleVi, story?.titleEn, story?.title);
   const storyDescription = getLocalizedValue(locale, story?.descriptionVi, story?.descriptionEn, story?.description);
   const hasEn = Boolean(story?.titleEn?.trim() && story?.descriptionEn?.trim());

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronUp, Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, X } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { getOrCreateDeviceId } from "@/lib/tracking/device-id";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 
@@ -22,6 +23,7 @@ export default function GlobalPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const lastSyncedProgressRef = useRef<Map<string, number>>(new Map());
+  const listenTrackedRef = useRef<Map<string, boolean>>(new Map());
 
   const accessToken = useUserStore((state) => state.accessToken);
 
@@ -197,6 +199,39 @@ export default function GlobalPlayer() {
       void syncHistory(true);
     };
   }, [syncHistory]);
+
+  useEffect(() => {
+    if (!currentTrack || !isPlaying) return;
+
+    const storyId = currentTrack.storyId;
+    const chapterId = currentTrack.chapterId || currentTrack.id;
+    if (!storyId || !chapterId) return;
+
+    const key = `${storyId}:${chapterId}`;
+    if (listenTrackedRef.current.get(key)) return;
+
+    const timer = window.setTimeout(() => {
+      const deviceId = getOrCreateDeviceId();
+      if (!deviceId) return;
+
+      void apiClient
+        .post("/tracking/listen", {
+          storyId,
+          chapterId,
+          deviceId,
+        })
+        .then(() => {
+          listenTrackedRef.current.set(key, true);
+        })
+        .catch(() => {
+          // Ignore tracking failures to keep playback uninterrupted.
+        });
+    }, 10_000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [currentTrack, isPlaying]);
 
   const progress = useMemo(() => {
     if (!duration || duration <= 0) return 0;

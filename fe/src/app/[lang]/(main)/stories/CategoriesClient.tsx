@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "@/components/shared/LocalizedLink";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
@@ -103,6 +104,17 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
   const currentCategoryName = currentCategory 
     ? getLocalizedValue(locale, currentCategory.nameVi, currentCategory.nameEn, currentCategory.name)
     : t("allCategories");
+  const categoryRootLabel = locale === "en" ? "Categories" : "Thể loại";
+  const breadcrumbItems = useMemo(() => {
+    if (currentCategory && currentCategory.id !== 0) {
+      return [
+        { label: categoryRootLabel, href: "/stories" },
+        { label: currentCategoryName },
+      ];
+    }
+
+    return [{ label: categoryRootLabel }];
+  }, [categoryRootLabel, currentCategory, currentCategoryName]);
   const selectedSortLabel =
     sort === "latest"
       ? t("sortLatest")
@@ -170,7 +182,10 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
   };
 
   return (
-    <div className="mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
+    <div className="space-y-2">
+      <Breadcrumbs items={breadcrumbItems} lang={locale === "en" ? "en" : "vi"} />
+
+      <div className="mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
       {/* LEFT SIDEBAR */}
       <div className="w-full md:w-80 flex-shrink-0 space-y-8">
         {/* Category List */}

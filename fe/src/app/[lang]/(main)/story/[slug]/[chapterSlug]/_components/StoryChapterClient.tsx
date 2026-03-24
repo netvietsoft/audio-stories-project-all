@@ -2448,29 +2448,38 @@ export default function StoryChapterClient() {
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                          {t("giftAmount")}
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={giftAmount}
-                          onChange={(e) => setGiftAmount(e.target.value)}
-                          className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                          placeholder={t("giftAmountPlaceholder")}
-                        />
-                        <div className="mt-3 flex justify-center flex-wrap gap-2">
-                          {[1, 3, 5, 10, 20, 50, 100].map((amount) => (
+                        <div className="grid grid-cols-4 gap-3">
+                          {[
+                            { id: 'potion', icon: '🥤', amount: 10 },
+                            { id: 'pizza', icon: '🍕', amount: 50 },
+                            { id: 'pill', icon: '💊', amount: 100 },
+                            { id: 'ticket', icon: '🎟️', amount: 500 },
+                            { id: 'car', icon: '🏎️', amount: 1000 },
+                            { id: 'dragon', icon: '🐉', amount: 2000 },
+                            { id: 'castle', icon: '🏰', amount: 5000 },
+                            { id: 'spaceship', icon: '🚀', amount: 10000 },
+                          ].map((gift) => (
                             <button
-                              key={amount}
-                              onClick={() => setGiftAmount(String(amount))}
-                              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${giftAmount === String(amount)
-                                ? "border-pink-500 bg-pink-500 text-white shadow-md shadow-pink-500/20"
-                                : "border-gray-200 bg-white text-gray-700 hover:border-pink-200 hover:bg-pink-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:border-pink-900/40 dark:hover:bg-pink-900/20"
-                                }`}
+                              key={gift.id}
+                              type="button"
+                              onClick={() => setGiftAmount(String(gift.amount))}
+                              className={`relative flex flex-col items-center justify-center gap-2 rounded-xl p-3 outline-none transition-all duration-200 ${
+                                giftAmount === String(gift.amount)
+                                  ? "bg-pink-50 border-2 border-pink-500 shadow-sm dark:bg-pink-900/20"
+                                  : "bg-gray-50 border-2 border-transparent hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
+                              }`}
                             >
-                              <img src="/icons/coin.png" alt="coin" className="h-4 w-4" onError={(e) => (e.currentTarget.style.display = 'none')} />
-                              <span>{amount}</span>
+                              <div className="text-3xl filter drop-shadow-sm transition-transform duration-200 hover:scale-110">
+                                {gift.icon}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className={`text-xs font-bold ${giftAmount === String(gift.amount) ? "text-pink-700 dark:text-pink-400" : "text-gray-600 dark:text-gray-300"}`}>
+                                  {gift.amount}
+                                </span>
+                                <div className="flex items-center justify-center w-3 h-3 rounded-full bg-yellow-400 text-yellow-900">
+                                  <Coins className="w-2 h-2" />
+                                </div>
+                              </div>
                             </button>
                           ))}
                         </div>

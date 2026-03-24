@@ -236,7 +236,8 @@
     "unlockVariant": "Mở khóa biến thể",
     "unlockVariantDescription": "Bạn đang mở khóa biến thể: {title}",
     "unlockVariantPrice": "Phí mở khóa: {price} credits.",
-    "unlockNow": "Mở khóa ngay"
+    "unlockNow": "Mở khóa ngay",
+    "unlocked": "Đã mở khóa"
   },
   "StoryPage": {
     "notFound": "Không tìm thấy truyện",

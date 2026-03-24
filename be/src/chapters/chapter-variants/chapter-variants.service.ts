@@ -7,9 +7,13 @@ import { UpdateChapterVariantDto } from '../dto/update-chapter-variant.dto';
 export class ChapterVariantsService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async findAllByChapter(chapterId: string) {
+    async findAllByChapter(chapterId: string, parentId?: string | null) {
+        const where: any = { chapterId, deletedAt: null };
+        if (parentId !== undefined) {
+            where.parentId = parentId;
+        }
         return this.prisma.chapterVariant.findMany({
-            where: { chapterId, deletedAt: null },
+            where,
             orderBy: { orderIndex: 'asc' },
         });
     }

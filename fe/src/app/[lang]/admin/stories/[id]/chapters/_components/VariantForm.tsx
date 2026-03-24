@@ -174,6 +174,13 @@ export const VariantForm = ({
         setValue('content', updatedContent, { shouldDirty: true });
     };
 
+    const addDienBien = () => {
+        const content = watch('content') || '';
+        const marker = ` [DIEN_BIEN] `;
+        const updatedContent = content ? `${content}${marker}` : marker;
+        setValue('content', updatedContent, { shouldDirty: true });
+    };
+
     const quillModules = {
         toolbar: [
             [{ 'header': [1, 2, 3, false] }],
@@ -381,14 +388,25 @@ export const VariantForm = ({
                         <BookOpen className="w-6 h-6 text-indigo-500" />
                         <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Kịch bản chi tiết</h3>
                     </div>
-                    <button
-                        type="button"
-                        onClick={addParagraph}
-                        className="text-[10px] font-black text-emerald-600 hover:text-white hover:bg-emerald-600 bg-emerald-50 px-4 py-2 rounded-full transition-all flex items-center gap-2 uppercase tracking-widest border border-emerald-100"
-                    >
-                        <Plus className="w-3.5 h-3.5" />
-                        Thêm đoạn
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={addParagraph}
+                            className="text-[10px] font-black text-emerald-600 hover:text-white hover:bg-emerald-600 bg-emerald-50 px-4 py-2 rounded-full transition-all flex items-center gap-2 uppercase tracking-widest border border-emerald-100"
+                        >
+                            <Plus className="w-3.5 h-3.5" />
+                            Thêm đoạn
+                        </button>
+                        <button
+                            type="button"
+                            onClick={addDienBien}
+                            className="text-[10px] font-black text-indigo-600 hover:text-white hover:bg-indigo-600 bg-indigo-50 px-4 py-2 rounded-full transition-all flex items-center gap-2 uppercase tracking-widest border border-indigo-100"
+                            title="Thêm điểm ngắt để hiển thị các biến thể con"
+                        >
+                            <Layers className="w-3.5 h-3.5" />
+                            Thêm Diễn biến con
+                        </button>
+                    </div>
                 </div>
                 <div className="flex-1 flex flex-col min-h-[400px]">
                     <ReactQuill

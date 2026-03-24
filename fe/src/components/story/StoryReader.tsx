@@ -576,7 +576,7 @@ export default function StoryReader({
   }, [chapterId]);
 
   if (!paragraphs.length) {
-    return <p className="text-base leading-loose text-gray-500 dark:text-gray-300">Chương này chưa có bản truyện chữ.</p>;
+    return null;
   }
 
   if (isLocked) {

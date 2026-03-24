@@ -571,6 +571,7 @@ export class StoriesService {
                 unlockPrice: true,
                 nextChapterId: true,
                 nextVariantId: true,
+                parentId: true,
                 isDefault: true,
                 content: true,
               },

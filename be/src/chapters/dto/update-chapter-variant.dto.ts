@@ -10,6 +10,10 @@ export class UpdateChapterVariantDto {
     nextVariantId?: string | null;
 
     @IsOptional()
+    @IsUUID()
+    parentId?: string | null;
+
+    @IsOptional()
     @IsString()
     @MaxLength(300)
     title?: string;

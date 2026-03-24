@@ -13,6 +13,7 @@ import StoryListView from "@/components/shared/StoryListView";
 import CategoryTabsSection from "@/components/story/CategoryTabsSection";
 import HighRatingStoriesGrid from "@/components/story/HighRatingStoriesGrid";
 import CompletedStoriesGrid from "@/components/story/CompletedStoriesGrid";
+import InteractiveStoriesSection from "../../../components/story/InteractiveStoriesSection";
 import { InteractiveStoryShelf, TopContributorsLeaderboard } from "@/components/shared/StoryDiscoveryBoard";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
@@ -149,6 +150,7 @@ type HeroSlide = {
 
 const NEW_LIMIT = 5;
 const POPULAR_LIMIT = 8;
+const HOME_AXIS_CLASS = "mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]";
 
 export default function HomePage() {
   const t = useTranslations("Home");
@@ -401,7 +403,7 @@ export default function HomePage() {
   ].filter((tab) => tab.stories.length > 0);
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-16">
 
       {/* ─── Hero Banner ─────────────────────────────────────────── */}
       <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-slate-950 text-white">
@@ -475,53 +477,54 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── Hashtag / Category Strip ────────────────────────────── */}
-      {topCategories.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
-            <Link href="/categories" className="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-              {t("viewAll")}
-            </Link>
-          </div>
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-            {topCategories.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/explore?categoryId=${cat.id}`}
-                className="flex-shrink-0 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-300"
-              >
-                #{cat.name}
+      <div className="space-y-16">
+        {/* ─── Hashtag / Category Strip ────────────────────────────── */}
+        {topCategories.length > 0 && (
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
+              <Link href="/categories" className="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                {t("viewAll")}
               </Link>
-            ))}
-          </div>
-        </section>
-      )}
+            </div>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {topCategories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={`/explore?categoryId=${cat.id}`}
+                  className="flex-shrink-0 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-300"
+                >
+                  #{cat.name}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
-      {/* ─── Quick Filter Bar ────────────────────────────────────── */}
-      <StoryFilterBar
-        categories={allCategories.map((c) => ({
-          id: c.id,
-          name: c.name,
-          nameVi: c.nameVi,
-          nameEn: c.nameEn
-        }))}
-        authors={authors}
-        value={filterValue}
-        onChange={setFilterValue}
-        onApply={() => {
-          const params = new URLSearchParams();
-          if (filterValue.categoryId) params.append("categoryId", filterValue.categoryId);
-          if (filterValue.authorId) params.append("authorId", filterValue.authorId);
-          if (filterValue.status) params.append("status", filterValue.status);
-          if (filterValue.sort && filterValue.sort !== "latest") params.append("sort", filterValue.sort);
-          router.push(`/${locale}/explore?${params.toString()}`);
-        }}
-        isLoading={isLoading}
-      />
+        {/* ─── Quick Filter Bar ────────────────────────────────────── */}
+        <StoryFilterBar
+          categories={allCategories.map((c) => ({
+            id: c.id,
+            name: c.name,
+            nameVi: c.nameVi,
+            nameEn: c.nameEn
+          }))}
+          authors={authors}
+          value={filterValue}
+          onChange={setFilterValue}
+          onApply={() => {
+            const params = new URLSearchParams();
+            if (filterValue.categoryId) params.append("categoryId", filterValue.categoryId);
+            if (filterValue.authorId) params.append("authorId", filterValue.authorId);
+            if (filterValue.status) params.append("status", filterValue.status);
+            if (filterValue.sort && filterValue.sort !== "latest") params.append("sort", filterValue.sort);
+            router.push(`/${locale}/explore?${params.toString()}`);
+          }}
+          isLoading={isLoading}
+        />
 
-      {accessToken ? (
-        <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {accessToken ? (
+          <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-gray-900">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
@@ -643,26 +646,27 @@ export default function HomePage() {
               </div>
             )}
           </div>
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
-      {/* ─── Truyện Trending ─────────────────────────────────────── */}
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("trendingTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t("trendingSubtitle")}</p>
+        {/* ─── Truyện Trending ─────────────────────────────────────── */}
+        <section className="space-y-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("trendingTitle")}</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t("trendingSubtitle")}</p>
+            </div>
+            <Link href="/trending" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              {t("viewAll")}
+            </Link>
           </div>
-          <Link href="/trending" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-            {t("viewAll")}
-          </Link>
-        </div>
-        <InteractiveStoryShelf stories={discoveryFeaturedStories} />
-      </section>
+          <InteractiveStoryShelf stories={discoveryFeaturedStories} />
+        </section>
+      </div>
 
       {/* ─── Truyện mới đăng (Stripe layout) ─────────── */}
-      <section className="relative left-1/2 my-10 w-dvw -translate-x-1/2 bg-slate-100 py-12 dark:bg-slate-800/50">
-        <div className="mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
+      <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-slate-100 py-12 dark:bg-slate-800/50">
+        <div className={HOME_AXIS_CLASS}>
           <div className="space-y-6">
             <div className="flex items-end justify-between gap-4">
               <div>
@@ -680,39 +684,43 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── Truyện Rating Cao (Grid 2 hàng x 4) ─ */}
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "High-Rating Stories" : "Truyện Rating Cao"}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{locale === "en" ? "Top-rated stories from our collection" : "Những truyện được đánh giá cao nhất"}</p>
-          </div>
-          <Link href="/search?sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-            {t("viewAll")}
-          </Link>
-        </div>
-        <HighRatingStoriesGrid stories={popularStories} isLoading={isLoading} />
-      </section>
-
-      {/* ─── Truyện đã hoàn thành (Grid 2 hàng x 4) ─ */}
-      {completedStories.length > 0 && (
+      <div className="space-y-16">
+        {/* ─── Truyện Rating Cao (Grid 2 hàng x 4) ─ */}
         <section className="space-y-4">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "Completed Stories" : "Truyện Đã Hoàn Thành"}</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{locale === "en" ? "Finished series with excellent ratings" : "Những câu chuyện được hoàn chỉnh với đánh giá xuất sắc"}</p>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "High-Rating Stories" : "Truyện Rating Cao"}</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{locale === "en" ? "Top-rated stories from our collection" : "Những truyện được đánh giá cao nhất"}</p>
             </div>
-            <Link href="/search?status=completed&sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            <Link href="/search?sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
               {t("viewAll")}
             </Link>
           </div>
-          <CompletedStoriesGrid stories={completedStories} isLoading={isLoading} />
+          <HighRatingStoriesGrid stories={popularStories} isLoading={isLoading} />
         </section>
-      )}
+
+        <InteractiveStoriesSection />
+
+        {/* ─── Truyện đã hoàn thành (Grid 2 hàng x 4) ─ */}
+        {completedStories.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "Completed Stories" : "Truyện Đã Hoàn Thành"}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{locale === "en" ? "Finished series with excellent ratings" : "Những câu chuyện được hoàn chỉnh với đánh giá xuất sắc"}</p>
+              </div>
+              <Link href="/search?status=completed&sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+                {t("viewAll")}
+              </Link>
+            </div>
+            <CompletedStoriesGrid stories={completedStories} isLoading={isLoading} />
+          </section>
+        )}
+      </div>
 
       {/* ─── Tabs thể loại (1 carousel duy nhất) ─ */}
-      <section className="relative left-1/2 my-10 w-dvw -translate-x-1/2 bg-slate-100 py-12 dark:bg-slate-800/50">
-        <div className="mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
+      <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-slate-100 py-12 dark:bg-slate-800/50">
+        <div className={HOME_AXIS_CLASS}>
           <CategoryTabsSection tabs={categoryTabs} isLoading={isLoading} />
         </div>
       </section>

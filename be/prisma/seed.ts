@@ -312,6 +312,10 @@ async function main() {
     { vi: 'Nhất Niệm Vĩnh Hằng', en: 'A Will Eternal' },
     { vi: 'Tinh Thần Biến', en: 'Stellar Transformations' },
     { vi: 'Truyện Tương Tác Demo', en: 'Interactive Story Demo', isInteractive: true },
+    { vi: 'Mê Cung Ánh Trăng', en: 'Moonlit Labyrinth', isInteractive: true },
+    { vi: 'Nhật Ký Cỗ Máy Thời Gian', en: 'Chronicle of the Time Engine', isInteractive: true },
+    { vi: 'Lời Nguyền Thư Viện Cổ', en: 'Curse of the Ancient Library', isInteractive: true },
+    { vi: 'Đêm Cuối Ở Thành Phố Gương', en: 'Last Night in Mirror City', isInteractive: true },
     { vi: 'Võ Luyện Đỉnh Phong', en: 'Martial Peak' },
     { vi: 'Toàn Chức Pháp Sư', en: 'Versatile Mage' },
     { vi: 'Tuyệt Thế Đường Môn', en: 'Soul Land 2' },
@@ -331,10 +335,13 @@ async function main() {
 
   for (let i = 0; i < storySeed.length; i += 1) {
     const storyData = storySeed[i]!;
+    const isInteractiveStory = Boolean((storyData as { isInteractive?: boolean }).isInteractive);
     
     const titleVi = storyData.vi;
     const slugVi = slugify(titleVi);
-    const descriptionVi = `${titleVi} - truyện audio tiếng Việt dùng để kiểm tra giao diện và chức năng cập nhật chương.`;
+    const descriptionVi = isInteractiveStory
+      ? `${titleVi} mở ra một câu chuyện tương tác nơi mỗi lựa chọn sẽ dẫn đến một nhánh diễn biến hoàn toàn khác nhau. Bạn sẽ quyết định cách nhân vật tiếp cận bí ẩn, đối thoại với đồng minh và đối đầu với những rủi ro không thể lường trước. Mỗi đoạn chuyển cảnh đều được xây dựng với tiết tấu chậm rãi, chi tiết giàu hình ảnh và cảm xúc để phù hợp trải nghiệm đọc dài hơi khi kiểm thử giao diện.`
+      : `${titleVi} - truyện audio tiếng Việt dùng để kiểm tra giao diện và chức năng cập nhật chương.`;
     
     const existingVi = await prisma.story.findFirst({
       where: { slug: slugVi, language: 'vi' },
@@ -349,10 +356,10 @@ async function main() {
             authorId: authors[i % authors.length].id,
             status: i % 3 === 0 ? 'completed' : 'ongoing',
             thumbnailUrl: `https://picsum.photos/seed/story-vi-${i + 1}/600/900`,
-            totalViews: BigInt(200000 + i * 45000),
+            totalViews: isInteractiveStory ? BigInt(830000 + i * 15000) : BigInt(200000 + i * 45000),
             isFeatured: i < 3,
             isRecommended: i % 2 === 0,
-            isInteractive: (storyData as any).isInteractive || false,
+            isInteractive: isInteractiveStory,
             featuredOrder: i < 3 ? i + 1 : null,
             description: descriptionVi,
           },
@@ -365,10 +372,10 @@ async function main() {
             authorId: authors[i % authors.length].id,
             status: i % 3 === 0 ? 'completed' : 'ongoing',
             thumbnailUrl: `https://picsum.photos/seed/story-vi-${i + 1}/600/900`,
-            totalViews: BigInt(200000 + i * 45000),
+            totalViews: isInteractiveStory ? BigInt(830000 + i * 15000) : BigInt(200000 + i * 45000),
             isFeatured: i < 3,
             isRecommended: i % 2 === 0,
-            isInteractive: (storyData as any).isInteractive || false,
+            isInteractive: isInteractiveStory,
             featuredOrder: i < 3 ? i + 1 : null,
             description: descriptionVi,
           },
@@ -388,7 +395,9 @@ async function main() {
 
     const titleEn = storyData.en;
     const slugEn = slugify(titleEn);
-    const descriptionEn = `${titleEn} - English audio story for interface and chapter update testing.`;
+    const descriptionEn = isInteractiveStory
+      ? `${titleEn} is an interactive narrative where each choice branches into a different emotional and strategic outcome. Readers can test long-form content rendering while moving through decision points that change alliances, pacing, and consequences. The description is intentionally long so UI truncation, spacing, and responsive composition can be validated under realistic conditions.`
+      : `${titleEn} - English audio story for interface and chapter update testing.`;
     
     const existingEn = await prisma.story.findFirst({
       where: { slug: slugEn, language: 'en' },
@@ -403,10 +412,10 @@ async function main() {
             authorId: authors[i % authors.length].id,
             status: i % 3 === 0 ? 'completed' : 'ongoing',
             thumbnailUrl: `https://picsum.photos/seed/story-en-${i + 1}/600/900`,
-            totalViews: BigInt(180000 + i * 40000),
+            totalViews: isInteractiveStory ? BigInt(760000 + i * 12000) : BigInt(180000 + i * 40000),
             isFeatured: i < 3,
             isRecommended: i % 2 === 1,
-            isInteractive: (storyData as any).isInteractive || false,
+            isInteractive: isInteractiveStory,
             featuredOrder: i < 3 ? i + 6 : null,
             description: descriptionEn,
           },
@@ -419,10 +428,10 @@ async function main() {
             authorId: authors[i % authors.length].id,
             status: i % 3 === 0 ? 'completed' : 'ongoing',
             thumbnailUrl: `https://picsum.photos/seed/story-en-${i + 1}/600/900`,
-            totalViews: BigInt(180000 + i * 40000),
+            totalViews: isInteractiveStory ? BigInt(760000 + i * 12000) : BigInt(180000 + i * 40000),
             isFeatured: i < 3,
             isRecommended: i % 2 === 1,
-            isInteractive: (storyData as any).isInteractive || false,
+            isInteractive: isInteractiveStory,
             featuredOrder: i < 3 ? i + 6 : null,
             description: descriptionEn,
           },
@@ -440,7 +449,7 @@ async function main() {
 
     stories.push(storyEn);
 
-    const chapterTotal = 15;
+    const chapterTotal = isInteractiveStory ? 1 : 15;
     for (let chapterNumber = 1; chapterNumber <= chapterTotal; chapterNumber += 1) {
       const chapterSeed = i * 20 + chapterNumber;
       const content = buildLongChapterContent('vi', titleVi, chapterNumber);
@@ -473,7 +482,7 @@ async function main() {
           audioDuration: 540 + chapterNumber * 12,
           accessType,
           unlocksAt,
-          isInteractive: (storyData as any).isInteractive && chapterNumber === 1 ? true : false,
+          isInteractive: isInteractiveStory && chapterNumber === 1 ? true : false,
         },
         create: {
           storyId: storyVi.id,
@@ -488,7 +497,7 @@ async function main() {
           audioDuration: 540 + chapterNumber * 12,
           accessType,
           unlocksAt,
-          isInteractive: (storyData as any).isInteractive && chapterNumber === 1 ? true : false,
+          isInteractive: isInteractiveStory && chapterNumber === 1 ? true : false,
         },
       });
 
@@ -501,6 +510,15 @@ async function main() {
       where: { id: storyVi.id },
       data: { totalChapters: chapterTotal },
     });
+
+    if (isInteractiveStory) {
+      await prisma.chapter.deleteMany({
+        where: {
+          storyId: storyVi.id,
+          chapterNumber: { gt: chapterTotal },
+        },
+      });
+    }
 
     for (let chapterNumber = 1; chapterNumber <= chapterTotal; chapterNumber += 1) {
       const chapterSeed = i * 20 + chapterNumber + 100;
@@ -534,7 +552,7 @@ async function main() {
           audioDuration: 540 + chapterNumber * 12,
           accessType,
           unlocksAt,
-          isInteractive: (storyData as any).isInteractive && chapterNumber === 1 ? true : false,
+          isInteractive: isInteractiveStory && chapterNumber === 1 ? true : false,
         },
         create: {
           storyId: storyEn.id,
@@ -549,7 +567,7 @@ async function main() {
           audioDuration: 540 + chapterNumber * 12,
           accessType,
           unlocksAt,
-          isInteractive: (storyData as any).isInteractive && chapterNumber === 1 ? true : false,
+          isInteractive: isInteractiveStory && chapterNumber === 1 ? true : false,
         },
       });
 
@@ -563,7 +581,16 @@ async function main() {
       data: { totalChapters: chapterTotal },
     });
 
-    if ((storyData as any).isInteractive) {
+    if (isInteractiveStory) {
+      await prisma.chapter.deleteMany({
+        where: {
+          storyId: storyEn.id,
+          chapterNumber: { gt: chapterTotal },
+        },
+      });
+    }
+
+    if (isInteractiveStory) {
       const firstChapterVi = await prisma.chapter.findFirst({
         where: { storyId: storyVi.id, chapterNumber: 1 },
       });
@@ -571,9 +598,21 @@ async function main() {
       if (firstChapterVi) {
         console.log(`Seeding variants for ${titleVi} Chapter 1...`);
         const variants = [
-          { title: 'Path A: Tiếp cận trong im lặng', unlockPrice: 0, content: 'Bạn quyết định lẻn vào... [DIEN_BIEN] Sau khi lẻn vào, bạn thấy hai cánh cửa hiện ra trước mắt.' },
-          { title: 'Path B: The Direct Confrontation', unlockPrice: 100, content: 'You charge forward!' },
-          { title: 'Path C: The Secret Alliance', unlockPrice: 200, content: 'You talk to the guard...' },
+          {
+            title: 'Path A: Tiếp cận trong im lặng',
+            unlockPrice: 0,
+            content: 'Bạn quyết định lẻn vào từng bước, kiểm tra đường thoát trước khi tiến sâu hơn vào khu vực cấm. Mỗi âm thanh nhỏ đều khiến bạn chững lại để quan sát dấu vết, ghi nhớ sơ đồ hành lang và suy luận hướng di chuyển của đối phương. Khi vượt qua cánh cửa đầu tiên, bạn nhận ra nơi này không chỉ là một kho lưu trữ, mà còn là tâm điểm của những giao kèo chưa từng được công khai. [DIEN_BIEN] Sau khi lẻn vào, bạn thấy hai cánh cửa hiện ra trước mắt cùng những ký hiệu cổ xếp thành một câu đố nhiều tầng.',
+          },
+          {
+            title: 'Path B: The Direct Confrontation',
+            unlockPrice: 100,
+            content: 'You move in directly and choose pressure over stealth, forcing the people in front of you to react before they can complete their plan. The confrontation escalates through layered dialogue, tactical feints, and a sequence of quick choices that can expose hidden loyalties. The more you push forward, the more likely you are to uncover immediate truth at the cost of future trust.',
+          },
+          {
+            title: 'Path C: The Secret Alliance',
+            unlockPrice: 200,
+            content: 'You open with negotiation and attempt to build a quiet alliance with someone who should have been your enemy. The conversation is long, filled with half-truths, old debts, and veiled warnings about what lies beneath the city archives. If your wording is precise, this branch reveals critical background lore and unlocks safer but morally complex outcomes.',
+          },
         ];
 
         for (let j = 0; j < variants.length; j++) {
@@ -587,7 +626,6 @@ async function main() {
               orderIndex: j,
               audioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${j + 1}.mp3`,
               audioDuration: 300 + j * 60,
-              parentId: null, // Root variants
             },
             create: {
               id: variantId,
@@ -598,7 +636,6 @@ async function main() {
               orderIndex: j,
               audioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${j + 1}.mp3`,
               audioDuration: 300 + j * 60,
-              parentId: null,
             },
           });
 
@@ -619,7 +656,6 @@ async function main() {
                   unlockPrice: subVariants[k].unlockPrice,
                   content: subVariants[k].content,
                   orderIndex: k,
-                  parentId: variantId,
                 },
                 create: {
                   id: `${variantId.slice(0, 30)}-sb${k}`,
@@ -628,7 +664,6 @@ async function main() {
                   unlockPrice: subVariants[k].unlockPrice,
                   content: subVariants[k].content,
                   orderIndex: k,
-                  parentId: variantId,
                 },
               });
             }

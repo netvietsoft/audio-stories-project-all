@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
     Plus,
     Search,
@@ -15,10 +16,12 @@ import {
     Check,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import { useRouter } from 'next/navigation';
 import type { Chapter } from '@/types/admin';
+import { useAdminStore } from '@/stores/admin-store';
 
 
 
@@ -30,6 +33,33 @@ interface StoryOption {
 }
 export default function ChaptersGlobalPage() {
     const router = useRouter();
+    const clearAdminAuth = useAdminStore((state) => state.clearAuth);
+
+    const getLocalePrefix = () => {
+        if (typeof window === 'undefined') return 'vi';
+        const locale = window.location.pathname.split('/')[1];
+        return locale === 'en' ? 'en' : 'vi';
+    };
+
+    const handleAdminAuthError = (error: unknown) => {
+        if (!axios.isAxiosError(error)) return false;
+
+        const status = error.response?.status;
+        if (status !== 401 && status !== 403) return false;
+
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('adminLoggedIn');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY);
+            localStorage.removeItem(ADMIN_REFRESH_TOKEN_KEY);
+        }
+        clearAdminAuth();
+
+        const locale = getLocalePrefix();
+        const reason = status === 401 ? 'expired' : 'unauthorized';
+        router.push(`/${locale}/admin/login?reason=${reason}`);
+        return true;
+    };
     const getLocalizedText = (value: unknown, localeKey = 'vi'): string => {
         if (typeof value === 'string') return value;
         if (value && typeof value === 'object') {
@@ -75,7 +105,7 @@ export default function ChaptersGlobalPage() {
     useEffect(() => {
         const fetchStories = async () => {
             try {
-                const res = await apiClient.get('/stories', {
+                const res = await apiClient.get('/stories/admin', {
                     params: {
                         all: true,
                         lang: selectedLocale,
@@ -83,6 +113,7 @@ export default function ChaptersGlobalPage() {
                 });
                 setStories(Array.isArray(res.data) ? res.data : res.data.data || []);
             } catch (error) {
+                if (handleAdminAuthError(error)) return;
                 console.error('Failed to fetch stories:', error);
             }
         };
@@ -117,6 +148,7 @@ export default function ChaptersGlobalPage() {
             setTotalPages(res.data.meta.totalPages);
             setSelectedChapters(new Set()); // Clear selection when fetching new data
         } catch (error) {
+            if (handleAdminAuthError(error)) return;
             console.error('Failed to fetch chapters:', error);
         } finally {
             setIsLoading(false);

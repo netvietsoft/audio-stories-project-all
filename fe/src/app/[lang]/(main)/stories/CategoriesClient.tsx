@@ -444,6 +444,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
         )}
       </div>
     </div>
+    </div>
   );
 }
 

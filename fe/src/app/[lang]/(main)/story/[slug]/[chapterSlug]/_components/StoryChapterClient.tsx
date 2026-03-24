@@ -34,6 +34,8 @@ import {
   Clock3,
   ArrowRight,
   Coins,
+  LockOpen,
+  Waves,
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
@@ -65,6 +67,7 @@ type ChapterVariant = {
   content?: string | null;
   nextChapterId?: string | null;
   nextVariantId?: string | null;
+  parentId?: string | null;
 };
 
 type ChapterItem = {
@@ -303,6 +306,7 @@ export default function StoryChapterClient() {
   const [giftError, setGiftError] = useState("");
   const [isVariantDropdownOpen, setIsVariantDropdownOpen] = useState(false);
   const [pendingVariantId, setPendingVariantId] = useState<string | null>(null);
+  const [openNestedDropdowns, setOpenNestedDropdowns] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
 
   const setUser = useUserStore((state) => state.setUser);
@@ -563,10 +567,25 @@ export default function StoryChapterClient() {
     return story.chapters[activeChapterIndex + 1] || null;
   }, [activeChapterIndex, story]);
 
+  const getVariantPath = useCallback((targetId: string | null, allVariants: ChapterVariant[]) => {
+    const path: ChapterVariant[] = [];
+    let currentId = targetId;
+    while (currentId) {
+      const variant = allVariants.find(v => v.id === currentId);
+      if (!variant) break;
+      path.unshift(variant);
+      currentId = variant.parentId || null;
+    }
+    return path;
+  }, []);
+
+  const selectedVariantPath = useMemo(() => {
+    return getVariantPath(selectedVariantId, variants);
+  }, [getVariantPath, selectedVariantId, variants]);
+
   const selectedVariant = useMemo(() => {
-    if (!selectedVariantId) return null;
-    return variants.find((v) => v.id === selectedVariantId) || null;
-  }, [selectedVariantId, variants]);
+    return selectedVariantPath[selectedVariantPath.length - 1] || null;
+  }, [selectedVariantPath]);
 
   const isVipActive = useMemo(() => {
     if (!user) return false;
@@ -1723,7 +1742,7 @@ export default function StoryChapterClient() {
 
                       {!selectedVariantId ? (
                         <div className="grid gap-3">
-                          {variants.map((v) => {
+                          {variants.filter(v => !v.parentId).map((v) => {
                             const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
 
                             return (
@@ -1743,6 +1762,18 @@ export default function StoryChapterClient() {
                                       {v.unlockPrice}
                                     </div>
                                   )}
+                                  {isUnlocked && v.unlockPrice > 0 && (
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-black">
+                                      <LockOpen className="h-3.5 w-3.5" />
+                                      {t("unlocked")}
+                                    </div>
+                                  )}
+                                  {v.unlockPrice <= 0 && (
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-tight">
+                                      <LockOpen className="h-3.5 w-3.5" />
+                                      {locale === "en" ? "Free" : "Miễn phí"}
+                                    </div>
+                                  )}
                                 </div>
                                 <p className="text-xs text-gray-500 flex items-center gap-1.5">
                                   <Clock3 className="h-3.5 w-3.5 opacity-70" /> {formatDuration(v.audioDuration)}
@@ -1751,43 +1782,47 @@ export default function StoryChapterClient() {
                             );
                           })}
                         </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <div className="flex flex-col items-start gap-3 p-4 rounded-xl border border-gray-300 bg-white dark:bg-gray-800/60 shadow-md">
-                            <div className="w-full flex items-start justify-between gap-3">
-                              <div 
-                                onClick={() => handleSelectVariant(selectedVariant!)}
-                                className="flex-1 text-left cursor-pointer"
-                              >
-                                <p className="text-base font-bold text-amber-900 dark:text-amber-100">
-                                  {getLocalizedValue(locale, selectedVariant?.titleVi, selectedVariant?.titleEn, selectedVariant?.title || "")}
-                                </p>
+                      ) : (() => {
+                        const rootVariant = selectedVariantPath[0];
+                        if (!rootVariant) return null;
+                        
+                        return (
+                          <div className="space-y-3">
+                            <div className="flex flex-col items-start gap-3 p-4 rounded-xl border border-gray-300 bg-white dark:bg-gray-800/60 shadow-md">
+                              <div className="w-full flex items-start justify-between gap-3">
+                                <div 
+                                  onClick={() => handleSelectVariant(rootVariant)}
+                                  className="flex-1 text-left cursor-pointer"
+                                >
+                                  <p className="text-base font-bold text-amber-900 dark:text-amber-100">
+                                    {getLocalizedValue(locale, rootVariant.titleVi, rootVariant.titleEn, rootVariant.title || "")}
+                                  </p>
+                                </div>
+                                
+                                <button
+                                  onClick={() => setIsVariantDropdownOpen(!isVariantDropdownOpen)}
+                                  className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white flex-shrink-0"
+                                >
+                                  <ChevronDown className={`h-4 w-4 transition-transform ${isVariantDropdownOpen ? "rotate-180" : ""}`} />
+                                </button>
                               </div>
-                              
-                              <button
-                                onClick={() => setIsVariantDropdownOpen(!isVariantDropdownOpen)}
-                                className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white flex-shrink-0"
-                              >
-                                <ChevronDown className={`h-4 w-4 transition-transform ${isVariantDropdownOpen ? "rotate-180" : ""}`} />
-                              </button>
+                              <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                                <Clock3 className="h-3.5 w-3.5 opacity-70" /> {formatDuration(rootVariant.audioDuration)}
+                              </p>
                             </div>
-                            <p className="text-xs text-gray-500 flex items-center gap-1.5">
-                              <Clock3 className="h-3.5 w-3.5 opacity-70" /> {formatDuration(selectedVariant?.audioDuration)}
-                            </p>
-                          </div>
 
-                          {isVariantDropdownOpen && (
-                            <div className="grid gap-3">
-                              {variants.filter(v => v.id !== selectedVariantId).map((v) => {
-                                const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
+                            {isVariantDropdownOpen && (
+                              <div className="grid gap-3">
+                                {variants.filter(v => v.id !== rootVariant.id && !v.parentId).map((v) => {
+                                  const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
 
-                                return (
-                                  <button
-                                    key={v.id}
-                                    onClick={() => {
-                                      handleSelectVariant(v);
-                                      setIsVariantDropdownOpen(false);
-                                    }}
+                                  return (
+                                    <button
+                                      key={v.id}
+                                      onClick={() => {
+                                        handleSelectVariant(v);
+                                        setIsVariantDropdownOpen(false);
+                                      }}
                                     className="flex flex-col items-start gap-3 p-4 rounded-xl border transition-all border-gray-200 bg-white/50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
                                   >
                                     <div className="w-full flex items-start justify-between gap-3">
@@ -1801,6 +1836,18 @@ export default function StoryChapterClient() {
                                           {v.unlockPrice}
                                         </div>
                                       )}
+                                      {isUnlocked && v.unlockPrice > 0 && (
+                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-black">
+                                          <LockOpen className="h-3.5 w-3.5" />
+                                          {t("unlocked")}
+                                        </div>
+                                      )}
+                                      {v.unlockPrice <= 0 && (
+                                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-tight">
+                                          <LockOpen className="h-3.5 w-3.5" />
+                                          {locale === "en" ? "Free" : "Miễn phí"}
+                                        </div>
+                                      )}
                                     </div>
                                     <p className="text-xs text-gray-500 flex items-center gap-1.5">
                                       <Clock3 className="h-3.5 w-3.5 opacity-70" /> {formatDuration(v.audioDuration)}
@@ -1811,29 +1858,180 @@ export default function StoryChapterClient() {
                             </div>
                           )}
                         </div>
-                      )}
-                    </div>
+                      );
+                    })()}
+                  </div>
 
-                    {/* Content after choice */}
-                    {selectedVariant && selectedVariant.content && (
-                      <StoryReader
-                        chapterId={`variant-${selectedVariant.id}`}
-                        content={selectedVariant.content}
-                        adInterval={700}
-                        isLocked={false}
-                        previewChars={500}
-                      />
-                    )}
+                  {/* Recursive Variant Content & Nested Choices */}
+                  {(() => {
+                      const hasTextContent = (htmlStr?: string | null) => {
+                        if (!htmlStr) return false;
+                        const stripped = htmlStr.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, '').trim();
+                        return stripped.length > 0;
+                      };
 
-                    {contentAfterChoice.trim() && selectedVariantId && (
-                      <StoryReader
-                        chapterId={`${selectedChapter.id}-part2`}
-                        content={contentAfterChoice}
-                        adInterval={700}
-                        isLocked={false}
-                        previewChars={500}
-                      />
-                    )}
+                      const renderVariantRecursive = (pathIndex: number) => {
+                        const currentV = selectedVariantPath[pathIndex];
+                        if (!currentV) return null;
+
+                        const nextV = selectedVariantPath[pathIndex + 1];
+                        const childVariants = variants.filter(v => v.parentId === currentV.id);
+                        const vContent = currentV.content || "";
+                        const vParts = vContent.split('[DIEN_BIEN]');
+                        const hasVChoice = vParts.length > 1 || childVariants.length > 0;
+
+                        const siblings = variants.filter(v => v.parentId === currentV.parentId);
+                        const dropdownKey = currentV.parentId || 'root';
+                        const isDropdownOpen = !!openNestedDropdowns[dropdownKey];
+
+                        return (
+                          <div key={currentV.id} className="mt-6 space-y-4">
+                            {pathIndex > 0 && (
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-indigo-50/60 border border-indigo-100 dark:bg-indigo-900/40 dark:border-indigo-800 shadow-sm">
+                                  <p className="text-sm font-bold text-indigo-900 dark:text-indigo-100">
+                                    {getLocalizedValue(locale, currentV.titleVi, currentV.titleEn, currentV.title)}
+                                  </p>
+                                  {siblings.length > 1 && (
+                                    <button
+                                      onClick={() => setOpenNestedDropdowns(prev => ({
+                                        ...prev,
+                                        [dropdownKey]: !prev[dropdownKey]
+                                      }))}
+                                      className="w-6 h-6 rounded-full bg-indigo-500 hover:bg-indigo-600 transition-colors flex items-center justify-center text-white"
+                                    >
+                                      <ChevronDown className={`h-4 w-4 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
+                                    </button>
+                                  )}
+                                </div>
+                                {isDropdownOpen && (
+                                  <div className="grid gap-2 p-1 bg-white/50 dark:bg-gray-800/10 rounded-xl border border-indigo-50 dark:border-indigo-900/20">
+                                    {siblings.filter(s => s.id !== currentV.id).map((s) => {
+                                      const isUnlocked = s.unlockPrice <= 0 || unlockedVariantIds.includes(s.id) || isVipActive;
+                                      return (
+                                        <button
+                                          key={s.id}
+                                          onClick={() => {
+                                            handleSelectVariant(s);
+                                            setOpenNestedDropdowns(prev => ({ ...prev, [dropdownKey]: false }));
+                                          }}
+                                          className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-500 transition-all text-left shadow-sm"
+                                        >
+                                          <span className="text-sm font-medium pr-4">{getLocalizedValue(locale, s.titleVi, s.titleEn, s.title)}</span>
+                                          <div className="flex-shrink-0">
+                                            {!isUnlocked && (
+                                              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-black">
+                                                <Coins className="h-3 w-3" /> {s.unlockPrice}
+                                              </div>
+                                            )}
+                                            {isUnlocked && s.unlockPrice > 0 && (
+                                              <div className="flex items-center gap-1 py-0.5 px-2 rounded bg-green-50 text-green-600 text-[10px] font-black">
+                                                <LockOpen className="h-3.5 w-3.5" /> {t("unlocked")}
+                                              </div>
+                                            )}
+                                            {s.unlockPrice <= 0 && (
+                                              <div className="flex items-center gap-1 py-0.5 px-2 rounded bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-tight">
+                                                <LockOpen className="h-3.5 w-3.5" /> {locale === "en" ? "Free" : "Miễn phí"}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {hasTextContent(vParts[0]) ? (
+                              <div className="p-5 rounded-2xl bg-indigo-50/40 border border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-800/50 shadow-sm">
+                                <StoryReader
+                                  chapterId={`variant-${currentV.id}-p1`}
+                                  content={vParts[0]}
+                                  adInterval={700}
+                                  isLocked={false}
+                                  previewChars={500}
+                                />
+                              </div>
+                            ) : null}
+
+                            {hasVChoice && (
+                              <div className="py-4 border-l-4 border-indigo-200 pl-4 dark:border-indigo-900/50">
+                                <h4 className="mb-3 text-sm font-bold text-gray-700 dark:text-gray-300">
+                                  {t("variantSelectionTitle")}
+                                </h4>
+                                {!nextV ? (
+                                  <div className="grid gap-3">
+                                    {childVariants.map((cv) => {
+                                      const isUnlocked = cv.unlockPrice <= 0 || unlockedVariantIds.includes(cv.id) || isVipActive;
+                                      return (
+                                        <button
+                                          key={cv.id}
+                                          onClick={() => handleSelectVariant(cv)}
+                                          className="flex flex-col items-start gap-3 rounded-xl bg-gray-50 p-4 transition-all hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800"
+                                        >
+                                          <div className="w-full flex items-start justify-between gap-3">
+                                            <p className="text-sm font-bold text-gray-800 dark:text-gray-200 text-left">
+                                              {getLocalizedValue(locale, cv.titleVi, cv.titleEn, cv.title)}
+                                            </p>
+                                            {!isUnlocked && (
+                                              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-black">
+                                                <Coins className="h-3 w-3" /> {cv.unlockPrice}
+                                              </div>
+                                            )}
+                                            {isUnlocked && cv.unlockPrice > 0 && (
+                                              <div className="flex items-center gap-1 py-0.5 px-2 rounded bg-green-50 text-green-600 text-[10px] font-black">
+                                                <LockOpen className="h-3 w-3" /> {t("unlocked")}
+                                              </div>
+                                            )}
+                                            {cv.unlockPrice <= 0 && (
+                                              <div className="flex items-center gap-1 py-0.5 px-2 rounded bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-tight">
+                                                <LockOpen className="h-3 w-3" /> {locale === "en" ? "Free" : "Miễn phí"}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                ) : renderVariantRecursive(pathIndex + 1)}
+                              </div>
+                            )}
+
+                            {vParts.length > 1 && hasTextContent(vParts.slice(1).join('[DIEN_BIEN]')) && (
+                              <div className="mt-6 p-5 rounded-2xl bg-indigo-50/40 border border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-800/50 shadow-sm">
+                                <StoryReader
+                                  chapterId={`variant-${currentV.id}-p2`}
+                                  content={vParts.slice(1).join('[DIEN_BIEN]')}
+                                  adInterval={700}
+                                  isLocked={false}
+                                  previewChars={500}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      };
+
+                      return renderVariantRecursive(0);
+                    })()}
+
+                    {(() => {
+                      const hasTextContent = (htmlStr?: string | null) => {
+                        if (!htmlStr) return false;
+                        const stripped = htmlStr.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, '').trim();
+                        return stripped.length > 0;
+                      };
+                      return hasTextContent(contentAfterChoice) && selectedVariantId ? (
+                        <StoryReader
+                          chapterId={`${selectedChapter.id}-part2`}
+                          content={contentAfterChoice}
+                          adInterval={700}
+                          isLocked={false}
+                          previewChars={500}
+                        />
+                      ) : null;
+                    })()}
                   </div>
                 ) : (
                   <StoryReader

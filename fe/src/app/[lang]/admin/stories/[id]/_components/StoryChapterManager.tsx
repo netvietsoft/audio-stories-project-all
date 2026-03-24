@@ -49,9 +49,8 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
   const [isSearching, setIsSearching] = useState(false);
   const [isVariantsModalOpen, setIsVariantsModalOpen] = useState(false);
   const [selectedChapterForVariants, setSelectedChapterForVariants] = useState<Chapter | null>(null);
+  const [selectedParentVariant, setSelectedParentVariant] = useState<Variant | null>(null);
   const [variants, setVariants] = useState<Variant[]>([]);
-  const [isFetchingVariants, setIsFetchingVariants] = useState(false);
-  const [branchVariants, setBranchVariants] = useState<Variant[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
 
   const handleGoBack = () => {
@@ -164,10 +163,12 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
     router.push(`/${currentLang}/admin/chapters/${chapterId}`);
   };
 
-  const fetchVariants = async (chapterId: string) => {
+  const fetchVariants = async (chapterId: string, parentId?: string | null) => {
     setIsFetchingVariants(true);
     try {
-      const res = await apiClient.get(`/chapters/${chapterId}/variants`);
+      const res = await apiClient.get(`/chapters/${chapterId}/variants`, {
+        params: { parentId: parentId === null ? 'null' : parentId }
+      });
       setVariants(res.data);
     } catch (error) {
       console.error("Failed to fetch variants:", error);
@@ -176,11 +177,13 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
     }
   };
 
+  const [isFetchingVariants, setIsFetchingVariants] = useState(false);
+
   useEffect(() => {
     if (isVariantsModalOpen && selectedChapterForVariants) {
-      fetchVariants(selectedChapterForVariants.id);
+      fetchVariants(selectedChapterForVariants.id, selectedParentVariant?.id || null);
     }
-  }, [isVariantsModalOpen, selectedChapterForVariants]);
+  }, [isVariantsModalOpen, selectedChapterForVariants, selectedParentVariant]);
 
   const updateChapterVariantCount = (chapterId: string, delta: number) => {
     setChapters(prev =>
@@ -217,12 +220,13 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
       const chapterId = selectedChapterForVariants.id;
       await apiClient.post('/chapter-variants', {
         chapterId,
+        parentId: selectedParentVariant?.id || null,
         title,
         orderIndex: variants.length,
         nextChapterId: null,
       });
       updateChapterVariantCount(chapterId, 1);
-      await Promise.all([fetchVariants(chapterId), fetchData()]);
+      await Promise.all([fetchVariants(chapterId, selectedParentVariant?.id || null), fetchData()]);
     } catch (error) {
       console.error("Failed to create variant:", error);
       alert("Không thể tạo biến thể.");
@@ -236,7 +240,7 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
       await apiClient.delete(`/chapter-variants/${variantId}`);
       if (chapterId) {
         updateChapterVariantCount(chapterId, -1);
-        await Promise.all([fetchVariants(chapterId), fetchData()]);
+        await Promise.all([fetchVariants(chapterId, selectedParentVariant?.id || null), fetchData()]);
       } else {
         await fetchData();
       }
@@ -429,19 +433,33 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
             <div className="bg-white border-b border-slate-200 px-8 py-6 rounded-t-[32px]">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-black text-slate-900">Quản lý Biến thể</h2>
+                  <h2 className="text-xl font-black text-slate-900">
+                    {selectedParentVariant ? `Con của: ${selectedParentVariant.title}` : "Quản lý Biến thể"}
+                  </h2>
                   <p className="text-sm text-slate-500">Chương {selectedChapterForVariants.chapterNumber}: {selectedChapterForVariants.title}</p>
                 </div>
-                <button
-                  onClick={() => {
-                    setIsVariantsModalOpen(false);
-                    setSelectedChapterForVariants(null);
-                    setVariants([]);
-                  }}
-                  className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {selectedParentVariant && (
+                    <button
+                      onClick={() => setSelectedParentVariant(null)}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Quay lại gốc
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setIsVariantsModalOpen(false);
+                      setSelectedChapterForVariants(null);
+                      setSelectedParentVariant(null);
+                      setVariants([]);
+                    }}
+                    className="p-2 hover:bg-slate-100 rounded-xl transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -502,6 +520,13 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
                           title={variant.isDefault ? 'Bỏ mặc định' : 'Đặt làm mặc định'}
                         >
                           <Star className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => setSelectedParentVariant(variant)}
+                          className="p-2 hover:bg-white text-slate-400 hover:text-indigo-600 rounded-lg transition-colors border border-transparent hover:border-slate-200"
+                          title="Quản lý biến thể con"
+                        >
+                          <Music className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => router.push(`/${currentLang}/admin/variants/${variant.id}`)}

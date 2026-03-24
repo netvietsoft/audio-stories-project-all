@@ -830,6 +830,7 @@ model CommentReport {
 model ChapterVariant {
   id             String    @id @default(uuid()) @db.VarChar(36)
   chapterId      String    @map("chapter_id") @db.VarChar(36)
+  parentId       String?   @map("parent_id") @db.VarChar(36)
   nextChapterId  String?   @map("next_chapter_id") @db.VarChar(36)
   nextVariantId  String?   @map("next_variant_id") @db.VarChar(36)
   title          String    @db.VarChar(300)
@@ -845,13 +846,17 @@ model ChapterVariant {
   updatedAt      DateTime  @updatedAt @map("updated_at")
   deletedAt      DateTime? @map("deleted_at")
 
-  chapter      Chapter  @relation("ChapterVariants", fields: [chapterId], references: [id], onDelete: Cascade)
-  nextChapter  Chapter? @relation("VariantNextChapter", fields: [nextChapterId], references: [id], onDelete: SetNull)
+  chapter      Chapter         @relation("ChapterVariants", fields: [chapterId], references: [id], onDelete: Cascade)
+  parent       ChapterVariant? @relation("VariantHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children     ChapterVariant[] @relation("VariantHierarchy")
+  nextChapter  Chapter?        @relation("VariantNextChapter", fields: [nextChapterId], references: [id], onDelete: SetNull)
+  
   userUnlockedVariants UserUnlockedVariant[]
   listeningHistory ListeningHistory[]
   chapterComments  ChapterComment[]
   
   @@index([chapterId])
+  @@index([parentId])
   @@index([nextChapterId])
   @@map("chapter_variants")
 }

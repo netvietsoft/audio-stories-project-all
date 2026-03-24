@@ -12,6 +12,10 @@ export class CreateChapterVariantDto {
     @IsUUID()
     nextVariantId?: string | null;
 
+    @IsOptional()
+    @IsUUID()
+    parentId?: string | null;
+
     @IsString()
     @MaxLength(300)
     title: string;

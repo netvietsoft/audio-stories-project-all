@@ -236,7 +236,8 @@
     "unlockVariant": "Unlock Variant",
     "unlockVariantDescription": "You are unlocking variant: {title}",
     "unlockVariantPrice": "Unlock fee: {price} credits.",
-    "unlockNow": "Unlock Now"
+    "unlockNow": "Unlock Now",
+    "unlocked": "Unlocked"
   },
   "StoryPage": {
     "notFound": "Story not found",

@@ -7,6 +7,7 @@ import {
     Param,
     Delete,
     UseGuards,
+    Query,
 } from '@nestjs/common';
 import { ChapterVariantsService } from './chapter-variants.service';
 import { CreateChapterVariantDto } from '../dto/create-chapter-variant.dto';
@@ -22,8 +23,14 @@ export class ChapterVariantsController {
 
     @Get('chapters/:chapterId/variants')
     @UseGuards(JwtAccessGuard)
-    findAllByChapter(@Param('chapterId') chapterId: string) {
-        return this.chapterVariantsService.findAllByChapter(chapterId);
+    findAllByChapter(
+        @Param('chapterId') chapterId: string,
+        @Query('parentId') parentId?: string
+    ) {
+        return this.chapterVariantsService.findAllByChapter(
+            chapterId, 
+            parentId === 'null' ? null : (parentId || undefined)
+        );
     }
 
     @Get('chapter-variants/:id')

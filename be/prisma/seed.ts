@@ -571,16 +571,15 @@ async function main() {
       if (firstChapterVi) {
         console.log(`Seeding variants for ${titleVi} Chapter 1...`);
         const variants = [
-          { title: 'Path A: The Silent Approach', unlockPrice: 0, content: 'You choose to sneak in...' },
+          { title: 'Path A: Tiếp cận trong im lặng', unlockPrice: 0, content: 'Bạn quyết định lẻn vào... [DIEN_BIEN] Sau khi lẻn vào, bạn thấy hai cánh cửa hiện ra trước mắt.' },
           { title: 'Path B: The Direct Confrontation', unlockPrice: 100, content: 'You charge forward!' },
           { title: 'Path C: The Secret Alliance', unlockPrice: 200, content: 'You talk to the guard...' },
         ];
 
         for (let j = 0; j < variants.length; j++) {
+          const variantId = `${firstChapterVi.id.slice(0, 32)}-v${j}`;
           await (prisma.chapterVariant as any).upsert({
-            where: {
-              id: `${firstChapterVi.id.slice(0, 32)}-v${j}`,
-            },
+            where: { id: variantId },
             update: {
               title: variants[j].title,
               unlockPrice: variants[j].unlockPrice,
@@ -588,9 +587,10 @@ async function main() {
               orderIndex: j,
               audioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${j + 1}.mp3`,
               audioDuration: 300 + j * 60,
+              parentId: null, // Root variants
             },
             create: {
-              id: `${firstChapterVi.id.slice(0, 32)}-v${j}`,
+              id: variantId,
               chapterId: firstChapterVi.id,
               title: variants[j].title,
               unlockPrice: variants[j].unlockPrice,
@@ -598,8 +598,41 @@ async function main() {
               orderIndex: j,
               audioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${j + 1}.mp3`,
               audioDuration: 300 + j * 60,
+              parentId: null,
             },
           });
+
+          // Add sub-variants for Path A (index 0)
+          if (j === 0) {
+            const subVariants = [
+              { title: 'A.1: Mở cửa bên trái', unlockPrice: 0, content: 'Bạn mở cửa bên trái và thấy một rương vàng lấp lánh.' },
+              { title: 'A.2: Mở cửa bên phải', unlockPrice: 50, content: 'Bạn mở cửa bên phải và bắt gặp một con mèo đen đang nhìn chằm chằm.' },
+            ];
+
+            for (let k = 0; k < subVariants.length; k++) {
+              await (prisma.chapterVariant as any).upsert({
+                where: {
+                  id: `${variantId.slice(0, 30)}-sb${k}`,
+                },
+                update: {
+                  title: subVariants[k].title,
+                  unlockPrice: subVariants[k].unlockPrice,
+                  content: subVariants[k].content,
+                  orderIndex: k,
+                  parentId: variantId,
+                },
+                create: {
+                  id: `${variantId.slice(0, 30)}-sb${k}`,
+                  chapterId: firstChapterVi.id,
+                  title: subVariants[k].title,
+                  unlockPrice: subVariants[k].unlockPrice,
+                  content: subVariants[k].content,
+                  orderIndex: k,
+                  parentId: variantId,
+                },
+              });
+            }
+          }
         }
       }
     }

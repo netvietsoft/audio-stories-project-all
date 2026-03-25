@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import Link from "@/components/shared/LocalizedLink";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Image from "next/image";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
@@ -54,6 +54,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
   const tCommon = useTranslations("Common");
   const locale = useLocale();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   // Read sort from URL if any, or default to views (Phổ biến)
@@ -76,8 +77,8 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
   const [authorSearch, setAuthorSearch] = useState("");
 
   // Determine current active category slug
-  // Either from props (if using /categories/[slug]), URL search param, or default to all
-  const activeSlug = initialSlug || searchParams.get("category") || "all";
+  // Prefer URL search param so filtering always follows current /stories query state.
+  const activeSlug = searchParams.get("category") || initialSlug || "all";
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -166,19 +167,22 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
     void loadStories();
   }, [currentCategory, page, sort, categories, search, status, author, locale]);
 
-  const handleCategorySelect = (slug: string) => {
+  const handleCategoryClick = (categorySlug: string) => {
     setPage(1);
-    if (!initialSlug) {
-      const params = new URLSearchParams(searchParams.toString());
-      if (slug === "all") {
-        params.delete("category");
-      } else {
-        params.set("category", slug);
-      }
-      router.push(`/categories?${params.toString()}`);
+
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
+
+    if (categorySlug === "all") {
+      current.delete("category");
     } else {
-      router.push(slug === "all" ? '/categories' : `/categories/${slug}`);
+      current.set("category", categorySlug);
     }
+
+    current.delete("page");
+
+    const search = current.toString();
+    const query = search ? `?${search}` : "";
+    router.push(`${pathname}${query}`);
   };
 
   return (
@@ -195,7 +199,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
             return (
               <button
                 key={cat.id}
-                onClick={() => handleCategorySelect(cat.slug)}
+                onClick={() => handleCategoryClick(cat.slug)}
                 className={`text-left text-sm py-1.5 px-3 rounded-md transition-colors ${isActive
                   ? "bg-blue-50 dark:bg-blue-500/20 text-black dark:text-white font-medium shadow-sm"
                   : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"

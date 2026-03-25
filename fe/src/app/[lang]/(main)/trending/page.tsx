@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
-import StoryCard from "@/components/shared/StoryCard";
+import StoryGridCard from "@/components/shared/StoryGridCard";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
 
 type StoryItem = {
@@ -83,9 +83,19 @@ export default function TrendingPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2">
         {stories.map((story) => (
-          <StoryCard key={story.id} story={story} />
+          <StoryGridCard
+            key={story.id}
+            story={story}
+            highligt={{
+              type: "views",
+              label: t("views"),
+              value: Number(story.totalViews || 0).toLocaleString(
+                locale === "en" ? "en-US" : "vi-VN"
+              ),
+            }}
+          />
         ))}
       </div>
 

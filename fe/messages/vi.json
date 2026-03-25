@@ -13,7 +13,7 @@
     "memberRanking": "BXH Hội Viên",
     "ranking": "Bảng xếp hạng",
     "storyRanking": "BXH Truyện",
-    "interactiveStories": "Truyện tình huống",
+    "interactiveStories": "Truyện tương tác",
     "searchPlaceholder": "Tìm truyện...",
     "topUp": "Nạp tiền",
     "notifications": "Thông báo",
@@ -98,7 +98,7 @@
     "viewsLabel": "Lượt đọc",
     "ratingLabel": "Đánh giá",
     "branchesLabel": "Diễn biến",
-    "interactiveSectionTitle": "Truyện tình huống",
+    "interactiveSectionTitle": "Truyện tương tác",
     "interactiveSectionSubtitle": "Những truyện có nhiều diễn biến và kết thúc theo lựa chọn của bạn.",
     "startInteraction": "Đọc truyện tương tác ngay",
     "creditsLabel": "credits",
@@ -160,7 +160,7 @@
     "unlockVip": "VIP",
     "unlockTimed": "Hẹn giờ",
     "unlockOpened": "Đã mở khóa",
-    "interactiveStoryBadge": "Truyện tình huống"
+    "interactiveStoryBadge": "Truyện tương tác"
   },
   "StoryChapterClient": {
     "loadingReader": "Đang tải module đọc truyện...",
@@ -273,7 +273,8 @@
   },
   "NewPage": {
     "title": "Trang Mới đăng",
-    "subtitle": "Sắp xếp theo ngày mới nhất, phân trang 12 truyện/trang."
+    "subtitle": "Sắp xếp theo ngày mới nhất, phân trang 12 truyện/trang.",
+    "lastUpdated": "Cập nhật nhất"
   },
   "TrendingPage": {
     "title": "Trang Trending",
@@ -281,10 +282,12 @@
     "today": "Hôm nay",
     "week": "Tuần",
     "month": "Tháng",
-    "all": "Tất cả"
+    "all": "Tất cả",
+    "views": "Lượt xem"
   },
   "InteractivePage": {
-    "title": "Truyện tình huống",
+    "title": "Truyện tương tác",
+    "branches": "Diễn biến",
     "subtitle": "Khám phá những câu chuyện với nhiều diễn biến và kết thúc khác nhau dựa trên lựa chọn của bạn."
   },
   "RankingPage": {
@@ -302,7 +305,9 @@
   "CategoriesPage": {
     "title": "Trang thể loại",
     "subtitle": "Liệt kê tất cả thể loại, click để lọc truyện theo thể loại.",
-    "storiesCount": "{count} truyện"
+    "storiesCount": "{count} truyện",
+    "loading": "Đang tải...",
+    "empty": "Không tìm thấy truyện trong thể loại này."
   },
   "CategoryStoriesPage": {
     "title": "Thể loại: {name}",

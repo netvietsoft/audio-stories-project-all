@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
-import StoryCard from "@/components/shared/StoryCard";
+import StoryGridCard from "@/components/shared/StoryGridCard";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
 
 type StoryItem = {
@@ -70,16 +70,24 @@ export default function InteractiveStoriesPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+        <div className="grid gap-4 md:grid-cols-2">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="aspect-[3/4] animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800"></div>
+            <div key={i} className="h-40 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
           ))}
         </div>
       ) : stories.length > 0 ? (
         <>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+          <div className="grid gap-4 md:grid-cols-2">
             {stories.map((story) => (
-              <StoryCard key={story.id} story={story} />
+              <StoryGridCard
+                key={story.id}
+                story={story}
+                highligt={{
+                  type: "branches",
+                  label: t("branches"),
+                  value: "?",
+                }}
+              />
             ))}
           </div>
 

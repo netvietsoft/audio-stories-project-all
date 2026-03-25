@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
-import StoryCard from "@/components/shared/StoryCard";
+import StoryGridCard from "@/components/shared/StoryGridCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
 
@@ -16,6 +16,7 @@ type StoryItem = {
   totalViews: number;
   averageRating?: number | string;
   createdAt?: string;
+  updatedAt?: string;
   author?: { name: string };
   categories?: Array<{ category: { id: number; name: string; slug: string } }>;
 };
@@ -33,6 +34,7 @@ const LIMIT = 12;
 export default function NewStoriesPage() {
   const t = useTranslations("NewPage");
   const tCommon = useTranslations("Common");
+  const locale = useLocale();
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [authors, setAuthors] = useState<Author[]>([]);
@@ -95,9 +97,19 @@ export default function NewStoriesPage() {
         onApply={handleApplyFilter}
       />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2">
         {stories.map((story) => (
-          <StoryCard key={story.id} story={story} variant="newly-posted" />
+          <StoryGridCard
+            key={story.id}
+            story={story}
+            highligt={{
+              type: "updated",
+              label: t("lastUpdated"),
+              value: new Date(story.updatedAt || story.createdAt || "").toLocaleDateString(
+                locale === "en" ? "en-US" : "vi-VN"
+              ),
+            }}
+          />
         ))}
       </div>
 

@@ -1782,7 +1782,7 @@ export default function StoryChapterClient() {
                                 <h4 className="mb-3 text-sm font-bold text-gray-700 dark:text-gray-300">
                                   {locale === 'en' ? 'Alternative choices:' : 'Các lựa chọn khác:'}
                                 </h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
                                   {siblings.map((s) => {
                                     const isUnlocked = s.unlockPrice <= 0 || unlockedVariantIds.includes(s.id) || isVipActive;
                                     const isSelected = currentV.id === s.id;
@@ -1860,7 +1860,7 @@ export default function StoryChapterClient() {
                             {hasVChoice && (
                               <div className="py-4 border-l-4 border-indigo-200 pl-4 dark:border-indigo-900/50">
                                 {!nextV ? (
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
                                     {childVariants.map((cv) => {
                                       const isUnlocked = cv.unlockPrice <= 0 || unlockedVariantIds.includes(cv.id) || isVipActive;
                                       return (
@@ -1904,17 +1904,23 @@ export default function StoryChapterClient() {
                               </div>
                             )}
 
-                            {vParts.length > 1 && hasTextContent(vParts.slice(1).join('[DIEN_BIEN]')) && (
-                              <div className="mt-6 p-5 md:p-6 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 shadow-md">
-                                <StoryReader
-                                  chapterId={`variant-${currentV.id}-p2`}
-                                  content={vParts.slice(1).join('[DIEN_BIEN]')}
-                                  adInterval={700}
-                                  isLocked={false}
-                                  previewChars={500}
-                                />
-                              </div>
-                            )}
+                            {vParts.length > 1 && hasTextContent(vParts.slice(1).join('[DIEN_BIEN]')) && (() => {
+                              // Only show remaining variant text if all child choices have been resolved
+                              const childVars = variants.filter(cv => cv.parentId === currentV.id);
+                              const hasUnresolvedChildren = childVars.length > 0 && !nextV;
+                              if (hasUnresolvedChildren) return null;
+                              return (
+                                <div className="mt-6 p-5 md:p-6 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 shadow-md">
+                                  <StoryReader
+                                    chapterId={`variant-${currentV.id}-p2`}
+                                    content={vParts.slice(1).join('[DIEN_BIEN]')}
+                                    adInterval={700}
+                                    isLocked={false}
+                                    previewChars={500}
+                                  />
+                                </div>
+                              );
+                            })()}
                           </div>
                         );
                       };
@@ -1928,7 +1934,15 @@ export default function StoryChapterClient() {
                         const stripped = htmlStr.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, '').trim();
                         return stripped.length > 0;
                       };
-                      return hasTextContent(contentAfterChoice) && selectedVariantId ? (
+                      // Check if all variant levels are fully resolved (no pending child choices)
+                      const isFullyResolved = (() => {
+                        if (!selectedVariantId) return false;
+                        const deepestVariant = selectedVariantPath[selectedVariantPath.length - 1];
+                        if (!deepestVariant) return false;
+                        const childVars = variants.filter(v => v.parentId === deepestVariant.id);
+                        return childVars.length === 0; // Fully resolved if no more children to choose
+                      })();
+                      return hasTextContent(contentAfterChoice) && isFullyResolved ? (
                         <StoryReader
                           chapterId={`${selectedChapter.id}-part2`}
                           content={contentAfterChoice}

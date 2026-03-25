@@ -13,7 +13,7 @@
     "memberRanking": "Member Ranking",
     "ranking": "Ranking",
     "storyRanking": "Story Ranking",
-    "interactiveStories": "Interactive Stories",
+    "interactiveStories": "Situation Stories",
     "searchPlaceholder": "Search stories...",
     "topUp": "Top Up",
     "notifications": "Notifications",
@@ -98,7 +98,7 @@
     "viewsLabel": "Views",
     "ratingLabel": "Rating",
     "branchesLabel": "Branches",
-    "interactiveSectionTitle": "Interactive Stories",
+    "interactiveSectionTitle": "Situation Stories",
     "interactiveSectionSubtitle": "Stories with multiple paths and endings based on your choices.",
     "startInteraction": "Start Interaction",
     "creditsLabel": "credits",
@@ -160,7 +160,7 @@
     "unlockVip": "VIP",
     "unlockTimed": "Timed",
     "unlockOpened": "Unlocked",
-    "interactiveStoryBadge": "Interactive Story"
+    "interactiveStoryBadge": "Situation Story"
   },
   "StoryChapterClient": {
     "loadingReader": "Loading reading module...",
@@ -284,7 +284,7 @@
     "all": "All"
   },
   "InteractivePage": {
-    "title": "Interactive Stories",
+    "title": "Situation Stories",
     "subtitle": "Discover stories with multiple plots and endings based on your choices."
   },
   "RankingPage": {

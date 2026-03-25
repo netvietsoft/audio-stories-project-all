@@ -665,7 +665,7 @@ export default function StoryReader({
             <div key={paragraph.id} className="group mb-4 overflow-visible rounded-lg transition-colors md:mb-6">
               <div className="relative">
                 <div
-                  className="story-paragraph-content rounded-lg px-1 py-1.5 text-lg leading-relaxed text-gray-800 transition-colors group-hover:bg-gray-50 sm:px-1.5 sm:py-2 md:px-2 md:py-2.5 dark:text-gray-100 dark:group-hover:bg-gray-800/70"
+                  className="story-paragraph-content rounded-lg px-1 py-1.5 text-lg leading-relaxed text-gray-800 transition-colors sm:px-1.5 sm:py-2 md:px-2 md:py-2.5 dark:text-gray-100"
                   style={{
                     wordBreak: "normal",
                     overflowWrap: "break-word",

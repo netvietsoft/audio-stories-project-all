@@ -13,7 +13,7 @@
     "memberRanking": "BXH Hội Viên",
     "ranking": "Bảng xếp hạng",
     "storyRanking": "BXH Truyện",
-    "interactiveStories": "Truyện tương tác",
+    "interactiveStories": "Truyện tình huống",
     "searchPlaceholder": "Tìm truyện...",
     "topUp": "Nạp tiền",
     "notifications": "Thông báo",
@@ -98,7 +98,7 @@
     "viewsLabel": "Lượt đọc",
     "ratingLabel": "Đánh giá",
     "branchesLabel": "Diễn biến",
-    "interactiveSectionTitle": "Truyện tương tác",
+    "interactiveSectionTitle": "Truyện tình huống",
     "interactiveSectionSubtitle": "Những truyện có nhiều diễn biến và kết thúc theo lựa chọn của bạn.",
     "startInteraction": "Đọc truyện tương tác ngay",
     "creditsLabel": "credits",
@@ -160,7 +160,7 @@
     "unlockVip": "VIP",
     "unlockTimed": "Hẹn giờ",
     "unlockOpened": "Đã mở khóa",
-    "interactiveStoryBadge": "Truyện tương tác"
+    "interactiveStoryBadge": "Truyện tình huống"
   },
   "StoryChapterClient": {
     "loadingReader": "Đang tải module đọc truyện...",
@@ -284,7 +284,7 @@
     "all": "Tất cả"
   },
   "InteractivePage": {
-    "title": "Truyện tương tác",
+    "title": "Truyện tình huống",
     "subtitle": "Khám phá những câu chuyện với nhiều diễn biến và kết thúc khác nhau dựa trên lựa chọn của bạn."
   },
   "RankingPage": {

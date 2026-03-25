@@ -237,9 +237,7 @@ export default function Navbar() {
   const switchLocale = (nextLocale: "vi" | "en") => {
     if (nextLocale === currentLang) return;
 
-    const normalizedPath = (pathname || "/").replace(/^\/(vi|en)(?=\/|$)/, "") || "/";
-    const queryString = searchParams.toString();
-    const nextPath = `/${nextLocale}${normalizedPath === "/" ? "" : normalizedPath}${queryString ? `?${queryString}` : ""}`;
+    const nextPath = `/${nextLocale}`;
 
     document.cookie = `${localeCookieName}=${nextLocale}; path=/; max-age=31536000`;
     closeMobileMenu();

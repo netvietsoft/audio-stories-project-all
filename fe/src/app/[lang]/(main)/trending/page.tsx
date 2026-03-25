@@ -85,17 +85,7 @@ export default function TrendingPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {stories.map((story) => (
-          <StoryGridCard
-            key={story.id}
-            story={story}
-            highligt={{
-              type: "views",
-              label: t("views"),
-              value: Number(story.totalViews || 0).toLocaleString(
-                locale === "en" ? "en-US" : "vi-VN"
-              ),
-            }}
-          />
+          <StoryGridCard key={story.id} story={story} highlightMode="trending" />
         ))}
       </div>
 

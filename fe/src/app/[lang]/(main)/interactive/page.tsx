@@ -79,15 +79,7 @@ export default function InteractiveStoriesPage() {
         <>
           <div className="grid gap-4 md:grid-cols-2">
             {stories.map((story) => (
-              <StoryGridCard
-                key={story.id}
-                story={story}
-                highligt={{
-                  type: "branches",
-                  label: t("branches"),
-                  value: "?",
-                }}
-              />
+              <StoryGridCard key={story.id} story={story} highlightMode="interactive" />
             ))}
           </div>
 

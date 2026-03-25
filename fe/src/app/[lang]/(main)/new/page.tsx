@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 
 import StoryGridCard from "@/components/shared/StoryGridCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
@@ -34,7 +34,6 @@ const LIMIT = 12;
 export default function NewStoriesPage() {
   const t = useTranslations("NewPage");
   const tCommon = useTranslations("Common");
-  const locale = useLocale();
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [authors, setAuthors] = useState<Author[]>([]);
@@ -99,17 +98,7 @@ export default function NewStoriesPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {stories.map((story) => (
-          <StoryGridCard
-            key={story.id}
-            story={story}
-            highligt={{
-              type: "updated",
-              label: t("lastUpdated"),
-              value: new Date(story.updatedAt || story.createdAt || "").toLocaleDateString(
-                locale === "en" ? "en-US" : "vi-VN"
-              ),
-            }}
-          />
+          <StoryGridCard key={story.id} story={story} highlightMode="new" />
         ))}
       </div>
 

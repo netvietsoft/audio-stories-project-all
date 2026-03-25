@@ -31,14 +31,15 @@ type StoryItem = {
 
 type StoryGridCardProps = {
   story: StoryItem;
-  highligt?: {
-    type: "views" | "rating" | "updated" | "branches" | "none";
-    label?: string;
-    value?: string | number;
-  };
+  highlightMode?: "new" | "trending" | "interactive" | "default";
+  highlightValue?: string | number;
 };
 
-export default function StoryGridCard({ story, highligt }: StoryGridCardProps) {
+export default function StoryGridCard({
+  story,
+  highlightMode = "default",
+  highlightValue,
+}: StoryGridCardProps) {
   const t = useTranslations("StoryCard");
   const locale = useLocale();
 
@@ -79,35 +80,45 @@ export default function StoryGridCard({ story, highligt }: StoryGridCardProps) {
   );
   const categoryName = story.categories?.[0]?.category?.name;
 
-  const formatTimeAgo = (dateString?: string | null) => {
-    if (!dateString) return locale === "en" ? "Just now" : "Vừa xong";
-
-    const now = new Date();
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return locale === "en" ? "N/A" : "N/A";
     const date = new Date(dateString);
-    const diffInMs = now.getTime() - date.getTime();
-    if (!Number.isFinite(diffInMs) || diffInMs < 0)
-      return locale === "en" ? "Just now" : "Vừa xong";
-
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-    if (diffInHours < 1) return locale === "en" ? "Just now" : "Vừa xong";
-    if (diffInHours < 24)
-      return locale === "en"
-        ? `${diffInHours}h ago`
-        : `${diffInHours} giờ trước`;
-
-    const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays < 7)
-      return locale === "en" ? `${diffInDays}d ago` : `${diffInDays} ngày trước`;
-
-    return date.toLocaleDateString(
-      locale === "en" ? "en-US" : "vi-VN"
-    );
+    if (Number.isNaN(date.getTime())) return locale === "en" ? "N/A" : "N/A";
+    return date.toLocaleDateString(locale === "en" ? "en-US" : "vi-VN");
   };
+
+  const resolvedHighlight = (() => {
+    if (highlightMode === "new") {
+      return {
+        label: locale === "en" ? "Last Updated" : "Cập nhật",
+        value: formatDate(story.updatedAt || story.createdAt),
+        className: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+      };
+    }
+
+    if (highlightMode === "trending") {
+      return {
+        label: locale === "en" ? "Views" : "Lượt xem",
+        value: viewsLabel,
+        className: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+      };
+    }
+
+    if (highlightMode === "interactive") {
+      return {
+        label: locale === "en" ? "Branches" : "Diễn biến",
+        value: highlightValue ?? "?",
+        className: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300",
+      };
+    }
+
+    return null;
+  })();
 
   return (
     <Link
       href={`/story/${story.slug}`}
-      className="group flex gap-4 rounded-2xl border border-slate-200 p-4 transition-all duration-300 hover:border-blue-300 hover:shadow-md dark:border-slate-800 dark:hover:border-blue-500 dark:hover:shadow-blue-900/20"
+      className="group relative flex items-stretch gap-4 rounded-2xl border border-slate-200 p-4 transition-all duration-300 hover:border-blue-300 hover:shadow-md dark:border-slate-800 dark:hover:border-blue-500 dark:hover:shadow-blue-900/20"
     >
       {/* Thumbnail - Small Left Side */}
       <div className="relative w-24 shrink-0 overflow-hidden rounded-lg sm:w-28">
@@ -122,7 +133,7 @@ export default function StoryGridCard({ story, highligt }: StoryGridCardProps) {
       </div>
 
       {/* Content - Right Side */}
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex flex-1 flex-col h-full">
         {/* Title */}
         <h3 className="line-clamp-2 text-base font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400 sm:text-lg">
           {localizedTitle}
@@ -145,7 +156,7 @@ export default function StoryGridCard({ story, highligt }: StoryGridCardProps) {
         </p>
 
         {/* Stats & Highlight */}
-        <div className="mt-3 flex flex-wrap items-center gap-3">
+        <div className="mt-auto pt-4 flex flex-wrap items-center gap-3">
           {/* Rating */}
           <div className="flex items-center gap-1 text-xs sm:text-sm">
             <Star className="h-4 w-4 text-yellow-500" fill="currentColor" />
@@ -155,12 +166,12 @@ export default function StoryGridCard({ story, highligt }: StoryGridCardProps) {
           </div>
 
           {/* Views */}
-          <div className="flex items-center gap-1 text-xs sm:text-sm">
-            <Eye className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-            <span className="text-slate-600 dark:text-slate-400">
-              {viewsLabel}
-            </span>
-          </div>
+          {highlightMode !== "trending" && (
+            <div className="flex items-center gap-1 text-xs sm:text-sm">
+              <Eye className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+              <span className="text-slate-600 dark:text-slate-400">{viewsLabel}</span>
+            </div>
+          )}
 
           {/* Status Badge */}
           <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass}`}>
@@ -168,11 +179,10 @@ export default function StoryGridCard({ story, highligt }: StoryGridCardProps) {
           </span>
 
           {/* Highlight based on type */}
-          {highligt && highligt.type !== "none" && (
-            <div className="flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
-              <span className="text-lg leading-none">✨</span>
+          {resolvedHighlight && (
+            <div className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${resolvedHighlight.className}`}>
               <span>
-                {highligt.label}: {highligt.value}
+                {resolvedHighlight.label}: {resolvedHighlight.value}
               </span>
             </div>
           )}
@@ -182,7 +192,9 @@ export default function StoryGridCard({ story, highligt }: StoryGridCardProps) {
       {/* Favorite Button */}
       <FavoriteButton
         storyId={story.id}
-        className="absolute top-4 right-4 z-10 rounded-full bg-white/90 p-2 text-slate-600 shadow-md hover:bg-red-50 hover:text-red-500 transition-colors dark:bg-slate-800/90 dark:text-slate-300 dark:hover:bg-red-900/30 dark:hover:text-red-400"
+        className="absolute right-4 top-4 z-10 border border-slate-200/80 shadow-md dark:border-slate-700/80"
+        inactiveClassName="bg-white/95 text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:bg-slate-900/90 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+        activeClassName="bg-rose-100 text-rose-600 hover:bg-rose-200 hover:text-rose-700 dark:bg-rose-900/50 dark:text-rose-300 dark:hover:bg-rose-900/70 dark:hover:text-rose-200"
       />
     </Link>
   );

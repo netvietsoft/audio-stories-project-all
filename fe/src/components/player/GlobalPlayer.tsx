@@ -210,6 +210,8 @@ export default function GlobalPlayer() {
     const key = `${storyId}:${chapterId}`;
     if (listenTrackedRef.current.get(key)) return;
 
+    console.log("[Tracking FE] Bat dau dem 10s cho luot NGHE...", { storyId, chapterId });
+
     const timer = window.setTimeout(() => {
       const deviceId = getOrCreateDeviceId();
       if (!deviceId) return;
@@ -220,7 +222,8 @@ export default function GlobalPlayer() {
           chapterId,
           deviceId,
         })
-        .then(() => {
+        .then((response) => {
+          console.log("[Tracking FE] 🎧 Da gui luot NGHE thanh cong len server!", response.data);
           listenTrackedRef.current.set(key, true);
         })
         .catch(() => {

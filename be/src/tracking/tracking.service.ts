@@ -61,10 +61,16 @@ export class TrackingService {
 
     const created = await this.redis.set(dedupKey, '1', 'EX', this.DEDUP_TTL_SECONDS, 'NX');
     if (!created) {
+      this.logger.debug(
+        `[Tracking BE] Bo qua (Spam/Dedup) - Loai: ${kind}, Story: ${dto.storyId}, Device: ${dto.deviceId}`,
+      );
       return { counted: false, deduplicated: true };
     }
 
     await this.redis.multi().incr(storyCounterKey).incr(chapterCounterKey).exec();
+    this.logger.log(
+      `[Tracking BE] +1 Tam thoi (Redis) - Loai: ${kind}, Story: ${dto.storyId}, Chapter: ${dto.chapterId}`,
+    );
     return { counted: true, deduplicated: false };
   }
 
@@ -98,6 +104,8 @@ export class TrackingService {
     if (!this.redisEnabled || !this.redis) return;
 
     try {
+      this.logger.log(`[Tracking BE] Bat dau tien trinh Flush Redis -> Database...`);
+
       const [storyKeys, chapterKeys] = await Promise.all([
         this.scanKeys(`${this.STORY_VIEWS_PREFIX}*`),
         this.scanKeys(`${this.CHAPTER_VIEWS_PREFIX}*`),
@@ -156,6 +164,15 @@ export class TrackingService {
             processingKey,
             count,
           });
+
+          if (prefix === this.STORY_VIEWS_PREFIX) {
+            this.logger.log(`[Tracking BE] Chuan bi cap nhat DB cho Story [${suffix}]: +${count} views`);
+          }
+
+          if (prefix === this.CHAPTER_VIEWS_PREFIX) {
+            this.logger.log(`[Tracking BE] Chuan bi cap nhat DB cho Chapter [${suffix}]: +${count} views`);
+          }
+
           writes.push(buildWrite(suffix, count));
         }
       };
@@ -191,6 +208,7 @@ export class TrackingService {
         await this.redis.del(...processingKeys);
       }
 
+      this.logger.log(`[Tracking BE] Du lieu da ghi vao Database thanh cong! Da xoa cac key processing.`);
       this.logger.log(`Flushed tracking counters safely. Keys processed: ${processingEntries.length}.`);
     } catch (error) {
       this.logger.error(`Failed to flush tracking counters: ${error?.message || error}`);

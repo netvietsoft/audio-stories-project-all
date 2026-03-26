@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import { adminApiClient } from '@/lib/api/admin-api-client';
 import Link from '@/components/shared/LocalizedLink';
+import { useTranslations } from 'next-intl';
+import { formatChapterTitle, cleanChapterTitle } from '@/lib/formatChapterTitle';
 
 interface UserDetail {
     id: string;
@@ -121,6 +123,7 @@ export default function UserDetailsPage() {
     const [user, setUser] = useState<UserDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
+    const tChapter = useTranslations("StoryChapterClient");
 
     useEffect(() => {
         if (id) fetchUser();
@@ -327,7 +330,7 @@ export default function UserDetailsPage() {
                                                             <div className="space-y-1">
                                                                 <p className="text-sm font-bold leading-5 text-slate-900 break-words">{history.story.title}</p>
                                                                 <p className="text-xs leading-5 text-slate-500 break-words">
-                                                                    Chương {history.chapter.chapterNumber}: {history.chapter.title}
+                                                                    {formatChapterTitle(tChapter("chapterKeyword"), history.chapter.chapterNumber, cleanChapterTitle(history.chapter.title))}
                                                                 </p>
                                                             </div>
                                                             <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold uppercase tracking-wide text-slate-400">

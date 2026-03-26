@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { JsonLd } from "@/components/seo/JsonLd";
+import { cleanChapterTitle } from "@/lib/formatChapterTitle";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import StoryChapterClient from "./_components/StoryChapterClient";
 
@@ -74,7 +75,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     : "";
 
   const chapterTitle = chapter
-    ? t("chapterTitle", { number: chapter.chapterNumber, title: chapterTitleValue })
+    ? t("chapterTitle", { number: chapter.chapterNumber, title: cleanChapterTitle(chapterTitleValue) })
     : t("chapterLoading");
   const title = `${chapterTitle} – ${storyTitle}`;
   const description =
@@ -115,7 +116,7 @@ export default async function StoryChapterPage({ params }: Props) {
     ? localizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)
     : chapterSlug;
   const chapterLabel = chapter
-    ? t("chapterTitle", { number: chapter.chapterNumber, title: chapterTitleValue })
+    ? t("chapterTitle", { number: chapter.chapterNumber, title: cleanChapterTitle(chapterTitleValue) })
     : chapterSlug;
 
   const breadcrumbSchema = {

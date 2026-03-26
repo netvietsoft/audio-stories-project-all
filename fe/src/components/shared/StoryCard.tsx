@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Eye, Star } from "lucide-react";
 import FavoriteButton from "@/components/shared/FavoriteButton";
 import { getLocalizedValue } from "@/lib/story-localization";
+import { cleanChapterTitle } from "@/lib/formatChapterTitle";
 
 type StoryCardStory = {
   id: string;
@@ -87,7 +88,7 @@ export default function StoryCard({ story, className, variant = "default", lang 
     const chapterNum = story.latestChapterNumber;
     const chapterTitle = story.latestChapterTitle;
 
-    if (chapterNum && chapterTitle) return t("chapterLabel", { number: chapterNum, title: chapterTitle });
+    if (chapterNum && chapterTitle) return t("chapterLabel", { number: chapterNum, title: cleanChapterTitle(chapterTitle) });
     if (chapterNum) return t("chapterNumber", { number: chapterNum });
     if (chapterTitle) return chapterTitle;
     return t("latestChapterUpdating");

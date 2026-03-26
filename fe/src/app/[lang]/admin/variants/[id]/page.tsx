@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import { formatChapterTitle, cleanChapterTitle } from "@/lib/formatChapterTitle";
 import { useRouter, useParams } from "next/navigation";
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
 import { VariantForm, type VariantFormValues } from "../../stories/[id]/chapters/_components/VariantForm";
@@ -10,6 +12,8 @@ export default function EditVariantPage() {
   const router = useRouter();
   const params = useParams<{ lang: string; id: string }>();
   const currentLang = params?.lang || "vi";
+    const t = useTranslations("StoryChapterClient");
+
   const variantId = params?.id;
 
   const [isLoading, setIsLoading] = useState(true);
@@ -89,9 +93,9 @@ export default function EditVariantPage() {
                 Chỉnh sửa Biến thể
                 </h1>
                 {chapter && (
-                    <p className="text-sm font-bold text-slate-400 mt-2 ml-1">
-                        Chương {chapter.chapterNumber}: {chapter.titleVi || chapter.title}
-                    </p>
+                  <p className="text-sm font-bold text-slate-400 mt-2 ml-1">
+                    {formatChapterTitle(t("chapterKeyword"), chapter.chapterNumber, cleanChapterTitle(chapter.titleVi || chapter.title))}
+                  </p>
                 )}
             </div>
           </div>

@@ -4,6 +4,7 @@ import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { cleanChapterTitle } from "@/lib/formatChapterTitle";
 
 type ChapterItem = {
   id: string;
@@ -124,7 +125,7 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
 
             <div className="hidden min-w-0 flex-1 px-2 md:flex">
               <p className="truncate text-sm text-gray-600 dark:text-gray-300">
-                {t("chapterLabel", { number: chapter.chapterNumber, title: chapter.title })}
+                {t("chapterLabel", { number: chapter.chapterNumber, title: cleanChapterTitle(chapter.title) })}
               </p>
             </div>
 

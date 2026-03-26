@@ -18,6 +18,8 @@ import {
 
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
 import type { Chapter, Variant } from "@/types/admin";
+import { useTranslations } from "next-intl";
+import { formatChapterTitle, cleanChapterTitle } from "@/lib/formatChapterTitle";
 
 type VariantUpdatePayload = {
   title?: string;
@@ -37,6 +39,8 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
   const router = useRouter();
   const params = useParams<{ lang?: string }>();
   const currentLang = params?.lang === "en" ? "en" : "vi";
+
+  const tChapter = useTranslations("StoryChapterClient");
 
   const [isLoading, setIsLoading] = useState(true);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -326,7 +330,7 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-slate-900 truncate">
-                            {chapter.title}
+                            {formatChapterTitle(tChapter("chapterKeyword"), chapter.chapterNumber, cleanChapterTitle(chapter.title))}
                           </p>
                           <p className="text-xs text-slate-500">
                             Chương {chapter.chapterNumber}
@@ -373,7 +377,7 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
                       )}
                     </div>
                     <h3 className="text-base font-bold text-slate-900 truncate">
-                      {chapter.title}
+                      {formatChapterTitle(tChapter("chapterKeyword"), chapter.chapterNumber, cleanChapterTitle(chapter.title))}
                     </h3>
                     <p className="text-xs text-slate-500 mt-1">
                       {new Date(chapter.createdAt).toLocaleDateString('vi-VN')}

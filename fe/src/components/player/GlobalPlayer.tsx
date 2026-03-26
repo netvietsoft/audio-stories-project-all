@@ -10,6 +10,8 @@ import { apiClient } from "@/lib/api/api-client";
 import { getOrCreateDeviceId } from "@/lib/tracking/device-id";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
+import { cleanChapterTitle, formatChapterTitle } from "@/lib/formatChapterTitle";
+import { useTranslations as useChapterTranslations } from "next-intl";
 
 const formatDuration = (seconds?: number | null) => {
   if (!seconds || seconds <= 0) return "00:00";
@@ -20,6 +22,7 @@ const formatDuration = (seconds?: number | null) => {
 
 export default function GlobalPlayer() {
   const t = useTranslations("Player");
+  const tChapter = useChapterTranslations("StoryChapterClient");
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const lastSyncedProgressRef = useRef<Map<string, number>>(new Map());
@@ -304,7 +307,7 @@ export default function GlobalPlayer() {
             </div>
 
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.title}</p>
+              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.chapterNumber ? formatChapterTitle(tChapter("chapterKeyword"), currentTrack.chapterNumber, cleanChapterTitle(currentTrack.title)) : currentTrack.title}</p>
               <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || t("defaultAuthor")}</p>
             </div>
           </Link>
@@ -325,6 +328,7 @@ export default function GlobalPlayer() {
 
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.title}</p>
+                <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.chapterNumber ? formatChapterTitle(tChapter("chapterKeyword"), currentTrack.chapterNumber, cleanChapterTitle(currentTrack.title)) : currentTrack.title}</p>
               <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || t("defaultAuthor")}</p>
             </div>
           </div>

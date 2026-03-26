@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+import { formatChapterTitle, cleanChapterTitle } from "@/lib/formatChapterTitle";
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -61,6 +63,7 @@ const formatDuration = (seconds?: number) => {
 };
 
 export default function InteractiveStoriesPage() {
+  const tChapter = useTranslations("StoryChapterClient");
   const [stories, setStories] = useState<StoryInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -421,7 +424,7 @@ export default function InteractiveStoriesPage() {
                                     </div>
                                     <div>
                                       <p className="text-sm font-bold text-slate-900">
-                                        {chapter.title}
+                                        {formatChapterTitle(tChapter("chapterKeyword"), chapter.chapterNumber, cleanChapterTitle(chapter.title))}
                                       </p>
                                       <div className="flex items-center gap-2 mt-0.5">
                                         {variantCount > 0 && (

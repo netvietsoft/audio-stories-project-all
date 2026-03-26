@@ -11,6 +11,7 @@ import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
 import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscriptionButton";
 import { getLocalizedValue } from "@/lib/story-localization";
+import { cleanChapterTitle } from "@/lib/formatChapterTitle";
 import { useViewTracking } from "@/hooks/use-view-tracking";
 
 type ChapterItem = {
@@ -425,7 +426,7 @@ export default function StoryDetailClient() {
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {t("chapterTitle", {
                       number: chapter.chapterNumber,
-                      title: getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title),
+                      title: cleanChapterTitle(getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)),
                     })}
                   </p>
                   <div className="mt-1 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">

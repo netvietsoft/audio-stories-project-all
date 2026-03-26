@@ -169,7 +169,8 @@ export default function InteractiveStoriesSection() {
           <div className="lg:col-span-8 flex min-h-[560px] flex-col justify-between">
             {activeStory ? (
               <>
-              <div>
+              {/* KHỐI TRÊN: Thông tin (mb-auto đẩy khối dưới xuống đáy) */}
+              <div className="mb-auto pb-6">
                 <div className="flex flex-wrap items-baseline gap-2">
                   <Link
                     href={`/story/${activeStory.slug}`}
@@ -199,46 +200,55 @@ export default function InteractiveStoriesSection() {
                     activeStory.description,
                   ) || t("storyIntroFallback")}
                 </p>
-                <Link
-                  href={`/story/${activeStory.slug}`}
-                  className="mt-4 inline-flex items-center justify-center rounded-full bg-blue-600 px-6 py-2 text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:bg-blue-500"
-                >
-                  {t("readNow")}
-                </Link>
+                {/* Đã xóa nút Đọc ngay cũ ở đây */}
               </div>
 
-              <div className="mt-8">
-                <div className="mb-8 grid grid-cols-4 gap-4 text-xs">
-                  <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600">
-                    <p className="flex items-center justify-center gap-1.5 font-extrabold text-blue-700 dark:text-blue-300">
-                      <BookOpenText className="h-3.5 w-3.5" />
-                      {getChapterCount(activeStory).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
-                    </p>
-                    <p className="mt-1 text-center text-slate-500">{t("chaptersLabel")}</p>
+              {/* KHỐI DƯỚI: Đính chặt vào đáy (mt-auto) */}
+              <div className="mt-auto w-full">
+                {/* KHU VỰC THỐNG KÊ & NÚT ĐỌC NGAY NẰM CÙNG HÀNG */}
+                <div className="mb-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                  {/* 4 Ô Thống kê đã thu nhỏ */}
+                  <div className="grid grid-cols-4 gap-2 sm:gap-3 flex-1 w-full">
+                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
+                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-blue-700 dark:text-blue-300">
+                        <BookOpenText className="h-3.5 w-3.5" />
+                        {getChapterCount(activeStory).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
+                      </p>
+                      <p className="mt-1 text-center text-[10px] sm:text-xs text-slate-500">{t("chaptersLabel")}</p>
+                    </div>
+                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
+                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-blue-700 dark:text-blue-300">
+                        <Eye className="h-3.5 w-3.5" />
+                        {Number(activeStory.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
+                      </p>
+                      <p className="mt-1 text-center text-[10px] sm:text-xs text-slate-500">{t("viewsLabel")}</p>
+                    </div>
+                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
+                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-blue-700 dark:text-blue-300">
+                        <Star className="h-3.5 w-3.5 fill-current" />
+                        {formatRating(activeStory.averageRating)}
+                      </p>
+                      <p className="mt-1 text-center text-[10px] sm:text-xs text-slate-500">{t("ratingLabel")}</p>
+                    </div>
+                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
+                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-blue-700 dark:text-blue-300">
+                        <GitBranch className="h-3.5 w-3.5" />
+                        {getBranchCount(activeStory)}
+                      </p>
+                      <p className="mt-1 text-center text-[10px] sm:text-xs text-slate-500">{t("branchesLabel")}</p>
+                    </div>
                   </div>
-                  <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600">
-                    <p className="flex items-center justify-center gap-1.5 font-extrabold text-blue-700 dark:text-blue-300">
-                      <Eye className="h-3.5 w-3.5" />
-                      {Number(activeStory.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
-                    </p>
-                    <p className="mt-1 text-center text-slate-500">{t("viewsLabel")}</p>
-                  </div>
-                  <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600">
-                    <p className="flex items-center justify-center gap-1.5 font-extrabold text-blue-700 dark:text-blue-300">
-                      <Star className="h-3.5 w-3.5 fill-current" />
-                      {formatRating(activeStory.averageRating)}
-                    </p>
-                    <p className="mt-1 text-center text-slate-500">{t("ratingLabel")}</p>
-                  </div>
-                  <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600">
-                    <p className="flex items-center justify-center gap-1.5 font-extrabold text-blue-700 dark:text-blue-300">
-                      <GitBranch className="h-3.5 w-3.5" />
-                      {getBranchCount(activeStory)}
-                    </p>
-                    <p className="mt-1 text-center text-slate-500">{t("branchesLabel")}</p>
-                  </div>
+
+                  {/* Nút Đọc ngay */}
+                  <Link
+                    href={`/story/${activeStory.slug}`}
+                    className="shrink-0 inline-flex items-center justify-center rounded-2xl lg:rounded-full bg-blue-600 px-6 py-2 h-[48px] text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:bg-blue-500 whitespace-nowrap"
+                  >
+                    {t("readNow")}
+                  </Link>
                 </div>
 
+                {/* Lưới 5 thumbnail ở đáy */}
                 <div className="grid grid-cols-5 gap-3">
                   {stories.map((story, index) => {
                     const title = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);

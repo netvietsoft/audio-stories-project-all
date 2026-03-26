@@ -3,7 +3,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
 import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -89,12 +90,12 @@ import { TrackingModule } from './tracking/tracking.module';
     TrackingModule,
   ],
   controllers: [AppController],
-  providers: [
+    providers: [
     AppService,
-    // Apply ThrottlerGuard globally for all routes
+    // Apply CustomThrottlerGuard globally (bypasses in non-production)
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: CustomThrottlerGuard,
     },
   ],
 })

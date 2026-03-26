@@ -8,6 +8,8 @@ import { History, PlayCircle, Trash2 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
 import { getLocalizedValue } from "@/lib/story-localization";
+import { cleanChapterTitle, formatChapterTitle } from "@/lib/formatChapterTitle";
+import { useTranslations as useChapterTranslations } from "next-intl";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 
@@ -57,6 +59,7 @@ export default function ProfileHistoryPage() {
   const accessToken = useUserStore((state) => state.accessToken);
   const playTrack = useAudioStore((state) => state.playTrack);
   const seekTo = useAudioStore((state) => state.seekTo);
+  const tChapter = useChapterTranslations("StoryChapterClient");
 
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,7 +100,7 @@ export default function ProfileHistoryPage() {
           storyId: item.story.id,
           storySlug: item.story.slug,
           chapterNumber: item.chapter.chapterNumber,
-          title: `Chương ${item.chapter.chapterNumber}: ${localizedChapterTitle}`,
+          title: formatChapterTitle(tChapter("chapterKeyword"), item.chapter.chapterNumber, localizedChapterTitle),
           author: item.story.author?.name,
           audioUrl: item.chapter.r2AudioUrl,
           coverUrl: item.story.thumbnailUrl || undefined,
@@ -166,7 +169,7 @@ export default function ProfileHistoryPage() {
 
                 <div className="min-w-0 flex-1">
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title)}</p>
-                  <p className="mt-1 line-clamp-1 text-sm text-gray-600 dark:text-gray-300">{t("chapter", { number: item.chapter.chapterNumber, title: getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title) })}</p>
+                  <p className="mt-1 line-clamp-1 text-sm text-gray-600 dark:text-gray-300">{t("chapter", { number: item.chapter.chapterNumber, title: cleanChapterTitle(getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title)) })}</p>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     {t("progress", { progress: formatDuration(item.progressSeconds), duration: formatDuration(item.chapter.audioDuration) })}
                   </p>

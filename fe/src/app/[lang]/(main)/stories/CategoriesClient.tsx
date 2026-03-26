@@ -193,7 +193,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
       {/* LEFT SIDEBAR */}
       <div className="w-full md:w-80 flex-shrink-0 space-y-8">
         {/* Category List */}
-        <div className="grid grid-cols-3 gap-y-4 gap-x-2">
+        <div className="flex flex-col gap-y-2">
           {categories.map((cat) => {
             const isActive = cat.slug === activeSlug;
             return (
@@ -420,7 +420,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
         </div>
 
         {/* Story Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
           {stories.map((story) => (
             <HorizontalStoryCard key={story.id} story={story} locale={locale} />
           ))}
@@ -459,13 +459,13 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
   const localizedTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
 
   return (
-    <div className="flex gap-4 group cursor-pointer bg-white dark:bg-slate-900 rounded-xl overflow-hidden p-2 transition hover:bg-gray-50 dark:hover:bg-slate-800">
-      <div className="relative w-[100px] h-[133px] flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+    <div className="flex gap-8 group cursor-pointer overflow-hidden p-2">
+      <div className="relative w-[180px] h-[240px] flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
         <Image
           src={story.thumbnailUrl || "https://placehold.co/200x300?text=No+Cover"}
           alt={localizedTitle}
           fill
-          sizes="100px"
+          sizes="180px"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-sm rounded px-1.5 py-0.5 flex flex-col items-center">
@@ -473,18 +473,18 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
         </div>
       </div>
 
-      <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+      <div className="flex-1 min-w-0 flex flex-col justify-between py-2">
         <div>
           <Link href={`/story/${story.slug}`} className="block">
-            <h3 className="font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-blue-600 transition-colors">
+            <h3 className="font-bold text-2xl text-slate-900 dark:text-white line-clamp-1 group-hover:text-blue-600 transition-colors">
               {localizedTitle}
             </h3>
           </Link>
-          <div className="flex flex-wrap gap-2 mt-1">
+          <div className="flex flex-wrap gap-2 mt-2">
             {story.categories?.map((catWrapper, idx) => (
               <span
                 key={catWrapper.category.id}
-                className={`text-[11px] px-2 py-0.5 rounded-sm ${idx === 0
+                className={`text-sm px-2 py-0.5 rounded-sm ${idx === 0
                   ? "text-blue-600 bg-blue-50 dark:bg-blue-900/30"
                   : "text-gray-500 bg-gray-100 dark:bg-gray-800"
                   }`}
@@ -493,16 +493,16 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
               </span>
             ))}
           </div>
-          <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mt-1.5">
+          <p className="text-base font-semibold text-gray-600 dark:text-gray-400 mt-2">
             {story.author?.name || t("updating")}
           </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">
+          <p className="text-base text-gray-500 dark:text-gray-400 mt-2 line-clamp-2 leading-relaxed">
             {story.description || t("storyFallbackDescription")}
           </p>
         </div>
 
-        <div className="flex items-center gap-4 mt-2 text-xs font-medium text-orange-500">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center gap-6 mt-4 text-lg font-medium text-orange-500">
+          <div className="flex items-center gap-2">
             <span className="text-yellow-400">★★★★★</span>
             <span>{rating}</span>
           </div>

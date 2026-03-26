@@ -31,8 +31,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             : story.chapters?.[0];
 
         const storyTitle = story.title || "Truyện Audio";
+        const { cleanChapterTitle } = await import("@/lib/formatChapterTitle");
+        const cleanTitle = chapter ? cleanChapterTitle(chapter.title) : "";
         const chapterTitle = chapter
-            ? `Chương ${chapter.chapterNumber}: ${chapter.title}`
+            ? `Chương ${chapter.chapterNumber}: ${cleanTitle}`
             : `Chương ${chapterNumber ?? 1}`;
 
         const title = `${chapterTitle} - ${storyTitle}`;

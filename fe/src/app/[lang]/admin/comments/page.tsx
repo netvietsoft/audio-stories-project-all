@@ -16,6 +16,8 @@ import {
     Reply,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { useTranslations } from 'next-intl';
+import { formatChapterTitle, cleanChapterTitle } from '@/lib/formatChapterTitle';
 
 interface Comment {
     id: string;
@@ -72,6 +74,7 @@ export default function CommentsPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
     const limit = 20;
+    const tChapter = useTranslations("StoryChapterClient");
 
     useEffect(() => {
         fetchComments();
@@ -303,7 +306,7 @@ export default function CommentsPage() {
                                         <span className="truncate">{comment.story.title}</span>
                                     </span>
                                     <span className="inline-flex max-w-full rounded-xl bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 break-words">
-                                        Chuong {comment.chapter.chapterNumber}: {comment.chapter.title}
+                                        {formatChapterTitle(tChapter("chapterKeyword"), comment.chapter.chapterNumber, cleanChapterTitle(comment.chapter.title))}
                                     </span>
                                     {comment.timestampSeconds && (
                                         <span className="inline-flex items-center gap-1 rounded-xl border border-purple-100 bg-purple-50 px-2.5 py-1 text-xs font-bold text-purple-600">

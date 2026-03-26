@@ -24,6 +24,8 @@ import {
 
 import { apiClient } from "@/lib/api/api-client";
 import { useAudioStore } from "@/stores/audio-store";
+import { cleanChapterTitle, formatChapterTitle } from "@/lib/formatChapterTitle";
+import { useTranslations as useChapterTranslations } from "next-intl";
 import { useUserStore } from "@/stores/user-store";
 import AvatarUpload from "@/components/profile/AvatarUpload";
 import { getLocalizedValue } from "@/lib/story-localization";
@@ -137,6 +139,7 @@ export default function ProfilePage() {
 
     const playTrack = useAudioStore((state) => state.playTrack);
     const seekTo = useAudioStore((state) => state.seekTo);
+    const tChapter = useChapterTranslations("StoryChapterClient");
 
     useEffect(() => {
         setMounted(true);
@@ -219,7 +222,7 @@ export default function ProfilePage() {
                     storyId: item.story.id,
                     storySlug: item.story.slug,
                     chapterNumber: item.chapter.chapterNumber,
-                    title: t("chapterTitle", { number: item.chapter.chapterNumber, title: localizedChapterTitle }),
+                    title: formatChapterTitle(tChapter("chapterKeyword"), item.chapter.chapterNumber, localizedChapterTitle),
                     author: item.story.author?.name,
                     audioUrl: item.chapter.r2AudioUrl,
                     coverUrl: item.story.thumbnailUrl || undefined,
@@ -592,7 +595,7 @@ export default function ProfilePage() {
                                                             </button>
                                                         </div>
                                                         <p className="mt-1 line-clamp-1 text-sm text-gray-600 dark:text-gray-300">
-                                                            {t("chapterTitle", { number: item.chapter.chapterNumber, title: getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title) })}
+                                                            {t("chapterTitle", { number: item.chapter.chapterNumber, title: cleanChapterTitle(getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title)) })}
                                                         </p>
                                                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                                             {t("listenedProgress", { current: formatDuration(item.progressSeconds), total: formatDuration(item.chapter.audioDuration) })}

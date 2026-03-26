@@ -42,6 +42,7 @@ import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
 import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscriptionButton";
 import { getLocaleLabel, getLocalizedValue, getRequestedLocaleValue } from "@/lib/story-localization";
+import { cleanChapterTitle, formatChapterTitle } from "@/lib/formatChapterTitle";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 import { useAuthModalStore } from "@/stores/auth-modal-store";
@@ -641,14 +642,15 @@ export default function StoryChapterClient() {
   }, [chapterQuery, story, t]);
 
   const selectedChapterTitle = useMemo(() => {
-    const baseTitle = selectedChapter
+    const rawBase = selectedChapter
       ? getLocalizedValue(locale, selectedChapter.titleVi, selectedChapter.titleEn, selectedChapter.title)
       : "";
+    const baseTitle = cleanChapterTitle(rawBase);
     if (selectedVariant) {
       const variantTitle = getLocalizedValue(locale, selectedVariant.titleVi, selectedVariant.titleEn, selectedVariant.title);
-      return `${baseTitle} - ${variantTitle}`;
+      return `${formatChapterTitle(t("chapterKeyword"), selectedChapter?.chapterNumber ?? 0, baseTitle)} - ${cleanChapterTitle(variantTitle)}`;
     }
-    return baseTitle;
+    return formatChapterTitle(t("chapterKeyword"), selectedChapter?.chapterNumber ?? 0, baseTitle);
   }, [locale, selectedChapter, selectedVariant]);
 
   const selectedChapterDescription = selectedChapter
@@ -718,7 +720,7 @@ export default function StoryChapterClient() {
       id: item.id,
       storyId: story.id,
       chapterId: item.id,
-      title: t("chapterTitle", { number: item.chapterNumber, title: item.title }),
+      title: t("chapterTitle", { number: item.chapterNumber, title: cleanChapterTitle(item.title) }),
       storySlug: story.slug,
       chapterNumber: item.chapterNumber,
       author: story.author?.name,
@@ -745,7 +747,7 @@ export default function StoryChapterClient() {
 
     setTrack({
       ...currentTrack,
-      title: t("chapterTitle", { number: latestChapter.chapterNumber, title: latestChapter.title }),
+      title: t("chapterTitle", { number: latestChapter.chapterNumber, title: cleanChapterTitle(latestChapter.title) }),
       storySlug: story.slug,
       chapterNumber: latestChapter.chapterNumber,
       author: story.author?.name,
@@ -790,7 +792,7 @@ export default function StoryChapterClient() {
         id: item.id,
         storyId: selectedStory.id,
         chapterId: item.id,
-        title: t("chapterTitle", { number: item.chapterNumber, title: item.title }),
+        title: t("chapterTitle", { number: item.chapterNumber, title: cleanChapterTitle(item.title) }),
         storySlug: selectedStory.slug,
         chapterNumber: item.chapterNumber,
         author: selectedStory.author?.name,
@@ -804,7 +806,7 @@ export default function StoryChapterClient() {
       }));
 
       let chapterAudioUrl = "";
-      let chapterTitle = t("chapterTitle", { number: chapter.chapterNumber, title: chapter.title });
+      let chapterTitle = t("chapterTitle", { number: chapter.chapterNumber, title: cleanChapterTitle(chapter.title) });
 
       if (targetVariant) {
         chapterAudioUrl = getRequestedLocaleValue(
@@ -1402,9 +1404,9 @@ export default function StoryChapterClient() {
                             <ArrowRight className="h-3 w-3" />
                             {locale === "en" ? "Continue the story" : "Tiếp tục câu chuyện"}
                           </p>
-                          <span className="line-clamp-1 font-bold text-emerald-900 dark:text-emerald-100">
-                            {locale === "en" ? "Chapter" : "Chương"} {targetChapter.chapterNumber}: {getLocalizedValue(locale, targetChapter.titleVi, targetChapter.titleEn, targetChapter.title)}
-                          </span>
+                            <span className="line-clamp-1 font-bold text-emerald-900 dark:text-emerald-100">
+                              {formatChapterTitle(t("chapterKeyword"), targetChapter.chapterNumber, getLocalizedValue(locale, targetChapter.titleVi, targetChapter.titleEn, targetChapter.title))}
+                            </span>
                         </button>
                       );
                     })()}
@@ -1419,7 +1421,7 @@ export default function StoryChapterClient() {
                             : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
                             }`}
                         >
-                          <span className="line-clamp-1">{getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)}</span>
+                          <span className="line-clamp-1">{formatChapterTitle(t("chapterKeyword"), chapter.chapterNumber, cleanChapterTitle(getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)))}</span>
                         </button>
                       );
                     })}
@@ -1442,7 +1444,7 @@ export default function StoryChapterClient() {
                     />
                   </div>
                   <p className="line-clamp-2 text-center text-xs text-gray-500 dark:text-gray-400">
-                    {t("chapterLabel", { number: selectedChapter.chapterNumber })}
+                    {formatChapterTitle(t("chapterKeyword"), selectedChapter.chapterNumber, cleanChapterTitle(getLocalizedValue(locale, selectedChapter.titleVi, selectedChapter.titleEn, selectedChapter.title)))}
                   </p>
                 </div>
 

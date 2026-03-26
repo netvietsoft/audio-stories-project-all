@@ -345,7 +345,7 @@ export default function MembershipsPage() {
                                                 )}
                                             </td>
                                             <td className="px-8 py-5 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                                <div className="flex items-center justify-end gap-2 transition-all">
                                                     <button
                                                         onClick={() => handleDelete(membership.id)}
                                                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"

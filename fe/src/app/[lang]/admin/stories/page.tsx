@@ -21,12 +21,17 @@ import {
     Trash2,
     Plus,
     CheckCircle2,
+    X,
+    Pencil,
 } from 'lucide-react';
 
 import Link from '@/components/shared/LocalizedLink';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
+import { StoryForm } from './_components/StoryForm';
+import { ChapterForm, type ChapterSubmitPayload } from './[id]/chapters/_components/ChapterForm';
+import type { StorySubmitPayload } from '@/types/admin';
 
 interface Story {
     id: string;
@@ -85,6 +90,20 @@ export default function StoriesPage() {
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const [updatingRecommendId, setUpdatingRecommendId] = useState<string | null>(null);
+
+    // Modal States
+    const [editingStoryId, setEditingStoryId] = useState<string | null>(null);
+    const [editingStoryData, setEditingStoryData] = useState<any | null>(null);
+    const [isFetchingStoryData, setIsFetchingStoryData] = useState(false);
+    const [isSubmittingStory, setIsSubmittingStory] = useState(false);
+
+    const [chaptersModalOpen, setChaptersModalOpen] = useState(false);
+    const [selectedStoryForChapters, setSelectedStoryForChapters] = useState<Story | null>(null);
+    const [chapters, setChapters] = useState<any[]>([]);
+    const [isFetchingChapters, setIsFetchingChapters] = useState(false);
+
+    const [isCreatingChapter, setIsCreatingChapter] = useState(false);
+    const [isSubmittingNewChapter, setIsSubmittingNewChapter] = useState(false);
 
     useEffect(() => {
         fetchStories();
@@ -156,6 +175,88 @@ export default function StoriesPage() {
         } catch (error) {
             console.error('Failed to delete story:', error);
             alert('Không thể xóa truyện. Vui lòng thử lại.');
+        }
+    };
+
+    const handleEditStory = async (story: Story) => {
+        setEditingStoryId(story.id);
+        setIsFetchingStoryData(true);
+        try {
+            const res = await apiClient.get(`/stories/admin/${story.id}`);
+            const data = res.data;
+            
+            const mappedData = {
+                ...data,
+                titleVi: data.titleVi || data.title || "",
+                titleEn: data.titleEn || "",
+                slug: data.slug || "",
+                descriptionVi: data.descriptionVi || data.description || "",
+                descriptionEn: data.descriptionEn || "",
+                categoryIds: (data.categories || []).map((item: any) => 
+                    item.category?.id || item.categoryId || (typeof item === 'number' ? item : item.id)
+                ).filter(Boolean),
+                authorId: data.author?.id || data.authorId,
+                status: data.status || "ongoing",
+                isInteractive: !!data.isInteractive,
+                isRecommended: !!data.isRecommended,
+            };
+            
+            setEditingStoryData(mappedData);
+        } catch (error) {
+            console.error('Failed to fetch story details:', error);
+            alert('Không thể tải thông tin truyện.');
+            setEditingStoryId(null);
+        } finally {
+            setIsFetchingStoryData(false);
+        }
+    };
+
+    const handleStorySubmit = async (data: StorySubmitPayload) => {
+        if (!editingStoryId) return;
+        setIsSubmittingStory(true);
+        try {
+            await apiClient.patch(`/stories/${editingStoryId}`, data);
+            setEditingStoryId(null);
+            setEditingStoryData(null);
+            await fetchStories();
+        } catch (error) {
+            console.error('Failed to update story:', error);
+            alert('Không thể cập nhật truyện.');
+        } finally {
+            setIsSubmittingStory(false);
+        }
+    };
+
+    const handleOpenChapters = async (story: Story) => {
+        setSelectedStoryForChapters(story);
+        setChaptersModalOpen(true);
+        setIsFetchingChapters(true);
+        try {
+            const res = await apiClient.get(`/chapters?storyId=${story.id}&limit=100`);
+            setChapters(res.data.data || res.data || []);
+        } catch (error) {
+            console.error('Failed to fetch chapters:', error);
+            alert('Không thể tải danh sách chương.');
+        } finally {
+            setIsFetchingChapters(false);
+        }
+    };
+
+    const handleChapterCreateSubmit = async (data: any) => {
+        if (!selectedStoryForChapters) return;
+        setIsSubmittingNewChapter(true);
+        try {
+            await apiClient.post(`/stories/${selectedStoryForChapters.id}/chapters`, data);
+            setIsCreatingChapter(false);
+            
+            // Refresh chapters list
+            const res = await apiClient.get(`/chapters?storyId=${selectedStoryForChapters.id}&limit=100`);
+            setChapters(res.data.data || res.data || []);
+        } catch (error) {
+            console.error('Failed to create chapter:', error);
+            alert('Không thể tạo chương mới.');
+        } finally {
+            setIsSubmittingNewChapter(false);
         }
     };
 
@@ -376,19 +477,19 @@ export default function StoriesPage() {
                                         </td>
                                         <td className="px-8 py-5 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <Link
-                                                    href={`/admin/stories/${story.id}/chapters`}
+                                                <button
+                                                    onClick={() => handleOpenChapters(story)}
                                                     title="Danh sách chương"
-                                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                                    className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                                                 >
                                                     <Music className="w-4 h-4" />
-                                                </Link>
-                                                <Link
-                                                    href={`/admin/stories/${story.id}`}
-                                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                                </button>
+                                                <button
+                                                    onClick={() => handleEditStory(story)}
+                                                    className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                                                 >
                                                     <Edit2 className="w-4 h-4" />
-                                                </Link>
+                                                </button>
                                                 <button 
                                                     onClick={() => handleDelete(story.id, story.title)}
                                                     className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
@@ -437,20 +538,20 @@ export default function StoriesPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 pl-[72px]">
-                                        <Link
-                                            href={`/admin/stories/${story.id}/chapters`}
+                                        <button
+                                            onClick={() => handleOpenChapters(story)}
                                             title="Danh sách chương"
                                             className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
                                         >
                                             <Music className="w-4 h-4" />
-                                        </Link>
-                                        <Link
-                                            href={`/admin/stories/${story.id}`}
+                                        </button>
+                                        <button
+                                            onClick={() => handleEditStory(story)}
                                             title="Chỉnh sửa truyện"
                                             className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
                                         >
                                             <Edit2 className="w-4 h-4" />
-                                        </Link>
+                                        </button>
                                         <button
                                             onClick={() => handleDelete(story.id, story.title)}
                                             className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-red-50 hover:text-red-600"
@@ -507,6 +608,201 @@ export default function StoriesPage() {
                     </div>
                 </div>
             </div>
+
+            {/* MODAL: Edit Story */}
+            {editingStoryId && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[40px] max-w-5xl w-full max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden border border-slate-100 flex flex-col">
+                        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-100 flex items-center justify-center text-white">
+                                    <Pencil className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900">Chi tiết truyện</h3>
+                                    <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-wider">
+                                        {isFetchingStoryData ? 'Đang tải thông tin...' : 'Chỉnh sửa thông tin cơ bản'}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setEditingStoryId(null);
+                                    setEditingStoryData(null);
+                                }}
+                                className="p-3 hover:bg-slate-50 rounded-2xl transition-colors text-slate-400 hover:text-slate-600"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                            {isFetchingStoryData ? (
+                                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                    <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+                                    <p className="text-sm font-bold text-slate-400">Đang lấy dữ liệu truyện...</p>
+                                </div>
+                            ) : editingStoryData && (
+                                <StoryForm
+                                    initialData={editingStoryData}
+                                    selectedLocale={selectedLocale}
+                                    onSubmit={handleStorySubmit}
+                                    onCancel={() => {
+                                        setEditingStoryId(null);
+                                        setEditingStoryData(null);
+                                    }}
+                                    isLoading={isSubmittingStory}
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: Chapters List */}
+            {chaptersModalOpen && selectedStoryForChapters && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-[32px] max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                        <div className="bg-white border-b border-slate-100 px-8 py-6 rounded-t-[32px] flex-shrink-0">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                            <Music className="w-5 h-5" />
+                                        </div>
+                                        Danh sách chương
+                                    </h2>
+                                    <p className="text-sm text-slate-500 mt-1">
+                                        {selectedStoryForChapters.titleVi || selectedStoryForChapters.titleEn || selectedStoryForChapters.title}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setIsCreatingChapter(true)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100"
+                                        title="Thêm chương mới"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Thêm chương mới
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setChaptersModalOpen(false);
+                                            setSelectedStoryForChapters(null);
+                                            setChapters([]);
+                                        }}
+                                        className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-600"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-8 flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50">
+                            {isFetchingChapters ? (
+                                <div className="flex justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                                </div>
+                            ) : chapters.length > 0 ? (
+                                <div className="space-y-3">
+                                    {chapters.map((chapter: any) => (
+                                        <div key={chapter.id} className="bg-white rounded-2xl border border-slate-200 p-5 hover:shadow-md transition-all">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-black">
+                                                    {chapter.chapterNumber}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-bold text-slate-900 truncate">
+                                                        {chapter.title || chapter.titleVi || chapter.titleEn || `Chương ${chapter.chapterNumber}`}
+                                                    </p>
+                                                    <p className="text-xs text-slate-500 mt-0.5">
+                                                        {chapter.accessType === 'free' ? 'Miễn phí' : `${chapter.unlockPrice || 0} credits`}
+                                                    </p>
+                                                </div>
+                                                <Link
+                                                    href={`/admin/stories/${selectedStoryForChapters.id}/chapters/${chapter.id}`}
+                                                    className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-3xl bg-white">
+                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Music className="w-8 h-8 text-slate-300" />
+                                    </div>
+                                    <h3 className="text-base font-bold text-slate-900 mb-1">Chưa có chương</h3>
+                                    <p className="text-sm text-slate-500">Truyện này chưa có chương nào.</p>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="px-8 py-5 border-t border-slate-100 bg-white rounded-b-[32px] flex items-center justify-between">
+                            <p className="text-xs font-medium text-slate-400">
+                                Tổng số: {chapters.length} chương
+                            </p>
+                            <Link
+                                href={`/admin/stories/${selectedStoryForChapters.id}/chapters`}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all"
+                            >
+                                Quản lý chi tiết
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: Create Chapter */}
+            {isCreatingChapter && selectedStoryForChapters && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[40px] max-w-5xl w-full max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden border border-slate-100 flex flex-col">
+                        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-100 flex items-center justify-center text-white">
+                                    <Plus className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900">Thêm Chương Mới</h3>
+                                    <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-wider">
+                                        {selectedStoryForChapters.titleVi || selectedStoryForChapters.titleEn || selectedStoryForChapters.title}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setIsCreatingChapter(false);
+                                }}
+                                className="p-3 hover:bg-slate-50 rounded-2xl transition-colors text-slate-400 hover:text-slate-600"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                            <ChapterForm
+                                initialData={{
+                                    chapterNumber: chapters.length + 1,
+                                    titleVi: '',
+                                    descriptionVi: '',
+                                    contentVi: '',
+                                    accessType: 'free',
+                                    storyId: selectedStoryForChapters.id,
+                                }}
+                                selectedLocale={selectedLocale}
+                                onSubmit={handleChapterCreateSubmit}
+                                onCancel={() => {
+                                    setIsCreatingChapter(false);
+                                }}
+                                isLoading={isSubmittingNewChapter}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

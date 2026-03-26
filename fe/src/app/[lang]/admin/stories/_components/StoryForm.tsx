@@ -23,6 +23,8 @@ import Link from '@/components/shared/LocalizedLink';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { UploadButton } from '@/lib/uploadthing';
 import type { Category, Chapter, Author, StorySubmitPayload } from '@/types/admin';
+import { AuthorForm } from '../../authors/_components/AuthorForm';
+import { CategoryForm } from '../../categories/_components/CategoryForm';
 
 const storySchema = z.object({
     titleVi: z.string().optional(),
@@ -79,6 +81,13 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
     const [chapters, setChapters] = useState<Chapter[]>([]);
     const [isChapterOpen, setIsChapterOpen] = useState(false);
     const [chapterSearch, setChapterSearch] = useState('');
+    
+    // Quick Creation Modal States
+    const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
+    const [isSubmittingAuthor, setIsSubmittingAuthor] = useState(false);
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    const [isSubmittingCategory, setIsSubmittingCategory] = useState(false);
+
     const isEnglishLocale = selectedLocale === 'en';
 
     const authorRef = React.useRef<HTMLDivElement>(null);
@@ -312,10 +321,46 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
         }
     };
 
+    const handleAuthorModalSubmit = async (data: any) => {
+        setIsSubmittingAuthor(true);
+        try {
+            const res = await apiClient.post('/authors', data);
+            const newAuthor = res.data;
+            setAuthors(prev => [...prev, newAuthor].sort((a, b) => a.name.localeCompare(b.name)));
+            setValue('authorId', newAuthor.id);
+            setIsAuthorModalOpen(false);
+        } catch (error) {
+            console.error('Failed to create author:', error);
+            alert('Không thể tạo tác giả mới.');
+        } finally {
+            setIsSubmittingAuthor(false);
+        }
+    };
+
+    const handleCategoryModalSubmit = async (data: any) => {
+        setIsSubmittingCategory(true);
+        try {
+            const res = await apiClient.post('/categories', {
+                ...data,
+                language: selectedLocale
+            });
+            const newCategory = res.data;
+            setCategories(prev => [...prev, newCategory]);
+            setValue('categoryIds', [...selectedCategoryIds, newCategory.id]);
+            setIsCategoryModalOpen(false);
+        } catch (error) {
+            console.error('Failed to create category:', error);
+            alert('Không thể tạo thể loại mới.');
+        } finally {
+            setIsSubmittingCategory(false);
+        }
+    };
+
     const selectedAuthor = authors.find(a => a.id === selectedAuthorId);
 
     return (
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8 w-full">
+        <>
+            <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8 w-full">
 
             <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-8 space-y-8">
@@ -386,13 +431,14 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     <div className="space-y-2" ref={authorRef}>
                         <div className="flex items-center justify-between">
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tác giả</label>
-                            <Link
-                                href="/admin/authors"
+                            <button
+                                type="button"
+                                onClick={() => setIsAuthorModalOpen(true)}
                                 className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                title="Quản lý tác giả"
+                                title="Thêm tác giả mới"
                             >
                                 <Plus className="w-4 h-4 text-blue-600" />
-                            </Link>
+                            </button>
                         </div>
                         <div className="relative">
 
@@ -455,13 +501,14 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     <div className="space-y-4" ref={categoryRef}>
                         <div className="flex items-center justify-between">
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Thể loại</label>
-                            <Link
-                                href="/admin/categories"
+                            <button
+                                type="button"
+                                onClick={() => setIsCategoryModalOpen(true)}
                                 className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                title="Quản lý thể loại"
+                                title="Thêm thể loại mới"
                             >
                                 <Plus className="w-4 h-4 text-blue-600" />
-                            </Link>
+                            </button>
                         </div>
                         <div className="relative">
 
@@ -494,7 +541,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                                 setValue('categoryIds', selectedCategoryIds.filter((cid: number) => cid !== id));
                                                             }
                                                         }}
-                                                        className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-indigo-700 rounded p-0.5"
+                                                        className="absolute right-1 top-1/2 -translate-y-1/2 hover:bg-indigo-700 rounded p-0.5"
                                                     >
                                                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -853,5 +900,66 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
 
 
         </form>
+
+        {/* Author Quick Creation Modal */}
+        {isAuthorModalOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                <div className="bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200">
+                    <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                            <div className="p-2 bg-indigo-100 rounded-xl">
+                                <Plus className="w-5 h-5 text-indigo-600" />
+                            </div>
+                            Tạo Tác Giả Mới
+                        </h2>
+                        <button
+                            type="button"
+                            onClick={() => setIsAuthorModalOpen(false)}
+                            className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-xl transition-all shadow-sm"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div className="p-8">
+                        <AuthorForm
+                            onSubmit={handleAuthorModalSubmit}
+                            onCancel={() => setIsAuthorModalOpen(false)}
+                            isLoading={isSubmittingAuthor}
+                        />
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Category Quick Creation Modal */}
+        {isCategoryModalOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                <div className="bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200">
+                    <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <h2 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                            <div className="p-2 bg-indigo-100 rounded-xl">
+                                <Plus className="w-5 h-5 text-indigo-600" />
+                            </div>
+                            Tạo Thể Loại Mới
+                        </h2>
+                        <button
+                            type="button"
+                            onClick={() => setIsCategoryModalOpen(false)}
+                            className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-xl transition-all shadow-sm"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div className="p-8">
+                        <CategoryForm
+                            onSubmit={handleCategoryModalSubmit}
+                            onCancel={() => setIsCategoryModalOpen(false)}
+                            isLoading={isSubmittingCategory}
+                        />
+                    </div>
+                </div>
+            </div>
+        )}
+    </>
     );
 };

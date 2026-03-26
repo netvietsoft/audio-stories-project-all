@@ -761,11 +761,14 @@ export default function StoryChapterClient() {
 
   useEffect(() => {
     if (!currentTrack?.id || !story) return;
+    // Only sync selectedChapterId with currentTrack when audio is actually playing
+    // This prevents overriding URL-based navigation
+    if (!isPlaying) return;
     const existsInStory = story.chapters.some((chapter) => chapter.id === currentTrack.id);
     if (existsInStory) {
       setSelectedChapterId(currentTrack.id);
     }
-  }, [currentTrack?.id, story]);
+  }, [currentTrack?.id, story, isPlaying]);
 
   const playChapter = useCallback(
     async (chapter: ChapterItem, selectedStory: StoryDetail, autoPlay = true, variantId?: string) => {

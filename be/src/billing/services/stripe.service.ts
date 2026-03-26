@@ -56,6 +56,15 @@ export class StripeService {
       throw new BadRequestException('User not found');
     }
 
+    // Convert VND to USD (approximate rate)
+    const exchangeRate = parseFloat(process.env.USD_TO_VND_RATE || '25000');
+    const amountUsd = Math.round((pkg.priceVnd / exchangeRate) * 100); // in cents
+
+    // Stripe minimum is 50 cents (0.5 USD)
+    if (amountUsd < 50) {
+      throw new BadRequestException('Số tiền thanh toán tối thiểu qua Stripe là 0.5 USD (khoảng 12,500 VND). Vui lòng chọn gói khác hoặc sử dụng phương thức VietQR. / Minimum payment amount via Stripe is 0.5 USD (approximately 12,500 VND). Please select another package or use VietQR payment method.');
+    }
+
     // Get or create Stripe customer, with fallback if stored ID is invalid
     let customerId = (user as any).stripeCustomerId as string | null;
 
@@ -90,10 +99,6 @@ export class StripeService {
       });
     }
 
-
-    // Convert VND to USD (approximate rate)
-    const exchangeRate = parseFloat(process.env.USD_TO_VND_RATE || '25000');
-    const amountUsd = Math.round((pkg.priceVnd / exchangeRate) * 100); // in cents
 
     // Get product name and description
     const productName = pkg.name?.trim() || `${pkg.credits} Credits Package`;

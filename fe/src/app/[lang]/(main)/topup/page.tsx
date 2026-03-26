@@ -17,6 +17,8 @@ import { apiClient } from '@/lib/api/api-client';
 import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector';
 import type { PaymentMethod } from '@/components/payment/PaymentMethodSelector';
 import VietQRPayment from '@/components/payment/VietQRPayment';
+import { useUserStore } from '@/stores/user-store';
+import { useAuthModalStore } from '@/stores/auth-modal-store';
 
 interface PaymentPackage {
     code: string;
@@ -54,6 +56,9 @@ export default function TopupPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [vietqrData, setVietqrData] = useState<any>(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    
+    const user = useUserStore((state) => state.user);
+    const openLogin = useAuthModalStore((state) => state.openLogin);
 
     useEffect(() => {
         fetchPackages();
@@ -65,6 +70,11 @@ export default function TopupPage() {
             const res = await apiClient.get(`/packages?lang=${currentLocale}`);
             const activePackages = res.data
                 .filter((pkg: PaymentPackage) => pkg.isActive)
+                .filter((pkg: PaymentPackage) => {
+                    // Filter packages by locale - only show packages matching current locale
+                    if (!pkg.lang) return true; // Show packages without lang field
+                    return pkg.lang === currentLocale;
+                })
                 .sort((a: PaymentPackage, b: PaymentPackage) => a.displayOrder - b.displayOrder);
             setPackages(activePackages);
 
@@ -157,7 +167,12 @@ export default function TopupPage() {
 
     const handleCheckout = async () => {
         if (!selectedPackage) return;
-        if (selectedPackage.code === 'CUSTOM' && customAmount < 6000) return;
+        
+        // Check if user is logged in
+        if (!user) {
+            openLogin();
+            return;
+        }
 
         setIsProcessing(true);
 
@@ -181,7 +196,21 @@ export default function TopupPage() {
             }
         } catch (error: any) {
             console.error('Payment error:', error);
-            const errorMessage = error?.response?.data?.message || error?.message || (currentLocale === 'vi' ? 'Có lỗi xảy ra. Vui lòng thử lại.' : 'An error occurred. Please try again.');
+            let errorMessage = error?.response?.data?.message || error?.message || '';
+            
+            // Translate common Stripe errors to Vietnamese
+            if (currentLocale === 'vi') {
+                if (errorMessage.includes('0.50') || errorMessage.includes('minimum') || errorMessage.toLowerCase().includes('amount must be at least')) {
+                    errorMessage = 'Số tiền thanh toán tối thiểu qua Stripe là 0.5 USD (khoảng 12,500 VND). Vui lòng chọn gói khác hoặc sử dụng phương thức VietQR.';
+                } else if (!errorMessage) {
+                    errorMessage = 'Có lỗi xảy ra. Vui lòng thử lại.';
+                }
+            } else {
+                if (!errorMessage) {
+                    errorMessage = 'An error occurred. Please try again.';
+                }
+            }
+            
             alert(errorMessage);
         } finally {
             setIsProcessing(false);
@@ -406,10 +435,7 @@ export default function TopupPage() {
                                         </div>
 
                                         <button
-                                            disabled={customAmount < 6000 && selectedPackage?.code === 'CUSTOM'}
-                                            className={`w-full py-3.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 mt-auto whitespace-nowrap ${customAmount < 6000 && selectedPackage?.code === 'CUSTOM'
-                                                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 cursor-not-allowed'
-                                                : selectedPackage?.code === 'CUSTOM'
+                                            className={`w-full py-3.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 mt-auto whitespace-nowrap ${selectedPackage?.code === 'CUSTOM'
                                                     ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30'
                                                     : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/20 group-hover:text-violet-600 dark:group-hover:text-violet-400'
                                                 }`}
@@ -487,12 +513,8 @@ export default function TopupPage() {
                                     </div>
 
                                     <button
-                                        disabled={
-                                            (selectedPackage.code === 'CUSTOM' && customAmount < 6000) ||
-                                            isProcessing
-                                        }
-                                        className={`w-full mt-6 py-4 rounded-xl font-black text-base uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${(selectedPackage.code === 'CUSTOM' && customAmount < 6000) ||
-                                            isProcessing
+                                        disabled={isProcessing}
+                                        className={`w-full mt-6 py-4 rounded-xl font-black text-base uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${isProcessing
                                             ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
                                             : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50 hover:-translate-y-1'
                                             }`}
@@ -539,7 +561,7 @@ export default function TopupPage() {
             {showPaymentModal && vietqrData && (
                 <div className="fixed inset-0 flex items-center justify-center z-50 p-4 sm:p-6">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowPaymentModal(false)}></div>
-                    <div className="relative bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-violet-100 dark:border-slate-700 animate-in fade-in zoom-in duration-300">
+                    <div className="relative bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-violet-100 dark:border-slate-700 animate-in fade-in zoom-in duration-300">
                         <div className="p-2 sm:p-4">
                             <VietQRPayment
                                 orderId={vietqrData.order_id}

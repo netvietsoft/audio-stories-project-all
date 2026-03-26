@@ -426,6 +426,11 @@ export default function StoryChapterClient() {
         const fallbackChapter = normalizedDetail.chapters[0] || null;
         const selected = pickedBySlug || fallbackChapter;
 
+        console.log('[DEBUG] chapterSlug:', chapterSlug);
+        console.log('[DEBUG] fromSlug (parsed number):', fromSlug);
+        console.log('[DEBUG] pickedBySlug:', pickedBySlug ? `Chapter ${pickedBySlug.chapterNumber}: ${pickedBySlug.title}` : 'null');
+        console.log('[DEBUG] selected:', selected ? `Chapter ${selected.chapterNumber}: ${selected.title}` : 'null');
+
         if (selected) {
           setSelectedChapterId(selected.id);
           setVariants(selected.variants || []);
@@ -1239,7 +1244,7 @@ export default function StoryChapterClient() {
 
   return (
     <div className="w-full space-y-6 md:space-y-8">
-        <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_560px] lg:items-start">
+        <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px] lg:items-start">
           {/* Story Info */}
           <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
@@ -1615,8 +1620,6 @@ export default function StoryChapterClient() {
                     ) : null}
                   </div>
                 ) : null}
-
-                {!hasPlayableAudio ? <p className="text-xs text-amber-600 dark:text-amber-300">{translationPendingMessage}</p> : null}
               </div>
             </section>
 
@@ -2318,7 +2321,7 @@ export default function StoryChapterClient() {
                     </button>
                     {showTopupAction ? (
                       <button
-                        onClick={() => router.push(`/${currentLang}/profile`)}
+                        onClick={() => router.push(`/${currentLang}/topup`)}
                         className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700"
                       >
                         <CreditCard className="h-4 w-4" /> {t("topUp")}

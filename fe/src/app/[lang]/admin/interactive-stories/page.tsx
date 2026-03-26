@@ -5,23 +5,31 @@ import Link from "@/components/shared/LocalizedLink";
 import {
   Zap,
   Search,
-  Loader2,
   ChevronDown,
   ChevronRight,
   BookOpen,
   Layers,
-  Star,
   GitBranch,
   ArrowRight,
   Eye,
-  Music,
   Plus,
-  Edit2,
+  Pencil,
+  Star,
+  Clock,
+  Music,
+  X,
+  ChevronLeft,
+  Loader2,
   Trash2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
+import { ChapterForm, type ChapterSubmitPayload } from "../stories/[id]/chapters/_components/ChapterForm";
+import { VariantForm } from "../stories/[id]/chapters/_components/VariantForm";
+import { StoryForm } from "../stories/_components/StoryForm";
+import type { Variant, StorySubmitPayload } from "@/types/admin";
 
 interface VariantInfo {
   id: string;
@@ -37,6 +45,8 @@ interface ChapterInfo {
   id: string;
   title: string;
   chapterNumber: number;
+  storyId: string;
+  _count?: { variants: number };
   variants: VariantInfo[];
 }
 
@@ -61,6 +71,7 @@ const formatDuration = (seconds?: number) => {
 };
 
 export default function InteractiveStoriesPage() {
+  const router = useRouter();
   const [stories, setStories] = useState<StoryInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -70,6 +81,37 @@ export default function InteractiveStoriesPage() {
   const [expandedChapterId, setExpandedChapterId] = useState<string | null>(null);
   const [selectedLocale, setSelectedLocale] = useState('vi');
   const { languages } = useAdminLanguages();
+
+  // Modal States
+  const [editingChapterId, setEditingChapterId] = useState<string | null>(null);
+  const [editingChapterData, setEditingChapterData] = useState<ChapterInfo | null>(null);
+  const [fullChapterData, setFullChapterData] = useState<any | null>(null);
+  const [isFetchingChapterData, setIsFetchingChapterData] = useState(false);
+  const [isSubmittingChapter, setIsSubmittingChapter] = useState(false);
+
+  const [variantsModalOpen, setVariantsModalOpen] = useState(false);
+  const [selectedChapterForVariants, setSelectedChapterForVariants] = useState<ChapterInfo | null>(null);
+  const [selectedParentVariant, setSelectedParentVariant] = useState<Variant | null>(null);
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [isFetchingVariants, setIsFetchingVariants] = useState(false);
+
+  const [isAddingVariant, setIsAddingVariant] = useState(false);
+  const [newVariantTitle, setNewVariantTitle] = useState("");
+  const [isCreatingVariant, setIsCreatingVariant] = useState(false);
+
+  const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
+  const [editingVariantData, setEditingVariantData] = useState<any | null>(null);
+  const [isFetchingVariantData, setIsFetchingVariantData] = useState(false);
+  const [isSubmittingVariant, setIsSubmittingVariant] = useState(false);
+
+  const [isCreatingChapter, setIsCreatingChapter] = useState(false);
+  const [storyIdForNewChapter, setStoryIdForNewChapter] = useState<string | null>(null);
+  const [isSubmittingNewChapter, setIsSubmittingNewChapter] = useState(false);
+
+  const [editingStoryId, setEditingStoryId] = useState<string | null>(null);
+  const [editingStoryData, setEditingStoryData] = useState<any | null>(null);
+  const [isFetchingStoryData, setIsFetchingStoryData] = useState(false);
+  const [isSubmittingStory, setIsSubmittingStory] = useState(false);
 
   useEffect(() => {
     if (!languages.some((language) => language.key === selectedLocale)) {
@@ -105,6 +147,304 @@ export default function InteractiveStoriesPage() {
     } catch (error) {
       console.error("Failed to delete story:", error);
       alert("Không thể xóa truyện. Vui lòng thử lại.");
+    }
+  };
+
+  const handleEditStory = async (story: StoryInfo) => {
+    setEditingStoryId(story.id);
+    setIsFetchingStoryData(true);
+    try {
+      const res = await apiClient.get(`/stories/admin/${story.id}`);
+      const data = res.data;
+      
+      // Extensive mapping to match StoryForm requirements
+      const mappedData = {
+        ...data,
+        titleVi: data.titleVi || data.title || "",
+        titleEn: data.titleEn || "",
+        slug: data.slug || "",
+        descriptionVi: data.descriptionVi || data.description || "",
+        descriptionEn: data.descriptionEn || "",
+        categoryIds: (data.categories || []).map((item: any) => 
+          item.category?.id || item.categoryId || (typeof item === 'number' ? item : item.id)
+        ).filter(Boolean),
+        authorId: data.author?.id || data.authorId,
+        status: data.status || "ongoing",
+        isInteractive: !!data.isInteractive,
+        isRecommended: !!data.isRecommended,
+      };
+      
+      setEditingStoryData(mappedData);
+    } catch (error) {
+      console.error("Failed to fetch story details:", error);
+      alert("Không thể tải thông tin truyện.");
+      setEditingStoryId(null);
+    } finally {
+      setIsFetchingStoryData(false);
+    }
+  };
+
+  const handleStorySubmit = async (data: StorySubmitPayload) => {
+    if (!editingStoryId) return;
+    setIsSubmittingStory(true);
+    try {
+      await apiClient.patch(`/stories/${editingStoryId}`, data);
+      setEditingStoryId(null);
+      setEditingStoryData(null);
+      await fetchStories();
+    } catch (error) {
+      console.error("Failed to update story:", error);
+      alert("Không thể cập nhật truyện.");
+    } finally {
+      setIsSubmittingStory(false);
+    }
+  };
+
+  const handleEditChapter = async (chapter: ChapterInfo) => {
+    setEditingChapterData(chapter);
+    setEditingChapterId(chapter.id);
+    setIsFetchingChapterData(true);
+    setFullChapterData(null);
+    try {
+      const res = await apiClient.get(`/chapters/${chapter.id}`);
+      setFullChapterData(res.data);
+    } catch (error) {
+      console.error("Failed to fetch chapter details:", error);
+      alert("Không thể tải thông tin chương. Vui lòng thử lại.");
+      setEditingChapterId(null);
+    } finally {
+      setIsFetchingChapterData(false);
+    }
+  };
+
+  const handleChapterSubmit = async (data: ChapterSubmitPayload) => {
+    if (!editingChapterId || !editingChapterData) return;
+    setIsSubmittingChapter(true);
+    
+    try {
+      const payload = {
+        ...data,
+        thumbnailUrl: data.thumbnailUrl || undefined,
+        youtubeVideoId: data.youtubeVideoId || undefined,
+        r2AudioUrl: data.r2AudioUrl || undefined,
+        storyId: data.storyId || undefined,
+      };
+
+      await apiClient.patch(`/chapters/${editingChapterId}`, payload);
+      
+      // Update local state
+      const updatedTitle = payload.title || editingChapterData.title;
+      setStoryChapters((prev) => ({
+        ...prev,
+        [editingChapterData.storyId]: (prev[editingChapterData.storyId] || []).map(ch => 
+          ch.id === editingChapterId 
+            ? { ...ch, title: updatedTitle } // Optimistic partial update
+            : ch
+        ),
+      }));
+      
+      setEditingChapterId(null);
+      setEditingChapterData(null);
+    } catch (error) {
+      console.error("Failed to save chapter:", error);
+      alert("Không thể lưu chương. Vui lòng thử lại.");
+    } finally {
+      setIsSubmittingChapter(false);
+    }
+  };
+
+  const fetchVariants = async (chapterId: string, parentId?: string | null) => {
+    setIsFetchingVariants(true);
+    try {
+      const res = await apiClient.get(`/chapters/${chapterId}/variants`, {
+        params: { parentId: parentId === null ? 'null' : parentId }
+      });
+      setVariants(res.data);
+    } catch (error) {
+      console.error("Failed to fetch variants:", error);
+    } finally {
+      setIsFetchingVariants(false);
+    }
+  };
+
+  useEffect(() => {
+    if (variantsModalOpen && selectedChapterForVariants) {
+      fetchVariants(selectedChapterForVariants.id, selectedParentVariant?.id || null);
+    }
+  }, [variantsModalOpen, selectedChapterForVariants, selectedParentVariant]);
+
+  const updateChapterVariantCount = (storyId: string, chapterId: string, delta: number) => {
+    setStoryChapters(prev => ({
+      ...prev,
+      [storyId]: (prev[storyId] || []).map(ch => {
+        if (ch.id !== chapterId) return ch;
+        const currentCount = ch._count?.variants ?? ch.variants?.length ?? 0;
+        return {
+          ...ch,
+          _count: {
+            ...ch._count,
+            variants: Math.max(0, currentCount + delta)
+          }
+        };
+      })
+    }));
+
+    setSelectedChapterForVariants(prev => {
+      if (!prev || prev.id !== chapterId) return prev;
+      const currentCount = prev._count?.variants ?? prev.variants?.length ?? 0;
+      return {
+        ...prev,
+        _count: {
+          ...prev._count,
+          variants: Math.max(0, currentCount + delta)
+        }
+      };
+    });
+  };
+
+  const handleCreateVariant = async () => {
+    if (!selectedChapterForVariants || !newVariantTitle.trim()) return;
+    setIsCreatingVariant(true);
+
+    try {
+      const chapterId = selectedChapterForVariants.id;
+      await apiClient.post('/chapter-variants', {
+        chapterId,
+        parentId: selectedParentVariant?.id || null,
+        title: newVariantTitle.trim(),
+        orderIndex: variants.length,
+        nextChapterId: null,
+      });
+      updateChapterVariantCount(selectedChapterForVariants.storyId, chapterId, 1);
+      await fetchVariants(chapterId, selectedParentVariant?.id || null);
+      setIsAddingVariant(false);
+      setNewVariantTitle("");
+    } catch (error) {
+      console.error("Failed to create variant:", error);
+      alert("Không thể tạo biến thể.");
+    } finally {
+      setIsCreatingVariant(false);
+    }
+  };
+
+  const handleEditVariant = async (variant: Variant) => {
+    setEditingVariantId(variant.id);
+    setIsFetchingVariantData(true);
+    setEditingVariantData(null);
+    try {
+      const res = await apiClient.get(`/chapter-variants/${variant.id}`);
+      setEditingVariantData(res.data);
+    } catch (error) {
+      console.error("Failed to fetch variant details:", error);
+      alert("Không thể tải thông tin diễn biến.");
+      setEditingVariantId(null);
+    } finally {
+      setIsFetchingVariantData(false);
+    }
+  };
+
+  const handleVariantSubmit = async (data: any) => {
+    if (!editingVariantId) return;
+    setIsSubmittingVariant(true);
+    try {
+      await apiClient.patch(`/chapter-variants/${editingVariantId}`, data);
+      if (selectedChapterForVariants) {
+        await fetchVariants(selectedChapterForVariants.id, selectedParentVariant?.id || null);
+      }
+      setEditingVariantId(null);
+      setEditingVariantData(null);
+    } catch (error) {
+      console.error("Failed to update variant:", error);
+      alert("Không thể lưu diễn biến. Vui lòng thử lại.");
+    } finally {
+      setIsSubmittingVariant(false);
+    }
+  };
+
+  const handleChapterCreateSubmit = async (data: any) => {
+    if (!storyIdForNewChapter) return;
+    setIsSubmittingNewChapter(true);
+    try {
+      await apiClient.post(`/stories/${storyIdForNewChapter}/chapters`, data);
+      setIsCreatingChapter(false);
+      
+      // Refresh chapters
+      const res = await apiClient.get(`/chapters?storyId=${storyIdForNewChapter}&limit=100`);
+      const chaptersRaw = res.data.data || res.data || [];
+      const chaptersWithVariants: ChapterInfo[] = await Promise.all(
+        chaptersRaw.map(async (ch: any) => {
+          try {
+            const varRes = await apiClient.get(`/chapters/${ch.id}/variants`);
+            return {
+              id: ch.id,
+              title: ch.title || ch.titleVi || ch.titleEn || `Chương ${ch.chapterNumber}`,
+              chapterNumber: ch.chapterNumber,
+              variants: varRes.data || [],
+            };
+          } catch {
+            return {
+              id: ch.id,
+              title: ch.title || ch.titleVi || ch.titleEn || `Chương ${ch.chapterNumber}`,
+              chapterNumber: ch.chapterNumber,
+              variants: [],
+            };
+          }
+        })
+      );
+      setStoryChapters((prev) => ({ ...prev, [storyIdForNewChapter]: chaptersWithVariants }));
+
+      // Update local count
+      setStories(prev => prev.map(s => 
+        s.id === storyIdForNewChapter 
+          ? { ...s, _count: { ...s._count, chapters: (s._count?.chapters || 0) + 1 } } 
+          : s
+      ));
+      
+      setStoryIdForNewChapter(null);
+    } catch (error) {
+      console.error("Failed to create chapter:", error);
+      alert("Không thể tạo chương mới.");
+    } finally {
+      setIsSubmittingNewChapter(false);
+    }
+  };
+
+  const handleDeleteVariant = async (variantId: string) => {
+    if (!confirm("Xóa biến thể này?")) return;
+    try {
+      const chapterId = selectedChapterForVariants?.id;
+      await apiClient.delete(`/chapter-variants/${variantId}`);
+      if (chapterId && selectedChapterForVariants) {
+        updateChapterVariantCount(selectedChapterForVariants.storyId, chapterId, -1);
+        await fetchVariants(chapterId, selectedParentVariant?.id || null);
+      }
+    } catch (error) {
+      console.error("Failed to delete variant:", error);
+    }
+  };
+
+  const formatDuration = (seconds?: number | null) => {
+    if (!seconds) return "N/A";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleDeleteChapter = async (storyId: string, chapterId: string, chapterTitle: string) => {
+    if (!confirm(`Bạn có chắc muốn xóa chương "${chapterTitle}"? Hành động này không thể hoàn tác.`)) {
+      return;
+    }
+
+    try {
+      await apiClient.delete(`/chapters/${chapterId}`);
+      // Refresh chapters for this story
+      setStoryChapters((prev) => ({
+        ...prev,
+        [storyId]: (prev[storyId] || []).filter((ch) => ch.id !== chapterId),
+      }));
+    } catch (error) {
+      console.error("Failed to delete chapter:", error);
+      alert("Không thể xóa chương. Vui lòng thử lại.");
     }
   };
 
@@ -352,34 +692,39 @@ export default function InteractiveStoriesPage() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-3 pr-2">
-                      <Link
-                        href={`/admin/stories/${story.id}/chapters`}
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                        className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all"
-                        title="Quản lý chương"
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStoryIdForNewChapter(story.id);
+                          setIsCreatingChapter(true);
+                        }}
+                        className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                        title="Thêm chương mới"
                       >
-                        <Music className="w-4 h-4" />
-                      </Link>
-                      <Link
-                        href={`/admin/stories/${story.id}?lang=${selectedLocale}`}
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                        <Plus className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditStory(story);
+                        }}
+                        className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                         title="Sửa truyện"
                       >
-                        <Edit2 className="w-4 h-4" />
-                      </Link>
+                        <Pencil className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteStory(story.id, story.title);
                         }}
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                        className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                         title="Xóa truyện"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                       <ChevronDown
-                        className={`w-5 h-5 ml-2 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                        className={`w-5 h-5 ml-2 text-slate-500 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
                       />
                     </div>
                   </div>
@@ -409,13 +754,13 @@ export default function InteractiveStoriesPage() {
                                 className="bg-white rounded-2xl border border-slate-200 overflow-hidden"
                               >
                                 {/* Chapter Header */}
-                                <button
-                                  onClick={() =>
-                                    setExpandedChapterId(isChapterExpanded ? null : chapter.id)
-                                  }
-                                  className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 transition-all"
-                                >
-                                  <div className="flex items-center gap-3">
+                                <div className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 transition-all group">
+                                  <div
+                                    onClick={() =>
+                                      setExpandedChapterId(isChapterExpanded ? null : chapter.id)
+                                    }
+                                    className="flex-1 flex items-center gap-3 cursor-pointer"
+                                  >
                                     <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-black">
                                       {chapter.chapterNumber}
                                     </div>
@@ -447,12 +792,69 @@ export default function InteractiveStoriesPage() {
                                       </div>
                                     </div>
                                   </div>
-                                  {variantCount > 0 && (
-                                    <ChevronRight
-                                      className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isChapterExpanded ? "rotate-90" : ""}`}
-                                    />
-                                  )}
-                                </button>
+
+                                  <div className="flex items-center gap-1">
+                                    {/* Plus Icon - Add Variant */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedChapterForVariants(chapter);
+                                        setSelectedParentVariant(null);
+                                        setVariantsModalOpen(true);
+                                        // Auto open add variant form
+                                        setTimeout(() => setIsAddingVariant(true), 100);
+                                      }}
+                                      className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                      title="Thêm diễn biến mới"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                    </button>
+
+                                    {/* Layers Icon (Action) */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedChapterForVariants(chapter);
+                                        setVariantsModalOpen(true);
+                                      }}
+                                      className={`p-2 rounded-lg transition-colors flex items-center gap-1.5 ${
+                                        isChapterExpanded 
+                                          ? "bg-indigo-50 text-indigo-600" 
+                                          : "text-slate-500 hover:bg-slate-100"
+                                      }`}
+                                      title="Quản lý biến thể"
+                                    >
+                                      <Layers className="w-4 h-4" />
+                                      <span className="text-xs font-bold">{variantCount}</span>
+                                    </button>
+
+                                    {/* Pencil Icon (Action) */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditChapter(chapter);
+                                      }}
+                                      className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                      title="Chỉnh sửa chương"
+                                    >
+                                      <Pencil className="w-4 h-4" />
+                                    </button>
+
+                                    {/* Trash Icon (Action) */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteChapter(story.id, chapter.id, chapter.title);
+                                      }}
+                                      className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                      title="Xóa chương"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+
+                                    {/* ChevronRight was here, removed as redundant */}
+                                  </div>
+                                </div>
 
                                 {/* Variants Detail */}
                                 {isChapterExpanded && variantCount > 0 && (
@@ -520,6 +922,422 @@ export default function InteractiveStoriesPage() {
           </div>
         )}
       </div>
+
+      {/* MODAL: Chapter Edit */}
+      {editingChapterId && editingChapterData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-[32px] shadow-2xl relative custom-scrollbar">
+            <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-8 py-6 rounded-t-[32px]">
+              <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                Chỉnh sửa chương
+              </h2>
+              <button
+                onClick={() => {
+                  setEditingChapterId(null);
+                  setEditingChapterData(null);
+                }}
+                className="p-2 rounded-xl text-slate-400 hover:bg-slate-100 transition-colors"
+                title="Đóng modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-8">
+              {isFetchingChapterData ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <Loader2 className="w-12 h-12 animate-spin text-indigo-600" />
+                  <p className="text-sm font-bold text-slate-500 animate-pulse">Đang tải dữ liệu chương...</p>
+                </div>
+              ) : fullChapterData && (
+                <ChapterForm
+                  initialData={fullChapterData}
+                  selectedLocale={selectedLocale}
+                  onSubmit={handleChapterSubmit}
+                  onCancel={() => {
+                    setEditingChapterId(null);
+                    setEditingChapterData(null);
+                    setFullChapterData(null);
+                  }}
+                  isLoading={isSubmittingChapter}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Variants Manager */}
+      {variantsModalOpen && selectedChapterForVariants && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-[32px] max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white border-b border-slate-100 px-8 py-6 rounded-t-[32px] flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-slate-900">
+                    {selectedParentVariant ? `Con của: ${selectedParentVariant.title}` : "Quản lý Diễn biến"}
+                  </h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Chương {selectedChapterForVariants.chapterNumber}: {selectedChapterForVariants.title}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {selectedParentVariant && (
+                    <button
+                      onClick={() => setSelectedParentVariant(null)}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-xs font-bold transition-all"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Quay lại gốc
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setVariantsModalOpen(false);
+                      setSelectedChapterForVariants(null);
+                      setSelectedParentVariant(null);
+                    }}
+                    className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8 flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50 space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Danh sách diễn biến</h3>
+                <button
+                  onClick={() => setIsAddingVariant(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+                >
+                  <Plus className="w-4 h-4" />
+                  Thêm diễn biến
+                </button>
+              </div>
+
+              {isFetchingVariants ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                </div>
+              ) : variants.length > 0 ? (
+                <div className="space-y-4">
+                  {variants.map((variant) => (
+                    <div key={variant.id} className="p-5 border border-slate-200 rounded-2xl bg-white flex items-center justify-between group shadow-sm hover:shadow-md transition-all">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-slate-900 text-base">{variant.title}</h4>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <span className="text-xs font-medium text-slate-500 flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg">
+                            <Clock className="w-3.5 h-3.5" />
+                            {formatDuration(variant.audioDuration)}
+                          </span>
+                          <span className="text-xs text-indigo-700 font-bold bg-indigo-50 px-2.5 py-1 rounded-lg">
+                            {variant.unlockPrice} Credits
+                          </span>
+                          {variant.isDefault && (
+                            <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                              <Star className="w-3.5 h-3.5 fill-emerald-700 text-transparent" />
+                              Mặc định
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={async () => {
+                            try {
+                              await apiClient.patch(`/chapter-variants/${variant.id}`, { isDefault: !variant.isDefault });
+                              await fetchVariants(selectedChapterForVariants.id, selectedParentVariant?.id || null);
+                            } catch (e) { console.error(e); }
+                          }}
+                          className={`p-2 rounded-xl transition-all border border-transparent hover:border-slate-200 ${
+                            variant.isDefault 
+                              ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' 
+                              : 'bg-slate-50 text-slate-400 hover:text-emerald-600 hover:bg-white'
+                          }`}
+                          title={variant.isDefault ? 'Bỏ mặc định' : 'Đặt làm mặc định'}
+                        >
+                          <Star className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => setSelectedParentVariant(variant)}
+                          className="p-2 bg-slate-50 hover:bg-white text-slate-400 hover:text-indigo-600 rounded-xl transition-all border border-transparent hover:border-slate-200"
+                          title="Quản lý biến thể con"
+                        >
+                          <Layers className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleEditVariant(variant)}
+                          className="p-2 bg-slate-50 hover:bg-white text-slate-400 hover:text-indigo-600 rounded-xl transition-all border border-transparent hover:border-slate-200"
+                          title="Chỉnh sửa chi tiết"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteVariant(variant.id)}
+                          className="p-2 bg-slate-50 hover:bg-white text-slate-400 hover:text-red-500 rounded-xl transition-all border border-transparent hover:border-slate-200"
+                          title="Xóa diễn biến"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-3xl bg-white">
+                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Layers className="w-8 h-8 text-slate-300" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 mb-1">Chưa có diễn biến</h3>
+                  <p className="text-sm text-slate-500">Tạo diễn biến đầu tiên để người đọc có thể lựa chọn.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="px-8 py-5 border-t border-slate-100 bg-white rounded-b-[32px] flex items-center justify-center">
+              <p className="text-xs font-medium text-slate-400 flex items-center gap-2">
+                <Music className="w-4 h-4" />
+                <span>Bạn cũng có thể đính kèm âm thanh riêng cho từng diễn biến.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Add Variant (Secondary Modal) */}
+      {isAddingVariant && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[32px] max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden border border-slate-100">
+            <div className="px-8 pt-8 pb-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  Thêm Diễn Biến
+                </h3>
+                <button
+                  onClick={() => setIsAddingVariant(false)}
+                  className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                    Tiêu đề diễn biến
+                  </label>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={newVariantTitle}
+                    onChange={(e) => setNewVariantTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCreateVariant();
+                      if (e.key === 'Escape') setIsAddingVariant(false);
+                    }}
+                    placeholder="Nhập tiêu đề (vd: Chiến đấu, Chạy trốn...)"
+                    className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-500/20 focus:bg-white rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 transition-all outline-none"
+                  />
+                </div>
+                
+                <p className="text-xs text-slate-400 px-1 leading-relaxed">
+                  Diễn biến mới sẽ được thêm vào cuối danh sách của chapter hiện tại.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-8 py-6 bg-slate-50/50 flex items-center gap-3 border-t border-slate-100">
+              <button
+                onClick={() => setIsAddingVariant(false)}
+                className="flex-1 py-3.5 px-6 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-100 transition-all"
+              >
+                Hủy
+              </button>
+              <button
+                disabled={isCreatingVariant || !newVariantTitle.trim()}
+                onClick={handleCreateVariant}
+                className="flex-[2] py-3.5 px-6 rounded-2xl bg-indigo-600 text-white text-sm font-black hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2"
+              >
+                {isCreatingVariant ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Plus className="w-4 h-4" />
+                )}
+                Tạo Ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Edit Variant (Secondary/Tertiary Modal) */}
+      {editingVariantId && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] max-w-5xl w-full max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden border border-slate-100 flex flex-col">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-100 flex items-center justify-center text-white">
+                  <Pencil className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Chỉnh sửa Diễn Biến</h3>
+                  {selectedChapterForVariants && (
+                    <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-wider">
+                      Chapter {selectedChapterForVariants.chapterNumber} • {selectedChapterForVariants.title}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingVariantId(null);
+                  setEditingVariantData(null);
+                }}
+                className="p-3 hover:bg-slate-50 rounded-2xl transition-colors text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+              {isFetchingVariantData ? (
+                <div className="flex flex-col items-center justify-center py-24 gap-4">
+                  <Loader2 className="w-12 h-12 animate-spin text-indigo-600" />
+                  <p className="text-sm font-black text-slate-500 animate-pulse">Đang tải chi tiết diễn biến...</p>
+                </div>
+              ) : editingVariantData && (
+                <VariantForm
+                  initialData={{
+                    title: editingVariantData.title,
+                    description: editingVariantData.description || "",
+                    content: editingVariantData.content || "",
+                    audioUrl: editingVariantData.audioUrl || "",
+                    r2AudioUrl: editingVariantData.r2AudioUrl || "",
+                    audioDuration: editingVariantData.audioDuration || 0,
+                    unlockPrice: editingVariantData.unlockPrice || 0,
+                    orderIndex: editingVariantData.orderIndex || 0,
+                    isDefault: editingVariantData.isDefault || false,
+                    nextChapterId: editingVariantData.nextChapterId || null,
+                    nextVariantId: editingVariantData.nextVariantId || null,
+                  }}
+                  chapterId={editingVariantData.chapterId}
+                  storyId={selectedChapterForVariants?.storyId}
+                  onSubmit={handleVariantSubmit}
+                  onCancel={() => {
+                    setEditingVariantId(null);
+                    setEditingVariantData(null);
+                  }}
+                  isLoading={isSubmittingVariant}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Create Chapter */}
+      {isCreatingChapter && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] max-w-5xl w-full max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden border border-slate-100 flex flex-col">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-600 shadow-lg shadow-emerald-100 flex items-center justify-center text-white">
+                  <Plus className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Thêm Chương Mới</h3>
+                  <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-wider">
+                    Tạo chương mới cho truyện này
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsCreatingChapter(false);
+                  setStoryIdForNewChapter(null);
+                }}
+                className="p-3 hover:bg-slate-50 rounded-2xl transition-colors text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+              <ChapterForm
+                initialData={{
+                  chapterNumber: (storyChapters[storyIdForNewChapter!]?.length || 0) + 1,
+                  titleVi: '',
+                  descriptionVi: '',
+                  contentVi: '',
+                  accessType: 'free',
+                }}
+                onSubmit={handleChapterCreateSubmit}
+                onCancel={() => {
+                  setIsCreatingChapter(false);
+                  setStoryIdForNewChapter(null);
+                }}
+                isLoading={isSubmittingNewChapter}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Edit Story */}
+      {editingStoryId && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[40px] max-w-5xl w-full max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden border border-slate-100 flex flex-col">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-100 flex items-center justify-center text-white">
+                  <Pencil className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Chi tiết truyện</h3>
+                  <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-wider">
+                    {isFetchingStoryData ? 'Đang tải thông tin...' : 'Chỉnh sửa thông tin cơ bản'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setEditingStoryId(null);
+                  setEditingStoryData(null);
+                }}
+                className="p-3 hover:bg-slate-50 rounded-2xl transition-colors text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+              {isFetchingStoryData ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+                  <p className="text-sm font-bold text-slate-400">Đang lấy dữ liệu truyện...</p>
+                </div>
+              ) : (
+                <StoryForm
+                  initialData={editingStoryData}
+                  onSubmit={handleStorySubmit}
+                  onCancel={() => {
+                    setEditingStoryId(null);
+                    setEditingStoryData(null);
+                  }}
+                  isLoading={isSubmittingStory}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

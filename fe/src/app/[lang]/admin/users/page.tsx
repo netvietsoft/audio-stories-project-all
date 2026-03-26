@@ -295,7 +295,7 @@ export default function UsersPage() {
                                         <td className="px-6 py-4 text-right">
                                             <Link
                                                 href={`/admin/users/${user.id}`}
-                                                className="inline-flex items-center justify-center p-2.5 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 transition-all shadow-sm active:scale-95"
+                                                className="inline-flex items-center justify-center p-2.5 bg-white border border-slate-200 rounded-xl text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-100 transition-all shadow-sm active:scale-95"
                                                 title="Xem chi tiết"
                                             >
                                                 <ChevronRight className="w-5 h-5" />

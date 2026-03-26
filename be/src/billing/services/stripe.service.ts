@@ -46,6 +46,8 @@ export class StripeService {
       throw new BadRequestException('Package not found or inactive');
     }
 
+    this.logger.log(`Found package: ${JSON.stringify(pkg)}`);
+
     const user = await this.prisma.user.findUnique({
       where: { id: params.userId },
     });
@@ -93,6 +95,12 @@ export class StripeService {
     const exchangeRate = parseFloat(process.env.USD_TO_VND_RATE || '25000');
     const amountUsd = Math.round((pkg.priceVnd / exchangeRate) * 100); // in cents
 
+    // Get product name and description
+    const productName = pkg.name?.trim() || `${pkg.credits} Credits Package`;
+    const productDescription = pkg.description?.trim() || `${pkg.credits} credits`;
+
+    this.logger.log(`Creating Stripe session with product: ${productName}, price: ${amountUsd} cents`);
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'payment',
@@ -101,8 +109,8 @@ export class StripeService {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: pkg.name,
-              description: `${pkg.credits} credits`,
+              name: productName,
+              description: productDescription,
             },
             unit_amount: amountUsd,
           },

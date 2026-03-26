@@ -483,7 +483,7 @@ export default function HomePage() {
           <section>
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
-              <Link href="/categories" className="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              <Link href="/stories" className="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
                 {t("viewAll")}
               </Link>
             </div>

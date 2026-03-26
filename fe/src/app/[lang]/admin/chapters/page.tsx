@@ -440,7 +440,7 @@ export default function ChaptersGlobalPage() {
                                 <div className="flex shrink-0 items-center gap-2">
                                     <button
                                         onClick={() => handleEdit(chapter)}
-                                        className="rounded-xl p-2 text-slate-400 transition-all hover:bg-indigo-50 hover:text-indigo-600"
+                                        className="rounded-xl p-2 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
                                         title="Chỉnh sửa"
                                     >
                                         <Edit2 className="w-4 h-4" />

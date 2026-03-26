@@ -241,7 +241,10 @@
     "unlockVariantDescription": "Bạn đang mở khóa biến thể: {title}",
     "unlockVariantPrice": "Phí mở khóa: {price} credits.",
     "unlockNow": "Mở khóa ngay",
-    "unlocked": "Đã mở khóa"
+    "unlocked": "Đã mở khóa",
+    "topUp": "Nạp thêm",
+    "buyVip": "Gói VIP",
+    "buyVipInfo": "Mở khóa trọn bộ mọi truyện trong {days} ngày chỉ với {cost} credits."
   },
   "StoryPage": {
     "notFound": "Không tìm thấy truyện",

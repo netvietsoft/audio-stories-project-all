@@ -592,7 +592,7 @@ export default function StoryReader({
           previewParagraphs.map((paragraph) => (
             <div key={paragraph.id} className="mb-6">
               <div 
-                className="text-lg leading-relaxed text-gray-800 dark:text-gray-100"
+                className="text-base sm:text-lg leading-relaxed text-gray-800 dark:text-gray-100 px-3 sm:px-4 md:px-5 text-justify"
                 style={{ 
                   wordBreak: "normal",
                   overflowWrap: "break-word",
@@ -604,7 +604,7 @@ export default function StoryReader({
             </div>
           ))
         ) : (
-          <p className="text-base leading-loose text-gray-500 dark:text-gray-300">Chương này hiện đang bị khóa nội dung.</p>
+          <p className="text-base leading-loose text-gray-500 dark:text-gray-300 px-3 sm:px-4">Chương này hiện đang bị khóa nội dung.</p>
         )}
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-white dark:to-gray-900" />
@@ -665,7 +665,7 @@ export default function StoryReader({
             <div key={paragraph.id} className="group mb-4 overflow-visible rounded-lg transition-colors md:mb-6">
               <div className="relative">
                 <div
-                  className="story-paragraph-content rounded-lg px-1 py-1.5 text-lg leading-relaxed text-gray-800 transition-colors sm:px-1.5 sm:py-2 md:px-2 md:py-2.5 dark:text-gray-100"
+                  className="story-paragraph-content rounded-lg px-3 py-2 text-base sm:text-lg leading-relaxed text-gray-800 transition-colors sm:px-4 sm:py-2.5 md:px-5 md:py-3 dark:text-gray-100 text-justify"
                   style={{
                     wordBreak: "normal",
                     overflowWrap: "break-word",

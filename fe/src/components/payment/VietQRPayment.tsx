@@ -167,9 +167,9 @@ export default function VietQRPayment({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Timer */}
-      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-center gap-3">
+      <div className="border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex items-center gap-3">
         <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
         <div className="flex-1">
           <p className="text-sm font-bold text-amber-900 dark:text-amber-300">{t("timeLeft")}</p>
@@ -179,13 +179,13 @@ export default function VietQRPayment({
 
       {/* QR Code */}
       <div className="bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-6">
-        <div className="text-center mb-4">
-          <h3 className="text-lg font-black text-slate-900 dark:text-white mb-1">{t("scanQRTitle")}</h3>
+        <div className="text-center mb-6">
+          <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">{t("scanQRTitle")}</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">{t("scanQRDesc")}</p>
         </div>
         
         {qrImage && (
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center">
             <div className="relative w-64 h-64 bg-white dark:bg-slate-800 rounded-xl border-2 border-slate-200 dark:border-slate-700 p-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -196,7 +196,7 @@ export default function VietQRPayment({
               {/* Download QR Button */}
               <button
                 onClick={downloadQRImage}
-                className="absolute top-4 right-4 p-2 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg shadow-lg border border-slate-200 dark:border-slate-600 transition-all"
+                className="absolute top-3 right-3 p-2 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg shadow-lg border border-slate-200 dark:border-slate-600 transition-all"
                 title={t("downloadQR")}
               >
                 {copied === 'qr' ? (
@@ -208,64 +208,6 @@ export default function VietQRPayment({
             </div>
           </div>
         )}
-
-        <div className="space-y-3">
-          <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-            <span className="text-sm text-slate-600 dark:text-slate-400">{t("amount")}</span>
-            <div className="flex items-center gap-2">
-              <span className="font-black text-slate-900 dark:text-white">{formatCurrency(amount)}</span>
-              <button
-                onClick={() => copyToClipboard(amount.toString(), 'amount')}
-                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded"
-              >
-                {copied === 'amount' ? (
-                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                ) : (
-                  <Copy className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-            <span className="text-sm text-slate-600 dark:text-slate-400">{t("transferContent")}</span>
-            <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-slate-900 dark:text-white">{transactionCode}</span>
-              <button
-                onClick={() => copyToClipboard(transactionCode, 'code')}
-                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded"
-              >
-                {copied === 'code' ? (
-                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                ) : (
-                  <Copy className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-            <span className="text-sm text-slate-600 dark:text-slate-400">{t("accountNumber")}</span>
-            <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-slate-900 dark:text-white">{bankInfo.account_no}</span>
-              <button
-                onClick={() => copyToClipboard(bankInfo.account_no, 'account')}
-                className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded"
-              >
-                {copied === 'account' ? (
-                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                ) : (
-                  <Copy className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-            <span className="text-sm text-slate-600 dark:text-slate-400">{t("accountName")}</span>
-            <span className="font-bold text-slate-900 dark:text-white">{bankInfo.account_name}</span>
-          </div>
-        </div>
       </div>
 
       {/* Status */}

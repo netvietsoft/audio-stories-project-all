@@ -20,14 +20,10 @@ import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
 interface PaymentPackage {
     code: string;
-    nameVi?: string;
-    nameEn?: string;
-    name?: string;
+    name: string;
     priceVnd: number;
     lang?: string;
     credits: number;
-    descriptionVi?: string;
-    descriptionEn?: string;
     description?: string;
     isActive: boolean;
     isPopular?: boolean;
@@ -47,12 +43,10 @@ export default function PackagesPage() {
     const { languages } = useAdminLanguages();
     const [formData, setFormData] = useState<Partial<PaymentPackage>>({
         code: '',
-        nameVi: '',
-        nameEn: '',
+        name: '',
         priceVnd: 0,
         credits: 0,
-        descriptionVi: '',
-        descriptionEn: '',
+        description: '',
         isActive: true,
         isPopular: false,
         isBestValue: false,
@@ -90,12 +84,10 @@ export default function PackagesPage() {
             setEditingCode(null);
             setFormData({
                 code: '',
-                nameVi: '',
-                nameEn: '',
+                name: '',
                 priceVnd: 0,
                 credits: 0,
-                descriptionVi: '',
-                descriptionEn: '',
+                description: '',
                 isActive: true,
                 isPopular: false,
                 isBestValue: false,
@@ -119,8 +111,8 @@ export default function PackagesPage() {
         console.log('Editing code:', editingCode);
         
         // Validation
-        if (!formData.code || (!formData.nameVi && !formData.nameEn)) {
-            alert('Vui lòng điền đầy đủ thông tin bắt buộc (Code và ít nhất một tên gói)!');
+        if (!formData.code || !formData.name) {
+            alert('Vui lòng điền đầy đủ thông tin bắt buộc (Code và tên gói)!');
             return;
         }
         
@@ -136,12 +128,10 @@ export default function PackagesPage() {
             if (editingCode) {
                 // For update, only send allowed fields (exclude code, createdAt, updatedAt)
                 const updateData = {
-                    nameVi: formData.nameVi,
-                    nameEn: formData.nameEn,
+                    name: formData.name,
                     priceVnd: formData.priceVnd,
                     credits: formData.credits,
-                    descriptionVi: formData.descriptionVi,
-                    descriptionEn: formData.descriptionEn,
+                    description: formData.description,
                     isActive: formData.isActive,
                     isPopular: formData.isPopular,
                     isBestValue: formData.isBestValue,
@@ -156,12 +146,10 @@ export default function PackagesPage() {
                 // For create, send all fields except timestamps
                 const createData = {
                     code: formData.code,
-                    nameVi: formData.nameVi,
-                    nameEn: formData.nameEn,
+                    name: formData.name,
                     priceVnd: formData.priceVnd,
                     credits: formData.credits,
-                    descriptionVi: formData.descriptionVi,
-                    descriptionEn: formData.descriptionEn,
+                    description: formData.description,
                     isActive: formData.isActive,
                     isPopular: formData.isPopular,
                     isBestValue: formData.isBestValue,
@@ -288,9 +276,7 @@ export default function PackagesPage() {
                                     <Coins className="w-7 h-7 text-white" />
                                 </div>
                                 <h3 className="text-xl font-black text-slate-900 mb-1">
-                                    {isEnglishLocale
-                                        ? (pkg.nameEn || pkg.nameVi || pkg.name)
-                                        : (pkg.nameVi || pkg.nameEn || pkg.name)}
+                                    {pkg.name}
                                 </h3>
                                 <p className="text-xs font-mono text-slate-400 uppercase tracking-wider">
                                     Code: {pkg.code}
@@ -310,11 +296,9 @@ export default function PackagesPage() {
                             </div>
 
                             {/* Description */}
-                            {((!isEnglishLocale && pkg.descriptionVi) || (isEnglishLocale && pkg.descriptionEn) || pkg.description) && (
+                            {pkg.description && (
                                 <p className="text-xs text-slate-500 mb-4 line-clamp-2">
-                                    {isEnglishLocale
-                                        ? (pkg.descriptionEn || pkg.descriptionVi || pkg.description)
-                                        : (pkg.descriptionVi || pkg.descriptionEn || pkg.description)}
+                                    {pkg.description}
                                 </p>
                             )}
 
@@ -408,25 +392,16 @@ export default function PackagesPage() {
 
                             <div className="space-y-2">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
-                                    {isEnglishLocale ? 'Package Name (English) *' : 'Tên gói (Tiếng Việt) *'}
+                                    Tên gói *
                                 </label>
                                 <input
                                     type="text"
-                                    value={isEnglishLocale ? (formData.nameEn || '') : (formData.nameVi || '')}
-                                    onChange={(e) => setFormData({ 
-                                        ...formData, 
-                                        [isEnglishLocale ? 'nameEn' : 'nameVi']: e.target.value 
-                                    })}
-                                    placeholder={isEnglishLocale ? 'e.g: 10,000 VND Package' : 'vd: Gói 10.000 VND'}
+                                    value={formData.name || ''}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    placeholder="vd: Gói 100 Credits"
                                     required
                                     className="w-full bg-slate-50 border-none rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 transition-all"
                                 />
-                                <p className="text-xs text-slate-400 mt-1">
-                                    {!isEnglishLocale 
-                                        ? `Tên tiếng Anh: ${formData.nameEn || '(chưa có)'}` 
-                                        : `Vietnamese name: ${formData.nameVi || '(chưa có)'}`
-                                    }
-                                </p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">
@@ -463,24 +438,15 @@ export default function PackagesPage() {
 
                             <div className="space-y-2">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
-                                    {isEnglishLocale ? 'Description (English)' : 'Mô tả (Tiếng Việt)'}
+                                    Mô tả
                                 </label>
                                 <textarea
-                                    value={isEnglishLocale ? (formData.descriptionEn || '') : (formData.descriptionVi || '')}
-                                    onChange={(e) => setFormData({ 
-                                        ...formData, 
-                                        [isEnglishLocale ? 'descriptionEn' : 'descriptionVi']: e.target.value 
-                                    })}
+                                    value={formData.description || ''}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     rows={2}
-                                    placeholder={isEnglishLocale ? 'Brief description of the package...' : 'Mô tả ngắn gọn về gói...'}
+                                    placeholder="Mô tả ngắn gọn về gói..."
                                     className="w-full bg-slate-50 border-none rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 transition-all resize-none"
                                 />
-                                <p className="text-xs text-slate-400 mt-1">
-                                    {!isEnglishLocale 
-                                        ? `Mô tả tiếng Anh: ${formData.descriptionEn || '(chưa có)'}` 
-                                        : `Vietnamese description: ${formData.descriptionVi || '(chưa có)'}`
-                                    }
-                                </p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-6">

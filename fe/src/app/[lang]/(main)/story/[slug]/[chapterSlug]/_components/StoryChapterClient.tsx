@@ -427,6 +427,11 @@ export default function StoryChapterClient() {
         const fallbackChapter = normalizedDetail.chapters[0] || null;
         const selected = pickedBySlug || fallbackChapter;
 
+        console.log('[DEBUG] chapterSlug:', chapterSlug);
+        console.log('[DEBUG] fromSlug (parsed number):', fromSlug);
+        console.log('[DEBUG] pickedBySlug:', pickedBySlug ? `Chapter ${pickedBySlug.chapterNumber}: ${pickedBySlug.title}` : 'null');
+        console.log('[DEBUG] selected:', selected ? `Chapter ${selected.chapterNumber}: ${selected.title}` : 'null');
+
         if (selected) {
           setSelectedChapterId(selected.id);
           setVariants(selected.variants || []);
@@ -758,11 +763,14 @@ export default function StoryChapterClient() {
 
   useEffect(() => {
     if (!currentTrack?.id || !story) return;
+    // Only sync selectedChapterId with currentTrack when audio is actually playing
+    // This prevents overriding URL-based navigation
+    if (!isPlaying) return;
     const existsInStory = story.chapters.some((chapter) => chapter.id === currentTrack.id);
     if (existsInStory) {
       setSelectedChapterId(currentTrack.id);
     }
-  }, [currentTrack?.id, story]);
+  }, [currentTrack?.id, story, isPlaying]);
 
   const playChapter = useCallback(
     async (chapter: ChapterItem, selectedStory: StoryDetail, autoPlay = true, variantId?: string) => {
@@ -1241,7 +1249,7 @@ export default function StoryChapterClient() {
 
   return (
     <div className="w-full space-y-6 md:space-y-8">
-        <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_440px] xl:grid-cols-[minmax(0,1fr)_520px] 2xl:grid-cols-[minmax(0,1fr)_560px] lg:items-start">
+        <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px] lg:items-start">
           {/* Story Info */}
           <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
@@ -1617,8 +1625,6 @@ export default function StoryChapterClient() {
                     ) : null}
                   </div>
                 ) : null}
-
-                {!hasPlayableAudio ? <p className="text-xs text-amber-600 dark:text-amber-300">{translationPendingMessage}</p> : null}
               </div>
             </section>
 
@@ -1696,9 +1702,38 @@ export default function StoryChapterClient() {
                       
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {variants.filter(v => !v.parentId).map((v) => {
+                        {variants.filter(v => !v.parentId).map((v, index) => {
                           const isUnlocked = v.unlockPrice <= 0 || unlockedVariantIds.includes(v.id) || isVipActive;
                           const isSelected = selectedVariantPath[0]?.id === v.id;
+                          
+                          // Define color schemes for each variant (always visible)
+                          const colorSchemes = [
+                            { // Blue
+                              base: "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/30",
+                              hover: "hover:bg-blue-100 dark:hover:bg-blue-900/50",
+                              selected: "border-blue-400 bg-blue-100 dark:border-blue-600 dark:bg-blue-900/60 ring-2 ring-blue-300/50",
+                              text: "text-blue-900 dark:text-blue-100",
+                              textNormal: "text-blue-800 dark:text-blue-200",
+                              icon: "text-blue-600 dark:text-blue-400"
+                            },
+                            { // Pink/Rose
+                              base: "border-pink-300 bg-pink-50 dark:border-pink-700 dark:bg-pink-900/30",
+                              hover: "hover:bg-pink-100 dark:hover:bg-pink-900/50",
+                              selected: "border-pink-400 bg-pink-100 dark:border-pink-600 dark:bg-pink-900/60 ring-2 ring-pink-300/50",
+                              text: "text-pink-900 dark:text-pink-100",
+                              textNormal: "text-pink-800 dark:text-pink-200",
+                              icon: "text-pink-600 dark:text-pink-400"
+                            },
+                            { // Yellow/Amber
+                              base: "border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/30",
+                              hover: "hover:bg-amber-100 dark:hover:bg-amber-900/50",
+                              selected: "border-amber-400 bg-amber-100 dark:border-amber-600 dark:bg-amber-900/60 ring-2 ring-amber-300/50",
+                              text: "text-amber-900 dark:text-amber-100",
+                              textNormal: "text-amber-800 dark:text-amber-200",
+                              icon: "text-amber-600 dark:text-amber-400"
+                            }
+                          ];
+                          const colorScheme = colorSchemes[index % 3]!; // Non-null assertion since we always have 3 color schemes
 
                           return (
                             <button
@@ -1707,15 +1742,17 @@ export default function StoryChapterClient() {
                                 if (!isSelected) handleSelectVariant(v);
                               }}
                               className={`flex flex-col items-start gap-3 rounded-xl p-4 transition-all h-full w-full border ${
+                                colorScheme.base
+                              } ${
                                 isSelected 
-                                  ? "border-indigo-300 bg-indigo-100 dark:border-indigo-600 dark:bg-indigo-900/60 shadow-sm ring-1 ring-indigo-300/50 cursor-default" 
-                                  : "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                  ? `${colorScheme.selected} shadow-lg cursor-default` 
+                                  : `${colorScheme.hover} shadow-sm`
                               }`}
                               disabled={isSelected}
                             >
                               <div className="w-full flex items-start justify-between gap-3">
                                 <p className={`text-base font-bold flex-1 text-left ${
-                                  isSelected ? "text-indigo-900 dark:text-indigo-100" : "text-gray-800 dark:text-gray-200"
+                                  isSelected ? colorScheme.text : colorScheme.textNormal
                                 }`}>
                                   {getLocalizedValue(locale, v.titleVi, v.titleEn, v.title)}
                                 </p>
@@ -1726,7 +1763,7 @@ export default function StoryChapterClient() {
                                 </p>
                                 <div className="flex-shrink-0">
                                   {!isUnlocked && (
-                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-black">
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black">
                                       <Coins className="h-3 w-3" />
                                       {v.unlockPrice}
                                     </div>
@@ -1738,12 +1775,12 @@ export default function StoryChapterClient() {
                                     </div>
                                   )}
                                   {isUnlocked && isSelected && v.unlockPrice > 0 && (
-                                    <div className="text-indigo-600 flex items-center justify-center dark:text-indigo-400">
+                                    <div className={`${colorScheme.icon} flex items-center justify-center`}>
                                       <LockOpen className="h-4 w-4" />
                                     </div>
                                   )}
                                   {v.unlockPrice <= 0 && (
-                                    <div className={`${isSelected ? "text-indigo-600 dark:text-indigo-400" : "text-emerald-500 dark:text-emerald-400"} flex items-center justify-center`}>
+                                    <div className={`${isSelected ? colorScheme.icon : "text-emerald-500 dark:text-emerald-400"} flex items-center justify-center`}>
                                       <LockOpen className="h-4 w-4" />
                                     </div>
                                   )}
@@ -1776,6 +1813,32 @@ export default function StoryChapterClient() {
                         const siblings = variants.filter(v => v.parentId === currentV.parentId);
                         const dropdownKey = currentV.parentId || 'root';
                         const isDropdownOpen = !!openNestedDropdowns[dropdownKey];
+                        
+                        // Determine color scheme based on variant level and index
+                        const getVariantColorScheme = () => {
+                          if (pathIndex === 0) {
+                            // Root level variants - Blue, Pink, Amber
+                            const rootVariants = variants.filter(v => !v.parentId);
+                            const variantIndex = rootVariants.findIndex(v => v.id === currentV.id);
+                            const rootColors = [
+                              { bg: "bg-blue-50 dark:bg-blue-900/30", border: "border-blue-200 dark:border-blue-800" },
+                              { bg: "bg-pink-50 dark:bg-pink-900/30", border: "border-pink-200 dark:border-pink-800" },
+                              { bg: "bg-amber-50 dark:bg-amber-900/30", border: "border-amber-200 dark:border-amber-800" }
+                            ];
+                            return rootColors[variantIndex % 3]!;
+                          } else {
+                            // Nested variants - Purple, Emerald, Orange
+                            const siblingIndex = siblings.findIndex(v => v.id === currentV.id);
+                            const nestedColors = [
+                              { bg: "bg-purple-50 dark:bg-purple-900/30", border: "border-purple-200 dark:border-purple-800" },
+                              { bg: "bg-emerald-50 dark:bg-emerald-900/30", border: "border-emerald-200 dark:border-emerald-800" },
+                              { bg: "bg-orange-50 dark:bg-orange-900/30", border: "border-orange-200 dark:border-orange-800" }
+                            ];
+                            return nestedColors[siblingIndex % 3]!;
+                          }
+                        };
+                        
+                        const variantColor = getVariantColorScheme();
 
                         return (
                           <div key={currentV.id} className="mt-6 space-y-4">
@@ -1784,10 +1847,39 @@ export default function StoryChapterClient() {
                                 <h4 className="mb-3 text-sm font-bold text-gray-700 dark:text-gray-300">
                                   {locale === 'en' ? 'Alternative choices:' : 'Các lựa chọn khác:'}
                                 </h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                  {siblings.map((s) => {
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                                  {siblings.map((s, sibIndex) => {
                                     const isUnlocked = s.unlockPrice <= 0 || unlockedVariantIds.includes(s.id) || isVipActive;
                                     const isSelected = currentV.id === s.id;
+                                    
+                                    // Define color schemes for child/nested variants (different from parent)
+                                    const colorSchemes = [
+                                      { // Purple/Violet
+                                        base: "border-purple-300 bg-purple-50 dark:border-purple-700 dark:bg-purple-900/30",
+                                        hover: "hover:bg-purple-100 dark:hover:bg-purple-900/50",
+                                        selected: "border-purple-400 bg-purple-100 dark:border-purple-600 dark:bg-purple-900/60 ring-2 ring-purple-300/50",
+                                        text: "text-purple-900 dark:text-purple-100",
+                                        textNormal: "text-purple-800 dark:text-purple-200",
+                                        icon: "text-purple-600 dark:text-purple-400"
+                                      },
+                                      { // Green/Emerald
+                                        base: "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-900/30",
+                                        hover: "hover:bg-emerald-100 dark:hover:bg-emerald-900/50",
+                                        selected: "border-emerald-400 bg-emerald-100 dark:border-emerald-600 dark:bg-emerald-900/60 ring-2 ring-emerald-300/50",
+                                        text: "text-emerald-900 dark:text-emerald-100",
+                                        textNormal: "text-emerald-800 dark:text-emerald-200",
+                                        icon: "text-emerald-600 dark:text-emerald-400"
+                                      },
+                                      { // Orange
+                                        base: "border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-900/30",
+                                        hover: "hover:bg-orange-100 dark:hover:bg-orange-900/50",
+                                        selected: "border-orange-400 bg-orange-100 dark:border-orange-600 dark:bg-orange-900/60 ring-2 ring-orange-300/50",
+                                        text: "text-orange-900 dark:text-orange-100",
+                                        textNormal: "text-orange-800 dark:text-orange-200",
+                                        icon: "text-orange-600 dark:text-orange-400"
+                                      }
+                                    ];
+                                    const colorScheme = colorSchemes[sibIndex % 3]!; // Non-null assertion since we always have 3 color schemes
 
                                     return (
                                       <button
@@ -1798,15 +1890,17 @@ export default function StoryChapterClient() {
                                           }
                                         }}
                                         className={`flex flex-col items-start gap-3 rounded-xl p-4 transition-all h-full w-full border ${
+                                          colorScheme.base
+                                        } ${
                                           isSelected 
-                                            ? "border-indigo-300 bg-indigo-100 dark:border-indigo-600 dark:bg-indigo-900/60 shadow-sm ring-1 ring-indigo-300/50 cursor-default" 
-                                            : "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                            ? `${colorScheme.selected} shadow-lg cursor-default` 
+                                            : `${colorScheme.hover} shadow-sm`
                                         }`}
                                         disabled={isSelected}
                                       >
                                         <div className="w-full flex items-start justify-between gap-3">
                                           <p className={`text-base font-bold flex-1 text-left ${
-                                            isSelected ? "text-indigo-900 dark:text-indigo-100" : "text-gray-800 dark:text-gray-200"
+                                            isSelected ? colorScheme.text : colorScheme.textNormal
                                           }`}>
                                             {getLocalizedValue(locale, s.titleVi, s.titleEn, s.title)}
                                           </p>
@@ -1817,7 +1911,7 @@ export default function StoryChapterClient() {
                                           </p>
                                           <div className="flex-shrink-0">
                                             {!isUnlocked && (
-                                              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-black">
+                                              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-black">
                                                 <Coins className="h-3 w-3" />
                                                 {s.unlockPrice}
                                               </div>
@@ -1829,12 +1923,12 @@ export default function StoryChapterClient() {
                                               </div>
                                             )}
                                             {isUnlocked && isSelected && s.unlockPrice > 0 && (
-                                              <div className="text-indigo-600 flex items-center justify-center dark:text-indigo-400">
+                                              <div className={`${colorScheme.icon} flex items-center justify-center`}>
                                                 <LockOpen className="h-4 w-4" />
                                               </div>
                                             )}
                                             {s.unlockPrice <= 0 && (
-                                              <div className={`${isSelected ? "text-indigo-600 dark:text-indigo-400" : "text-emerald-500 dark:text-emerald-400"} flex items-center justify-center`}>
+                                              <div className={`${isSelected ? colorScheme.icon : colorScheme.icon} flex items-center justify-center`}>
                                                 <LockOpen className="h-4 w-4" />
                                               </div>
                                             )}
@@ -1848,7 +1942,7 @@ export default function StoryChapterClient() {
                             )}
 
                             {hasTextContent(vParts[0]) ? (
-                              <div className="p-5 md:p-6 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 shadow-md">
+                              <div className={`p-5 md:p-6 rounded-2xl ${variantColor.bg} border ${variantColor.border} shadow-md`}>
                                 <StoryReader
                                   chapterId={`variant-${currentV.id}-p1`}
                                   content={vParts[0]}
@@ -1860,9 +1954,9 @@ export default function StoryChapterClient() {
                             ) : null}
 
                             {hasVChoice && (
-                              <div className="py-4 border-l-4 border-indigo-200 pl-4 dark:border-indigo-900/50">
+                              <div className="py-4">
                                 {!nextV ? (
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
                                     {childVariants.map((cv) => {
                                       const isUnlocked = cv.unlockPrice <= 0 || unlockedVariantIds.includes(cv.id) || isVipActive;
                                       return (
@@ -1906,17 +2000,23 @@ export default function StoryChapterClient() {
                               </div>
                             )}
 
-                            {vParts.length > 1 && hasTextContent(vParts.slice(1).join('[DIEN_BIEN]')) && (
-                              <div className="mt-6 p-5 md:p-6 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 shadow-md">
-                                <StoryReader
-                                  chapterId={`variant-${currentV.id}-p2`}
-                                  content={vParts.slice(1).join('[DIEN_BIEN]')}
-                                  adInterval={700}
-                                  isLocked={false}
-                                  previewChars={500}
-                                />
-                              </div>
-                            )}
+                            {vParts.length > 1 && hasTextContent(vParts.slice(1).join('[DIEN_BIEN]')) && (() => {
+                              // Only show remaining variant text if all child choices have been resolved
+                              const childVars = variants.filter(cv => cv.parentId === currentV.id);
+                              const hasUnresolvedChildren = childVars.length > 0 && !nextV;
+                              if (hasUnresolvedChildren) return null;
+                              return (
+                                <div className={`mt-6 p-5 md:p-6 rounded-2xl ${variantColor.bg} border ${variantColor.border} shadow-md`}>
+                                  <StoryReader
+                                    chapterId={`variant-${currentV.id}-p2`}
+                                    content={vParts.slice(1).join('[DIEN_BIEN]')}
+                                    adInterval={700}
+                                    isLocked={false}
+                                    previewChars={500}
+                                  />
+                                </div>
+                              );
+                            })()}
                           </div>
                         );
                       };
@@ -1930,7 +2030,22 @@ export default function StoryChapterClient() {
                         const stripped = htmlStr.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, '').trim();
                         return stripped.length > 0;
                       };
-                      return hasTextContent(contentAfterChoice) && selectedVariantId ? (
+                      // Check if we should show content after choice
+                      // Show if: 1) All variants resolved OR 2) Default variant is selected
+                      const shouldShowAfterContent = (() => {
+                        if (!selectedVariantId) return false;
+                        
+                        // Check if default variant is selected
+                        const selectedVar = variants.find(v => v.id === selectedVariantId);
+                        if (selectedVar && selectedVar.isDefault) return true;
+                        
+                        // Otherwise check if fully resolved (no more children to choose)
+                        const deepestVariant = selectedVariantPath[selectedVariantPath.length - 1];
+                        if (!deepestVariant) return false;
+                        const childVars = variants.filter(v => v.parentId === deepestVariant.id);
+                        return childVars.length === 0;
+                      })();
+                      return hasTextContent(contentAfterChoice) && shouldShowAfterContent ? (
                         <StoryReader
                           chapterId={`${selectedChapter.id}-part2`}
                           content={contentAfterChoice}
@@ -2306,7 +2421,7 @@ export default function StoryChapterClient() {
                     </button>
                     {showTopupAction ? (
                       <button
-                        onClick={() => router.push(`/${currentLang}/profile`)}
+                        onClick={() => router.push(`/${currentLang}/topup`)}
                         className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700"
                       >
                         <CreditCard className="h-4 w-4" /> {t("topUp")}

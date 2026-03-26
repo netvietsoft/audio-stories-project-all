@@ -241,7 +241,10 @@
     "unlockVariantDescription": "You are unlocking variant: {title}",
     "unlockVariantPrice": "Unlock fee: {price} credits.",
     "unlockNow": "Unlock Now",
-    "unlocked": "Unlocked"
+    "unlocked": "Unlocked",
+    "topUp": "Top Up",
+    "buyVip": "Buy VIP",
+    "buyVipInfo": "Unlock all chapters for {days} days with only {cost} credits."
   },
   "StoryPage": {
     "notFound": "Story not found",

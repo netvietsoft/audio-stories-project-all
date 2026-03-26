@@ -152,7 +152,9 @@ export default function AdminLayout({
                 <nav className={`flex-1 overflow-y-auto py-6 space-y-1.5 transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-4'}`}>
                     {navItems.map((item) => {
                         const Icon = item.icon;
-                        const isActive = pathname === item.href;
+                        // Remove locale prefix from pathname for comparison
+                        const pathWithoutLocale = pathname?.replace(/^\/(vi|en)/, '') || '';
+                        const isActive = pathWithoutLocale === item.href || pathname === item.href;
 
                         return (
                             <Link
@@ -160,11 +162,11 @@ export default function AdminLayout({
                                 href={item.href}
                                 title={isCollapsed ? item.label : ''}
                                 className={`flex items-center rounded-2xl font-medium transition-all group relative overflow-hidden ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} ${isActive
-                                    ? 'bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-600/5'
-                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                    ? 'bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-600/5 dark:bg-indigo-950/50 dark:text-indigo-300'
+                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
                                     }`}
                             >
-                                <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                                <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
                                 {!isCollapsed && <span className="whitespace-nowrap opacity-100 transition-opacity duration-300">{item.label}</span>}
                             </Link>
                         );
@@ -254,7 +256,9 @@ export default function AdminLayout({
                             <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5">
                                 {navItems.map((item) => {
                                     const Icon = item.icon;
-                                    const isActive = pathname === item.href;
+                                    // Remove locale prefix from pathname for comparison
+                                    const pathWithoutLocale = pathname?.replace(/^\/(vi|en)/, '') || '';
+                                    const isActive = pathWithoutLocale === item.href || pathname === item.href;
 
                                     return (
                                         <Link
@@ -262,11 +266,11 @@ export default function AdminLayout({
                                             href={item.href}
                                             onClick={() => setIsMobileMenuOpen(false)}
                                             className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all group relative overflow-hidden ${isActive
-                                                ? 'bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-600/5'
-                                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                                ? 'bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-600/5 dark:bg-indigo-950/50 dark:text-indigo-300'
+                                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
                                                 }`}
                                         >
-                                            <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                                            <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
                                             <span className="whitespace-nowrap">{item.label}</span>
                                         </Link>
                                     );

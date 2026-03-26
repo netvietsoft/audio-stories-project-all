@@ -420,18 +420,18 @@ export const VariantForm = ({
             </div>
 
             {/* Footer Actions */}
-            <div className="flex items-center justify-between gap-4 p-6 bg-slate-900 rounded-[32px] shadow-2xl shadow-indigo-200/50 sticky bottom-4 z-30">
+            <div className="flex items-center justify-end gap-4 p-6 bg-slate-50/50 rounded-[32px] border border-slate-100 mt-8">
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-8 py-3 text-sm font-black text-slate-400 hover:text-white transition-colors uppercase tracking-widest"
+                    className="px-8 py-3 text-sm font-black text-slate-500 hover:text-slate-900 hover:bg-white rounded-2xl transition-all uppercase tracking-widest"
                 >
                     Hủy bỏ
                 </button>
                 <button
                     type="submit"
                     disabled={isLoading || isUploadingAudio}
-                    className={`flex items-center gap-3 px-10 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[16px] text-sm font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`flex items-center gap-3 px-10 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[20px] text-sm font-black uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                     {isLoading ? (
                         <Loader2 className="w-5 h-5 animate-spin" />

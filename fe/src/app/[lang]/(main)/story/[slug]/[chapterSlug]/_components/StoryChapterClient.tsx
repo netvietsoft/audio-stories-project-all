@@ -1469,7 +1469,7 @@ export default function StoryChapterClient() {
                       if (!canSeekSelectedChapter) return;
                       seekTo(Number(event.target.value));
                     }}
-                    className="w-full accent-blue-600 h-1.5 sm:h-2"
+                    className="w-full accent-blue-600 h-2.5 sm:h-2"
                     style={{
                       WebkitAppearance: 'none',
                       appearance: 'none',
@@ -1484,8 +1484,8 @@ export default function StoryChapterClient() {
                     input[type="range"]::-webkit-slider-thumb {
                       -webkit-appearance: none;
                       appearance: none;
-                      width: 14px;
-                      height: 14px;
+                      width: 18px;
+                      height: 18px;
                       border-radius: 50%;
                       background: rgb(37 99 235);
                       cursor: pointer;
@@ -1493,22 +1493,35 @@ export default function StoryChapterClient() {
                       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
                     }
                     input[type="range"]::-moz-range-thumb {
-                      width: 14px;
-                      height: 14px;
+                      width: 18px;
+                      height: 18px;
                       border-radius: 50%;
                       background: rgb(37 99 235);
                       cursor: pointer;
                       border: 2px solid white;
                       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
                     }
-                    @media (max-width: 640px) {
+                    /* Volume slider - smaller thumb */
+                    input[type="range"].volume-slider::-webkit-slider-thumb {
+                      width: 10px;
+                      height: 10px;
+                      border: 1px solid white;
+                      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+                    }
+                    input[type="range"].volume-slider::-moz-range-thumb {
+                      width: 10px;
+                      height: 10px;
+                      border: 1px solid white;
+                      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+                    }
+                    @media (min-width: 640px) {
                       input[type="range"]::-webkit-slider-thumb {
-                        width: 12px;
-                        height: 12px;
+                        width: 14px;
+                        height: 14px;
                       }
                       input[type="range"]::-moz-range-thumb {
-                        width: 12px;
-                        height: 12px;
+                        width: 14px;
+                        height: 14px;
                       }
                     }
                   `}</style>
@@ -1572,7 +1585,16 @@ export default function StoryChapterClient() {
                       step={0.01}
                       value={volume}
                       onChange={(event) => setVolume(Number(event.target.value))}
-                      className="w-16 sm:w-20 accent-blue-600"
+                      className="volume-slider w-12 sm:w-16 accent-blue-600 h-1.5"
+                      style={{
+                        WebkitAppearance: 'none',
+                        appearance: 'none',
+                        background: 'linear-gradient(to right, rgb(37 99 235) 0%, rgb(37 99 235) ' + 
+                          (volume * 100) + '%, rgb(229 231 235) ' + 
+                          (volume * 100) + '%, rgb(229 231 235) 100%)',
+                        borderRadius: '9999px',
+                        outline: 'none',
+                      }}
                     />
 
                     <button

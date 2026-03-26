@@ -1471,8 +1471,49 @@ export default function StoryChapterClient() {
                       if (!canSeekSelectedChapter) return;
                       seekTo(Number(event.target.value));
                     }}
-                    className="w-full accent-blue-600"
+                    className="w-full accent-blue-600 h-1.5 sm:h-2"
+                    style={{
+                      WebkitAppearance: 'none',
+                      appearance: 'none',
+                      background: 'linear-gradient(to right, rgb(37 99 235) 0%, rgb(37 99 235) ' + 
+                        ((playerCurrentTime / (playerDuration || 1)) * 100) + '%, rgb(229 231 235) ' + 
+                        ((playerCurrentTime / (playerDuration || 1)) * 100) + '%, rgb(229 231 235) 100%)',
+                      borderRadius: '9999px',
+                      outline: 'none',
+                    }}
                   />
+                  <style jsx>{`
+                    input[type="range"]::-webkit-slider-thumb {
+                      -webkit-appearance: none;
+                      appearance: none;
+                      width: 14px;
+                      height: 14px;
+                      border-radius: 50%;
+                      background: rgb(37 99 235);
+                      cursor: pointer;
+                      border: 2px solid white;
+                      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                    }
+                    input[type="range"]::-moz-range-thumb {
+                      width: 14px;
+                      height: 14px;
+                      border-radius: 50%;
+                      background: rgb(37 99 235);
+                      cursor: pointer;
+                      border: 2px solid white;
+                      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                    }
+                    @media (max-width: 640px) {
+                      input[type="range"]::-webkit-slider-thumb {
+                        width: 12px;
+                        height: 12px;
+                      }
+                      input[type="range"]::-moz-range-thumb {
+                        width: 12px;
+                        height: 12px;
+                      }
+                    }
+                  `}</style>
 
                   <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <span>{formatDuration(playerCurrentTime)}</span>

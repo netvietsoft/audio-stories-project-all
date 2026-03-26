@@ -629,277 +629,245 @@ export default function Navbar() {
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 z-[60] bg-gray-900/40 backdrop-blur-sm lg:hidden transition-opacity"
+            className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm lg:hidden transition-opacity"
             onClick={closeMobileMenu}
           ></div>
 
-          {/* Side Sheet */}
-          <div className="fixed inset-y-0 right-0 z-[70] w-[85%] max-w-sm bg-white dark:bg-slate-950 shadow-2xl flex flex-col lg:hidden animate-in slide-in-from-right duration-300">
-            {/* Header: User Info / Login */}
-            <div className="p-6 border-b border-gray-100 dark:border-white/5 relative bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-900/10">
+          {/* Side Sheet - Redesigned for better mobile UX */}
+          <div className="fixed inset-y-0 right-0 z-[70] w-[280px] bg-white dark:bg-slate-900 shadow-2xl flex flex-col lg:hidden animate-in slide-in-from-right duration-300">
+            
+            {/* Header with Close Button */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-lg font-bold">N</div>
+                <span className="font-bold text-gray-900 dark:text-white">Menu</span>
+              </div>
               <button
                 onClick={closeMobileMenu}
-                className="absolute top-4 right-4 p-2 rounded-full bg-white dark:bg-slate-800 text-gray-500 hover:text-gray-700 shadow-sm border border-gray-100 dark:border-slate-700 transition-transform active:scale-95"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label={t("closeMenu")}
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
               </button>
-
-              {user ? (
-                <div className="flex items-center gap-4 pr-10">
-                  <div className="relative">
-                    <img src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} alt="Avatar" className="h-14 w-14 rounded-full border-2 border-blue-200 dark:border-blue-800 object-cover shadow-sm" />
-                    <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-green-500 border-2 border-white dark:border-slate-900"></div>
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-gray-900 dark:text-white truncate text-lg tracking-tight">{user.name || user.email}</h3>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/40 text-[10px] font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wider">Member</span>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="pr-10 pt-2">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xl font-black shadow-lg">N</div>
-                    <div>
-                      <h3 className="text-lg font-black text-slate-900 dark:text-white leading-none">Netviet Audio</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sách nói & Audio stories</p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => {
-                      openLogin();
-                      closeMobileMenu();
-                    }}
-                    className="flex justify-center w-full py-3 rounded-xl bg-slate-900 dark:bg-blue-600 text-white font-bold text-sm shadow-xl active:scale-[0.98] transition-all"
-                  >
-                    {t("login")}
-                  </button>
-                </div>
-              )}
             </div>
 
-            {/* Menu Items */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-8 scrollbar-hide">
-              {/* Search Bar */}
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={handleSearch}
-                  onFocus={() => {
-                    if (searchResults.length > 0) setShowSearchDropdown(true);
+            {/* User Info Section */}
+            {user ? (
+              <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} 
+                    alt="Avatar" 
+                    className="h-12 w-12 rounded-full border-2 border-blue-500 object-cover" 
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-gray-900 dark:text-white truncate text-sm">{user.name || user.email}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+                <button 
+                  onClick={() => {
+                    openLogin();
+                    closeMobileMenu();
                   }}
-                  placeholder={t("mobileSearchPlaceholder")}
-                  className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800/50 text-sm border-2 border-transparent focus:border-blue-500/30 focus:bg-white dark:focus:bg-slate-800 transition-all outline-none"
-                />
-                <Search className="absolute left-3.5 top-4 h-5 w-5 text-slate-400" />
-
-                {/* Mobile Search Results */}
-                {showSearchDropdown && searchQuery.trim() && (
-                  <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl py-2 z-50 max-h-[350px] overflow-y-auto overflow-x-hidden">
-                    {isSearching ? (
-                      <div className="px-4 py-8 text-center">
-                        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-blue-600 border-r-transparent"></div>
-                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Đang tìm kiếm...</p>
-                      </div>
-                    ) : searchResults.length > 0 ? (
-                      <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                        {searchResults.map((story) => (
-                          <button
-                            key={story.id}
-                            onClick={() => {
-                              handleSearchResultClick(story.slug);
-                              closeMobileMenu();
-                            }}
-                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-left"
-                          >
-                            <img
-                              src={story.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
-                              alt={story.title}
-                              className="w-12 h-12 rounded-xl object-cover shrink-0 shadow-sm"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-slate-900 dark:text-slate-100 line-clamp-1">
-                                {currentLang === 'en' ? story.titleEn || story.title : story.titleVi || story.title}
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
-                                {story.author?.name || "Đang cập nhật"}
-                              </p>
-                            </div>
-                          </button>
-                        ))}
-                        <Link
-                          href={`/search?keyword=${encodeURIComponent(searchQuery)}`}
-                          onClick={() => {
-                            setShowSearchDropdown(false);
-                            setSearchQuery("");
-                            closeMobileMenu();
-                          }}
-                          className="block px-4 py-4 text-center text-xs font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-                        >
-                          Xem tất cả kết quả
-                        </Link>
-                      </div>
-                    ) : (
-                      <div className="px-4 py-10 text-center">
-                        <Search className="h-10 w-10 mx-auto text-slate-200 dark:text-slate-700 mb-3" />
-                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Không tìm thấy kết quả</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  className="w-full py-2.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-sm shadow-md active:scale-[0.98] transition-all"
+                >
+                  {t("login")}
+                </button>
               </div>
+            )}
 
-              {/* Main Navigation */}
-              <div className="space-y-4">
+            {/* Menu Items - Scrollable */}
+            <div className="flex-1 overflow-y-auto">
+              <nav className="p-3 space-y-1">
+                {/* Main Navigation */}
+                <Link 
+                  href="/" 
+                  onClick={closeMobileMenu} 
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Home className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium">{t("home")}</span>
+                </Link>
+
+                <Link 
+                  href="/stories" 
+                  onClick={closeMobileMenu} 
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <LayoutGrid className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium">{t("categories")}</span>
+                </Link>
+
+                <Link 
+                  href="/new" 
+                  onClick={closeMobileMenu} 
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Zap className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium">{t("new")}</span>
+                </Link>
+
+                <Link 
+                  href="/trending" 
+                  onClick={closeMobileMenu} 
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Flame className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium">{t("trending")}</span>
+                </Link>
+
+                <Link 
+                  href="/interactive" 
+                  onClick={closeMobileMenu} 
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Sparkles className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium">{t("interactiveStories")}</span>
+                </Link>
+
+                {/* BXH Collapsible */}
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-4 ml-1">{t("home")}</p>
-                  <div className="grid grid-cols-1 gap-1">
-                    <Link href="/" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-                        <Home className="w-5 h-5" />
-                      </div>
-                      <span className="text-sm tracking-tight">{t("home")}</span>
-                    </Link>
-                    <Link href="/stories" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
-                        <LayoutGrid className="w-5 h-5" />
-                      </div>
-                      <span className="text-sm tracking-tight">{t("categories")}</span>
-                    </Link>
-                    <Link href="/new" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
-                        <Zap className="w-5 h-5" />
-                      </div>
-                      <span className="text-sm tracking-tight">{t("new")}</span>
-                    </Link>
-                    <Link href="/trending" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all">
-                      <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform">
-                        <Flame className="w-5 h-5" />
-                      </div>
-                      <span className="text-sm tracking-tight">{t("popular")}</span>
-                    </Link>
-                    <Link href="/interactive" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all">
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
-                        <Sparkles className="w-5 h-5" />
-                      </div>
-                      <span className="text-sm tracking-tight">{t("interactiveStories")}</span>
-                    </Link>
-                    
-                    {/* BXH Dropdown */}
-                    <div className="space-y-1">
-                      <button 
-                        onClick={() => setIsRankingOpen(!isRankingOpen)}
-                        className="group flex items-center justify-between w-full px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform">
-                            <Trophy className="w-5 h-5" />
-                          </div>
-                          <span className="text-sm tracking-tight">BXH</span>
-                        </div>
-                        <ChevronDown className={`w-4 h-4 transition-transform ${isRankingOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                      
-                      {isRankingOpen && (
-                        <div className="ml-14 space-y-1 animate-in slide-in-from-top-2 duration-200">
-                          <Link href="/ranking" onClick={closeMobileMenu} className="block px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all">
-                            {t("ranking")}
-                          </Link>
-                          <Link href="/vinh-danh" onClick={closeMobileMenu} className="block px-4 py-2.5 rounded-xl text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all">
-                            {t("memberRanking")}
-                          </Link>
-                        </div>
-                      )}
+                  <button 
+                    onClick={() => setIsRankingOpen(!isRankingOpen)}
+                    className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Trophy className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-medium">BXH</span>
                     </div>
-                  </div>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isRankingOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {isRankingOpen && (
+                    <div className="ml-8 mt-1 space-y-1">
+                      <Link 
+                        href="/ranking" 
+                        onClick={closeMobileMenu} 
+                        className="block px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        {t("ranking")}
+                      </Link>
+                      <Link 
+                        href="/vinh-danh" 
+                        onClick={closeMobileMenu} 
+                        className="block px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        {t("memberRanking")}
+                      </Link>
+                    </div>
+                  )}
                 </div>
 
-                {user && (
-                  <div className="pt-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-4 ml-1">{t("account")}</p>
-                    <div className="grid grid-cols-1 gap-1">
-                      <Link href="/notifications" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all">
-                        <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
-                          <Bell className="w-5 h-5" />
-                        </div>
-                        <span className="text-sm tracking-tight">{t("notifications")}</span>
-                      </Link>
+                {/* Divider */}
+                {user && <div className="my-2 border-t border-gray-200 dark:border-gray-800"></div>}
 
-                      <Link href="/topup" onClick={closeMobileMenu} className="group flex items-center justify-between px-4 py-4 rounded-3xl text-white font-black bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-200 dark:shadow-none transition-all active:scale-[0.98] mb-2">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-white">
-                            <Coins className="w-5 h-5" />
-                          </div>
-                          <span className="text-sm uppercase tracking-widest">{t("topUpCredits")}</span>
-                        </div>
-                        <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-                      </Link>
-                      
-                      <Link href="/profile" onClick={closeMobileMenu} className="group flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all">
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 group-hover:scale-110 transition-transform">
-                          <UserCircle className="w-5 h-5" />
-                        </div>
-                        <span className="text-sm tracking-tight">{t("profile")}</span>
-                      </Link>
-                    </div>
-                  </div>
+                {/* User Menu Items */}
+                {user && (
+                  <>
+                    <Link 
+                      href="/notifications" 
+                      onClick={closeMobileMenu} 
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <Bell className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-medium">{t("notifications")}</span>
+                      {unreadNotifs > 0 && (
+                        <span className="ml-auto px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
+                          {unreadNotifs}
+                        </span>
+                      )}
+                    </Link>
+
+                    <Link 
+                      href="/profile/favorites" 
+                      onClick={closeMobileMenu} 
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <Heart className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-medium">{t("favorites")}</span>
+                    </Link>
+
+                    <Link 
+                      href="/profile/history" 
+                      onClick={closeMobileMenu} 
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <History className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-medium">{t("listeningHistory")}</span>
+                    </Link>
+
+                    <Link 
+                      href="/topup" 
+                      onClick={closeMobileMenu} 
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                    >
+                      <Coins className="w-5 h-5" />
+                      <span className="text-sm font-semibold">{t("topUp")}</span>
+                    </Link>
+
+                    <Link 
+                      href="/profile" 
+                      onClick={closeMobileMenu} 
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <UserCircle className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-medium">{t("profile")}</span>
+                    </Link>
+                  </>
                 )}
-              </div>
+              </nav>
             </div>
 
-            {/* Footer: User Settings & Logout */}
-            <div className="p-5 border-t border-gray-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 space-y-4">
-              {/* Compact Settings */}
+            {/* Footer Settings */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
+              {/* Language & Theme Toggle */}
               <div className="flex items-center gap-2">
                 {/* Language Switcher */}
-                <div className="flex-1 flex items-center p-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-white/5 shadow-sm">
+                <div className="flex-1 flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
                   <button
-                    type="button"
                     onClick={() => switchLocale("vi")}
-                    className={`flex-1 py-1.5 text-[10px] font-black transition-all rounded-lg ${
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                       currentLang === "vi"
-                        ? "bg-slate-900 text-white dark:bg-blue-600"
-                        : "text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-700"
+                        ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                        : "text-gray-500 dark:text-gray-400"
                     }`}
                   >
-                    VN
+                    Tiếng Việt
                   </button>
                   <button
-                    type="button"
                     onClick={() => switchLocale("en")}
-                    className={`flex-1 py-1.5 text-[10px] font-black transition-all rounded-lg ${
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                       currentLang === "en"
-                        ? "bg-slate-900 text-white dark:bg-blue-600"
-                        : "text-slate-500 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-700"
+                        ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                        : "text-gray-500 dark:text-gray-400"
                     }`}
                   >
-                    EN
+                    English
                   </button>
                 </div>
 
                 {/* Theme Toggle */}
                 <button
-                  type="button"
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="w-12 h-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-white/5 shadow-sm active:scale-95 transition-all text-slate-500 dark:text-slate-400 hover:text-blue-500"
+                  className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 >
-                  {mounted && theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  {mounted && theme === "dark" ? <Sun className="h-5 w-5 text-gray-600 dark:text-gray-400" /> : <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />}
                 </button>
               </div>
 
-              {user ? (
+              {/* Logout Button */}
+              {user && (
                 <button
                   onClick={handleLogout}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] text-red-500 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-950/20 transition-all active:scale-[0.98]"
+                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all active:scale-[0.98]"
                 >
                   <LogOut className="h-4 w-4" /> {t("logout")}
                 </button>
-              ) : null}
+              )}
             </div>
           </div>
         </>

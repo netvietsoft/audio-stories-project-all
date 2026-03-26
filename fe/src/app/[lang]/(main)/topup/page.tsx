@@ -231,7 +231,7 @@ export default function TopupPage() {
         <div className="min-h-screen font-sans">
 
             {/* Main Content Area */}
-            <div className="px-4 sm:px-6 mt-24 lg:px-8 py-8 sm:py-12 -mt-6 sm:-mt-8 relative z-20">
+            <div className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-20">
                 <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 max-w-7xl mx-auto">
 
                     {/* Left Side: Packages */}

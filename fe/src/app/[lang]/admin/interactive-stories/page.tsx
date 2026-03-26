@@ -1,7 +1,6 @@
+"use client";
 import { useTranslations } from "next-intl";
 import { formatChapterTitle, cleanChapterTitle } from "@/lib/formatChapterTitle";
-"use client";
-
 import React, { useState, useEffect } from "react";
 import Link from "@/components/shared/LocalizedLink";
 import {
@@ -73,11 +72,8 @@ const formatDuration = (seconds?: number) => {
 };
 
 export default function InteractiveStoriesPage() {
-<<<<<<< HEAD
   const tChapter = useTranslations("StoryChapterClient");
-=======
   const router = useRouter();
->>>>>>> b8b8c7bf2a3c7ac7765ffa49d13e904aabb61782
   const [stories, setStories] = useState<StoryInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");

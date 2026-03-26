@@ -44,11 +44,7 @@ export default function HighRatingStoriesGrid({ stories, isLoading = false }: Hi
 
   if (isLoading) {
     return (
-<<<<<<< HEAD
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 xl:grid-cols-3">
-=======
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
->>>>>>> b8b8c7bf2a3c7ac7765ffa49d13e904aabb61782
         {Array.from({ length: 6 }).map((_, index) => (
           <div key={index} className="h-[180px] sm:h-[220px] animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
         ))}
@@ -67,11 +63,7 @@ export default function HighRatingStoriesGrid({ stories, isLoading = false }: Hi
   }
 
   return (
-<<<<<<< HEAD
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 xl:grid-cols-3">
-=======
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
->>>>>>> b8b8c7bf2a3c7ac7765ffa49d13e904aabb61782
       {displayStories.map((story) => {
         const title = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
         const description = getLocalizedValue(locale, story.descriptionVi, story.descriptionEn, story.description || "")

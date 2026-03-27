@@ -7,7 +7,6 @@ import axios from "axios";
 import { useLocale, useTranslations } from "next-intl";
 import { Headphones, Heart, PlayCircle } from "lucide-react";
 
-import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import InfiniteMarqueeSlider from "@/components/shared/InfiniteMarqueeSlider";
 import StoryListView from "@/components/shared/StoryListView";
 import CategoryTabsSection from "@/components/story/CategoryTabsSection";
@@ -19,7 +18,6 @@ import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
 import { getLocalizedValue } from "@/lib/story-localization";
 import { useUserStore } from "@/stores/user-store";
-import { useRouter } from "next/navigation";
 
 type StoryItem = {
   id: string;
@@ -160,7 +158,6 @@ export default function HomePage() {
   const tProfileHistory = useTranslations("ProfileHistoryPage");
   const locale = useLocale();
   const lang = locale === "en" ? "en" : "vi";
-  const router = useRouter();
   const accessToken = useUserStore((state) => state.accessToken);
 
   const [newestStories, setNewestStories] = useState<StoryItem[]>([]);
@@ -182,12 +179,6 @@ export default function HomePage() {
   const [isPersonalizedLoading, setIsPersonalizedLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
-  const [filterValue, setFilterValue] = useState<StoryFilterValue>({
-    categoryId: "",
-    authorId: "",
-    status: "",
-    sort: "latest",
-  });
 
   const heroStories = useMemo(() => {
     return (trendingStories.length ? trendingStories : newestStories).slice(0, 5);
@@ -480,7 +471,7 @@ export default function HomePage() {
       <div className="space-y-16">
         {/* ─── Hashtag / Category Strip ────────────────────────────── */}
         {topCategories.length > 0 && (
-          <section>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
               <Link href="/stories" className="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
@@ -492,7 +483,7 @@ export default function HomePage() {
                 <Link
                   key={cat.id}
                   href={`/explore?categoryId=${cat.id}`}
-                  className="flex-shrink-0 rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-500 dark:hover:bg-blue-950 dark:hover:text-blue-300"
+                  className="flex-shrink-0 rounded-full bg-slate-100 px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-blue-950 dark:hover:text-blue-300"
                 >
                   #{cat.name}
                 </Link>
@@ -500,28 +491,6 @@ export default function HomePage() {
             </div>
           </section>
         )}
-
-        {/* ─── Quick Filter Bar ────────────────────────────────────── */}
-        <StoryFilterBar
-          categories={allCategories.map((c) => ({
-            id: c.id,
-            name: c.name,
-            nameVi: c.nameVi,
-            nameEn: c.nameEn
-          }))}
-          authors={authors}
-          value={filterValue}
-          onChange={setFilterValue}
-          onApply={() => {
-            const params = new URLSearchParams();
-            if (filterValue.categoryId) params.append("categoryId", filterValue.categoryId);
-            if (filterValue.authorId) params.append("authorId", filterValue.authorId);
-            if (filterValue.status) params.append("status", filterValue.status);
-            if (filterValue.sort && filterValue.sort !== "latest") params.append("sort", filterValue.sort);
-            router.push(`/${locale}/explore?${params.toString()}`);
-          }}
-          isLoading={isLoading}
-        />
 
         {accessToken ? (
           <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -567,8 +536,8 @@ export default function HomePage() {
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="line-clamp-1 text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
-                        <p className="mt-1 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{tProfile("chapterTitle", { number: item.chapter.chapterNumber, title: chapterTitle })}</p>
+                        <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
+                        <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{tProfile("chapterTitle", { number: item.chapter.chapterNumber, title: chapterTitle })}</p>
                         <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                           <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${progressPercent}%` }} />
                         </div>
@@ -629,8 +598,8 @@ export default function HomePage() {
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="line-clamp-1 text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
-                        <p className="mt-1 line-clamp-1 text-xs text-slate-500 dark:text-slate-400">{categoryName}</p>
+                        <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
+                        <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{categoryName}</p>
                         <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{story.author?.name || tStoryDetail("authorUpdating")}</p>
                       </div>
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-sm">

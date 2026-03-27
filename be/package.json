@@ -22,12 +22,7 @@
         "prisma:generate": "prisma generate",
         "prisma:migrate": "dotenv -e .env -- prisma migrate dev",
         "prisma:migrate:deploy": "prisma migrate deploy",
-        "prisma:push": "prisma db push",
-        "prisma:seed": "ts-node prisma/seed.ts",
-        "seed": "bash scripts/run-seed.sh",
-        "db:setup": "bash scripts/setup-database.sh",
-        "db:create": "mysql -u root -p < scripts/create-database.sql",
-        "db:reset": "prisma migrate reset --force"
+        "prisma:push": "prisma db push"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.958.0",

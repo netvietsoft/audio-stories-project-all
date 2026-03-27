@@ -172,50 +172,6 @@ npm install --legacy-peer-deps
 echo "📦 Generating Prisma client..."
 npx prisma generate
 
-# Database setup
-echo "🗄️  Setting up database..."
-
-# Extract database credentials from .env
-DB_USER=\$(grep '^DATABASE_URL=' .env | sed 's/.*mysql:\\/\\/\\([^:]*\\):.*/\\1/')
-DB_PASS=\$(grep '^DATABASE_URL=' .env | sed 's/.*:\\/\\/[^:]*:\\([^@]*\\)@.*/\\1/')
-DB_HOST=\$(grep '^DATABASE_URL=' .env | sed 's/.*@\\([^:]*\\):.*/\\1/')
-DB_PORT=\$(grep '^DATABASE_URL=' .env | sed 's/.*:\\([0-9]*\\)\\/.*/\\1/')
-DB_NAME=\$(grep '^DATABASE_URL=' .env | sed 's/.*\\/\\([^?]*\\).*/\\1/')
-
-echo "  Database: \$DB_NAME on \$DB_HOST:\$DB_PORT"
-
-# Check if MySQL is running
-if ! command -v mysql >/dev/null 2>&1; then
-    echo "  ⚠️  MySQL client not found, skipping database creation"
-else
-    # Create database if not exists
-    echo "  Creating database if not exists..."
-    mysql -h"\$DB_HOST" -P"\$DB_PORT" -u"\$DB_USER" -p"\$DB_PASS" -e "CREATE DATABASE IF NOT EXISTS \\\`\$DB_NAME\\\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || echo "  ⚠️  Could not create database (may already exist or no permissions)"
-    
-    # Grant privileges
-    mysql -h"\$DB_HOST" -P"\$DB_PORT" -u"\$DB_USER" -p"\$DB_PASS" -e "GRANT ALL PRIVILEGES ON \\\`\$DB_NAME\\\`.* TO '\$DB_USER'@'%'; FLUSH PRIVILEGES;" 2>/dev/null || echo "  ⚠️  Could not grant privileges"
-fi
-
-echo "🔄 Running database migrations..."
-npx prisma migrate deploy || {
-    echo "  ⚠️  Migration failed, trying to push schema..."
-    npx prisma db push --accept-data-loss || echo "  ⚠️  Schema push failed"
-}
-
-# Check if database is empty and needs seeding
-echo "🌱 Checking if database needs seeding..."
-TABLE_COUNT=\$(mysql -h"\$DB_HOST" -P"\$DB_PORT" -u"\$DB_USER" -p"\$DB_PASS" -D"\$DB_NAME" -se "SELECT COUNT(*) FROM users;" 2>/dev/null || echo "0")
-
-if [ "\$TABLE_COUNT" = "0" ]; then
-    echo "  📦 Database is empty, running seed..."
-    npx prisma db seed || echo "  ⚠️  Seeding failed or no seed script found"
-    echo "  ✅ Seeding completed"
-else
-    echo "  ℹ️  Database already has data (\$TABLE_COUNT users), skipping seed"
-fi
-
-echo "✅ Database setup completed"
-
 echo "📦 Building application on server..."
 npm run build
 

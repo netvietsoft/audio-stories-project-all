@@ -1723,26 +1723,28 @@ export default function StoryChapterClient() {
           </div>{/* END RIGHT STICKY SIDEBAR */}
 
           {/* Chapter Content / Text Reader */}
-          <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
-            <div className="mb-4 flex items-center justify-between gap-3">
+          <section className="rounded-2xl bg-white p-1 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
+            <div className="mb-4 flex items-center justify-between gap-3 px-2 sm:px-0">
               <button
                 type="button"
                 onClick={() => previousChapter && goToChapter(previousChapter, false)}
                 disabled={!previousChapter}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
               >
-                <ChevronLeft className="h-5 w-5" />
-                {locale === "en" ? "Previous chapter" : "Chương trước"}
+                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="hidden sm:inline">{locale === "en" ? "Previous chapter" : "Chương trước"}</span>
+                <span className="sm:hidden">{locale === "en" ? "Prev" : "Trước"}</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => nextChapter && goToChapter(nextChapter, false)}
                 disabled={!nextChapter}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
               >
-                {locale === "en" ? "Next chapter" : "Chương tiếp"}
-                <ArrowRight className="h-5 w-5" />
+                <span className="hidden sm:inline">{locale === "en" ? "Next chapter" : "Chương tiếp"}</span>
+                <span className="sm:hidden">{locale === "en" ? "Next" : "Tiếp"}</span>
+                <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </div>
 
@@ -1907,9 +1909,6 @@ export default function StoryChapterClient() {
                           <div key={currentV.id} className="mt-6 space-y-4">
                             {pathIndex > 0 && siblings.length > 1 && (
                               <div className="mt-2 mb-6">
-                                <h4 className="mb-3 text-sm font-bold text-gray-700 dark:text-gray-300">
-                                  {locale === 'en' ? 'Alternative choices:' : 'Các lựa chọn khác:'}
-                                </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
                                   {siblings.map((s, sibIndex) => {
                                     const isUnlocked = s.unlockPrice <= 0 || unlockedVariantIds.includes(s.id) || isVipActive;
@@ -2005,7 +2004,7 @@ export default function StoryChapterClient() {
                             )}
 
                             {hasTextContent(vParts[0]) ? (
-                              <div className={`p-5 md:p-6 rounded-2xl ${variantColor.bg} border ${variantColor.border} shadow-md`}>
+                              <div className={`p-1 sm:p-5 md:p-6 rounded-2xl ${variantColor.bg} border ${variantColor.border} shadow-md`}>
                                 <StoryReader
                                   chapterId={`variant-${currentV.id}-p1`}
                                   content={vParts[0]}
@@ -2069,7 +2068,7 @@ export default function StoryChapterClient() {
                               const hasUnresolvedChildren = childVars.length > 0 && !nextV;
                               if (hasUnresolvedChildren) return null;
                               return (
-                                <div className={`mt-6 p-5 md:p-6 rounded-2xl ${variantColor.bg} border ${variantColor.border} shadow-md`}>
+                                <div className={`mt-6 p-1 sm:p-5 md:p-6 rounded-2xl ${variantColor.bg} border ${variantColor.border} shadow-md`}>
                                   <StoryReader
                                     chapterId={`variant-${currentV.id}-p2`}
                                     content={vParts.slice(1).join('[DIEN_BIEN]')}
@@ -2136,25 +2135,27 @@ export default function StoryChapterClient() {
                 </div>
               )}
 
-              <div className="mt-6 flex items-center justify-between gap-3">
+              <div className="mt-6 flex items-center justify-between gap-3 px-2 sm:px-0">
                 <button
                   type="button"
                   onClick={() => previousChapter && goToChapter(previousChapter, false)}
                   disabled={!previousChapter}
-                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
-                  <ChevronLeft className="h-5 w-5" />
-                  {locale === "en" ? "Previous chapter" : "Chương trước"}
+                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <span className="hidden sm:inline">{locale === "en" ? "Previous chapter" : "Chương trước"}</span>
+                  <span className="sm:hidden">{locale === "en" ? "Prev" : "Trước"}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => nextChapter && goToChapter(nextChapter, false)}
                   disabled={!nextChapter}
-                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 >
-                  {locale === "en" ? "Next chapter" : "Chương tiếp"}
-                  <ArrowRight className="h-5 w-5" />
+                  <span className="hidden sm:inline">{locale === "en" ? "Next chapter" : "Chương tiếp"}</span>
+                  <span className="sm:hidden">{locale === "en" ? "Next" : "Tiếp"}</span>
+                  <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </div>
             </div>

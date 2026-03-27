@@ -102,42 +102,12 @@ SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 # Server path
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
 
-# Save current branch
+# Save current branch for reference
 ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-echo "🔄 Current branch: $ORIGINAL_BRANCH"
+echo "ℹ️  Current branch: $ORIGINAL_BRANCH"
 
-# Backup .env file BEFORE switching branches
+# Backup .env file
 backup_env
-
-# Auto Git Workflow (only for current directory)
-echo "🔄 Preparing Git changes in current directory..."
-
-# Check if there are any changes in current directory
-if git diff --quiet . && git diff --cached --quiet .; then
-    echo "ℹ️  No changes to commit in current directory"
-else
-    git add .
-    git commit -m "Deploy FE: $(date '+%Y-%m-%d %H:%M:%S')" . || echo "ℹ️  Nothing to commit"
-fi
-
-echo "📥 Syncing with remote master..."
-git pull origin master --rebase || {
-    echo "⚠️  Pull failed, trying to resolve..."
-    git rebase --abort 2>/dev/null || true
-    git pull origin master --no-rebase
-}
-
-echo "📤 Pushing to master..."
-git push origin HEAD:master
-echo "✅ Pushed to master"
-
-# Sync local branch with master to be safe
-echo "🔄 Fetching latest from origin/master..."
-git fetch origin master
-
-echo "🔄 Resetting to origin/master..."
-git reset --hard origin/master
-echo "✅ Local workspace is now synced with origin/master"
 
 # Prepare .env file for build
 echo "📝 Preparing .env file for build..."

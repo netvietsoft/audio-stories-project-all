@@ -59,7 +59,7 @@ export default function CategoryStorySlider({ stories, isLoading = false }: Cate
       <button
         type="button"
         onClick={() => scroll("left")}
-        className="absolute -left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/95 p-2 text-slate-700 shadow-md ring-1 ring-slate-200 transition hover:bg-white dark:bg-slate-900/95 dark:text-slate-200 dark:ring-slate-700"
+        className="absolute -left-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/95 p-2 text-slate-700 shadow-md ring-1 ring-slate-200 transition hover:bg-white dark:bg-slate-900/95 dark:text-slate-200 dark:ring-slate-700 hidden md:block md:opacity-0 md:invisible md:group-hover/slider:opacity-100 md:group-hover/slider:visible md:pointer-events-none md:group-hover/slider:pointer-events-auto"
         aria-label="Scroll left"
       >
         <ChevronLeft className="h-5 w-5" />
@@ -68,7 +68,7 @@ export default function CategoryStorySlider({ stories, isLoading = false }: Cate
       <button
         type="button"
         onClick={() => scroll("right")}
-        className="absolute -right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/95 p-2 text-slate-700 shadow-md ring-1 ring-slate-200 transition hover:bg-white dark:bg-slate-900/95 dark:text-slate-200 dark:ring-slate-700"
+        className="absolute -right-2 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/95 p-2 text-slate-700 shadow-md ring-1 ring-slate-200 transition hover:bg-white dark:bg-slate-900/95 dark:text-slate-200 dark:ring-slate-700 hidden md:block md:opacity-0 md:invisible md:group-hover/slider:opacity-100 md:group-hover/slider:visible md:pointer-events-none md:group-hover/slider:pointer-events-auto"
         aria-label="Scroll right"
       >
         <ChevronRight className="h-5 w-5" />

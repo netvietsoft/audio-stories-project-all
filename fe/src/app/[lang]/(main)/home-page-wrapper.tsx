@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://netvietaudio.com";
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
     title: "Trang chủ",

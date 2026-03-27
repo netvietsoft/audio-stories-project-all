@@ -32,7 +32,7 @@ const localizedValue = (locale: string, vi?: string | null, en?: string | null, 
   return vi || en || fallback || "";
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://webtruyen.vn";
 
 async function fetchStoryMeta(slug: string): Promise<StoryMeta | null> {

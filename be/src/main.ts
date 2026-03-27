@@ -30,23 +30,28 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new PrismaExceptionFilter());
 
-  const corsEnv = process.env.CORS || process.env.ALLOWED_CLIENT_URLS || '';
-  const allowedOrigins = corsEnv
-    .split(',')
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+  const frontendUrl = process.env.FRONTEND_URL;
+  const allowedOrigins = new Set<string>();
+
+  if (frontendUrl) allowedOrigins.add(frontendUrl.trim());
+
+  // Allow localhost/127.0.0.1 during development
+  if (process.env.NODE_ENV !== 'production') {
+    ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3058', 'http://127.0.0.1:3058'].forEach((u) => allowedOrigins.add(u));
+  }
 
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
-      }
+      // Allow server-to-server requests (no origin)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.size === 0) return callback(null, true);
+      if (allowedOrigins.has(origin)) return callback(null, true);
       callback(new Error('CORS not allowed'));
     },
     credentials: true,
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = Number(process.env.PORT ?? 8035);
+  await app.listen(port);
 }
 bootstrap();

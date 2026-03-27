@@ -15,7 +15,7 @@ const staticRoutes: { url: string; priority: number; changeFrequency: MetadataRo
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://netvietaudio.com";
-  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
   const now = new Date();
 

@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 export default function GoogleOAuthBtn() {
   const t = useTranslations("Auth");
   const handleGoogleOAuth = () => {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
     
     // Capture current URL to return after login
     // If we're on a login/register page, we should check for an existing redirect param or default to home

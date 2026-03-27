@@ -66,7 +66,8 @@ All endpoints are prefixed with `/auth`.
    ```
 
 2. **Database Setup**:
-   - Configure `.env` with your `DATABASE_URL`.
+   - Configure `.env` with your `DATABASE_URL` (MySQL). Example:
+     - `mysql://root:password@localhost:3306/netviet_audio`
    - Run migrations: `npx prisma migrate dev`
    - Seed database: `npx prisma db seed`
 

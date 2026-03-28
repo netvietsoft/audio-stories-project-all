@@ -63,7 +63,7 @@ export default function HighRatingStoriesGrid({ stories, isLoading = false }: Hi
   }
 
   // Sắp xếp lại theo cột: [0,3,6], [1,4,7], [2,5,8]
-  const reorderedStories = [];
+  const reorderedStories: Array<{ story: StoryItem; originalIndex: number }> = [];
   const cols = 3;
   const rows = Math.ceil(displayStories.length / cols);
   
@@ -71,7 +71,7 @@ export default function HighRatingStoriesGrid({ stories, isLoading = false }: Hi
     for (let row = 0; row < rows; row++) {
       const index = col * rows + row;
       if (index < displayStories.length) {
-        reorderedStories.push({ story: displayStories[index], originalIndex: index });
+        reorderedStories.push({ story: displayStories[index]!, originalIndex: index });
       }
     }
   }

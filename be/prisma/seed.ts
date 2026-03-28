@@ -381,6 +381,26 @@ async function main() {
     { vi: 'Thần Đạo Vô Cực', en: 'Divine Dao Limitless' },
     { vi: 'Huyền Thiên Kiếm Tôn', en: 'Profound Heaven Sword Sovereign' },
     { vi: 'Vô Thượng Chiến Thần', en: 'Supreme War God' },
+    
+    // 18 new stories (6 completed per language)
+    { vi: 'Thiên Địa Bá Chủ', en: 'Heaven and Earth Overlord' },
+    { vi: 'Vạn Kiếm Quy Tông', en: 'Ten Thousand Swords Return' },
+    { vi: 'Huyền Thiên Bảo Lục', en: 'Profound Heaven Treasure Record' },
+    { vi: 'Thần Ma Đại Chiến', en: 'Divine Demon Great War' },
+    { vi: 'Vô Cực Thần Tôn', en: 'Limitless God Sovereign' },
+    { vi: 'Thái Cổ Long Tộc', en: 'Ancient Dragon Clan' },
+    { vi: 'Huyền Thiên Huyết Chiến', en: 'Profound Heaven Blood War' },
+    { vi: 'Vạn Đạo Kiếm Đế', en: 'Myriad Dao Sword Emperor' },
+    { vi: 'Thần Võ Vô Song', en: 'Divine Martial Peerless' },
+    { vi: 'Hỏa Vũ Đế Tôn', en: 'Fire Martial Emperor Sovereign' },
+    { vi: 'Vô Địch Chiến Thần', en: 'Invincible War God' },
+    { vi: 'Thái Cổ Đế Quốc', en: 'Ancient Empire' },
+    { vi: 'Huyền Thiên Ma Đế', en: 'Profound Heaven Demon Emperor' },
+    { vi: 'Vạn Giới Chiến Tôn', en: 'Myriad Realms War Sovereign' },
+    { vi: 'Thần Đạo Kiếm Thánh', en: 'Divine Dao Sword Saint' },
+    { vi: 'Vô Thượng Ma Đế', en: 'Supreme Demon Emperor' },
+    { vi: 'Thái Cổ Huyền Tôn', en: 'Ancient Profound Sovereign' },
+    { vi: 'Huyền Thiên Vạn Kiếm', en: 'Profound Heaven Ten Thousand Swords' },
   ];
 
   const stories = [] as Awaited<ReturnType<typeof prisma.story.upsert>>[];

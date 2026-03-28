@@ -24,7 +24,7 @@ type StoryItem = {
   categories?: Array<{ category: { id: number; name: string; slug: string } }>;
 };
 
-type HighRatingStoriesGridProps = {
+type CategoryStoriesGridProps = {
   stories: StoryItem[];
   isLoading?: boolean;
 };
@@ -34,7 +34,7 @@ const formatRating = (rating?: number | string) => {
   return Number.isFinite(num) && num > 0 ? num.toFixed(1) : "N/A";
 };
 
-export default function HighRatingStoriesGrid({ stories, isLoading = false }: HighRatingStoriesGridProps) {
+export default function CategoryStoriesGrid({ stories, isLoading = false }: CategoryStoriesGridProps) {
   const t = useTranslations("StoryCard");
   const locale = useLocale();
   const viewsSuffix = locale === "en" ? "views" : "lượt đọc";
@@ -62,23 +62,9 @@ export default function HighRatingStoriesGrid({ stories, isLoading = false }: Hi
     );
   }
 
-  // Sắp xếp lại theo cột: [0,3,6], [1,4,7], [2,5,8]
-  const reorderedStories = [];
-  const cols = 3;
-  const rows = Math.ceil(displayStories.length / cols);
-  
-  for (let col = 0; col < cols; col++) {
-    for (let row = 0; row < rows; row++) {
-      const index = col * rows + row;
-      if (index < displayStories.length) {
-        reorderedStories.push({ story: displayStories[index], originalIndex: index });
-      }
-    }
-  }
-
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {reorderedStories.map(({ story, originalIndex }) => {
+      {displayStories.map((story) => {
         const title = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
         const description = getLocalizedValue(locale, story.descriptionVi, story.descriptionEn, story.description || "")
           .replace(/<[^>]*>/g, " ")
@@ -87,28 +73,13 @@ export default function HighRatingStoriesGrid({ stories, isLoading = false }: Hi
         const categoryName = story.categories?.[0]?.category?.name;
         const statusLabel = story.status === "completed" ? t("full") : t("ongoing");
         const rating = formatRating(story.averageRating);
-        
-        // Màu badge theo ranking
-        let badgeClass = "bg-gradient-to-br from-slate-400 to-slate-500"; // Default cho top 4-9
-        if (originalIndex === 0) {
-          badgeClass = "bg-gradient-to-br from-red-500 to-red-600"; // Top 1: Đỏ
-        } else if (originalIndex === 1) {
-          badgeClass = "bg-gradient-to-br from-orange-500 to-orange-600"; // Top 2: Cam
-        } else if (originalIndex === 2) {
-          badgeClass = "bg-gradient-to-br from-amber-400 to-yellow-500"; // Top 3: Vàng
-        }
 
         return (
           <Link
             key={story.id}
             href={`/story/${story.slug}`}
-            className="group flex min-h-[160px] sm:min-h-[220px] gap-3 rounded-2xl p-3 transition-all duration-300 hover:-translate-y-0.5 bg-white dark:bg-slate-900 hover:shadow-lg relative"
+            className="group flex min-h-[160px] sm:min-h-[220px] gap-3 rounded-2xl p-3 transition-all duration-300 hover:-translate-y-0.5 bg-white dark:bg-slate-900 hover:shadow-lg"
           >
-            {/* Badge TOP */}
-            <div className={`absolute left-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full text-xs font-black text-white shadow-md ${badgeClass}`}>
-              {originalIndex + 1}
-            </div>
-
             <div className="relative w-[110px] sm:w-[120px] xl:w-[140px] shrink-0 overflow-hidden rounded-lg">
               <Image
                 src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
@@ -135,10 +106,10 @@ export default function HighRatingStoriesGrid({ stories, isLoading = false }: Hi
               </p>
 
               <div className="mt-auto pt-2 flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                  <span className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-300">
-                    <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-amber-500 text-amber-500" />
-                    {rating}
-                  </span>
+                <span className="inline-flex items-center gap-1 font-bold text-amber-600 dark:text-amber-300">
+                  <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-amber-500 text-amber-500" />
+                  {rating}
+                </span>
                 <span className="text-[11px] sm:text-sm">{formatViews(story.totalViews)} {viewsSuffix}</span>
                 <span className="text-[11px] sm:text-sm">{statusLabel}</span>
               </div>

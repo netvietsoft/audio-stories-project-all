@@ -43,15 +43,15 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-        {Array.from({ length: 8 }).map((_, index) => (
+      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-4 md:gap-6">
+        {Array.from({ length: 14 }).map((_, index) => (
           <div key={index} className="aspect-[3/4] animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
         ))}
       </div>
     );
   }
 
-  const displayStories = stories.slice(0, 8);
+  const displayStories = stories.slice(0, 14);
 
   if (!displayStories.length) {
     return (
@@ -62,7 +62,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-4 md:gap-6">
       {displayStories.map((story) => {
         const title = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
         const categoryName = story.categories?.[0]?.category?.name;
@@ -70,57 +70,56 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
         const viewsLabel = Number(story.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN");
 
         return (
-          <Link
-            key={story.id}
-            href={`/story/${story.slug}`}
-            className="group block overflow-hidden rounded-2xl bg-slate-900/95 shadow-sm ring-1 ring-slate-800/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-          >
-            <div className="relative">
-              <Image
-                src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
-                alt={title}
-                width={240}
-                height={320}
-                sizes="(max-width: 640px) 48vw, (max-width: 768px) 32vw, (max-width: 1024px) 24vw, 18vw"
-                className="aspect-[3/4] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
+          <div key={story.id} className="group">
+            <Link
+              href={`/story/${story.slug}`}
+              className="block overflow-hidden rounded-2xl bg-slate-900/95 shadow-sm ring-1 ring-slate-800/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="relative">
+                <Image
+                  src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
+                  alt={title}
+                  width={128}
+                  height={179}
+                  sizes="(max-width: 640px) 30vw, (max-width: 768px) 20vw, (max-width: 1024px) 15vw, 11vw"
+                  className="aspect-[5/7] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-              <div className="absolute left-2 top-2 flex flex-col gap-1">
-                <span className="inline-flex rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white">
-                  {t("full")}
-                </span>
-                {categoryName ? (
-                  <span className="inline-flex rounded-md bg-black/65 px-2 py-0.5 text-[10px] font-semibold text-white">
-                    {categoryName}
-                  </span>
-                ) : null}
-              </div>
+                <FavoriteButton
+                  storyId={story.id}
+                  className="absolute right-2 top-2 z-10 rounded-full bg-black/45 p-1.5 text-white shadow-sm backdrop-blur-sm hover:bg-black/65 hover:text-red-400"
+                />
 
-              <FavoriteButton
-                storyId={story.id}
-                className="absolute right-2 top-2 z-10 rounded-full bg-black/45 p-1.5 text-white shadow-sm backdrop-blur-sm hover:bg-black/65 hover:text-red-400"
-              />
+                <div className="absolute inset-x-0 bottom-0 p-2.5 text-white">
+                  <div className="flex items-center justify-between gap-2 text-xs font-semibold">
+                    <div className="flex items-center gap-1 text-amber-300">
+                      <Star className="h-3.5 w-3.5" fill="currentColor" />
+                      <span>{rating}</span>
+                    </div>
 
-              <div className="absolute inset-x-0 bottom-0 p-2.5 text-white sm:p-3">
-                <h3 className="line-clamp-1 truncate text-sm font-extrabold leading-tight">{title}</h3>
-                <p className="mt-0.5 line-clamp-1 text-xs text-white/85">{story.author?.name || t("updating")}</p>
-
-                <div className="mt-1.5 flex items-center justify-between gap-2 text-sm font-semibold sm:text-base">
-                  <div className="flex items-center gap-1 text-amber-300">
-                    <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="currentColor" />
-                    <span>{rating}</span>
-                  </div>
-
-                  <div className="flex items-center gap-1 text-white/90">
-                    <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    <span>{viewsLabel}</span>
+                    <div className="flex items-center gap-1 text-white/90">
+                      <Eye className="h-3.5 w-3.5" />
+                      <span>{viewsLabel}</span>
+                    </div>
                   </div>
                 </div>
               </div>
+            </Link>
+
+            <div className="mt-2 px-1">
+              <Link href={`/story/${story.slug}`}>
+                <h3 className="line-clamp-2 text-sm font-bold leading-tight text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400">
+                  {title}
+                </h3>
+              </Link>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{story.author?.name || t("updating")}</p>
+              {categoryName ? (
+                <p className="mt-0.5 text-xs text-pink-600 dark:text-pink-400">{categoryName}</p>
+              ) : null}
             </div>
-          </Link>
+          </div>
         );
       })}
     </div>

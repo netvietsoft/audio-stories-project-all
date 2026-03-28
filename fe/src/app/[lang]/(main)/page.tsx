@@ -11,6 +11,7 @@ import InfiniteMarqueeSlider from "@/components/shared/InfiniteMarqueeSlider";
 import StoryListView from "@/components/shared/StoryListView";
 import CategoryTabsSection from "@/components/story/CategoryTabsSection";
 import HighRatingStoriesGrid from "@/components/story/HighRatingStoriesGrid";
+import CategoryStoriesGrid from "@/components/story/CategoryStoriesGrid";
 import CompletedStoriesGrid from "@/components/story/CompletedStoriesGrid";
 import InteractiveStoriesSection from "../../../components/story/InteractiveStoriesSection";
 import { InteractiveStoryShelf, TopContributorsLeaderboard } from "@/components/shared/StoryDiscoveryBoard";
@@ -148,7 +149,7 @@ type HeroSlide = {
 };
 
 const NEW_LIMIT = 5;
-const POPULAR_LIMIT = 8;
+const POPULAR_LIMIT = 9;
 const HOME_AXIS_CLASS = "mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]";
 
 export default function HomePage() {
@@ -251,7 +252,7 @@ export default function HomePage() {
           fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
           apiClient.get("/chapters/latest", { params: { limit: 12, lang } }).then((r) => r.data || []).catch(() => []),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
-          fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating", status: "completed" }),
+          fetchExploreCached<ExploreResponse>({ limit: 14, lang, sort: "rating", status: "completed" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "views", trendWindow: "week" }),
           apiClient
             .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 20, lang } })
@@ -310,13 +311,13 @@ export default function HomePage() {
         setShounenStories(shounenRes.status === "fulfilled" ? (shounenRes.value.data || []) : []);
         setTienHiepStories(tienHiepRes.status === "fulfilled" ? (tienHiepRes.value.data || []) : []);
 
-        // Lấy random 4 thể loại (loại trừ các thể loại đã hiển thị ở Category Tabs)
+        // Lấy random 8 thể loại (loại trừ các thể loại đã hiển thị ở Category Tabs)
         const excludedSlugs = ['action', 'xuyen-khong', 'shounen', 'tien-hiep'];
         const availableCategories = allCats.filter(cat => !excludedSlugs.includes(cat.slug));
         
-        // Shuffle và lấy 4 thể loại
+        // Shuffle và lấy 8 thể loại
         const shuffled = [...availableCategories].sort(() => Math.random() - 0.5);
-        const selectedCategories = shuffled.slice(0, 4);
+        const selectedCategories = shuffled.slice(0, 8);
         setRandomCategories(selectedCategories);
 
         // Fetch stories cho các thể loại random
@@ -512,16 +513,40 @@ export default function HomePage() {
                 {t("viewAll")}
               </Link>
             </div>
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-              {topCategories.map((cat) => (
-                <Link
-                  key={cat.id}
-                  href={`/explore?categoryId=${cat.id}`}
-                  className="flex-shrink-0 rounded-full bg-slate-100 px-4 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-blue-100 hover:text-blue-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-blue-950 dark:hover:text-blue-300"
-                >
-                  #{cat.name}
-                </Link>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {topCategories.slice(0, 5).map((cat, index) => {
+                // Màu gradient modern, pastel
+                const gradients = [
+                  'from-pink-400 to-rose-400',
+                  'from-purple-400 to-violet-400',
+                  'from-blue-400 to-cyan-400',
+                  'from-emerald-400 to-teal-400',
+                  'from-amber-400 to-orange-400',
+                  'from-fuchsia-400 to-pink-400',
+                  'from-indigo-400 to-blue-400',
+                  'from-lime-400 to-green-400',
+                ];
+                const gradient = gradients[index % gradients.length];
+                
+                return (
+                  <Link
+                    key={cat.id}
+                    href={`/explore?categoryId=${cat.id}`}
+                    className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg w-[90%] mx-auto"
+                    style={{ aspectRatio: '3 / 1.4' }}
+                  >
+                    {/* Gradient Background */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${gradient} group-hover:brightness-110 transition-all`} />
+                    
+                    {/* Category Name */}
+                    <div className="relative z-10 flex h-full items-center justify-center p-3">
+                      <span className="text-center text-base font-bold text-white drop-shadow-lg">
+                        {getLocalizedValue(locale, cat.nameVi, cat.nameEn, cat.name)}
+                      </span>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}
@@ -619,7 +644,7 @@ export default function HomePage() {
                   {t("viewAll")}
                 </Link>
               </div>
-              <HighRatingStoriesGrid stories={stories} isLoading={isLoading} />
+              <CategoryStoriesGrid stories={stories} isLoading={isLoading} />
             </section>
           );
         })}

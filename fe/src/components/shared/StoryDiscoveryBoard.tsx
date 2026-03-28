@@ -147,56 +147,41 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
   const rankedStories = stories.slice(1, 5);
 
   return (
-    <div>
+    <div className="p-6">
       {stories.length ? (
-        <div className="mt-4 grid grid-cols-1 items-start gap-6 lg:grid-cols-2 lg:items-stretch">
+        <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-[40%_1fr]">
 
-          {/* Left: Top 1 */}
-          <div className="flex h-full flex-col gap-5 rounded-xl p-4 md:flex-row md:items-stretch">
+          {/* Left: Top 1 Featured Story */}
+          <div className="flex h-full flex-col gap-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-5">
             {topStory ? (
               <>
-                {/* Thumbnail – fixed width, aligned to top */}
-                <div className="w-full shrink-0 self-start md:h-full md:w-56 lg:w-64">
-                  <Link href={`/story/${topStory.slug}`} className="block h-full">
+                {/* Thumbnail */}
+                <div className="w-full flex justify-center flex-[0.7]">
+                  <Link href={`/story/${topStory.slug}`} className="block w-1/2">
                     <Image
                       src={topStory.thumbnailUrl || "/icon.svg"}
                       alt={getLocalizedValue(lang, topStory.titleVi, topStory.titleEn, topStory.title)}
-                      width={224}
-                      height={299}
-                      sizes="(max-width: 768px) 100vw, 256px"
-                      className="aspect-[2/3] w-full shrink-0 rounded-xl object-cover md:aspect-auto md:h-full"
+                      width={400}
+                      height={400}
+                      sizes="(max-width: 1024px) 50vw, 25vw"
+                      className="aspect-[3/4] w-full rounded-xl object-cover"
                     />
                   </Link>
                 </div>
 
-                {/* Content – title, author, stats, description, buttons */}
-                <div className="flex h-full min-w-0 flex-1 flex-col py-1">
+                {/* Content */}
+                <div className="flex flex-[0.3] flex-col items-center text-center justify-center w-[70%] mx-auto">
                   <Link href={`/story/${topStory.slug}`}>
-                    <h4 className="line-clamp-2 text-2xl font-extrabold leading-tight text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400 sm:text-[2rem]">
+                    <h4 className="line-clamp-2 text-xl font-extrabold leading-tight text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400">
                       {getLocalizedValue(lang, topStory.titleVi, topStory.titleEn, topStory.title)}
                     </h4>
                   </Link>
 
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     {topStory.author?.name || labels.authorFallback}
                   </p>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 dark:text-gray-300">
-                    <p className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-blue-50 px-2.5 py-1.5 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                      <Eye className="h-4 w-4" />
-                      {Number(topStory.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
-                    </p>
-                    <p className="inline-flex items-center gap-1 whitespace-nowrap">
-                      <Layers className="h-3.5 w-3.5" />
-                      {labels.chapters}: {getChapterTotal(topStory).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
-                    </p>
-                    <p className="inline-flex items-center gap-1 whitespace-nowrap">
-                      <Star className="h-3.5 w-3.5 text-amber-500" />
-                      {labels.rating}: {formatRating(topStory.averageRating)}
-                    </p>
-                  </div>
-
-                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                  <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
                     {getLocalizedValue(
                       lang,
                       topStory.descriptionVi,
@@ -205,88 +190,66 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
                     ) || labels.storyIntroFallback}
                   </p>
 
-                  <div className="mt-auto flex items-center gap-2 pt-4">
+                  <div className="mt-4">
                     <Link
                       href={`/story/${topStory.slug}`}
-                      className="inline-flex items-center rounded-full bg-blue-600 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700"
+                      className="inline-flex items-center rounded-full bg-gradient-to-r from-orange-400 to-pink-400 px-6 py-2.5 text-sm font-bold text-white transition-all hover:shadow-md"
                     >
                       {labels.readNow}
                     </Link>
-                    <FavoriteButton
-                      storyId={topStory.id}
-                      size="sm"
-                      icon="heart"
-                      className="h-10 w-10 justify-center rounded-full p-0"
-                      activeClassName="bg-red-500 text-white"
-                      inactiveClassName="bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
-                    />
                   </div>
                 </div>
               </>
             ) : null}
           </div>
 
-          {/* Right: Top 2 -> Top 5 */}
-          <div className="flex flex-col gap-3">
+          {/* Right: Top 2-5 Grid (2 rows x 2 cols) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 content-center">
             {rankedStories.map((story, idx) => {
               const storyTitle = getLocalizedValue(lang, story.titleVi, story.titleEn, story.title);
-              const rank = idx + 2;
-              const rankColors = ["text-slate-400", "text-amber-600", "text-gray-400", "text-gray-400"];
+              const authorName = story.author?.name || labels.authorFallback;
+              const views = Number(story.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN");
+              const categories = story.categories?.slice(0, 2).map(c => 
+                getLocalizedValue(lang, c.category?.nameVi, c.category?.nameEn, c.category?.name)
+              ).filter(Boolean).join(", ") || "";
 
               return (
                 <Link
                   key={story.id}
                   href={`/story/${story.slug}`}
-                  className="flex items-start gap-3 rounded-xl p-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/60"
+                  className="flex items-center gap-4 rounded-xl p-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 >
-                  <span className={`w-6 shrink-0 pt-1 text-center text-xl font-bold tabular-nums ${rankColors[idx] ?? "text-gray-400"}`}>
-                    {rank}
-                  </span>
-
-                  <div className="relative h-24 w-16 shrink-0 overflow-hidden rounded-lg">
+                  <div className="relative h-36 w-28 shrink-0 overflow-hidden rounded-lg">
                     <Image
                       src={story.thumbnailUrl || "/icon.svg"}
                       alt={storyTitle}
                       fill
-                      sizes="64px"
-                      className="aspect-[3/4] object-cover"
+                      sizes="112px"
+                      className="object-cover"
                     />
                   </div>
 
-                  <div className="flex min-w-0 flex-col flex-1">
-                    <span className="line-clamp-2 text-sm font-semibold text-gray-900 dark:text-white">
+                  <div className="min-w-0 flex-1">
+                    <h5 className="line-clamp-2 text-base font-bold text-gray-900 dark:text-white">
                       {storyTitle}
-                    </span>
-
-                    <span className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                      {story.author?.name || labels.authorFallback}
-                    </span>
-
-                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-                      <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-blue-50 px-2 py-1 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                        <Eye className="h-3 w-3" />
-                        {Number(story.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
-                      </span>
-                      <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                        <Layers className="h-3 w-3" />
-                        {getChapterTotal(story).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
-                      </span>
-                      <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                        <Star className="h-3 w-3 text-amber-500" />
-                        {formatRating(story.averageRating)}
-                      </span>
-                    </div>
-
-                    <span className="mt-1 line-clamp-2 text-xs leading-5 text-gray-500 dark:text-gray-400">
-                      {getLocalizedValue(lang, story.descriptionVi, story.descriptionEn, story.description) || labels.storyIntroFallback}
-                    </span>
-
+                    </h5>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      {authorName}
+                    </p>
+                    {categories && (
+                      <p className="mt-1 text-xs text-pink-600 dark:text-pink-400 line-clamp-1">
+                        {categories}
+                      </p>
+                    )}
+                    <p className="mt-1.5 flex items-center gap-1 text-sm font-medium text-gray-400 dark:text-gray-500">
+                      <Eye className="h-4 w-4" />
+                      {views}
+                    </p>
                   </div>
                 </Link>
               );
             })}
           </div>
-
         </div>
       ) : (
         <div className="mt-4 rounded-2xl bg-gray-100 p-6 text-sm text-gray-600 dark:bg-gray-800/50 dark:text-gray-300">

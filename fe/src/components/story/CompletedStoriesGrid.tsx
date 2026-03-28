@@ -45,7 +45,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
         {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="aspect-[2/3] animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
+          <div key={index} className="aspect-[3/4] animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
         ))}
       </div>
     );
@@ -79,10 +79,10 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
               <Image
                 src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
                 alt={title}
-                width={320}
+                width={240}
                 height={320}
                 sizes="(max-width: 640px) 48vw, (max-width: 768px) 32vw, (max-width: 1024px) 24vw, 18vw"
-                className="aspect-[2/3] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="aspect-[3/4] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10" />

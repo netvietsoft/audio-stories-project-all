@@ -347,7 +347,9 @@
     "loading": "Loading search...",
     "titleDefault": "Search Stories",
     "titleWithKeyword": "Results for \"{keyword}\"",
-    "subtitle": "Unified filters + search results, paginated at 12 stories per page."
+    "subtitle": "Unified filters + search results, paginated at 12 stories per page.",
+    "searchPlaceholder": "Search stories...",
+    "search": "Search"
   },
   "HallPage": {
     "title": "Member Hall of Fame",
@@ -397,6 +399,7 @@
     "sortChapters": "Chapter count",
     "searchCategories": "Search categories...",
     "searchAuthors": "Search authors...",
+    "searchPlaceholder": "Search...",
     "applying": "Applying...",
     "apply": "Apply filters"
   },

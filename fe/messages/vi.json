@@ -347,7 +347,9 @@
     "loading": "Đang tải tìm kiếm...",
     "titleDefault": "Tìm kiếm truyện",
     "titleWithKeyword": "Kết quả cho \"{keyword}\"",
-    "subtitle": "Bộ lọc tổng hợp + kết quả tìm kiếm, phân trang 12 truyện/trang."
+    "subtitle": "Bộ lọc tổng hợp + kết quả tìm kiếm, phân trang 12 truyện/trang.",
+    "searchPlaceholder": "Tìm kiếm truyện...",
+    "search": "Tìm kiếm"
   },
   "HallPage": {
     "title": "Trang Vinh danh hội viên",
@@ -397,6 +399,7 @@
     "sortChapters": "Số chương",
     "searchCategories": "Tìm thể loại...",
     "searchAuthors": "Tìm tác giả...",
+    "searchPlaceholder": "Tìm kiếm...",
     "applying": "Đang lọc...",
     "apply": "Lọc ngay"
   },

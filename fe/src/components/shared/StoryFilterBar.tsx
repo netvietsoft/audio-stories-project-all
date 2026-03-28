@@ -22,6 +22,7 @@ export type StoryFilterValue = {
   authorId: string;
   status: "" | "completed" | "ongoing";
   sort: "latest" | "views" | "rating" | "title_asc" | "chapters_desc";
+  keyword?: string;
 };
 
 type StoryFilterBarProps = {
@@ -31,6 +32,7 @@ type StoryFilterBarProps = {
   onChange: (next: StoryFilterValue) => void;
   onApply: () => void;
   isLoading?: boolean;
+  showKeywordInput?: boolean;
 };
 
 export default function StoryFilterBar({
@@ -40,6 +42,7 @@ export default function StoryFilterBar({
   onChange,
   onApply,
   isLoading = false,
+  showKeywordInput = false,
 }: StoryFilterBarProps) {
   const t = useTranslations("StoryFilterBar");
   const locale = useLocale();
@@ -111,7 +114,25 @@ export default function StoryFilterBar({
         {t("quickFilter")}
       </h2>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-5">
+      <div className={`grid grid-cols-1 gap-3 ${showKeywordInput ? 'md:grid-cols-2 lg:grid-cols-6' : 'md:grid-cols-2 lg:grid-cols-5'}`}>
+        {/* Keyword Input (if enabled) */}
+        {showKeywordInput && (
+          <div className="lg:col-span-1">
+            <input
+              type="text"
+              placeholder={t("searchPlaceholder") || "Tìm kiếm..."}
+              value={value.keyword || ""}
+              onChange={(e) => onChange({ ...value, keyword: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  onApply();
+                }
+              }}
+              className="w-full bg-slate-50 dark:bg-slate-800 rounded-xl py-3 px-4 text-sm font-medium text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 border-none"
+            />
+          </div>
+        )}
+
         {/* Category Dropdown */}
         <div className="relative" ref={categoryRef}>
           <button

@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import StoryCard from "@/components/shared/StoryCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
+import { useDebounce } from "@/hooks/useDebounce";
 
 type StoryItem = {
   id: string;
@@ -45,7 +46,7 @@ function SearchPageContent() {
   const t = useTranslations("SearchPage");
   const tCommon = useTranslations("Common");
   const searchParams = useSearchParams();
-  const keyword = searchParams.get("keyword") || "";
+  const initialKeyword = searchParams.get("keyword") || "";
 
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [page, setPage] = useState(1);
@@ -57,8 +58,19 @@ function SearchPageContent() {
     authorId: searchParams.get("authorId") || "",
     status: (searchParams.get("status") as StoryFilterValue["status"]) || "",
     sort: (searchParams.get("sort") as StoryFilterValue["sort"]) || "latest",
+    keyword: initialKeyword,
   });
   const [appliedFilters, setAppliedFilters] = useState<StoryFilterValue>(filters);
+
+  // Debounce keyword để tránh gọi API quá nhiều khi user đang gõ
+  const debouncedKeyword = useDebounce(filters.keyword || "", 500);
+
+  // Update keyword when URL changes
+  useEffect(() => {
+    const urlKeyword = searchParams.get("keyword") || "";
+    setFilters((prev) => ({ ...prev, keyword: urlKeyword }));
+    setAppliedFilters((prev) => ({ ...prev, keyword: urlKeyword }));
+  }, [searchParams]);
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -73,6 +85,14 @@ function SearchPageContent() {
     void loadOptions();
   }, []);
 
+  // Auto-apply khi keyword debounced thay đổi
+  useEffect(() => {
+    if (debouncedKeyword !== appliedFilters.keyword) {
+      setAppliedFilters((prev) => ({ ...prev, keyword: debouncedKeyword }));
+      setPage(1);
+    }
+  }, [debouncedKeyword, appliedFilters.keyword]);
+
   useEffect(() => {
     setPage(1);
     const loadStories = async () => {
@@ -80,7 +100,7 @@ function SearchPageContent() {
         params: {
           page: 1,
           limit: LIMIT,
-          ...(keyword ? { search: keyword } : {}),
+          ...(appliedFilters.keyword ? { search: appliedFilters.keyword } : {}),
           ...(appliedFilters.categoryId ? { categoryId: appliedFilters.categoryId } : {}),
           ...(appliedFilters.authorId ? { authorId: appliedFilters.authorId } : {}),
           ...(appliedFilters.status ? { status: appliedFilters.status } : {}),
@@ -92,7 +112,7 @@ function SearchPageContent() {
     };
 
     void loadStories();
-  }, [appliedFilters, keyword]);
+  }, [appliedFilters]);
 
   useEffect(() => {
     if (page === 1) return;
@@ -101,7 +121,7 @@ function SearchPageContent() {
         params: {
           page,
           limit: LIMIT,
-          ...(keyword ? { search: keyword } : {}),
+          ...(appliedFilters.keyword ? { search: appliedFilters.keyword } : {}),
           ...(appliedFilters.categoryId ? { categoryId: appliedFilters.categoryId } : {}),
           ...(appliedFilters.authorId ? { authorId: appliedFilters.authorId } : {}),
           ...(appliedFilters.status ? { status: appliedFilters.status } : {}),
@@ -112,11 +132,11 @@ function SearchPageContent() {
       setLastPage(res.data.meta?.lastPage || 1);
     };
     void loadStories();
-  }, [appliedFilters, keyword, page]);
+  }, [appliedFilters, page]);
 
   const title = useMemo(
-    () => (keyword ? t("titleWithKeyword", { keyword }) : t("titleDefault")),
-    [keyword, t],
+    () => (appliedFilters.keyword ? t("titleWithKeyword", { keyword: appliedFilters.keyword }) : t("titleDefault")),
+    [appliedFilters.keyword, t],
   );
 
   return (
@@ -135,6 +155,7 @@ function SearchPageContent() {
           setAppliedFilters(filters);
           setPage(1);
         }}
+        showKeywordInput={true}
       />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">

@@ -14,6 +14,7 @@ import HighRatingStoriesGrid from "@/components/story/HighRatingStoriesGrid";
 import CompletedStoriesGrid from "@/components/story/CompletedStoriesGrid";
 import InteractiveStoriesSection from "../../../components/story/InteractiveStoriesSection";
 import { InteractiveStoryShelf, TopContributorsLeaderboard } from "@/components/shared/StoryDiscoveryBoard";
+import TrendingKeywords from "@/components/shared/TrendingKeywords";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
 import { getLocalizedValue } from "@/lib/story-localization";
@@ -176,6 +177,11 @@ export default function HomePage() {
   const [heroBanners, setHeroBanners] = useState<BannerItem[]>([]);
   const [favoriteStories, setFavoriteStories] = useState<FavoriteItem[]>([]);
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  
+  // Random categories và stories của chúng
+  const [randomCategories, setRandomCategories] = useState<CategoryItem[]>([]);
+  const [randomCategoryStories, setRandomCategoryStories] = useState<Record<number, StoryItem[]>>({});
+  
   const [isPersonalizedLoading, setIsPersonalizedLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -303,6 +309,34 @@ export default function HomePage() {
         setXuyenKhongStories(xuyenKhongRes.status === "fulfilled" ? (xuyenKhongRes.value.data || []) : []);
         setShounenStories(shounenRes.status === "fulfilled" ? (shounenRes.value.data || []) : []);
         setTienHiepStories(tienHiepRes.status === "fulfilled" ? (tienHiepRes.value.data || []) : []);
+
+        // Lấy random 4 thể loại (loại trừ các thể loại đã hiển thị ở Category Tabs)
+        const excludedSlugs = ['action', 'xuyen-khong', 'shounen', 'tien-hiep'];
+        const availableCategories = allCats.filter(cat => !excludedSlugs.includes(cat.slug));
+        
+        // Shuffle và lấy 4 thể loại
+        const shuffled = [...availableCategories].sort(() => Math.random() - 0.5);
+        const selectedCategories = shuffled.slice(0, 4);
+        setRandomCategories(selectedCategories);
+
+        // Fetch stories cho các thể loại random
+        const randomCategoryPromises = selectedCategories.map(cat =>
+          fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, categoryId: cat.id })
+        );
+
+        const randomCategoryResults = await Promise.allSettled(randomCategoryPromises);
+        const storiesMap: Record<number, StoryItem[]> = {};
+        
+        selectedCategories.forEach((cat, index) => {
+          const result = randomCategoryResults[index];
+          if (result && result.status === "fulfilled") {
+            storiesMap[cat.id] = result.value.data || [];
+          } else {
+            storiesMap[cat.id] = [];
+          }
+        });
+
+        setRandomCategoryStories(storiesMap);
 
         setAuthors(authorRes.status === "fulfilled" ? authorRes.value : []);
         setHallContributors(hallRes.status === "fulfilled" ? hallRes.value : []);
@@ -471,7 +505,7 @@ export default function HomePage() {
       <div className="space-y-16">
         {/* ─── Hashtag / Category Strip ────────────────────────────── */}
         {topCategories.length > 0 && (
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <section className="space-y-4">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
               <Link href="/stories" className="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
@@ -492,131 +526,19 @@ export default function HomePage() {
           </section>
         )}
 
-        {accessToken ? (
-          <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-gray-900">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("continueTitle")}</h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("continueSubtitle")}</p>
-              </div>
-              <Link href="/profile/history" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-50 dark:border-slate-700 dark:text-blue-400 dark:hover:bg-slate-800">
-                <Headphones className="h-4 w-4" />
-                {tNavbar("listeningHistory")}
-              </Link>
+        {/* ─── Truyện Rating Cao (Grid 2 hàng x 4) ─ */}
+        <section className="space-y-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "High-Rating Stories" : "Truyện Rating Cao"}</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{locale === "en" ? "Top-rated stories from our collection" : "Những truyện được đánh giá cao nhất"}</p>
             </div>
-
-            {isPersonalizedLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
-                ))}
-              </div>
-            ) : historyItems.length > 0 ? (
-              <div className="space-y-3">
-                {historyItems.map((item) => {
-                  const storyTitle = getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title);
-                  const chapterTitle = getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title);
-                  const progressPercent = item.chapter.audioDuration
-                    ? Math.min(100, Math.round((item.progressSeconds / item.chapter.audioDuration) * 100))
-                    : 0;
-
-                  return (
-                    <Link
-                      key={item.id}
-                      href={`/story/${item.story.slug}/chuong-${item.chapter.chapterNumber}`}
-                      className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-slate-700"
-                    >
-                      <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
-                        <Image
-                          src={item.story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
-                          alt={storyTitle}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
-                        <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{tProfile("chapterTitle", { number: item.chapter.chapterNumber, title: chapterTitle })}</p>
-                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                          <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${progressPercent}%` }} />
-                        </div>
-                        <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{t("continueProgress", { percent: progressPercent })}</p>
-                      </div>
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
-                        <PlayCircle className="h-5 w-5" />
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-gray-800/50 dark:text-slate-400">
-                {t("continueEmpty")}
-              </div>
-            )}
+            <Link href="/search?sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              {t("viewAll")}
+            </Link>
           </div>
-
-          <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-gray-900">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("favoritesListTitle")}</h2>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("favoritesListSubtitle")}</p>
-              </div>
-              <Link href="/profile?panel=favorites" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-50 dark:border-slate-700 dark:text-blue-400 dark:hover:bg-slate-800">
-                <Heart className="h-4 w-4" />
-                {tNavbar("favorites")}
-              </Link>
-            </div>
-
-            {isPersonalizedLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
-                ))}
-              </div>
-            ) : favoriteStories.length > 0 ? (
-              <div className="space-y-3">
-                {favoriteStories.map((story) => {
-                  const storyTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
-                  const categoryName = story.categories?.[0]?.category
-                    ? getLocalizedValue(locale, story.categories[0].category.nameVi, story.categories[0].category.nameEn, story.categories[0].category.name)
-                    : t("uncategorized");
-
-                  return (
-                    <Link
-                      key={story.id}
-                      href={`/story/${story.slug}`}
-                      className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-slate-800 dark:hover:bg-slate-700"
-                    >
-                      <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
-                        <Image
-                          src={story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
-                          alt={storyTitle}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
-                        <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{categoryName}</p>
-                        <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{story.author?.name || tStoryDetail("authorUpdating")}</p>
-                      </div>
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-sm">
-                        <Heart className="h-5 w-5" />
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-gray-800/50 dark:text-slate-400">
-                {t("favoritesEmpty")}
-              </div>
-            )}
-          </div>
-          </section>
-        ) : null}
+          <HighRatingStoriesGrid stories={popularStories} isLoading={isLoading} />
+        </section>
 
         {/* ─── Truyện Trending ─────────────────────────────────────── */}
         <section className="space-y-4">
@@ -654,20 +576,6 @@ export default function HomePage() {
       </section>
 
       <div className="space-y-16">
-        {/* ─── Truyện Rating Cao (Grid 2 hàng x 4) ─ */}
-        <section className="space-y-4">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "High-Rating Stories" : "Truyện Rating Cao"}</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{locale === "en" ? "Top-rated stories from our collection" : "Những truyện được đánh giá cao nhất"}</p>
-            </div>
-            <Link href="/search?sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-              {t("viewAll")}
-            </Link>
-          </div>
-          <HighRatingStoriesGrid stories={popularStories} isLoading={isLoading} />
-        </section>
-
         <InteractiveStoriesSection />
 
         {/* ─── Truyện đã hoàn thành (Grid 2 hàng x 4) ─ */}
@@ -685,6 +593,36 @@ export default function HomePage() {
             <CompletedStoriesGrid stories={completedStories} isLoading={isLoading} />
           </section>
         )}
+
+        {/* ─── Random Category Sections ─ */}
+        {randomCategories.map((category) => {
+          const stories = randomCategoryStories[category.id] || [];
+          if (stories.length === 0) return null;
+
+          const categoryName = getLocalizedValue(locale, category.nameVi, category.nameEn, category.name);
+
+          return (
+            <section key={category.id} className="space-y-4">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+                    {locale === "en" ? `${categoryName} Stories` : `Truyện ${categoryName}`}
+                  </h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {locale === "en" ? `Discover amazing ${categoryName.toLowerCase()} stories` : `Khám phá những truyện ${categoryName.toLowerCase()} hấp dẫn`}
+                  </p>
+                </div>
+                <Link 
+                  href={`/explore?categoryId=${category.id}`} 
+                  className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  {t("viewAll")}
+                </Link>
+              </div>
+              <HighRatingStoriesGrid stories={stories} isLoading={isLoading} />
+            </section>
+          );
+        })}
       </div>
 
       {/* ─── Tabs thể loại (1 carousel duy nhất) ─ */}
@@ -695,18 +633,150 @@ export default function HomePage() {
       </section>
 
       {/* ─── Hall of Fame ─────────────────────────────────────────── */}
-      <section className="space-y-4">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("hallTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t("hallSubtitle")}</p>
+      <div className="space-y-16">
+        <section className="space-y-4">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("hallTitle")}</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{t("hallSubtitle")}</p>
+            </div>
+            <Link href="/hall" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              {t("viewFullRanking")}
+            </Link>
           </div>
-          <Link href="/hall" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
-            {t("viewFullRanking")}
-          </Link>
-        </div>
-        <TopContributorsLeaderboard contributors={hallContributors} />
-      </section>
+          <TopContributorsLeaderboard contributors={hallContributors} />
+        </section>
+
+        {/* ─── Continue Listening & Favorites ─────────────────────────────────────── */}
+        {accessToken ? (
+          <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-gray-900">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("continueTitle")}</h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("continueSubtitle")}</p>
+                </div>
+                <Link href="/profile/history" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-50 dark:border-slate-700 dark:text-blue-400 dark:hover:bg-slate-800">
+                  <Headphones className="h-4 w-4" />
+                  {tNavbar("listeningHistory")}
+                </Link>
+              </div>
+
+              {isPersonalizedLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+                  ))}
+                </div>
+              ) : historyItems.length > 0 ? (
+                <div className="space-y-3">
+                  {historyItems.map((item) => {
+                    const storyTitle = getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title);
+                    const chapterTitle = getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title);
+                    const progressPercent = item.chapter.audioDuration
+                      ? Math.min(100, Math.round((item.progressSeconds / item.chapter.audioDuration) * 100))
+                      : 0;
+
+                    return (
+                      <Link
+                        key={item.id}
+                        href={`/story/${item.story.slug}/chuong-${item.chapter.chapterNumber}`}
+                        className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-slate-700"
+                      >
+                        <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
+                          <Image
+                            src={item.story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
+                            alt={storyTitle}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
+                          <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{tProfile("chapterTitle", { number: item.chapter.chapterNumber, title: chapterTitle })}</p>
+                          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                            <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${progressPercent}%` }} />
+                          </div>
+                          <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{t("continueProgress", { percent: progressPercent })}</p>
+                        </div>
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
+                          <PlayCircle className="h-5 w-5" />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-gray-800/50 dark:text-slate-400">
+                  {t("continueEmpty")}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-gray-900">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("favoritesListTitle")}</h2>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("favoritesListSubtitle")}</p>
+                </div>
+                <Link href="/profile?panel=favorites" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-50 dark:border-slate-700 dark:text-blue-400 dark:hover:bg-slate-800">
+                  <Heart className="h-4 w-4" />
+                  {tNavbar("favorites")}
+                </Link>
+              </div>
+
+              {isPersonalizedLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+                  ))}
+                </div>
+              ) : favoriteStories.length > 0 ? (
+                <div className="space-y-3">
+                  {favoriteStories.map((story) => {
+                    const storyTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
+                    const categoryName = story.categories?.[0]?.category
+                      ? getLocalizedValue(locale, story.categories[0].category.nameVi, story.categories[0].category.nameEn, story.categories[0].category.name)
+                      : t("uncategorized");
+
+                    return (
+                      <Link
+                        key={story.id}
+                        href={`/story/${story.slug}`}
+                        className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-slate-800 dark:hover:bg-slate-700"
+                      >
+                        <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
+                          <Image
+                            src={story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
+                            alt={storyTitle}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
+                          <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{categoryName}</p>
+                          <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{story.author?.name || tStoryDetail("authorUpdating")}</p>
+                        </div>
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-sm">
+                          <Heart className="h-5 w-5" />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-gray-800/50 dark:text-slate-400">
+                  {t("favoritesEmpty")}
+                </div>
+              )}
+            </div>
+          </section>
+        ) : null}
+
+        {/* ─── Trending Keywords ─────────────────────────────────────── */}
+        <TrendingKeywords />
+      </div>
 
     </div>
   );

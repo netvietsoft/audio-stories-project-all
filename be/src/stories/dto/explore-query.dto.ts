@@ -1,5 +1,5 @@
 import { Type, Transform } from 'class-transformer';
-import { IsBoolean, IsIn, IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
+import { Allow, IsBoolean, IsIn, IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
 
 export const storySortOptions = ['latest', 'views', 'rating', 'title_asc', 'chapters_desc', 'gifts', 'favorites'] as const;
 export type StorySortOption = (typeof storySortOptions)[number];
@@ -50,6 +50,7 @@ export class ExploreQueryDto {
   @IsIn(trendWindowOptions)
   trendWindow?: TrendWindowOption = 'all';
 
+  @Allow()
   @IsOptional()
   @Transform(({ value }) => {
     if (value === 'true' || value === true) return true;

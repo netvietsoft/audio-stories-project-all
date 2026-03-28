@@ -193,6 +193,10 @@ export class StoriesService {
         status: true,
         totalViews: true,
         isInteractive: true,
+        totalChapters: true,
+        _count: {
+          select: { chapters: true },
+        },
         author: {
           select: {
             id: true,
@@ -291,7 +295,11 @@ export class StoriesService {
           title: true,
           createdAt: true,
           totalGifts: true,
+          totalChapters: true,
           favoritesCount: true,
+          _count: {
+            select: { chapters: true },
+          },
           author: {
             select: { name: true },
           },

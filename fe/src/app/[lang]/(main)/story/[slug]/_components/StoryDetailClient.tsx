@@ -195,22 +195,26 @@ export default function StoryDetailClient() {
   return (
     <div className="space-y-4 md:space-y-6">
       <section className="flex w-full flex-col items-start gap-3 rounded-xl p-3 sm:p-4 md:flex-row md:items-stretch md:gap-6 md:p-6">
-        <div className="relative w-full shrink-0 aspect-square overflow-hidden rounded-lg shadow-xl md:w-[220px] md:aspect-auto md:self-stretch lg:w-[260px]">
-          <Image
-            src={story.thumbnailUrl || "https://placehold.co/600x600?text=No+Cover"}
-            alt={storyTitle}
-            fill
-            priority
-            className="object-cover w-full h-full"
-          />
+        {/* Thumbnail - proper 2:3 book cover ratio */}
+        <div className="w-[140px] shrink-0 self-start md:w-[200px] lg:w-[220px]">
+          <div className="relative w-full overflow-hidden rounded-lg shadow-xl" style={{ aspectRatio: "2/3" }}>
+            <Image
+              src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
+              alt={storyTitle}
+              fill
+              priority
+              className="object-cover"
+            />
+          </div>
         </div>
 
         <div className="flex w-full flex-1 flex-col gap-2 md:gap-3">
           {/* Title */}
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">{storyTitle}</h1>
 
-          {/* Metadata grid */}
+          {/* Metadata grid - 2 columns */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            {/* Row 1: Tác giả + Trạng thái */}
             <div className="text-left">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("author")}</p>
               <p className="font-semibold text-gray-900 dark:text-white">{story.author?.name || t("authorUpdating")}</p>
@@ -230,144 +234,132 @@ export default function StoryDetailClient() {
                 </span>
               )}
             </div>
+
+            {/* Row 2: Cập nhật lần cuối + Ngôn ngữ */}
             <div className="text-left">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("lastUpdated")}</p>
               <p className="font-medium text-gray-900 dark:text-white">{formatDate(story.updatedAt)}</p>
             </div>
             <div className="text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("listens", { count: "" })}</p>
-              <p className="font-medium text-gray-900 dark:text-white inline-flex items-center gap-1">
-                <Headphones className="h-4 w-4" />
-                {Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
-              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("language")}</p>
+              <p className="font-medium text-gray-900 dark:text-white">{t("languageCurrent")}</p>
             </div>
-            <div className="col-span-2 text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("rating")}</p>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-yellow-500 text-base">{Number(story.averageRating).toFixed(1)}</span>
-                {story.ratingCount > 0 && <span className="text-gray-500 dark:text-gray-400 text-xs">({story.ratingCount})</span>}
-                <div className="flex items-center gap-0.5">
-                  {[1, 2, 3, 4, 5].map((starIndex) => {
-                    const rating = Number(story.averageRating);
-                    const isFilled = starIndex <= Math.round(rating);
-                    return (
-                      <Star
-                        key={starIndex}
-                        className={`h-4 w-4 ${isFilled ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+
+            {/* Row 3: Độ tuổi + Thể loại */}
             <div className="text-left">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("ageRating")}</p>
               <p className="font-medium text-gray-900 dark:text-white">{t("ageRatingAll")}</p>
             </div>
-            <div className="text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("language")}</p>
-              <p className="font-medium text-gray-900 dark:text-white">{t("languageCurrent")}</p>
+            {story.categories.length > 0 && (
+              <div className="text-left">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("genre")}</p>
+                <div className="flex flex-wrap gap-1">
+                  {story.categories.map(({ category }) => (
+                    <Link
+                      key={category.id}
+                      href={`/categories/${category.slug}`}
+                      className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 font-medium text-xs transition-colors"
+                    >
+                      {category.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Row 4 (bottom): Lượt đọc + Đánh giá */}
+            <div className="col-span-2 flex items-center gap-4 pt-1 text-sm border-t border-gray-100 dark:border-gray-800">
+              <span className="inline-flex items-center gap-1.5">
+                <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                <span className="font-semibold text-gray-900 dark:text-white">{Number(story.averageRating).toFixed(1)}</span>
+                {story.ratingCount > 0 && <span className="text-gray-500 dark:text-gray-400 text-xs">({story.ratingCount})</span>}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+                <BookOpen className="h-4 w-4" />
+                {t("totalChapters", { count: story.chapters.length })}
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
+                <Headphones className="h-4 w-4" />
+                {Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
+              </span>
             </div>
           </div>
 
-          {/* Stats row - Hidden on mobile, shown on desktop */}
-          <div className="hidden md:flex items-center gap-4 py-2 rounded-xl px-3 text-sm">
-            <span className="inline-flex items-center gap-1.5">
-              <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-              <span className="font-semibold text-gray-900 dark:text-white">{Number(story.averageRating).toFixed(1)}</span>
-              {story.ratingCount > 0 && <span className="text-gray-500 dark:text-gray-400">({story.ratingCount})</span>}
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
-              <BookOpen className="h-4 w-4" />
-              {t("totalChapters", { count: story.chapters.length })}
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
-              <Headphones className="h-4 w-4" />
-              {t("listens", { count: Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN") })}
-            </span>
-          </div>
-          {/* Action buttons - single horizontal row on larger screens */}
-          <div className="flex w-full flex-col gap-3 md:flex-row md:items-center">
-            {/* Main action button */}
+          {/* Action buttons - compact single row */}
+          <div className="flex w-full flex-wrap items-center gap-2 mt-1">
             {firstChapter ? (
               <Link
                 href={chapterHref(story.slug, firstChapter.chapterNumber)}
-                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-medium transition-colors w-full md:flex-1 whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap"
               >
                 <Play className="h-3.5 w-3.5" />
-                {t("listenFromFirst")}
+                {t("readNow")}
               </Link>
             ) : (
               <button
                 type="button"
                 disabled
-                className="flex items-center justify-center gap-2 rounded-full bg-gray-200 px-4 py-2 font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400 w-full md:flex-1 whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 rounded-full bg-gray-200 px-4 py-2 text-sm font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400 whitespace-nowrap"
               >
                 <Clock3 className="h-3.5 w-3.5" />
                 {t("chaptersPendingCta")}
               </button>
             )}
 
-            {/* Icon buttons - centered on mobile */}
-            <div className="flex items-center justify-center gap-3 md:justify-start">
-              <StoryUpdateSubscriptionButton 
-                storyId={story.id} 
-                className="px-3 py-2 md:px-6 md:py-2.5" 
-                labelClassName="hidden md:inline"
-              />
+            <StoryUpdateSubscriptionButton
+              storyId={story.id}
+              className="px-4 py-2 text-sm"
+              labelClassName="inline"
+            />
 
-              <FavoriteButton
-                storyId={story.id}
-                size="md"
-                icon="heart"
-                label=""
-                className="flex items-center justify-center px-3 py-2 rounded-full font-medium shadow-sm transition-colors whitespace-nowrap"
-                activeClassName="bg-red-500 text-white hover:bg-red-600"
-                inactiveClassName="bg-white text-black hover:bg-red-50 hover:text-red-600 dark:bg-gray-900 dark:text-white dark:hover:bg-red-900/20 dark:hover:text-red-300"
-              />
+            <FavoriteButton
+              storyId={story.id}
+              size="md"
+              icon="heart"
+              label={t("favoriteLabel")}
+              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium shadow-sm transition-colors whitespace-nowrap border border-gray-200 dark:border-gray-700"
+              activeClassName="bg-red-500 text-white hover:bg-red-600 border-red-500"
+              inactiveClassName="bg-white text-black hover:bg-red-50 hover:text-red-600 dark:bg-gray-900 dark:text-white dark:hover:bg-red-900/20 dark:hover:text-red-300"
+            />
 
-              <button
-                type="button"
-                onClick={() => {
-                  void onShare();
-                }}
-                className="flex items-center justify-center gap-2 px-3 py-2 rounded-full border shadow-sm transition-colors border-gray-300 bg-white text-black hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-blue-800/60 dark:hover:bg-blue-900/20 dark:hover:text-blue-300 whitespace-nowrap"
-                aria-label={t("share")}
-              >
-                <Share2 className="h-3.5 w-3.5" />
-                <span className="hidden md:inline">{t("share")}</span>
-              </button>
-            </div>
-            <div className="hidden md:flex items-center gap-2">
-              {(hasVi || hasEn) ? (
-                <div className="relative w-full sm:w-auto sm:min-w-[140px]">
-                  <Globe className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
-                  <select
-                    value={currentLang}
-                    onChange={(event) => handleSwitchLanguage(event.target.value as "vi" | "en")}
-                    className="appearance-none w-full rounded-full border border-gray-300 bg-white py-2 pl-8 pr-8 text-sm font-medium text-gray-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                    aria-label={t("languageSwitcherLabel")}
-                  >
-                    {hasVi ? <option value="vi">{t("languageOptionVi")}</option> : null}
-                    {hasEn ? <option value="en">{t("languageOptionEn")}</option> : null}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-                </div>
-              ) : null}
+            <button
+              type="button"
+              onClick={() => { void onShare(); }}
+              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full border text-sm shadow-sm transition-colors border-gray-300 bg-white text-black hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-blue-800/60 dark:hover:bg-blue-900/20 dark:hover:text-blue-300 whitespace-nowrap"
+              aria-label={t("share")}
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              <span>{t("share")}</span>
+            </button>
 
-              {siteSocial?.facebook_url ? (
-                <a
-                  href={siteSocial.facebook_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm transition-colors hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
-                  aria-label={t("joinFacebook")}
-                  title={t("joinFacebook")}
+            {(hasVi || hasEn) ? (
+              <div className="relative">
+                <Globe className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
+                <select
+                  value={currentLang}
+                  onChange={(event) => handleSwitchLanguage(event.target.value as "vi" | "en")}
+                  className="appearance-none rounded-full border border-gray-300 bg-white py-2 pl-8 pr-7 text-sm font-medium text-gray-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  aria-label={t("languageSwitcherLabel")}
                 >
-                  <Facebook className="h-3.5 w-3.5" />
-                </a>
-              ) : null}
-            </div>
+                  {hasVi ? <option value="vi">{t("languageOptionVi")}</option> : null}
+                  {hasEn ? <option value="en">{t("languageOptionEn")}</option> : null}
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+              </div>
+            ) : null}
+
+            {siteSocial?.facebook_url ? (
+              <a
+                href={siteSocial.facebook_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm transition-colors hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
+                aria-label={t("joinFacebook")}
+                title={t("joinFacebook")}
+              >
+                <Facebook className="h-3.5 w-3.5" />
+              </a>
+            ) : null}
           </div>
         </div>
       </section>
@@ -379,23 +371,7 @@ export default function StoryDetailClient() {
         </p>
       </section>
 
-      {/* Categories section */}
-      {story.categories.length > 0 && (
-        <section className="rounded-2xl p-3 sm:p-4 md:p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{t("genre")}</h2>
-          <div className="flex flex-wrap gap-2">
-            {story.categories.map(({ category }) => (
-              <Link
-                key={category.id}
-                href={`/categories/${category.slug}`}
-                className="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 font-medium text-sm transition-colors"
-              >
-                {category.name}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Categories section moved into metadata grid above */}
       <section className="p-3 sm:p-4 md:p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="inline-flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">

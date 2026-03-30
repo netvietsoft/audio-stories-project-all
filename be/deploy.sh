@@ -172,9 +172,6 @@ npm install --legacy-peer-deps
 echo "📦 Generating Prisma client..."
 npx prisma generate
 
-echo "🌱 Running database seed..."
-npm run prisma:seed
-
 echo "📦 Building application on server..."
 npm run build
 

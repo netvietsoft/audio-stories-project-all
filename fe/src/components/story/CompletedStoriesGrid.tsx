@@ -43,15 +43,15 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-4 md:gap-6">
-        {Array.from({ length: 14 }).map((_, index) => (
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-4 md:gap-6">
+        {Array.from({ length: 12 }).map((_, index) => (
           <div key={index} className="aspect-[3/4] animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
         ))}
       </div>
     );
   }
 
-  const displayStories = stories.slice(0, 14);
+  const displayStories = stories.slice(0, 12);
 
   if (!displayStories.length) {
     return (
@@ -62,15 +62,18 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
   }
 
   return (
-    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-4 md:gap-6">
-      {displayStories.map((story) => {
+    <div className="grid grid-cols-3 md:grid-cols-6 gap-4 md:gap-6">
+      {displayStories.map((story, index) => {
         const title = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
         const categoryName = story.categories?.[0]?.category?.name;
         const rating = formatRating(story.averageRating);
         const viewsLabel = Number(story.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN");
 
+        // show first 6 on mobile (3x2), show up to 12 on md+ (6x2)
+        const visibilityClass = index >= 12 ? "hidden" : index >= 6 ? "hidden md:block" : "";
+
         return (
-          <div key={story.id} className="group">
+          <div key={story.id} className={`${visibilityClass} group`}>
             <Link
               href={`/story/${story.slug}`}
               className="block overflow-hidden rounded-2xl bg-slate-900/95 shadow-sm ring-1 ring-slate-800/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
@@ -91,20 +94,6 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
                   storyId={story.id}
                   className="absolute right-2 top-2 z-10 rounded-full bg-black/45 p-1.5 text-white shadow-sm backdrop-blur-sm hover:bg-black/65 hover:text-red-400"
                 />
-
-                <div className="absolute inset-x-0 bottom-0 p-2.5 text-white">
-                  <div className="flex items-center justify-between gap-2 text-xs font-semibold">
-                    <div className="flex items-center gap-1 text-amber-300">
-                      <Star className="h-3.5 w-3.5" fill="currentColor" />
-                      <span>{rating}</span>
-                    </div>
-
-                    <div className="flex items-center gap-1 text-white/90">
-                      <Eye className="h-3.5 w-3.5" />
-                      <span>{viewsLabel}</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             </Link>
 

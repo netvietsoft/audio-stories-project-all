@@ -143,17 +143,7 @@ export default function StoryCard({ story, className, variant = "default", lang 
               {shortDescription || t("updating")}
             </p>
 
-            <div className="mt-2 flex items-center justify-between gap-2 text-base font-semibold">
-              <div className="flex items-center gap-1 text-amber-300">
-                <Star className="h-4 w-4" fill="currentColor" />
-                <span>{rating}</span>
-              </div>
-
-              <div className="flex items-center gap-1 text-white/90">
-                <Eye className="h-4 w-4" />
-                <span>{viewsLabel}</span>
-              </div>
-            </div>
+            {/* Rating and views removed from thumbnail overlay */}
           </div>
         </div>
       </Link>

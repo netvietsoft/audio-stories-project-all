@@ -8,8 +8,6 @@ import {
     Loader2,
     Save,
     X,
-    Upload,
-    Image as ImageIcon,
     ChevronDown,
     Search,
     Check,
@@ -21,7 +19,6 @@ import {
 import Link from '@/components/shared/LocalizedLink';
 
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
-import { UploadButton } from '@/lib/uploadthing';
 import type { Category, Chapter, Author, StorySubmitPayload } from '@/types/admin';
 import { AuthorForm } from '../../authors/_components/AuthorForm';
 import { CategoryForm } from '../../categories/_components/CategoryForm';
@@ -68,6 +65,10 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
     const [authors, setAuthors] = useState<Author[]>([]);
     const [isFetchingMeta, setIsFetchingMeta] = useState(true);
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(null);
+    const [urlText, setUrlText] = useState<string>(initialData?.thumbnailUrl || '');
 
     // Available chapters for selection (all chapters in system)
     const [availableChapters, setAvailableChapters] = useState<Chapter[]>([]);
@@ -187,6 +188,25 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
         );
     }, [availableChapters, initialData?.id, selectedLocale]);
 
+    // Sync initial thumbnail URL into local urlText and form value
+    useEffect(() => {
+        if (initialData?.thumbnailUrl) {
+            setUrlText(initialData.thumbnailUrl);
+            setValue('thumbnailUrl', initialData.thumbnailUrl);
+        }
+    }, [initialData?.thumbnailUrl, setValue]);
+
+    // Create object URL for preview when a file is selected
+    useEffect(() => {
+        if (!selectedFile) {
+            setSelectedFilePreview(null);
+            return;
+        }
+        const objUrl = URL.createObjectURL(selectedFile);
+        setSelectedFilePreview(objUrl);
+        return () => URL.revokeObjectURL(objUrl);
+    }, [selectedFile]);
+
     // Close dropdowns on outside click
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -240,11 +260,27 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
 
             const description = isEnglishLocale ? (descriptionEn || descriptionVi) : (descriptionVi || descriptionEn);
 
+            // If a local file is selected, upload it first to backend and get local URL
+            setIsUploadingThumbnail(true);
+            let finalThumbnailUrl = values.thumbnailUrl;
+            if (selectedFile) {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+                try {
+                    const uploadRes = await apiClient.post('/upload/image', formData);
+                    finalThumbnailUrl = uploadRes.data?.url;
+                } catch (err) {
+                    console.error('Failed to upload image:', err);
+                    alert('Lỗi khi tải ảnh lên server. Vui lòng thử lại.');
+                    return;
+                }
+            }
+
             const finalData: StorySubmitPayload = {
                 title,
                 slug: values.slug.trim(),
                 description,
-                thumbnailUrl: values.thumbnailUrl || undefined,
+                thumbnailUrl: finalThumbnailUrl || undefined,
                 authorId: values.authorId,
                 status: values.status,
                 categoryIds: values.categoryIds,
@@ -787,86 +823,83 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                         </div>
                     </div>
 
-                    {/* Thumbnail Upload using UploadThing - Redesigned */}
+                    {/* Thumbnail: allow URL input OR file select (mutually exclusive) */}
                     <div className="space-y-4">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ảnh bìa (Thumbnail)</label>
 
-                        {watch('thumbnailUrl') ? (
+                        {/* Preview if either a selected local file or existing URL is present */}
+                        {selectedFilePreview || watch('thumbnailUrl') ? (
                             <div className="relative group w-full aspect-[2/3] md:w-48 overflow-hidden rounded-[32px] border-4 border-white shadow-2xl transition-transform hover:scale-[1.02] mx-auto md:mx-0">
-                                <img src={watch('thumbnailUrl')} alt="Thumbnail" className="w-full h-full object-cover" />
-                                <button
-                                    type="button"
-                                    onClick={() => setValue('thumbnailUrl', '')}
-                                    className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-black/10"
-                                    title="Xóa ảnh hiện tại"
-                                >
-                                    <Trash2 className="w-5 h-5" />
-                                </button>
+                                <img src={selectedFilePreview ?? watch('thumbnailUrl')} alt="Thumbnail" className="w-full h-full object-cover" />
+                                <div className="absolute top-4 right-4 flex items-center gap-2">
+                                    {selectedFile && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedFile(null)}
+                                            className="p-2 bg-white/90 text-slate-700 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg"
+                                            title="Xóa file đã chọn"
+                                        >
+                                            X
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setValue('thumbnailUrl', '');
+                                            setUrlText('');
+                                            setSelectedFile(null);
+                                        }}
+                                        className="p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg"
+                                        title="Xóa ảnh hiện tại"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
                         ) : (
-                            <div className="relative group">
-                                <UploadButton
-                                    endpoint="imageUploader"
-                                    onUploadProgress={() => setIsUploadingThumbnail(true)}
-                                    onClientUploadComplete={async (res) => {
-                                        setIsUploadingThumbnail(false);
-                                        if (res && res[0]) {
-                                            const newUrl = (res[0] as any).ufsUrl || (res[0] as any).url;
-                                            setValue('thumbnailUrl', newUrl);
-                                        }
-                                    }}
-                                    onUploadError={(error: Error) => {
-                                        setIsUploadingThumbnail(false);
-                                        alert(`Lỗi tải ảnh: ${error.message}`);
-                                    }}
-                                    appearance={{
-                                        container: {
-                                            width: "100%",
-                                        },
-                                        button({ ready, isUploading }) {
-                                            return {
-                                                width: "100%",
-                                                minHeight: "160px",
-                                                backgroundColor: "#f8fafc", // bg-white
-                                                border: "2px dashed #e2e8f0", // border-slate-200
-                                                borderRadius: "24px",
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                gap: "12px",
-                                                color: "#334155", // text-slate-700
-                                                transition: "all 0.2s",
-                                                cursor: "pointer",
-                                                fontSize: "0px", // Hide default browser file text
-                                                ...(isUploading ? { opacity: 0.7, cursor: "not-allowed" } : {}),
-                                            };
-                                        },
-                                        allowedContent: {
-                                            display: "none"
-                                        }
-                                    }}
-                                    content={{
-                                        button({ isUploading }) {
-                                            if (isUploading) return (
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-                                                    <span className="text-sm font-bold">Đang tải ảnh...</span>
-                                                </div>
-                                            );
-                                            return (
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 group-hover:scale-110 transition-transform">
-                                                        <Upload className="w-6 h-6 text-indigo-600" />
-                                                    </div>
-                                                    <div className="text-center">
-                                                        <p className="text-sm font-bold text-slate-700 uppercase tracking-tight">Click để chọn ảnh bìa</p>
-                                                        <p className="text-xs font-medium text-slate-400 mt-1">Hỗ trợ tất cả định dạng ảnh (Tối đa 4MB)</p>
-                                                    </div>
-                                                </div>
-                                            );
-                                        }
-                                    }}
-                                />
-                                <input {...register('thumbnailUrl')} type="hidden" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-wider text-slate-700">Link ảnh (URL)</label>
+                                    <input
+                                        type="url"
+                                        value={urlText}
+                                        onChange={(e) => {
+                                            const v = e.target.value;
+                                            setUrlText(v);
+                                            setValue('thumbnailUrl', v);
+                                            if (v) setSelectedFile(null);
+                                        }}
+                                        placeholder="https://..."
+                                        className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                        disabled={!!selectedFile}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black uppercase tracking-wider text-slate-700">Hoặc chọn file</label>
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => {
+                                                const f = e.target.files?.[0] ?? null;
+                                                setSelectedFile(f);
+                                                if (f) {
+                                                    setValue('thumbnailUrl', '');
+                                                    setUrlText('');
+                                                }
+                                            }}
+                                            disabled={!!urlText}
+                                            className="text-sm"
+                                        />
+                                        {selectedFile && (
+                                            <button type="button" onClick={() => setSelectedFile(null)} className="px-3 py-2 bg-white border rounded-lg text-sm">
+                                                X, xóa file
+                                            </button>
+                                        )}
+                                    </div>
+                                    <input {...register('thumbnailUrl')} type="hidden" />
+                                </div>
                             </div>
                         )}
                     </div>

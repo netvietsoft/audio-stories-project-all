@@ -67,11 +67,6 @@ export type StorySubmitPayload = {
     status: 'ongoing' | 'completed';
     categoryIds: number[];
     audioUrl?: string;
-    facebookGroupUrl?: string;
-    twitterUrl?: string;
-    instagramUrl?: string;
-    redditUrl?: string;
-    whatsappUrl?: string;
     isRecommended?: boolean;
     isInteractive?: boolean;
     chapterIds?: string[];

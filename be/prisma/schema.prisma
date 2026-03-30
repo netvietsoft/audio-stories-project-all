@@ -204,11 +204,6 @@ model Story {
   favoritesCount Int        @default(0) @map("favorites_count") @db.UnsignedInt
   publishedAt   DateTime?   @map("published_at")
   audioUrl          String?     @map("audio_url") @db.Text
-  facebookGroupUrl  String?     @map("facebook_group_url") @db.VarChar(500)
-  twitterUrl        String?     @map("twitter_url") @db.VarChar(500)
-  instagramUrl      String?     @map("instagram_url") @db.VarChar(500)
-  redditUrl         String?     @map("reddit_url") @db.VarChar(500)
-  whatsappUrl       String?     @map("whatsapp_url") @db.VarChar(500)
   createdAt         DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
   deletedAt     DateTime?   @map("deleted_at")

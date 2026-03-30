@@ -48,11 +48,6 @@ export default function EditStoryPage() {
           status: story.status || "ongoing",
           categoryIds: (story.categories || []).map((item: { category: { id: number } }) => item.category.id),
           audioUrl: story.audioUrl || "",
-          facebookGroupUrl: story.facebookGroupUrl || "",
-          twitterUrl: story.twitterUrl || "",
-          instagramUrl: story.instagramUrl || "",
-          redditUrl: story.redditUrl || "",
-          whatsappUrl: story.whatsappUrl || "",
           isRecommended: !!story.isRecommended,
           isInteractive: !!story.isInteractive,
         });

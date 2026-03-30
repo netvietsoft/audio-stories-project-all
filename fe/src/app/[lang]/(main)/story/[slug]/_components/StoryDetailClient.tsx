@@ -85,6 +85,7 @@ export default function StoryDetailClient() {
     new Date(iso).toLocaleDateString(locale === "en" ? "en-US" : "vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 
   const [story, setStory] = useState<StoryDetail | null>(null);
+  const [siteSocial, setSiteSocial] = useState<Record<string, string | null> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -94,6 +95,13 @@ export default function StoryDetailClient() {
       try {
         const response = await apiClient.get<StoryDetail>(`/stories/${slug}`);
         setStory(response.data);
+        // fetch site social links (public)
+        try {
+          const siteRes = await apiClient.get('/settings/site');
+          setSiteSocial(siteRes.data);
+        } catch (e) {
+          setSiteSocial(null);
+        }
       } catch (error) {
         console.error("Error while loading chapter list:", error);
         setStory(null);
@@ -325,9 +333,9 @@ export default function StoryDetailClient() {
                   </div>
                 ) : null}
 
-                {story.facebookGroupUrl ? (
+                {siteSocial?.facebook_url ? (
                   <a
-                    href={story.facebookGroupUrl}
+                    href={siteSocial.facebook_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm transition-colors hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
@@ -375,9 +383,9 @@ export default function StoryDetailClient() {
               </div>
 
               {/* Row 3: Facebook Group */}
-              {story.facebookGroupUrl ? (
+              {siteSocial?.facebook_url ? (
                 <a
-                  href={story.facebookGroupUrl}
+                  href={siteSocial.facebook_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold border shadow-sm transition-colors w-full border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"

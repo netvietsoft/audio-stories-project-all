@@ -29,26 +29,7 @@ export class UpdateStoryDto {
   @IsOptional()
   @IsString()
   audioUrl?: string;
-
-  @IsOptional()
-  @IsUrl({}, { message: 'facebookGroupUrl must be a valid URL' })
-  facebookGroupUrl?: string;
-
-  @IsOptional()
-  @IsUrl({}, { message: 'twitterUrl must be a valid URL' })
-  twitterUrl?: string;
-
-  @IsOptional()
-  @IsUrl({}, { message: 'instagramUrl must be a valid URL' })
-  instagramUrl?: string;
-
-  @IsOptional()
-  @IsUrl({}, { message: 'redditUrl must be a valid URL' })
-  redditUrl?: string;
-
-  @IsOptional()
-  @IsUrl({}, { message: 'whatsappUrl must be a valid URL' })
-  whatsappUrl?: string;
+  
 
   @IsOptional()
   @IsBoolean()

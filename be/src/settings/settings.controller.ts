@@ -26,6 +26,41 @@ export class SettingsController {
         return this.settingsService.findAll();
     }
 
+    @Get('site')
+    @Public()
+    async getSiteSettings() {
+        const all = await this.settingsService.findAll();
+        // keys we expose publicly
+        const keys = ['facebook_url', 'twitter_url', 'instagram_url', 'youtube_url', 'reddit_url', 'whatsapp_url'];
+        const result: Record<string, any> = {};
+        keys.forEach((k) => {
+            result[k] = all[k]?.value ?? null;
+        });
+        return result;
+    }
+
+    @Patch('site')
+    @UseGuards(JwtAccessGuard, RolesGuard)
+    @Roles('ADMIN')
+    async updateSiteSettings(@Body() payload: Record<string, any>) {
+        // Map incoming friendly keys to stored keys
+        const mapping: Record<string, string> = {
+            facebookUrl: 'facebook_url',
+            twitterUrl: 'twitter_url',
+            instagramUrl: 'instagram_url',
+            youtubeUrl: 'youtube_url',
+            redditUrl: 'reddit_url',
+            whatsappUrl: 'whatsapp_url',
+        };
+        const settings: Record<string, any> = {};
+        Object.entries(payload).forEach(([k, v]) => {
+            const mapped = mapping[k] ?? k;
+            settings[mapped] = v;
+        });
+
+        return this.settingsService.updateMultiple({ settings });
+    }
+
     @Post()
     @UseGuards(JwtAccessGuard, RolesGuard)
     @Roles('ADMIN')

@@ -169,13 +169,13 @@ export default function StoryDetailClient() {
   return (
     <div className="space-y-4 md:space-y-6">
       <section className="flex w-full flex-col items-start gap-3 rounded-xl bg-white p-3 sm:p-4 dark:bg-gray-900 md:flex-row md:items-stretch md:gap-6 md:p-6">
-        <div className="relative w-full shrink-0 aspect-square overflow-hidden rounded-lg shadow-xl md:w-[220px] md:aspect-auto md:self-stretch lg:w-[260px] bg-gray-100">
+        <div className="relative w-full shrink-0 aspect-square overflow-hidden rounded-lg shadow-xl md:w-[220px] md:aspect-auto md:self-stretch lg:w-[260px]">
           <Image
             src={story.thumbnailUrl || "https://placehold.co/600x600?text=No+Cover"}
             alt={storyTitle}
             fill
             priority
-            className="object-contain w-full h-full"
+            className="object-cover w-full h-full"
           />
         </div>
 
@@ -235,7 +235,7 @@ export default function StoryDetailClient() {
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center gap-4 py-2 rounded-xl bg-white/80 px-3 dark:bg-gray-950/50 text-sm">
+          <div className="flex items-center gap-4 py-2 rounded-xl px-3 text-sm">
             <span className="inline-flex items-center gap-1.5">
               <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
               <span className="font-semibold text-gray-900 dark:text-white">{Number(story.averageRating).toFixed(1)}</span>
@@ -257,7 +257,7 @@ export default function StoryDetailClient() {
               {firstChapter ? (
                 <Link
                   href={chapterHref(story.slug, firstChapter.chapterNumber)}
-                  className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-medium transition-colors w-full md:flex-[2]"
+                  className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-medium transition-colors w-full md:flex-1 whitespace-nowrap"
                 >
                   <Play className="h-3.5 w-3.5" />
                   {t("listenFromFirst")}
@@ -266,7 +266,7 @@ export default function StoryDetailClient() {
                 <button
                   type="button"
                   disabled
-                  className="flex items-center justify-center gap-2 rounded-full bg-gray-200 px-4 py-2 font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400 w-full md:flex-[2]"
+                  className="flex items-center justify-center gap-2 rounded-full bg-gray-200 px-4 py-2 font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400 w-full md:flex-1 whitespace-nowrap"
                 >
                   <Clock3 className="h-3.5 w-3.5" />
                   {t("chaptersPendingCta")}
@@ -278,19 +278,19 @@ export default function StoryDetailClient() {
                 size="md"
                 icon="heart"
                 label={t("favorite")}
-                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full font-medium shadow-sm transition-colors w-full md:flex-1"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full font-medium shadow-sm transition-colors w-full md:flex-1 whitespace-nowrap"
                 activeClassName="bg-red-500 text-white hover:bg-red-600"
                 inactiveClassName="bg-white text-black hover:bg-red-50 hover:text-red-600 dark:bg-gray-900 dark:text-white dark:hover:bg-red-900/20 dark:hover:text-red-300"
               />
 
-              <StoryUpdateSubscriptionButton storyId={story.id} className="flex items-center justify-center gap-2 px-4 py-2 rounded-full w-full md:flex-1" />
+              <StoryUpdateSubscriptionButton storyId={story.id} className="flex items-center justify-center gap-2 px-4 py-2 rounded-full w-full md:flex-1 whitespace-nowrap" />
 
               <button
                 type="button"
                 onClick={() => {
                   void onShare();
                 }}
-                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full w-full md:flex-1 border shadow-sm transition-colors border-gray-300 bg-white text-black hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-blue-800/60 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full w-full md:w-auto border shadow-sm transition-colors border-gray-300 bg-white text-black hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-blue-800/60 dark:hover:bg-blue-900/20 dark:hover:text-blue-300 whitespace-nowrap"
               >
                 <Share2 className="h-3.5 w-3.5" />
                 {t("share")}

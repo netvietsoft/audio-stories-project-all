@@ -92,9 +92,10 @@ export class StoriesController {
 
   @Get('categories/top')
   @UseInterceptors(CacheInterceptor)
+  @CacheKey('stories:categories:top:v2')
   @CacheTTL(3600)
   getTopCategories(@Query('limit') limit?: string, @Query('lang') lang = 'vi') {
-    return this.storiesService.getTopCategories(Number(limit) || 5, lang);
+    return this.storiesService.getTopCategories(Number(limit) || 6, lang);
   }
 
   @Get('hall-of-fame')

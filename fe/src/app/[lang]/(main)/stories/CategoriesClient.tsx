@@ -83,7 +83,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
   useEffect(() => {
     const loadCategories = async () => {
       const res = await apiClient.get<{ data: CategoryItem[] }>("/stories/categories-with-count", {
-        params: { language: locale }
+        params: { language: locale, _t: Date.now() }
       });
       setCategories([{ id: 0, name: t("allCategories"), slug: "all", storiesCount: 0 }, ...(res.data.data || [])]);
     };
@@ -193,14 +193,14 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
       {/* LEFT SIDEBAR */}
       <div className="w-full md:w-80 flex-shrink-0 space-y-8">
         {/* Category List */}
-        <div className="flex flex-col gap-y-2">
+        <div className="grid grid-cols-2 gap-2">
           {categories.map((cat) => {
             const isActive = cat.slug === activeSlug;
             return (
               <button
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.slug)}
-                className={`text-left text-sm py-1.5 px-3 rounded-md transition-colors ${isActive
+                className={`w-full text-left text-sm py-2 px-3 rounded-md transition-colors truncate ${isActive
                   ? "bg-blue-50 dark:bg-blue-500/20 text-black dark:text-white font-medium shadow-sm"
                   : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                   }`}

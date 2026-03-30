@@ -30,9 +30,9 @@ export const metadata: Metadata = {
 // Fetch categories for BreadcrumbList JSON-LD
 async function getTopCategories() {
     try {
-        const res = await fetch(`${API_URL}/stories/categories/top?limit=5`, {
-            next: { revalidate: 86400 },
-        });
+            const res = await fetch(`${API_URL}/stories/categories/top?limit=6`, {
+                next: { revalidate: 0 },
+            });
         if (!res.ok) return [];
         const data = await res.json();
         return data?.data || [];

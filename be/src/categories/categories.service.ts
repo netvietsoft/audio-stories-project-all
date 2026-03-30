@@ -39,6 +39,7 @@ export class CategoriesService {
                     language: true,
                     description: true,
                     iconUrl: true,
+                    imageUrl: true,
                     createdAt: true,
                     _count: {
                         select: { stories: true },
@@ -67,6 +68,7 @@ export class CategoriesService {
                 language: true,
                 description: true,
                 iconUrl: true,
+                imageUrl: true,
                 createdAt: true,
                 _count: {
                     select: { stories: true },

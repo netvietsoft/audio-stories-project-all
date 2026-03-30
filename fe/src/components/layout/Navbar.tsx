@@ -41,6 +41,7 @@ type TopCategoryItem = {
   slug: string;
   language: string;
   storiesCount: number;
+  imageUrl?: string | null;
 };
 
 type SearchResultItem = {
@@ -137,7 +138,7 @@ export default function Navbar() {
     const loadTopCategories = async () => {
       try {
         const response = await apiClient.get<{ data: TopCategoryItem[] }>("/stories/categories/top", {
-          params: { limit: 5, lang: currentLang },
+          params: { limit: 6, lang: currentLang, _t: Date.now() },
         });
         setTopCategories(response.data.data || []);
       } catch {

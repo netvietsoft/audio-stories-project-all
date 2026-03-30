@@ -326,8 +326,8 @@ export class StoriesService {
     return result;
   }
 
-  async getTopCategories(limit = 5, lang = 'vi') {
-    const safeLimit = Math.min(Math.max(limit || 5, 1), 20);
+  async getTopCategories(limit = 6, lang = 'vi') {
+    const safeLimit = Math.min(Math.max(limit || 6, 1), 20);
     const grouped = await this.prisma.storyCategory.groupBy({
       by: ['categoryId'],
       where: {
@@ -359,6 +359,7 @@ export class StoriesService {
           name: true,
           slug: true,
           language: true,
+          imageUrl: true,
         } as any,
       })
       : [];

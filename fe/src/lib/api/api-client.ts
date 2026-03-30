@@ -92,7 +92,29 @@ apiClient.interceptors.request.use((config) => {
     (typeof window !== "undefined" ? localStorage.getItem(ACCESS_TOKEN_KEY) : null);
 
   if (accessToken) {
-    config.headers.set("Authorization", `Bearer ${accessToken}`);
+    // Axios may expose headers as a plain object or an AxiosHeaders instance.
+    // Use .set if available, otherwise assign to the object key.
+    try {
+      // @ts-ignore
+      if (config.headers && typeof (config.headers as any).set === 'function') {
+        // AxiosHeaders has .set
+        // @ts-ignore
+        config.headers.set("Authorization", `Bearer ${accessToken}`);
+      } else {
+        // Fallback for plain object
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        config.headers = config.headers || {};
+        // @ts-ignore
+        config.headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+    } catch (e) {
+      // As a last resort, assign to headers object
+      // @ts-ignore
+      config.headers = config.headers || {};
+      // @ts-ignore
+      config.headers['Authorization'] = `Bearer ${accessToken}`;
+    }
   }
 
   return config;
@@ -119,7 +141,23 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    originalRequest.headers.set("Authorization", `Bearer ${newAccessToken}`);
+    try {
+      if (originalRequest.headers && typeof (originalRequest.headers as any).set === 'function') {
+        // @ts-ignore
+        originalRequest.headers.set("Authorization", `Bearer ${newAccessToken}`);
+      } else {
+        // @ts-ignore
+        originalRequest.headers = originalRequest.headers || {};
+        // @ts-ignore
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+      }
+    } catch (e) {
+      // Fallback
+      // @ts-ignore
+      originalRequest.headers = originalRequest.headers || {};
+      // @ts-ignore
+      originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+    }
 
     return apiClient(originalRequest);
   },

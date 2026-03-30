@@ -91,7 +91,24 @@ adminApiClient.interceptors.request.use((config) => {
     (typeof window !== "undefined" ? localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) : null);
 
   if (accessToken) {
-    config.headers.set("Authorization", `Bearer ${accessToken}`);
+    try {
+      // @ts-ignore
+      if (config.headers && typeof (config.headers as any).set === 'function') {
+        // @ts-ignore
+        config.headers.set("Authorization", `Bearer ${accessToken}`);
+      } else {
+        // @ts-ignore
+        config.headers = config.headers || {};
+        // @ts-ignore
+        config.headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+    } catch (e) {
+      // Fallback
+      // @ts-ignore
+      config.headers = config.headers || {};
+      // @ts-ignore
+      config.headers['Authorization'] = `Bearer ${accessToken}`;
+    }
   }
 
   return config;
@@ -118,7 +135,23 @@ adminApiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    originalRequest.headers.set("Authorization", `Bearer ${newAccessToken}`);
+    try {
+      if (originalRequest.headers && typeof (originalRequest.headers as any).set === 'function') {
+        // @ts-ignore
+        originalRequest.headers.set("Authorization", `Bearer ${newAccessToken}`);
+      } else {
+        // @ts-ignore
+        originalRequest.headers = originalRequest.headers || {};
+        // @ts-ignore
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+      }
+    } catch (e) {
+      // Fallback
+      // @ts-ignore
+      originalRequest.headers = originalRequest.headers || {};
+      // @ts-ignore
+      originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+    }
 
     return adminApiClient(originalRequest);
   },

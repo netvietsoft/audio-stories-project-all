@@ -46,6 +46,7 @@ type CategoryItem = {
   nameEn?: string | null;
   slug: string;
   storiesCount?: number;
+  imageUrl?: string | null;
 };
 
 type AuthorItem = {
@@ -255,12 +256,12 @@ export default function HomePage() {
           fetchExploreCached<ExploreResponse>({ limit: 14, lang, sort: "rating", status: "completed" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "views", trendWindow: "week" }),
           apiClient
-            .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 20, lang } })
+            .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 20, lang, _t: Date.now() } })
             .then((r) => r.data?.data || [])
             .catch(() => []),
           apiClient
             .get<Array<{ id: number; name: string; slug: string }>>("/stories/categories", {
-              params: { language: lang }
+              params: { language: lang, _t: Date.now() }
             })
             .then((r) => r.data || [])
             .catch(() => []),
@@ -432,7 +433,7 @@ export default function HomePage() {
     <div className="space-y-16">
 
       {/* ─── Hero Banner ─────────────────────────────────────────── */}
-      <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-slate-950 text-white">
+      <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-slate-950 text-white -mt-8">
         {activeHero ? (
           <div className="absolute inset-y-0 left-1/2 w-2/3 -translate-x-1/2">
             <Image
@@ -513,8 +514,8 @@ export default function HomePage() {
                 {t("viewAll")}
               </Link>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {topCategories.slice(0, 5).map((cat, index) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {topCategories.slice(0, 6).map((cat, index) => {
                 // Màu gradient modern, pastel
                 const gradients = [
                   'from-pink-400 to-rose-400',
@@ -527,7 +528,32 @@ export default function HomePage() {
                   'from-lime-400 to-green-400',
                 ];
                 const gradient = gradients[index % gradients.length];
-                
+                if (cat.imageUrl) {
+                  return (
+                    <Link
+                      key={cat.id}
+                      href={`/explore?categoryId=${cat.id}`}
+                      className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg w-[90%] mx-auto"
+                      style={{ aspectRatio: '3 / 1.4' }}
+                    >
+                      {/* Background Image */}
+                      <div
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: cat.imageUrl ? `url('${cat.imageUrl}')` : undefined }}
+                      />
+                      {/* Dark overlay for readability */}
+                      <div className="absolute inset-0 bg-black/40" />
+
+                      {/* Category Name */}
+                      <div className="relative z-10 flex h-full items-center justify-center p-3">
+                        <span className="text-center text-base font-bold text-white drop-shadow-lg">
+                          {getLocalizedValue(locale, cat.nameVi, cat.nameEn, cat.name)}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                }
+
                 return (
                   <Link
                     key={cat.id}

@@ -1,16 +1,16 @@
 -- Add notification preference columns
 ALTER TABLE `users`
-ADD COLUMN IF NOT EXISTS `allow_email_noti` BOOLEAN NOT NULL DEFAULT true,
-ADD COLUMN IF NOT EXISTS `allow_bell_noti` BOOLEAN NOT NULL DEFAULT true;
+ADD COLUMN `allow_email_noti` BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN `allow_bell_noti` BOOLEAN NOT NULL DEFAULT true;
 
 -- Add recommendation flag for stories
 ALTER TABLE `stories`
-ADD COLUMN IF NOT EXISTS `is_recommended` BOOLEAN NOT NULL DEFAULT false;
+ADD COLUMN `is_recommended` BOOLEAN NOT NULL DEFAULT false;
 
-CREATE INDEX IF NOT EXISTS `stories_is_recommended_updated_at_idx` ON `stories`(`is_recommended`, `updated_at`);
+CREATE INDEX `stories_is_recommended_updated_at_idx` ON `stories`(`is_recommended`, `updated_at`);
 
 -- Add reactions on chapter comments
-CREATE TABLE IF NOT EXISTS `comment_reactions` (
+CREATE TABLE `comment_reactions` (
     `id` VARCHAR(36) NOT NULL,
     `user_id` VARCHAR(36) NOT NULL,
     `comment_id` VARCHAR(36) NOT NULL,

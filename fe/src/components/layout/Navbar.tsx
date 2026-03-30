@@ -289,7 +289,7 @@ export default function Navbar() {
 
               {/* Menu Desktop (Responsive: text on 2xl+, icons on xl and below) */}
               <nav className="hidden lg:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">
-                <Link href="/" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("home")}>
+                <Link href="/" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("home")} title={t("home")}>
                   <Home className="w-5 h-5 2xl:hidden" />
                   <span className="hidden 2xl:inline">{t("home")}</span>
                 </Link>
@@ -301,6 +301,7 @@ export default function Navbar() {
                     onClick={() => setIsCategoryOpen(!isCategoryOpen)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
                     aria-label={t("categories")}
+                    title={t("categories")}
                   >
                     <LayoutGrid className="w-5 h-5 2xl:hidden" />
                     <span className="hidden 2xl:inline">{t("categories")}</span>
@@ -328,15 +329,15 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
-                <Link href="/new" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("new")}>
+                <Link href="/new" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("new")} title={t("new")}>
                   <Zap className="w-5 h-5 2xl:hidden" />
                   <span className="hidden 2xl:inline">{t("new")}</span>
                 </Link>
-                <Link href="/trending" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("trending")}>
+                <Link href="/trending" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("trending")} title={t("trending")}>
                   <Flame className="w-5 h-5 2xl:hidden" />
                   <span className="hidden 2xl:inline">{t("trending")}</span>
                 </Link>
-                <Link href="/interactive" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("interactiveStories")}>
+                <Link href="/interactive" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("interactiveStories")} title={t("interactiveStories")}>
                   <Sparkles className="w-5 h-5 2xl:hidden" />
                   <span className="hidden 2xl:inline">{t("interactiveStories")}</span>
                 </Link>
@@ -347,10 +348,11 @@ export default function Navbar() {
                   <button 
                     onClick={() => setIsRankingOpen(!isRankingOpen)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
-                    aria-label="BXH"
+                    aria-label={t("ranking")}
+                    title={currentLang === "vi" ? "BXH" : "Ranking"}
                   >
                     <Trophy className="w-5 h-5 2xl:hidden" />
-                    <span className="hidden 2xl:inline">BXH</span>
+                    <span className="hidden 2xl:inline">{currentLang === "vi" ? "BXH" : "Ranking"}</span>
                     <ChevronDown className="w-4 h-4" />
                   </button>
                   {isRankingOpen && (
@@ -379,7 +381,7 @@ export default function Navbar() {
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
               {/* Search Expandable - For screens below 2xl when search button clicked */}
               {isMobileSearchOpen && (
-                <div className="relative 2xl:hidden w-[30%]" ref={mobileSearchRef}>
+                <div className="relative 2xl:hidden w-full max-w-2xl lg:w-[50%] xl:w-[40%]" ref={mobileSearchRef}>
                   <input
                     type="text"
                     value={searchQuery}

@@ -133,6 +133,7 @@
     "languageEn": "English",
     "ageRating": "Độ tuổi",
     "ageRatingAll": "Mọi lứa tuổi",
+    "rating": "Đánh giá",
     "listens": "{count} lượt đọc",
     "favorite": "Thêm vào yêu thích",
     "share": "Chia sẻ",
@@ -160,7 +161,10 @@
     "unlockVip": "VIP",
     "unlockTimed": "Hẹn giờ",
     "unlockOpened": "Đã mở khóa",
-    "interactiveStoryBadge": "Truyện tương tác"
+    "interactiveStoryBadge": "Truyện tương tác",
+    "recommendedStories": "Truyện đề xuất",
+    "youMightLike": "Bạn có thể thích",
+    "newArrivals": "Mới cập nhật"
   },
   "StoryChapterClient": {
     "loadingReader": "Đang tải module đọc truyện...",
@@ -172,7 +176,12 @@
     "chapterLabel": "Chương {number}",
     "chapterTitle": "Chương {number}: {title}",
     "author": "Tác giả",
+    "status": "Trạng thái",
+    "completed": "Hoàn thành",
+    "ongoing": "Đang cập nhật",
+    "updating": "Đang cập nhật",
     "updatedAt": "Cập nhật",
+    "rating": "Đánh giá",
     "listens": "{count} lượt nghe",
     "favorite": "Thêm vào mục yêu thích",
     "share": "Chia sẻ",

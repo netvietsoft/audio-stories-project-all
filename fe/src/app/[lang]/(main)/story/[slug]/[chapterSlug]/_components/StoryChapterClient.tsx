@@ -36,6 +36,7 @@ import {
   Coins,
   LockOpen,
   Waves,
+  Headphones,
 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
@@ -1254,37 +1255,77 @@ export default function StoryChapterClient() {
           <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
 
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
-              <span>{t("author")}: <b>{story.author?.name || t("updating")}</b></span>
-              <span>{formatStatus(story.status, {
-                completed: t("completed"),
-                ongoing: t("ongoing"),
-                updating: t("updating"),
-              })}</span>
-              <span>{t("updatedAt")}: {formatDate(story.updatedAt, locale, t("updating"))}</span>
-              <span>{t("listens", { count: Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN") })}</span>
-              <span>{Number(story.averageRating || 0).toFixed(1)} ({story.ratingCount || 0})</span>
+            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("author")}</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{story.author?.name || t("updating")}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("status")}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{formatStatus(story.status, {
+                  completed: t("completed"),
+                  ongoing: t("ongoing"),
+                  updating: t("updating"),
+                })}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("updatedAt")}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{formatDate(story.updatedAt, locale, t("updating"))}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("listens", { count: "" })}</p>
+                <p className="font-medium text-gray-900 dark:text-white inline-flex items-center gap-1">
+                  <Headphones className="h-4 w-4" />
+                  {Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
+                </p>
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("rating")}</p>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-yellow-500 text-base">{Number(story.averageRating || 0).toFixed(1)}</span>
+                  {(story.ratingCount || 0) > 0 && <span className="text-gray-500 dark:text-gray-400 text-xs">({story.ratingCount})</span>}
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((starIndex) => {
+                      const rating = Number(story.averageRating || 0);
+                      const isFilled = starIndex <= Math.round(rating);
+                      return (
+                        <Star
+                          key={starIndex}
+                          className={`h-4 w-4 ${isFilled ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-3">
-              <FavoriteButton
-                storyId={story.id}
-                size="sm"
-                label={t("favorite")}
-                className="px-4 py-2 text-sm font-medium border shadow-sm"
-                activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
-                inactiveClassName="border-gray-300 bg-white text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-300"
-              />
+            <div className="mt-4 flex flex-col gap-3 md:flex-row md:flex-wrap">
+              <div className="flex items-center justify-center gap-3 md:justify-start">
+                <FavoriteButton
+                  storyId={story.id}
+                  size="sm"
+                  label=""
+                  className="px-3 py-2 text-sm font-medium border shadow-sm"
+                  activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
+                  inactiveClassName="border-gray-300 bg-white text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                />
 
-              <StoryUpdateSubscriptionButton storyId={story.id} />
+                <StoryUpdateSubscriptionButton 
+                  storyId={story.id} 
+                  className="px-3 py-2 md:px-6 md:py-2.5"
+                  labelClassName="hidden md:inline"
+                />
 
-              <button
-                onClick={onShare}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-                <Share2 className="h-4 w-4" />
-                {t("share")}
-              </button>
+                <button
+                  onClick={onShare}
+                  className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                  aria-label={t("share")}
+                >
+                  <Share2 className="h-4 w-4" />
+                  <span className="hidden md:inline">{t("share")}</span>
+                </button>
+              </div>
             </div>
           </section>
 

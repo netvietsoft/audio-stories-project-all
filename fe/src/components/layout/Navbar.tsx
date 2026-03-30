@@ -79,14 +79,15 @@ export default function Navbar() {
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
 
-  // State cho Mobile/Tablet Menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   // Refs
   const categoryMenuRef = useRef<HTMLDivElement>(null);
   const rankingMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
   const notifMenuRef = useRef<HTMLDivElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
 
@@ -97,6 +98,8 @@ export default function Navbar() {
   const [notifs, setNotifs] = useState<NotificationItem[]>([]);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [topCategories, setTopCategories] = useState<TopCategoryItem[]>([]);
+  
+  const searchPlaceholder = t("searchPlaceholder");
 
   // Debug log
   useEffect(() => {
@@ -164,6 +167,17 @@ export default function Navbar() {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSearchDropdown(false);
       }
+      // Close mobile search when clicking outside (but not on the search button itself)
+      if (isMobileSearchOpen && mobileSearchRef.current && !mobileSearchRef.current.contains(event.target as Node)) {
+        // Check if click is not on the search toggle button
+        const target = event.target as HTMLElement;
+        const isSearchButton = target.closest('[aria-label="' + searchPlaceholder + '"]');
+        if (!isSearchButton) {
+          setIsMobileSearchOpen(false);
+          setSearchQuery("");
+          setShowSearchDropdown(false);
+        }
+      }
       if (notifMenuRef.current && !notifMenuRef.current.contains(event.target as Node)) {
         setIsNotifOpen(false);
       }
@@ -174,7 +188,7 @@ export default function Navbar() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [isMobileSearchOpen, searchPlaceholder]);
 
   // Search with debounce
   useEffect(() => {
@@ -273,18 +287,24 @@ export default function Navbar() {
               </Link>
 
 
-              {/* Menu Desktop (Ẩn khi màn hình nhỏ hơn lg) */}
-              <nav className="hidden xl:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">
-                <Link href="/" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("home")}</Link>
+              {/* Menu Desktop (Responsive: text on 2xl+, icons on xl and below) */}
+              <nav className="hidden lg:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">
+                <Link href="/" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("home")}>
+                  <Home className="w-5 h-5 2xl:hidden" />
+                  <span className="hidden 2xl:inline">{t("home")}</span>
+                </Link>
                 <div
                   ref={categoryMenuRef}
                   className="relative"
                 >
                   <button 
                     onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                    className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                    aria-label={t("categories")}
                   >
-                    {t("categories")} <ChevronDown className="ml-1 h-4 w-4" />
+                    <LayoutGrid className="w-5 h-5 2xl:hidden" />
+                    <span className="hidden 2xl:inline">{t("categories")}</span>
+                    <ChevronDown className="w-4 h-4" />
                   </button>
                   {isCategoryOpen && (
                     <div className="absolute top-full left-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 mt-1">
@@ -308,18 +328,30 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
-                <Link href="/new" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("new")}</Link>
-                <Link href="/trending" className="px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("trending")}</Link>
-                <Link href="/interactive" className="hidden 2xl:inline-flex px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap">{t("interactiveStories")}</Link>
+                <Link href="/new" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("new")}>
+                  <Zap className="w-5 h-5 2xl:hidden" />
+                  <span className="hidden 2xl:inline">{t("new")}</span>
+                </Link>
+                <Link href="/trending" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("trending")}>
+                  <Flame className="w-5 h-5 2xl:hidden" />
+                  <span className="hidden 2xl:inline">{t("trending")}</span>
+                </Link>
+                <Link href="/interactive" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("interactiveStories")}>
+                  <Sparkles className="w-5 h-5 2xl:hidden" />
+                  <span className="hidden 2xl:inline">{t("interactiveStories")}</span>
+                </Link>
                 <div
                   ref={rankingMenuRef}
-                  className="hidden 2xl:block relative"
+                  className="relative"
                 >
                   <button 
                     onClick={() => setIsRankingOpen(!isRankingOpen)}
-                    className="flex items-center px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                    aria-label="BXH"
                   >
-                    BXH <ChevronDown className="ml-1 h-4 w-4" />
+                    <Trophy className="w-5 h-5 2xl:hidden" />
+                    <span className="hidden 2xl:inline">BXH</span>
+                    <ChevronDown className="w-4 h-4" />
                   </button>
                   {isRankingOpen && (
                     <div className="absolute top-full left-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 mt-1">
@@ -345,7 +377,93 @@ export default function Navbar() {
 
             {/* RIGHT SECTION */}
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
-              <div className="relative mx-2 hidden flex-grow 2xl:flex max-w-sm md:max-w-md" ref={searchRef}>
+              {/* Search Expandable - For screens below 2xl when search button clicked */}
+              {isMobileSearchOpen && (
+                <div className="relative 2xl:hidden w-[30%]" ref={mobileSearchRef}>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleSearch}
+                    onFocus={() => {
+                      if (searchResults.length > 0) setShowSearchDropdown(true);
+                    }}
+                    placeholder={t("searchPlaceholder")}
+                    autoFocus
+                    className="w-full pl-9 pr-9 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none transition-all"
+                  />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                  
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setShowSearchDropdown(false);
+                      setIsMobileSearchOpen(false);
+                    }}
+                    className="absolute right-2 top-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+                  >
+                    <X className="h-4 w-4 text-gray-400" />
+                  </button>
+
+                  {/* Search Results Dropdown for Mobile */}
+                  {showSearchDropdown && searchQuery.trim() && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-[100] max-h-[60vh] overflow-y-auto">
+                      {isSearching ? (
+                        <div className="px-4 py-8 text-center">
+                          <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-blue-600 border-r-transparent"></div>
+                          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Đang tìm kiếm...</p>
+                        </div>
+                      ) : searchResults.length > 0 ? (
+                        <>
+                          {searchResults.map((story) => (
+                            <button
+                              key={story.id}
+                              onClick={() => {
+                                handleSearchResultClick(story.slug);
+                                setIsMobileSearchOpen(false);
+                              }}
+                              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
+                            >
+                              <img
+                                src={story.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
+                                alt={story.title}
+                                className="w-12 h-12 rounded-lg object-cover shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
+                                  {currentLang === 'en' ? story.titleEn || story.title : story.titleVi || story.title}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                                  {story.author?.name || "Đang cập nhật"}
+                                </p>
+                              </div>
+                            </button>
+                          ))}
+                          <Link
+                            href={`/search?keyword=${encodeURIComponent(searchQuery)}`}
+                            onClick={() => {
+                              setShowSearchDropdown(false);
+                              setSearchQuery("");
+                              setIsMobileSearchOpen(false);
+                            }}
+                            className="block px-4 py-3 text-center text-sm text-blue-600 dark:text-blue-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
+                          >
+                            Xem tất cả kết quả
+                          </Link>
+                        </>
+                      ) : (
+                        <div className="px-4 py-8 text-center">
+                          <Search className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Không tìm thấy kết quả</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Desktop Search Bar - Only visible on 2xl+ */}
+              <div className="relative mx-2 hidden 2xl:flex flex-grow max-w-sm md:max-w-md" ref={searchRef}>
                 <input
                   type="text"
                   value={searchQuery}
@@ -355,7 +473,7 @@ export default function Navbar() {
                     if (searchResults.length > 0) setShowSearchDropdown(true);
                   }}
                   placeholder={t("searchPlaceholder")}
-                  className="hidden 2xl:block w-full pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none transition-all"
+                  className="w-full pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none transition-all"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
 
@@ -412,22 +530,22 @@ export default function Navbar() {
               </div>
 
               <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="hidden 2xl:flex flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
-              >
-                {mounted && theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
-
-              <button
-                onClick={() => router.push(`/${currentLang}/search`)}
-                className="2xl:hidden flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
+                onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+                className="lg:flex 2xl:hidden flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
                 aria-label={t("searchPlaceholder")}
               >
                 <Search className="h-5 w-5" />
               </button>
 
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="hidden xl:flex flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
+              >
+                {mounted && theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+
               <div
-                className="hidden 2xl:flex flex-shrink-0 relative"
+                className="hidden xl:flex flex-shrink-0 relative"
                 ref={langMenuRef}
               >
                 <button 
@@ -550,20 +668,18 @@ export default function Navbar() {
                   <>
                     <Link
                       href="/profile/favorites"
-                      className="hidden lg:flex items-center gap-1.5 p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      className="hidden lg:flex items-center p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       aria-label={t("favorites")}
                     >
                       <Heart className="w-5 h-5" />
-                      <span className="hidden xl:inline-block text-sm font-medium whitespace-nowrap">{t("favorites")}</span>
                     </Link>
 
                     <Link
                       href="/profile/history"
-                      className="hidden lg:flex items-center gap-1.5 p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      className="hidden lg:flex items-center p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       aria-label={t("listeningHistory")}
                     >
                       <History className="w-5 h-5" />
-                      <span className="hidden xl:inline-block text-sm font-medium whitespace-nowrap">{t("listeningHistory")}</span>
                     </Link>
                   </>
                 ) : null}

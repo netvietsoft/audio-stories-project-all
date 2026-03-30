@@ -259,6 +259,7 @@ export class StoriesService {
       ...(query.authorId ? { authorId: query.authorId } : {}),
       ...(query.trendWindow !== undefined && query.trendWindow !== 'all' && trendWindowStart ? { updatedAt: { gte: trendWindowStart } } : {}),
       ...(query.isInteractive !== undefined ? { isInteractive: query.isInteractive } : {}),
+      ...(query.isRecommended !== undefined ? { isRecommended: query.isRecommended } : {}),
     } as any; // Cast the entire where object to any
 
     const orderBy: Prisma.StoryOrderByWithRelationInput =

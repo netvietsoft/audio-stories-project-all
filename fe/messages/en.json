@@ -133,6 +133,7 @@
     "languageEn": "English",
     "ageRating": "Age rating",
     "ageRatingAll": "All ages",
+    "rating": "Rating",
     "listens": "{count} listens",
     "favorite": "Add to favorites",
     "share": "Share",
@@ -160,7 +161,10 @@
     "unlockVip": "VIP",
     "unlockTimed": "Timed",
     "unlockOpened": "Unlocked",
-    "interactiveStoryBadge": "Interactive Story"
+    "interactiveStoryBadge": "Interactive Story",
+    "recommendedStories": "Recommended Stories",
+    "youMightLike": "You might also like",
+    "newArrivals": "New Arrivals"
   },
   "StoryChapterClient": {
     "loadingReader": "Loading reading module...",
@@ -172,7 +176,12 @@
     "chapterLabel": "Chapter {number}",
     "chapterTitle": "Chapter {number}: {title}",
     "author": "Author",
+    "status": "Status",
+    "completed": "Completed",
+    "ongoing": "Ongoing",
+    "updating": "Updating",
     "updatedAt": "Updated",
+    "rating": "Rating",
     "listens": "{count} listens",
     "favorite": "Add to favorites",
     "share": "Share",

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "@/components/shared/LocalizedLink";
-import Image from "next/image";
+// using native <img> to preserve original aspect ratio without cropping
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { BookOpen, ChevronDown, Clock3, Facebook, Globe, Headphones, ListMusic, Lock, Play, PlayCircle, Share2, Star, Zap } from "lucide-react";
@@ -86,8 +86,6 @@ export default function StoryDetailClient() {
 
   const [story, setStory] = useState<StoryDetail | null>(null);
   const [siteSocial, setSiteSocial] = useState<Record<string, string | null> | null>(null);
-  const [recommendedStories, setRecommendedStories] = useState<StoryDetail[]>([]);
-  const [newStories, setNewStories] = useState<StoryDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -103,30 +101,6 @@ export default function StoryDetailClient() {
           setSiteSocial(siteRes.data);
         } catch (e) {
           setSiteSocial(null);
-        }
-        // fetch recommended stories
-        try {
-          const recommendedRes = await apiClient.get<{ data: StoryDetail[] }>('/stories/recommended', {
-            params: {
-              limit: 6,
-            },
-          });
-          setRecommendedStories(recommendedRes.data.data || []);
-        } catch (e) {
-          setRecommendedStories([]);
-        }
-        // fetch new stories
-        try {
-          const newRes = await apiClient.get<{ data: StoryDetail[] }>('/stories/explore', {
-            params: {
-              sort: 'latest',
-              page: 1,
-              limit: 6,
-            },
-          });
-          setNewStories(newRes.data.data || []);
-        } catch (e) {
-          setNewStories([]);
         }
       } catch (error) {
         console.error("Error while loading chapter list:", error);
@@ -194,14 +168,12 @@ export default function StoryDetailClient() {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <section className="flex w-full flex-col items-start gap-3 rounded-xl p-3 sm:p-4 md:flex-row md:items-stretch md:gap-6 md:p-6">
-        <div className="relative w-full shrink-0 aspect-square overflow-hidden rounded-lg shadow-xl md:w-[220px] md:aspect-auto md:self-stretch lg:w-[260px]">
-          <Image
+      <section className="flex w-full flex-col items-start gap-3 rounded-xl bg-white p-3 sm:p-4 dark:bg-gray-900 md:flex-row md:items-stretch md:gap-6 md:p-6 md:max-h-[320px]">
+        <div className="w-full shrink-0 flex justify-center md:w-[220px] lg:w-[260px] md:flex-shrink-0 md:self-stretch rounded-[10px] overflow-hidden">
+          <img
             src={story.thumbnailUrl || "https://placehold.co/600x600?text=No+Cover"}
             alt={storyTitle}
-            fill
-            priority
-            className="object-cover w-full h-full"
+            className="w-auto md:h-full object-contain md:object-bottom rounded-[10px]"
           />
         </div>
 
@@ -211,11 +183,31 @@ export default function StoryDetailClient() {
 
           {/* Metadata grid */}
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <div className="text-left">
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("genre")}</p>
+              <div className="flex flex-wrap gap-1">
+                {story.categories.length > 0
+                  ? story.categories.map(({ category }) => (
+                      <Link
+                        key={category.id}
+                        href={`/categories/${category.slug}`}
+                        className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                      >
+                        {category.name}
+                      </Link>
+                    ))
+                  : <span className="text-gray-700 dark:text-gray-300 font-medium">—</span>}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("lastUpdated")}</p>
+              <p className="font-medium text-gray-900 dark:text-white">{formatDate(story.updatedAt)}</p>
+            </div>
+            <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("author")}</p>
               <p className="font-semibold text-gray-900 dark:text-white">{story.author?.name || t("authorUpdating")}</p>
             </div>
-            <div className="text-left">
+            <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("status")}</p>
               <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${
                 story.status === "completed"
@@ -225,53 +217,33 @@ export default function StoryDetailClient() {
                 {story.status === "completed" ? t("statusCompleted") : t("statusOngoing")}
               </span>
               {story.isInteractive && (
-                <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 ml-1">
+                <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400">
                   {t("interactiveStoryBadge")}
                 </span>
               )}
             </div>
-            <div className="text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("lastUpdated")}</p>
-              <p className="font-medium text-gray-900 dark:text-white">{formatDate(story.updatedAt)}</p>
-            </div>
-            <div className="text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("listens", { count: "" })}</p>
-              <p className="font-medium text-gray-900 dark:text-white inline-flex items-center gap-1">
-                <Headphones className="h-4 w-4" />
-                {Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
-              </p>
-            </div>
-            <div className="col-span-2 text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("rating")}</p>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-yellow-500 text-base">{Number(story.averageRating).toFixed(1)}</span>
-                {story.ratingCount > 0 && <span className="text-gray-500 dark:text-gray-400 text-xs">({story.ratingCount})</span>}
-                <div className="flex items-center gap-0.5">
-                  {[1, 2, 3, 4, 5].map((starIndex) => {
-                    const rating = Number(story.averageRating);
-                    const isFilled = starIndex <= Math.round(rating);
-                    return (
-                      <Star
-                        key={starIndex}
-                        className={`h-4 w-4 ${isFilled ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-            <div className="text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("ageRating")}</p>
-              <p className="font-medium text-gray-900 dark:text-white">{t("ageRatingAll")}</p>
-            </div>
-            <div className="text-left">
+            <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("language")}</p>
               <p className="font-medium text-gray-900 dark:text-white">{t("languageCurrent")}</p>
             </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("genre")}</p>
+              <div className="flex flex-wrap gap-2">
+                {story.categories.length > 0 ? (
+                  story.categories.map(({ category }) => (
+                    <span key={category.id} className="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300">
+                      {category.name}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-gray-700 dark:text-gray-300 font-medium">—</span>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Stats row - Hidden on mobile, shown on desktop */}
-          <div className="hidden md:flex items-center gap-4 py-2 rounded-xl px-3 text-sm">
+          {/* Stats row */}
+          <div className="flex items-center gap-4 py-2 rounded-xl bg-white/80 px-3 dark:bg-gray-950/50 text-sm">
             <span className="inline-flex items-center gap-1.5">
               <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
               <span className="font-semibold text-gray-900 dark:text-white">{Number(story.averageRating).toFixed(1)}</span>
@@ -288,54 +260,49 @@ export default function StoryDetailClient() {
           </div>
 
           {/* Action buttons - single horizontal row on larger screens */}
-          <div className="flex w-full flex-col gap-3 md:flex-row md:items-center">
-            {/* Main action button */}
-            {firstChapter ? (
-              <Link
-                href={chapterHref(story.slug, firstChapter.chapterNumber)}
-                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-medium transition-colors w-full md:flex-1 whitespace-nowrap"
-              >
-                <Play className="h-3.5 w-3.5" />
-                {t("listenFromFirst")}
-              </Link>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="flex items-center justify-center gap-2 rounded-full bg-gray-200 px-4 py-2 font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400 w-full md:flex-1 whitespace-nowrap"
-              >
-                <Clock3 className="h-3.5 w-3.5" />
-                {t("chaptersPendingCta")}
-              </button>
-            )}
-
-            {/* Icon buttons - centered on mobile */}
-            <div className="flex items-center justify-center gap-3 md:justify-start">
-              <StoryUpdateSubscriptionButton 
-                storyId={story.id} 
-                className="px-3 py-2 md:px-6 md:py-2.5" 
-                labelClassName="hidden md:inline"
-              />
+          <div className="flex w-full items-center gap-3 mt-auto">
+            <div className="flex gap-3 flex-1 flex-wrap md:flex-nowrap">
+              {firstChapter ? (
+                <Link
+                  href={chapterHref(story.slug, firstChapter.chapterNumber)}
+                  className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-medium transition-colors w-full md:flex-[2] whitespace-nowrap text-sm"
+                >
+                  <Play className="h-3.5 w-3.5" />
+                  {t("listenFromFirst")}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="flex items-center justify-center gap-2 rounded-full bg-gray-200 px-4 py-2 font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400 w-full md:flex-[2]"
+                >
+                  <Clock3 className="h-3.5 w-3.5" />
+                  {t("chaptersPendingCta")}
+                </button>
+              )}
 
               <FavoriteButton
                 storyId={story.id}
                 size="md"
                 icon="heart"
-                label=""
-                className="flex items-center justify-center px-3 py-2 rounded-full font-medium shadow-sm transition-colors whitespace-nowrap"
+                label={t("favorite")}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full font-medium shadow-sm transition-colors w-full md:flex-1"
+                labelClassName="whitespace-nowrap text-sm"
                 activeClassName="bg-red-500 text-white hover:bg-red-600"
                 inactiveClassName="bg-white text-black hover:bg-red-50 hover:text-red-600 dark:bg-gray-900 dark:text-white dark:hover:bg-red-900/20 dark:hover:text-red-300"
               />
+
+              <StoryUpdateSubscriptionButton storyId={story.id} className="flex items-center justify-center gap-2 px-4 py-2 rounded-full w-full md:flex-1" labelClassName="whitespace-nowrap text-sm" />
+
               <button
                 type="button"
                 onClick={() => {
                   void onShare();
                 }}
-                className="flex items-center justify-center gap-2 px-3 py-2 rounded-full border shadow-sm transition-colors border-gray-300 bg-white text-black hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-blue-800/60 dark:hover:bg-blue-900/20 dark:hover:text-blue-300 whitespace-nowrap"
-                aria-label={t("share")}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full w-full md:flex-1 border shadow-sm transition-colors border-gray-300 bg-white text-black hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-blue-800/60 dark:hover:bg-blue-900/20 dark:hover:text-blue-300 whitespace-nowrap text-sm"
               >
                 <Share2 className="h-3.5 w-3.5" />
-                <span className="hidden md:inline">{t("share")}</span>
+                {t("share")}
               </button>
             </div>
 
@@ -373,32 +340,14 @@ export default function StoryDetailClient() {
         </div>
       </section>
 
-      <section className="p-3 sm:p-4 md:p-6">
+      <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("introTitle")}</h2>
         <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
           {storyDescription || t("introUpdating")}
         </p>
       </section>
 
-      {/* Categories section */}
-      {story.categories.length > 0 && (
-        <section className="rounded-2xl p-3 sm:p-4 md:p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">{t("genre")}</h2>
-          <div className="flex flex-wrap gap-2">
-            {story.categories.map(({ category }) => (
-              <Link
-                key={category.id}
-                href={`/categories/${category.slug}`}
-                className="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 font-medium text-sm transition-colors"
-              >
-                {category.name}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="p-3 sm:p-4 md:p-6">
+      <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="inline-flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
             <ListMusic className="h-5 w-5" /> {t("chapterList")}
@@ -442,102 +391,6 @@ export default function StoryDetailClient() {
           })}
         </div>
       </section>
-
-      {/* Recommended Stories Section */}
-      {recommendedStories.length > 0 && (
-        <section className="rounded-2xl  p-3 sm:p-4 md:p-6 ">
-          <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">{t("youMightLike")}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-            {recommendedStories.map((recommendedStory) => {
-              const title = getLocalizedValue(locale, recommendedStory.titleVi, recommendedStory.titleEn, recommendedStory.title);
-              return (
-                <Link
-                  key={recommendedStory.id}
-                  href={`/story/${recommendedStory.slug}`}
-                  className="group flex flex-col gap-2"
-                >
-                  <div className="relative w-full aspect-square overflow-hidden rounded-lg shadow-md group-hover:shadow-xl transition-shadow">
-                    <Image
-                      src={recommendedStory.thumbnailUrl || "https://placehold.co/300x300?text=No+Cover"}
-                      alt={title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    {recommendedStory.isInteractive && (
-                      <div className="absolute top-2 right-2 bg-indigo-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                        <Zap className="h-3 w-3 inline" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {title}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
-                      {recommendedStory.author?.name || t("authorUpdating")}
-                    </p>
-                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                      <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-                      <span>{Number(recommendedStory.averageRating).toFixed(1)}</span>
-                      <span className="mx-1">•</span>
-                      <Headphones className="h-3 w-3" />
-                      <span>{Number(recommendedStory.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}</span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* New Arrivals Section */}
-      {newStories.length > 0 && (
-        <section className="rounded-2xl p-3 sm:p-4 md:p-6">
-          <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">{t("newArrivals")}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-            {newStories.map((newStory) => {
-              const title = getLocalizedValue(locale, newStory.titleVi, newStory.titleEn, newStory.title);
-              return (
-                <Link
-                  key={newStory.id}
-                  href={`/story/${newStory.slug}`}
-                  className="group flex flex-col gap-2"
-                >
-                  <div className="relative w-full aspect-square overflow-hidden rounded-lg shadow-md group-hover:shadow-xl transition-shadow">
-                    <Image
-                      src={newStory.thumbnailUrl || "https://placehold.co/300x300?text=No+Cover"}
-                      alt={title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    {newStory.isInteractive && (
-                      <div className="absolute top-2 right-2 bg-indigo-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                        <Zap className="h-3 w-3 inline" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {title}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
-                      {newStory.author?.name || t("authorUpdating")}
-                    </p>
-                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                      <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-                      <span>{Number(newStory.averageRating).toFixed(1)}</span>
-                      <span className="mx-1">•</span>
-                      <Headphones className="h-3 w-3" />
-                      <span>{Number(newStory.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}</span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      )}
     </div>
   );
 }

@@ -326,7 +326,6 @@ export default function StoryDetailClient() {
                 activeClassName="bg-red-500 text-white hover:bg-red-600"
                 inactiveClassName="bg-white text-black hover:bg-red-50 hover:text-red-600 dark:bg-gray-900 dark:text-white dark:hover:bg-red-900/20 dark:hover:text-red-300"
               />
-
               <button
                 type="button"
                 onClick={() => {

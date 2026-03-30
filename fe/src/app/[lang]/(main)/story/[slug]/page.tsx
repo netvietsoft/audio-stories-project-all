@@ -115,6 +115,7 @@ export default async function StoryPage({ params }: Props) {
       <Breadcrumbs
         lang={locale === "en" ? "en" : "vi"}
         items={story ? [{ label: storyTitle }] : []}
+        className="py-1"
       />
       <StoryDetailClient />
     </>

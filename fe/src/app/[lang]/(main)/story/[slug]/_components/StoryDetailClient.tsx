@@ -193,10 +193,10 @@ export default function StoryDetailClient() {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-2 md:space-y-3">
       <section className="flex w-full flex-col items-start gap-3 rounded-xl p-3 sm:p-4 md:flex-row md:items-stretch md:gap-6 md:p-6">
         {/* Thumbnail - proper 2:3 book cover ratio */}
-        <div className="w-[140px] shrink-0 self-start md:w-[200px] lg:w-[220px]">
+        <div className="w-[140px] shrink-0 self-end md:w-[155px] lg:w-[175px]">
           <div className="relative w-full overflow-hidden rounded-lg shadow-xl" style={{ aspectRatio: "2/3" }}>
             <Image
               src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}

@@ -169,22 +169,22 @@ export default function StoryDetailClient() {
   return (
     <div className="space-y-4 md:space-y-6">
       <section className="flex w-full flex-col items-start gap-3 rounded-xl bg-white p-3 sm:p-4 dark:bg-gray-900 md:flex-row md:items-stretch md:gap-6 md:p-6">
-        <div className="relative w-full shrink-0 aspect-square overflow-hidden rounded-lg shadow-xl md:w-[280px] md:aspect-auto md:self-stretch lg:w-[320px]">
+        <div className="relative w-full shrink-0 aspect-square overflow-hidden rounded-lg shadow-xl md:w-[220px] md:aspect-auto md:self-stretch lg:w-[260px] bg-gray-100">
           <Image
             src={story.thumbnailUrl || "https://placehold.co/600x600?text=No+Cover"}
             alt={storyTitle}
             fill
             priority
-            className="object-cover w-full h-full"
+            className="object-contain w-full h-full"
           />
         </div>
 
-        <div className="flex w-full flex-1 flex-col gap-3 md:gap-4">
+        <div className="flex w-full flex-1 flex-col gap-2 md:gap-3">
           {/* Title */}
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">{storyTitle}</h1>
 
           {/* Metadata grid */}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("genre")}</p>
               <div className="flex flex-wrap gap-1">
@@ -235,7 +235,7 @@ export default function StoryDetailClient() {
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center gap-5 py-3 rounded-xl bg-white/80 px-3 dark:bg-gray-950/50 text-sm">
+          <div className="flex items-center gap-4 py-2 rounded-xl bg-white/80 px-3 dark:bg-gray-950/50 text-sm">
             <span className="inline-flex items-center gap-1.5">
               <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
               <span className="font-semibold text-gray-900 dark:text-white">{Number(story.averageRating).toFixed(1)}</span>
@@ -251,25 +251,24 @@ export default function StoryDetailClient() {
             </span>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex flex-col gap-3">
-            {/* Row 1: Listen and Favorite */}
-            <div className="flex flex-col sm:flex-row gap-3">
+          {/* Action buttons - single horizontal row on larger screens */}
+          <div className="flex w-full items-center gap-3">
+            <div className="flex gap-3 flex-1 flex-wrap">
               {firstChapter ? (
                 <Link
                   href={chapterHref(story.slug, firstChapter.chapterNumber)}
-                  className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-semibold transition-colors w-full sm:flex-1"
+                  className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-medium transition-colors w-full md:flex-[2]"
                 >
-                  <Play className="h-4 w-4" />
+                  <Play className="h-3.5 w-3.5" />
                   {t("listenFromFirst")}
                 </Link>
               ) : (
                 <button
                   type="button"
                   disabled
-                  className="flex items-center justify-center gap-2 rounded-full bg-gray-200 px-6 py-3 font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400 w-full sm:flex-1"
+                  className="flex items-center justify-center gap-2 rounded-full bg-gray-200 px-4 py-2 font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400 w-full md:flex-[2]"
                 >
-                  <Clock3 className="h-4 w-4" />
+                  <Clock3 className="h-3.5 w-3.5" />
                   {t("chaptersPendingCta")}
                 </button>
               )}
@@ -279,99 +278,33 @@ export default function StoryDetailClient() {
                 size="md"
                 icon="heart"
                 label={t("favorite")}
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold shadow-sm transition-colors w-full sm:flex-1"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full font-medium shadow-sm transition-colors w-full md:flex-1"
                 activeClassName="bg-red-500 text-white hover:bg-red-600"
                 inactiveClassName="bg-white text-black hover:bg-red-50 hover:text-red-600 dark:bg-gray-900 dark:text-white dark:hover:bg-red-900/20 dark:hover:text-red-300"
               />
-            </div>
 
-            {/* Mobile actions: icon-only, single row */}
-            <div className="md:hidden -mx-1 overflow-x-auto">
-              <div className="flex min-w-max items-center gap-2 px-1">
-                <FavoriteButton
-                  storyId={story.id}
-                  size="md"
-                  icon="heart"
-                  label={t("favorite")}
-                  labelClassName="sr-only"
-                  className="h-11 w-11 justify-center rounded-full"
-                  activeClassName="bg-red-500 text-white hover:bg-red-600"
-                  inactiveClassName="bg-white text-black hover:bg-red-50 hover:text-red-600 dark:bg-gray-900 dark:text-white dark:hover:bg-red-900/20 dark:hover:text-red-300"
-                />
-
-                <StoryUpdateSubscriptionButton
-                  storyId={story.id}
-                  labelClassName="hidden"
-                  className="h-11 w-11 justify-center rounded-full px-0"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    void onShare();
-                  }}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-black shadow-sm transition-colors hover:bg-blue-50 hover:text-blue-700 dark:bg-gray-900 dark:text-white dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
-                  aria-label={t("share")}
-                  title={t("share")}
-                >
-                  <Share2 className="h-4 w-4" />
-                </button>
-
-                {(hasVi || hasEn) ? (
-                  <div className="relative">
-                    <Globe className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-                    <select
-                      value={currentLang}
-                      onChange={(event) => handleSwitchLanguage(event.target.value as "vi" | "en")}
-                      className="appearance-none h-11 rounded-full border border-gray-300 bg-white py-2 pl-9 pr-9 text-sm font-medium text-gray-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      aria-label={t("languageSwitcherLabel")}
-                    >
-                      {hasVi ? <option value="vi">VI</option> : null}
-                      {hasEn ? <option value="en">EN</option> : null}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-                  </div>
-                ) : null}
-
-                {siteSocial?.facebook_url ? (
-                  <a
-                    href={siteSocial.facebook_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm transition-colors hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
-                    aria-label={t("joinFacebook")}
-                    title={t("joinFacebook")}
-                  >
-                    <Facebook className="h-4 w-4" />
-                  </a>
-                ) : null}
-              </div>
-            </div>
-
-            {/* Desktop actions */}
-            <div className="hidden md:flex md:flex-col gap-3">
-              {/* Row 2: Subscribe, Share, Language */}
-              <div className="flex flex-col sm:flex-row gap-3">
-              <StoryUpdateSubscriptionButton storyId={story.id} className="w-full sm:flex-1" />
+              <StoryUpdateSubscriptionButton storyId={story.id} className="flex items-center justify-center gap-2 px-4 py-2 rounded-full w-full md:flex-1" />
 
               <button
                 type="button"
                 onClick={() => {
                   void onShare();
                 }}
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold border shadow-sm transition-colors w-full sm:flex-1 border-gray-300 bg-white text-black hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-blue-800/60 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-full w-full md:flex-1 border shadow-sm transition-colors border-gray-300 bg-white text-black hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-blue-800/60 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
               >
-                <Share2 className="h-4 w-4" />
+                <Share2 className="h-3.5 w-3.5" />
                 {t("share")}
               </button>
+            </div>
 
+            <div className="hidden md:flex items-center gap-2">
               {(hasVi || hasEn) ? (
                 <div className="relative w-full sm:w-auto sm:min-w-[140px]">
-                  <Globe className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                  <Globe className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
                   <select
                     value={currentLang}
                     onChange={(event) => handleSwitchLanguage(event.target.value as "vi" | "en")}
-                    className="appearance-none w-full rounded-full border border-gray-300 bg-white py-3 pl-9 pr-9 text-sm font-medium text-gray-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                    className="appearance-none w-full rounded-full border border-gray-300 bg-white py-2 pl-8 pr-8 text-sm font-medium text-gray-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                     aria-label={t("languageSwitcherLabel")}
                   >
                     {hasVi ? <option value="vi">{t("languageOptionVi")}</option> : null}
@@ -380,18 +313,17 @@ export default function StoryDetailClient() {
                   <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                 </div>
               ) : null}
-              </div>
 
-              {/* Row 3: Facebook Group */}
               {siteSocial?.facebook_url ? (
                 <a
                   href={siteSocial.facebook_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-full font-semibold border shadow-sm transition-colors w-full border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm transition-colors hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
+                  aria-label={t("joinFacebook")}
+                  title={t("joinFacebook")}
                 >
-                  <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                  {t("joinFacebook")}
+                  <Facebook className="h-3.5 w-3.5" />
                 </a>
               ) : null}
             </div>
@@ -421,15 +353,17 @@ export default function StoryDetailClient() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {story.chapters.map((chapter) => {
             const unlockLabel = getUnlockLabel(chapter, t);
             return (
               <Link
                 key={chapter.id}
                 href={chapterHref(story.slug, chapter.chapterNumber)}
-                className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="flex items-center gap-3 rounded-xl px-4 py-3 transition hover:bg-gray-100 dark:hover:bg-gray-800"
               >
+                <PlayCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+
                 <div className="min-w-0">
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {t("chapterTitle", {
@@ -443,8 +377,6 @@ export default function StoryDetailClient() {
                     {unlockLabel ? <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-300"><Lock className="h-3.5 w-3.5" /> {unlockLabel}</span> : null}
                   </div>
                 </div>
-
-                <PlayCircle className="h-5 w-5 shrink-0 text-blue-600" />
               </Link>
             );
           })}

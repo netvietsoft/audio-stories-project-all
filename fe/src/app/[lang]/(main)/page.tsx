@@ -514,7 +514,7 @@ export default function HomePage() {
                 {t("viewAll")}
               </Link>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
               {topCategories.slice(0, 6).map((cat, index) => {
                 // Màu gradient modern, pastel
                 const gradients = [
@@ -533,8 +533,7 @@ export default function HomePage() {
                     <Link
                       key={cat.id}
                       href={`/explore?categoryId=${cat.id}`}
-                      className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg w-[90%] mx-auto"
-                      style={{ aspectRatio: '3 / 1.4' }}
+                      className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg w-[90%] mx-auto h-10 sm:h-12 md:h-14 flex items-center justify-center overflow-hidden"
                     >
                       {/* Background Image */}
                       <div
@@ -545,8 +544,8 @@ export default function HomePage() {
                       <div className="absolute inset-0 bg-black/40" />
 
                       {/* Category Name */}
-                      <div className="relative z-10 flex h-full items-center justify-center p-3">
-                        <span className="text-center text-base font-bold text-white drop-shadow-lg">
+                      <div className="relative z-10 flex items-center justify-center w-full h-full">
+                        <span className="text-[11px] sm:text-xs md:text-sm font-bold text-center px-1.5 line-clamp-1 w-full text-white drop-shadow-lg">
                           {getLocalizedValue(locale, cat.nameVi, cat.nameEn, cat.name)}
                         </span>
                       </div>
@@ -558,15 +557,14 @@ export default function HomePage() {
                   <Link
                     key={cat.id}
                     href={`/explore?categoryId=${cat.id}`}
-                    className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg w-[90%] mx-auto"
-                    style={{ aspectRatio: '3 / 1.4' }}
+                    className={`group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg w-[90%] mx-auto h-10 sm:h-12 md:h-14 flex items-center justify-center overflow-hidden`}
                   >
                     {/* Gradient Background */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${gradient} group-hover:brightness-110 transition-all`} />
                     
                     {/* Category Name */}
-                    <div className="relative z-10 flex h-full items-center justify-center p-3">
-                      <span className="text-center text-base font-bold text-white drop-shadow-lg">
+                    <div className="relative z-10 flex items-center justify-center w-full h-full">
+                      <span className="text-[11px] sm:text-xs md:text-sm font-bold text-center px-1.5 line-clamp-1 w-full text-white drop-shadow-lg">
                         {getLocalizedValue(locale, cat.nameVi, cat.nameEn, cat.name)}
                       </span>
                     </div>

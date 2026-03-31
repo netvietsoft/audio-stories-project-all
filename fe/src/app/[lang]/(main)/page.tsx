@@ -532,7 +532,7 @@ export default function HomePage() {
                   return (
                     <Link
                       key={cat.id}
-                      href={`/explore?categoryId=${cat.id}`}
+                      href={`/explore?categoryId=${cat.id}&lang=${lang}`}
                       className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg w-[90%] mx-auto h-10 sm:h-12 md:h-14 flex items-center justify-center overflow-hidden"
                     >
                       {/* Background Image */}
@@ -556,7 +556,7 @@ export default function HomePage() {
                 return (
                   <Link
                     key={cat.id}
-                    href={`/explore?categoryId=${cat.id}`}
+                    href={`/explore?categoryId=${cat.id}&lang=${lang}`}
                     className={`group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg w-[90%] mx-auto h-10 sm:h-12 md:h-14 flex items-center justify-center overflow-hidden`}
                   >
                     {/* Gradient Background */}

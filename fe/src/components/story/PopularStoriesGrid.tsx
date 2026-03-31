@@ -46,9 +46,9 @@ export default function PopularStoriesGrid({ stories, isLoading = false }: Popul
     return new Intl.NumberFormat("en-US").format(views || 0);
   };
 
-  if (isLoading) {
+    if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-4">
         {Array.from({ length: 8 }).map((_, index) => (
           <div key={index} className="h-[180px] animate-pulse rounded-xl bg-white/70 dark:bg-slate-900/70 sm:h-[200px]" />
         ))}
@@ -67,7 +67,7 @@ export default function PopularStoriesGrid({ stories, isLoading = false }: Popul
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-4">
       {displayStories.map((story) => {
         const title = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
         const description = getLocalizedValue(locale, story.descriptionVi, story.descriptionEn, story.description || "");
@@ -76,10 +76,10 @@ export default function PopularStoriesGrid({ stories, isLoading = false }: Popul
         const statusLabel = story.status === "completed" ? t("full") : t("ongoing");
 
         return (
-          <Link
+            <Link
             key={story.id}
             href={`/story/${story.slug}`}
-            className="group flex min-h-[180px] flex-col gap-2 rounded-xl bg-white/85 p-2 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:bg-slate-900/85 sm:gap-3 sm:p-3"
+            className="group flex min-h-[180px] flex-col gap-y-1 rounded-xl bg-white/85 p-2 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:bg-slate-900/85 sm:gap-y-1 sm:p-2"
           >
             <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800 sm:h-32">
               <Image

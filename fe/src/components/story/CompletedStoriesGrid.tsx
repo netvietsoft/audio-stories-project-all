@@ -43,7 +43,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-4 md:gap-6">
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-x-4 gap-y-1 md:gap-x-4 md:gap-y-1">
         {Array.from({ length: 12 }).map((_, index) => (
           <div key={index} className="aspect-[3/4] animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
         ))}
@@ -62,7 +62,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
   }
 
   return (
-    <div className="grid grid-cols-3 md:grid-cols-6 gap-4 md:gap-6">
+    <div className="grid grid-cols-3 md:grid-cols-6 gap-x-4 gap-y-1 md:gap-x-4 md:gap-y-1">
       {displayStories.map((story, index) => {
         const title = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
         const categoryName = story.categories?.[0]?.category?.name;
@@ -97,7 +97,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
               </div>
             </Link>
 
-            <div className="mt-2 px-1">
+            <div className="mt-1 px-1">
               <Link href={`/story/${story.slug}`}>
                 <h3 className="line-clamp-2 text-sm font-bold leading-tight text-gray-900 hover:text-pink-600 dark:text-white dark:hover:text-pink-400">
                   {title}

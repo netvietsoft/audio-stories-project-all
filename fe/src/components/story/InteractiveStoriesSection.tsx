@@ -132,7 +132,7 @@ export default function InteractiveStoriesSection() {
       <section className="space-y-4">
         <div className="h-7 w-56 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
         <div className="h-4 w-80 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-1 lg:grid-cols-2 lg:gap-x-4 lg:gap-y-2">
           <div className="space-y-4">
             <div className="h-48 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
             <div className="grid grid-cols-5 gap-2.5">
@@ -151,8 +151,8 @@ export default function InteractiveStoriesSection() {
 
   return (
     <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-slate-200/70 py-10 dark:bg-slate-800/70">
-      <div className="mx-auto w-full space-y-4 px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
-        <div className="flex items-end justify-between gap-4">
+      <div className="mx-auto w-full space-y-3 px-3 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
+      <div className="flex items-end justify-between gap-x-4">
           <div>
             <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("interactiveSectionTitle")}</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">{t("interactiveSectionSubtitle")}</p>
@@ -206,9 +206,9 @@ export default function InteractiveStoriesSection() {
               {/* KHỐI DƯỚI: Đính chặt vào đáy (mt-auto) */}
               <div className="mt-auto w-full">
                 {/* KHU VỰC THỐNG KÊ & NÚT ĐỌC NGAY NẰM CÙNG HÀNG */}
-                <div className="mb-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                <div className="mb-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-y-1 lg:gap-x-4 lg:gap-y-0">
                   {/* 4 Ô Thống kê đã thu nhỏ */}
-                  <div className="grid grid-cols-4 gap-2 sm:gap-3 flex-1 w-full">
+                  <div className="grid grid-cols-4 gap-x-4 gap-y-1 sm:gap-x-4 sm:gap-y-1 flex-1 w-full">
                     <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
                       <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-pink-700 dark:text-pink-300">
                         <BookOpenText className="h-3.5 w-3.5" />
@@ -249,7 +249,7 @@ export default function InteractiveStoriesSection() {
                 </div>
 
                 {/* Lưới 5 thumbnail ở đáy */}
-                <div className="grid grid-cols-5 gap-3">
+                <div className="grid grid-cols-5 gap-2">
                   {stories.map((story, index) => {
                     const title = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
                     const isActive = index === activeIndex;
@@ -304,7 +304,7 @@ export default function InteractiveStoriesSection() {
 
         <div className="space-y-4 lg:hidden">
         {activeStory ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
             <div className="flex flex-wrap items-baseline gap-2">
               <Link
                 href={`/story/${activeStory.slug}`}

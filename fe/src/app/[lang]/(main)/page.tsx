@@ -430,7 +430,7 @@ export default function HomePage() {
   ].filter((tab) => tab.stories.length > 0);
 
   return (
-    <div className="space-y-16">
+    <div className="space-y-10 md:space-y-8">
 
       {/* ─── Hero Banner ─────────────────────────────────────────── */}
       <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-slate-950 text-white -mt-8">
@@ -502,12 +502,12 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+        </section>
 
-      <div className="space-y-16">
+      <div className="space-y-10 md:space-y-8">
         {/* ─── Hashtag / Category Strip ────────────────────────────── */}
         {topCategories.length > 0 && (
-          <section className="space-y-4">
+          <section className="space-y-3">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
               <Link href="/stories" className="text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
@@ -576,7 +576,7 @@ export default function HomePage() {
         )}
 
         {/* ─── Truyện Rating Cao (Grid 2 hàng x 4) ─ */}
-        <section className="space-y-4">
+        <section className="space-y-3">
           <div className="flex items-end justify-between gap-4">
             <div>
               <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "High-Rating Stories" : "Truyện Rating Cao"}</h2>
@@ -590,7 +590,7 @@ export default function HomePage() {
         </section>
 
         {/* ─── Truyện Trending ─────────────────────────────────────── */}
-        <section className="space-y-4">
+        <section className="space-y-3">
           <div className="flex items-end justify-between gap-4">
             <div>
               <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("trendingTitle")}</h2>
@@ -606,8 +606,8 @@ export default function HomePage() {
 
       {/* ─── Truyện mới đăng (Stripe layout) ─────────── */}
       <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-slate-100 py-12 dark:bg-slate-800/50">
-        <div className={HOME_AXIS_CLASS}>
-          <div className="space-y-6">
+          <div className={HOME_AXIS_CLASS}>
+          <div className="space-y-4">
             <div className="flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("newestTitle")}</h2>
@@ -624,12 +624,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="space-y-16">
+      <div className="space-y-10 md:space-y-8">
         <InteractiveStoriesSection />
 
         {/* ─── Truyện đã hoàn thành (Grid 2 hàng x 4) ─ */}
         {completedStories.length > 0 && (
-          <section className="space-y-4">
+          <section className="space-y-3">
             <div className="flex items-end justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "Completed Stories" : "Truyện Đã Hoàn Thành"}</h2>
@@ -651,7 +651,7 @@ export default function HomePage() {
           const categoryName = getLocalizedValue(locale, category.nameVi, category.nameEn, category.name);
 
           return (
-            <section key={category.id} className="space-y-4">
+            <section key={category.id} className="space-y-3">
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <h2 className="text-2xl font-black text-slate-900 dark:text-white">
@@ -682,8 +682,8 @@ export default function HomePage() {
       </section>
 
       {/* ─── Hall of Fame ─────────────────────────────────────────── */}
-      <div className="space-y-16">
-        <section className="space-y-4">
+      <div className="space-y-10 md:space-y-8">
+        <section className="space-y-3">
           <div className="flex items-end justify-between gap-4">
             <div>
               <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("hallTitle")}</h2>
@@ -698,7 +698,7 @@ export default function HomePage() {
 
         {/* ─── Continue Listening & Favorites ─────────────────────────────────────── */}
         {accessToken ? (
-          <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-gray-900">
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div>

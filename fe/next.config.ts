@@ -38,6 +38,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "utfs.io" },
       { protocol: "https", hostname: "**.ufs.sh" },
       { protocol: "https", hostname: "**.r2.dev" },
+        { protocol: "https", hostname: "khoinguonsangtao.vn" },
       { protocol: "https", hostname: "picsum.photos" },
       ...envImagePatterns,
     ],

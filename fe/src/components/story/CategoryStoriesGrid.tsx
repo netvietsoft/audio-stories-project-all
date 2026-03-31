@@ -42,9 +42,9 @@ export default function CategoryStoriesGrid({ stories, isLoading = false }: Cate
 
   const formatViews = (views: number) => new Intl.NumberFormat("en-US").format(views || 0);
 
-  if (isLoading) {
+    if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 9 }).map((_, index) => (
           <div key={index} className="h-[180px] sm:h-[220px] animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
         ))}
@@ -63,7 +63,7 @@ export default function CategoryStoriesGrid({ stories, isLoading = false }: Cate
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-x-4 gap-y-1 sm:grid-cols-2 xl:grid-cols-3">
       {displayStories.map((story) => {
         const title = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
         const description = getLocalizedValue(locale, story.descriptionVi, story.descriptionEn, story.description || "")
@@ -78,7 +78,7 @@ export default function CategoryStoriesGrid({ stories, isLoading = false }: Cate
           <Link
             key={story.id}
             href={`/story/${story.slug}`}
-            className="group flex min-h-[160px] sm:min-h-[220px] gap-3 rounded-2xl p-3 transition-all duration-300 hover:-translate-y-0.5 bg-white dark:bg-transparent hover:shadow-lg"
+            className="group flex min-h-[160px] sm:min-h-[220px] gap-x-4 rounded-2xl p-2 transition-all duration-300 hover:-translate-y-0.5 bg-white dark:bg-transparent hover:shadow-lg"
           >
             <div className="relative w-[110px] sm:w-[120px] xl:w-[140px] shrink-0 overflow-hidden rounded-lg">
               <Image

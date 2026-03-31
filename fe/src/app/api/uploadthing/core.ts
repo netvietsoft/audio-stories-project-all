@@ -16,7 +16,8 @@ export const ourFileRouter = {
         }),
     audioUploader: f({
         audio: {
-            maxFileSize: "64MB",
+            // increased to match frontend uploader (5GB)
+            maxFileSize: "4GB",
             maxFileCount: 1,
         },
     })

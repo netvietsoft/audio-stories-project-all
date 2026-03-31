@@ -49,7 +49,7 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
   };
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-0">
         {[...Array(10)].map((_, i) => (
           <div
             key={i}
@@ -79,7 +79,7 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-2">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-0">
       {validChapters.map((chapter) => {
         const story = chapter.story;
         const hasStoryLink = Boolean(story?.slug);
@@ -98,13 +98,13 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
                 event.preventDefault();
               }
             }}
-            className={`group flex w-full items-center justify-between gap-4 bg-transparent py-2 ${
+            className={`group flex w-full items-center justify-between gap-x-4 bg-transparent py-1 ${
               hasStoryLink
                 ? "bg-transparent"
                 : "opacity-80 cursor-not-allowed"
             }`}
           >
-            <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex min-w-0 flex-1 items-center gap-x-4">
               <div className="relative h-14 w-10 overflow-hidden rounded bg-gray-200 shadow-sm dark:bg-gray-700 shrink-0">
                 <Image
                   src={story?.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
@@ -123,7 +123,7 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
               </div>
             </div>
 
-            <div className="hidden min-w-0 flex-1 px-2 md:flex">
+            <div className="hidden min-w-0 flex-1 px-1 md:flex">
               <p className="truncate text-sm text-gray-600 dark:text-gray-300">
                 {t("chapterLabel", { number: chapter.chapterNumber, title: cleanChapterTitle(chapter.title) })}
               </p>

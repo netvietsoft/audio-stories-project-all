@@ -48,7 +48,7 @@ export default function TrendingKeywords({ title, keywords = DEFAULT_KEYWORDS }:
   const displayTitle = title || (isVietnamese ? "Từ khóa phổ biến" : "Trending Keywords");
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-1">
       <div>
         <h2 className="text-2xl font-black text-slate-900 dark:text-white">{displayTitle}</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -56,7 +56,7 @@ export default function TrendingKeywords({ title, keywords = DEFAULT_KEYWORDS }:
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-x-3 gap-y-1">
         {keywords.map((keyword, index) => {
           const displayText = isVietnamese 
             ? (keyword.textVi || keyword.text || '') 

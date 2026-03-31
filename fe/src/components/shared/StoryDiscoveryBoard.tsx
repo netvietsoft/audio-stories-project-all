@@ -76,7 +76,7 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
   if (!topOne) return null;
 
   return (
-    <div className="mx-auto grid max-w-[1320px] grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
+    <div className="mx-auto grid max-w-[1320px] grid-cols-1 items-stretch gap-x-4 gap-y-1 lg:grid-cols-12">
         <div className="flex h-full flex-col items-center justify-center rounded-2xl bg-gradient-to-b from-yellow-50 to-yellow-100 p-8 text-center shadow-lg lg:col-span-5">
           <Crown className="text-yellow-500 w-12 h-12 mb-2 drop-shadow-[0_0_8px_rgba(234,179,8,0.3)]" />
           <Image
@@ -106,7 +106,7 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
             return (
               <div
                 key={user.id}
-                className="flex w-full items-center gap-4 rounded-xl bg-white p-4 shadow-sm transition-colors hover:bg-gray-50 dark:bg-gray-800/40 dark:hover:bg-gray-800/60 lg:max-w-2xl"
+                className="flex w-full items-center gap-x-4 rounded-xl bg-white p-3 shadow-sm transition-colors hover:bg-gray-50 dark:bg-gray-800/40 dark:hover:bg-gray-800/60 lg:max-w-2xl"
               >
                 <span className={`text-xl font-bold w-6 text-center ${rankClass}`}>{rank}</span>
                 <Image
@@ -147,17 +147,17 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
   const rankedStories = stories.slice(1, 5);
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6">
       {stories.length ? (
-        <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-[40%_1fr]">
+        <div className="grid grid-cols-1 items-center gap-4 lg:grid-cols-[40%_1fr]">
 
           {/* Left: Top 1 Featured Story */}
-          <div className="flex h-full flex-col gap-4 rounded-2xl bg-slate-50 dark:bg-transparent p-5">
+          <div className="flex h-full flex-col gap-4 rounded-2xl bg-slate-50 dark:bg-transparent p-4 md:p-5">
             {topStory ? (
               <>
                 {/* Thumbnail */}
                 <div className="w-full flex justify-center flex-[0.7]">
-                  <Link href={`/story/${topStory.slug}`} className="block w-1/2">
+                  <Link href={`/story/${topStory.slug}`} className="block w-full md:w-1/2">
                     <Image
                       src={topStory.thumbnailUrl || "/icon.svg"}
                       alt={getLocalizedValue(lang, topStory.titleVi, topStory.titleEn, topStory.title)}
@@ -170,7 +170,7 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
                 </div>
 
                 {/* Content */}
-                <div className="flex flex-[0.3] flex-col items-center text-center justify-center w-[70%] mx-auto">
+                <div className="flex flex-[0.3] flex-col items-center text-center justify-center w-full md:w-[70%] mx-auto">
                   <Link href={`/story/${topStory.slug}`}>
                     <h4 className="line-clamp-2 text-xl font-extrabold leading-tight text-gray-900 hover:text-pink-600 dark:text-white dark:hover:text-pink-400">
                       {getLocalizedValue(lang, topStory.titleVi, topStory.titleEn, topStory.title)}
@@ -204,7 +204,7 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
           </div>
 
           {/* Right: Top 2-5 Grid (2 rows x 2 cols) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 content-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 content-center">
             {rankedStories.map((story, idx) => {
               const storyTitle = getLocalizedValue(lang, story.titleVi, story.titleEn, story.title);
               const authorName = story.author?.name || labels.authorFallback;
@@ -217,9 +217,9 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
                 <Link
                   key={story.id}
                   href={`/story/${story.slug}`}
-                  className="flex items-center gap-4 rounded-xl p-4 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  className="flex items-center gap-3 rounded-xl p-3 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50"
                 >
-                  <div className="relative h-36 w-28 shrink-0 overflow-hidden rounded-lg">
+                  <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded-lg">
                     <Image
                       src={story.thumbnailUrl || "/icon.svg"}
                       alt={storyTitle}

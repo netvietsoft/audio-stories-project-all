@@ -450,7 +450,7 @@ export default function StoryDetailClient() {
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col space-y-1">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
                       {title}
                     </h3>
@@ -497,7 +497,7 @@ export default function StoryDetailClient() {
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col space-y-1">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
                       {title}
                     </h3>

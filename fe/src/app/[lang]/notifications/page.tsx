@@ -64,8 +64,8 @@ export default function NotificationsPage() {
 
       <div className="flex items-center justify-between">
         <h1 className="inline-flex items-center gap-3 text-3xl font-black text-gray-900 dark:text-gray-100 max-lg:hidden">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-            <BellRing className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+          <div className="p-2 bg-pink-100 dark:bg-pink-900/30 rounded-xl">
+            <BellRing className="h-7 w-7 text-pink-600 dark:text-pink-400" />
           </div>
           {t("title")}
         </h1>
@@ -84,7 +84,7 @@ export default function NotificationsPage() {
       <div className="space-y-3">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
           </div>
         ) : null}
         
@@ -104,14 +104,14 @@ export default function NotificationsPage() {
             className={`rounded-2xl border-2 p-5 transition-all hover:shadow-md relative ${
               item.isRead 
                 ? "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900" 
-                : "border-blue-200 bg-blue-50/80 dark:border-blue-900 dark:bg-blue-900/20 shadow-sm"
+                : "border-pink-200 bg-pink-50/80 dark:border-pink-900 dark:bg-pink-900/20 shadow-sm"
             }`}
           >
             {!item.isRead && (
               <div className="absolute top-5 left-5">
                 <span className="flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-pink-500"></span>
                 </span>
               </div>
             )}
@@ -126,7 +126,7 @@ export default function NotificationsPage() {
                   </p>
                 </div>
                 {!item.isRead && (
-                  <span className="px-2.5 py-1 bg-blue-500 text-white text-xs font-bold rounded-full shrink-0">
+                  <span className="px-2.5 py-1 bg-pink-500 text-white text-xs font-bold rounded-full shrink-0">
                     {t("new")}
                   </span>
                 )}

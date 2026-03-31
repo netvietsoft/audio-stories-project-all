@@ -174,10 +174,10 @@ export default function AdsPage() {
         </Link>
       </div>
 
-      <section className="rounded-2xl bg-blue-50 p-6 shadow-sm dark:bg-blue-950/30">
+      <section className="rounded-2xl bg-pink-50 p-6 shadow-sm dark:bg-pink-950/30">
         <div className="space-y-3">
-          <h2 className="text-lg font-black tracking-tight text-blue-900 dark:text-blue-100">Cấu hình tần suất chèn quảng cáo</h2>
-          <p className="text-sm text-blue-800/90 dark:text-blue-200/90">
+          <h2 className="text-lg font-black tracking-tight text-pink-900 dark:text-pink-100">Cấu hình tần suất chèn quảng cáo</h2>
+          <p className="text-sm text-pink-800/90 dark:text-pink-200/90">
             Nhập số chữ (ký tự) ước tính để chia đoạn và chèn quảng cáo xen kẽ vào truyện (Ví dụ: 1000).
           </p>
         </div>
@@ -190,13 +190,13 @@ export default function AdsPage() {
             value={frequencyValue}
             onChange={(event) => setFrequencyValue(event.target.value)}
             disabled={isLoadingFrequency || isSavingFrequency}
-            className="h-11 w-full max-w-[220px] rounded-xl bg-white px-4 text-sm font-semibold text-slate-800 outline-none ring-blue-400/20 transition focus:ring-2 disabled:opacity-60 dark:bg-slate-900 dark:text-slate-100"
+            className="h-11 w-full max-w-[220px] rounded-xl bg-white px-4 text-sm font-semibold text-slate-800 outline-none ring-pink-400/20 transition focus:ring-2 disabled:opacity-60 dark:bg-slate-900 dark:text-slate-100"
           />
           <button
             type="button"
             onClick={() => void handleSaveFrequency()}
             disabled={isLoadingFrequency || isSavingFrequency}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-pink-600 px-5 text-sm font-bold text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSavingFrequency ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Lưu cấu hình

@@ -178,13 +178,13 @@ export default function ProfileHistoryPage() {
                   </p>
 
                   <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
-                    <div className="h-full rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
+                    <div className="h-full rounded-full bg-pink-600" style={{ width: `${progress}%` }} />
                   </div>
 
                   <div className="mt-3 flex items-center gap-2">
                     <button
                       onClick={() => handleResume(item)}
-                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+                      className="inline-flex items-center gap-2 rounded-lg bg-pink-600 px-3 py-2 text-xs font-semibold text-white hover:bg-pink-700"
                     >
                       <PlayCircle className="h-4 w-4" /> {t("resume")}
                     </button>

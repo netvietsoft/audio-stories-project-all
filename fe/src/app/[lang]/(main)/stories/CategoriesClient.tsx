@@ -201,7 +201,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.slug)}
                 className={`w-full text-left text-sm py-2 px-3 rounded-md transition-colors truncate ${isActive
-                  ? "bg-blue-50 dark:bg-blue-500/20 text-black dark:text-white font-medium shadow-sm"
+                  ? "bg-pink-50 dark:bg-pink-500/20 text-black dark:text-white font-medium shadow-sm"
                   : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                   }`}
               >
@@ -246,11 +246,11 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
 
         {/* Description Box */}
         {currentCategory && currentCategory.name !== t("allCategories") && (
-          <div className="bg-blue-50 dark:bg-blue-500/20 rounded-xl p-4 mb-6 flex items-center justify-between">
+          <div className="bg-pink-50 dark:bg-pink-500/20 rounded-xl p-4 mb-6 flex items-center justify-between">
             <p className="text-sm text-black dark:text-white line-clamp-1">
               {currentCategory.description || t("categoryFallbackDescription", { name: currentCategoryName.toLowerCase() })}
             </p>
-            <button className="text-blue-700 dark:text-blue-300 p-1">
+            <button className="text-pink-700 dark:text-pink-300 p-1">
               <ChevronDown className="h-5 w-5" />
             </button>
           </div>
@@ -264,7 +264,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
               placeholder={t("searchStoriesPlaceholder")}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full lg:max-w-[20rem] min-w-0"
+              className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 w-full lg:max-w-[20rem] min-w-0"
             />
             
             {/* Status Dropdown */}
@@ -301,11 +301,11 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                       }}
                       className="flex justify-between items-center w-full px-4 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
                     >
-                      <span className={status === s.id ? "font-semibold text-blue-600 dark:text-blue-400" : ""}>
+                      <span className={status === s.id ? "font-semibold text-pink-600 dark:text-pink-400" : ""}>
                         {s.label}
                       </span>
                       {status === s.id && (
-                        <span className="text-blue-600 dark:text-blue-400">✓</span>
+                        <span className="text-pink-600 dark:text-pink-400">✓</span>
                       )}
                     </button>
                   ))}
@@ -336,7 +336,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                      placeholder={t("searchAuthorPlaceholder")}
                       value={authorSearch}
                       onChange={(e) => setAuthorSearch(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 mb-1"
+                      className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/20 mb-1"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <div className="max-h-60 overflow-y-auto mt-1">
@@ -344,10 +344,10 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                         onClick={() => { setAuthor(""); setPage(1); setAuthorDropdownOpen(false); setAuthorSearch(""); }}
                         className="flex justify-between items-center w-full px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md"
                       >
-                        <span className={!author ? "font-semibold text-blue-600 dark:text-blue-400" : ""}>
+                        <span className={!author ? "font-semibold text-pink-600 dark:text-pink-400" : ""}>
                           {t("allAuthors")}
                         </span>
-                        {!author && <span className="text-blue-600 dark:text-blue-400">✓</span>}
+                        {!author && <span className="text-pink-600 dark:text-pink-400">✓</span>}
                       </button>
                       
                       {filteredAuthors.map(a => (
@@ -356,10 +356,10 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                           onClick={() => { setAuthor(a.id); setPage(1); setAuthorDropdownOpen(false); }}
                           className="flex justify-between items-center w-full px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md"
                         >
-                          <span className={author === a.id ? "font-semibold text-blue-600 dark:text-blue-400 truncate" : "truncate"}>
+                          <span className={author === a.id ? "font-semibold text-pink-600 dark:text-pink-400 truncate" : "truncate"}>
                             {a.name}
                           </span>
-                          {author === a.id && <span className="text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2">✓</span>}
+                          {author === a.id && <span className="text-pink-600 dark:text-pink-400 flex-shrink-0 ml-2">✓</span>}
                         </button>
                       ))}
                       
@@ -382,7 +382,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                 setStatusDropdownOpen(false);
                 setAuthorDropdownOpen(false);
               }}
-              className="flex items-center justify-between w-full lg:w-44 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-slate-900 dark:text-white rounded-lg px-4 py-2 font-medium text-sm"
+              className="flex items-center justify-between w-full lg:w-44 bg-pink-50 dark:bg-pink-900/20 border border-pink-100 dark:border-pink-800 text-slate-900 dark:text-white rounded-lg px-4 py-2 font-medium text-sm"
             >
               <span>{selectedSortLabel}</span>
               <ChevronDown className="h-4 w-4 text-gray-500" />
@@ -406,11 +406,11 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                     }}
                     className="flex justify-between items-center w-full px-4 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
                   >
-                    <span className={sort === s.id ? "font-semibold text-blue-600 dark:text-blue-400" : ""}>
+                    <span className={sort === s.id ? "font-semibold text-pink-600 dark:text-pink-400" : ""}>
                       {s.label}
                     </span>
                     {sort === s.id && (
-                      <span className="text-blue-600 dark:text-blue-400">✓</span>
+                      <span className="text-pink-600 dark:text-pink-400">✓</span>
                     )}
                   </button>
                 ))}
@@ -459,13 +459,13 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
   const localizedTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
 
   return (
-    <div className="flex gap-8 group cursor-pointer overflow-hidden p-2">
-      <div className="relative w-[180px] h-[240px] flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden">
+    <div className="flex gap-3 sm:gap-4 group cursor-pointer overflow-hidden p-2">
+      <div className="relative w-[100px] h-[140px] sm:w-[120px] sm:h-[160px] md:w-[140px] md:h-[190px] flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
         <Image
           src={story.thumbnailUrl || "https://placehold.co/200x300?text=No+Cover"}
           alt={localizedTitle}
           fill
-          sizes="180px"
+          sizes="(max-width: 640px) 100px, (max-width: 768px) 120px, 140px"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-sm rounded px-1.5 py-0.5 flex flex-col items-center">
@@ -473,19 +473,19 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
         </div>
       </div>
 
-      <div className="flex-1 min-w-0 flex flex-col justify-between py-2">
+      <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
         <div>
           <Link href={`/story/${story.slug}`} className="block">
-            <h3 className="font-bold text-2xl text-slate-900 dark:text-white line-clamp-1 group-hover:text-blue-600 transition-colors">
+            <h3 className="font-bold text-base sm:text-lg md:text-xl text-slate-900 dark:text-white line-clamp-2 group-hover:text-pink-600 transition-colors">
               {localizedTitle}
             </h3>
           </Link>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {story.categories?.map((catWrapper, idx) => (
+          <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-1 sm:mt-2">
+            {story.categories?.slice(0, 2).map((catWrapper, idx) => (
               <span
                 key={catWrapper.category.id}
-                className={`text-sm px-2 py-0.5 rounded-sm ${idx === 0
-                  ? "text-blue-600 bg-blue-50 dark:bg-blue-900/30"
+                className={`text-xs px-1.5 py-0.5 rounded-sm ${idx === 0
+                  ? "text-pink-600 bg-pink-50 dark:bg-pink-900/30"
                   : "text-gray-500 bg-gray-100 dark:bg-gray-800"
                   }`}
               >
@@ -493,20 +493,20 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
               </span>
             ))}
           </div>
-          <p className="text-base font-semibold text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mt-1 sm:mt-1.5 truncate">
             {story.author?.name || t("updating")}
           </p>
-          <p className="text-base text-gray-500 dark:text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+          <p className="hidden sm:block text-sm text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">
             {story.description || t("storyFallbackDescription")}
           </p>
         </div>
 
-        <div className="flex items-center gap-6 mt-4 text-lg font-medium text-orange-500">
-          <div className="flex items-center gap-2">
-            <span className="text-yellow-400">★★★★★</span>
-            <span>{rating}</span>
+        <div className="flex items-center gap-3 sm:gap-4 mt-2 text-sm sm:text-base font-medium text-orange-500">
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            <span className="text-yellow-400 text-xs sm:text-sm">★★★★★</span>
+            <span className="text-xs sm:text-sm">{rating}</span>
           </div>
-          <div className="text-gray-500">
+          <div className="text-gray-500 text-xs sm:text-sm">
             {t("viewsShort", { count: views })}
           </div>
         </div>

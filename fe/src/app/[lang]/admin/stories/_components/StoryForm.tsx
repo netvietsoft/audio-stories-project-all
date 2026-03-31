@@ -453,7 +453,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                                 title="Thêm tác giả mới"
                             >
-                                <Plus className="w-4 h-4 text-blue-600" />
+                                <Plus className="w-4 h-4 text-pink-600" />
                             </button>
                         </div>
                         <div className="relative">
@@ -523,7 +523,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                                 title="Thêm thể loại mới"
                             >
-                                <Plus className="w-4 h-4 text-blue-600" />
+                                <Plus className="w-4 h-4 text-pink-600" />
                             </button>
                         </div>
                         <div className="relative">
@@ -623,7 +623,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                     className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                                     title="Quản lý chương"
                                 >
-                                    <Plus className="w-5 h-5 text-blue-600" />
+                                    <Plus className="w-5 h-5 text-pink-600" />
                                 </Link>
                             </div>
                             <div className="relative">

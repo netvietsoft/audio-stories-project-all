@@ -98,7 +98,7 @@ export default function StoryCard({ story, className, variant = "default", lang 
   const statusClass =
     story.status === "completed"
       ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200"
-      : "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200";
+      : "bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-200";
 
   if (variant === "overlay") {
     const firstCategory = story.categories?.[0]?.category?.name;
@@ -121,7 +121,7 @@ export default function StoryCard({ story, className, variant = "default", lang 
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10" />
 
           <div className="absolute left-2 top-2 flex flex-col gap-1">
-            <span className="inline-flex rounded-md bg-blue-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+            <span className="inline-flex rounded-md bg-pink-600 px-2 py-0.5 text-[10px] font-semibold text-white">
               {statusLabel}
             </span>
             {firstCategory ? (
@@ -176,14 +176,14 @@ export default function StoryCard({ story, className, variant = "default", lang 
           />
         </div>
 
-        <h3 className="mt-3 line-clamp-1 text-base font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{localizedTitle}</h3>
+        <h3 className="mt-3 line-clamp-1 text-base font-bold text-slate-900 dark:text-white group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">{localizedTitle}</h3>
 
         <p className="line-clamp-1 text-xs text-slate-500 dark:text-gray-400">
           {story.author?.name || t("updating")}
         </p>
 
         <div className="mt-2 flex items-center justify-between bg-white/70 dark:bg-gray-900/70 rounded-lg px-2 py-2">
-          <span className="line-clamp-1 text-sm font-medium text-blue-400">{latestChapterLabel}</span>
+          <span className="line-clamp-1 text-sm font-medium text-pink-400">{latestChapterLabel}</span>
           <span className="ml-2 shrink-0 text-xs text-slate-400 dark:text-gray-500">
             {formatTimeAgo(story.latestChapterCreatedAt || story.updatedAt || story.createdAt)}
           </span>
@@ -224,7 +224,7 @@ export default function StoryCard({ story, className, variant = "default", lang 
       </div>
 
       <div className="mt-2 space-y-1">
-        <h3 className="mt-2 line-clamp-2 text-sm font-bold text-gray-900 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300">
+        <h3 className="mt-2 line-clamp-2 text-sm font-bold text-gray-900 transition-colors group-hover:text-pink-700 dark:text-white dark:group-hover:text-pink-300">
           {localizedTitle}
         </h3>
 
@@ -244,3 +244,4 @@ export default function StoryCard({ story, className, variant = "default", lang 
     </Link>
   );
 }
+

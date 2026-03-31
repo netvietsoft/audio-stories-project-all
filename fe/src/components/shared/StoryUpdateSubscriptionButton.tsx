@@ -71,7 +71,7 @@ export default function StoryUpdateSubscriptionButton({ storyId, className = "",
 
   const activeClassName = isSubscribed
     ? "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600"
-    : "border-gray-300 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-blue-200";
+    : "border-gray-300 bg-white text-gray-700 hover:border-pink-300 hover:bg-pink-50 hover:text-pink-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-pink-700 dark:hover:bg-pink-950/40 dark:hover:text-pink-200";
   const buttonLabel = isSubscribed ? t("subscribedUpdates") : t("subscribeUpdates");
 
   return (

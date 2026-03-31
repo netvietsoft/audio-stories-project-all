@@ -261,14 +261,14 @@ export default function BannerForm({ initialData, selectedLocale, isLoading, onS
           </div>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-            <div className="space-y-5 rounded-2xl border border-blue-100 bg-blue-50/40 p-6">
-              <h3 className="text-lg font-black text-blue-900">Tiếng Việt</h3>
+            <div className="space-y-5 rounded-2xl border border-pink-100 bg-pink-50/40 p-6">
+              <h3 className="text-lg font-black text-pink-900">Tiếng Việt</h3>
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-wider text-slate-600">title_vi</label>
                 <input
                   {...register('titleVi')}
                   placeholder="Tiêu đề hero tiếng Việt"
-                  className="w-full rounded-xl border border-blue-100 bg-white px-4 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
+                  className="w-full rounded-xl border border-pink-100 bg-white px-4 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
                 />
                 {errors.titleVi ? <p className="ml-1 text-xs font-bold text-red-500">{errors.titleVi.message}</p> : null}
               </div>
@@ -278,7 +278,7 @@ export default function BannerForm({ initialData, selectedLocale, isLoading, onS
                   rows={4}
                   {...register('subtitleVi')}
                   placeholder="Mô tả ngắn tiếng Việt"
-                  className="w-full resize-none rounded-xl border border-blue-100 bg-white px-4 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
+                  className="w-full resize-none rounded-xl border border-pink-100 bg-white px-4 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
                 />
               </div>
             </div>

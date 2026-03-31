@@ -259,7 +259,7 @@ export default function PackagesPage() {
                                     </span>
                                 )}
                                 {pkg.isPopular && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-600 uppercase">
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-pink-50 border border-pink-100 text-[10px] font-black text-pink-600 uppercase">
                                         ⭐ Phổ biến
                                     </span>
                                 )}
@@ -498,7 +498,7 @@ export default function PackagesPage() {
                                             type="button"
                                             onClick={() => setFormData({ ...formData, isPopular: !formData.isPopular })}
                                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                                formData.isPopular ? 'bg-blue-600' : 'bg-slate-200'
+                                                formData.isPopular ? 'bg-pink-600' : 'bg-slate-200'
                                             }`}
                                         >
                                             <span

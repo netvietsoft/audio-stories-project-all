@@ -50,7 +50,7 @@ export default function ProfileSettingsPage() {
         <div className="space-y-5">
           <label className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
             <div className="flex items-center gap-3">
-              <Mail className="h-5 w-5 text-blue-600" />
+              <Mail className="h-5 w-5 text-pink-600" />
               <div>
                 <p className="font-semibold text-gray-900 dark:text-gray-100">{t("emailTitle")}</p>
                 <p className="text-sm text-gray-500">{t("emailDesc")}</p>
@@ -84,7 +84,7 @@ export default function ProfileSettingsPage() {
         <button
           onClick={() => void saveSettings()}
           disabled={saving}
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-pink-600 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-700 disabled:opacity-60"
         >
           <Save className="h-4 w-4" /> {t("save")}
         </button>

@@ -24,7 +24,7 @@ export default function Breadcrumbs({ items, lang = "vi", className = "" }: Brea
     >
       <ol className="flex flex-wrap items-center gap-1.5 sm:gap-2">
         <li className="flex items-center">
-          <Link href={`/${lang}`} className="inline-flex items-center hover:text-blue-600 transition-colors">
+          <Link href={`/${lang}`} className="inline-flex items-center hover:text-pink-600 transition-colors">
             <Home className="mr-1 h-4 w-4" />
             <span>{homeText}</span>
           </Link>
@@ -36,7 +36,7 @@ export default function Breadcrumbs({ items, lang = "vi", className = "" }: Brea
             {item.href ? (
               <Link
                 href={item.href}
-                className="max-w-[130px] truncate hover:text-blue-600 transition-colors sm:max-w-xs"
+                className="max-w-[130px] truncate hover:text-pink-600 transition-colors sm:max-w-xs"
               >
                 {item.label}
               </Link>
@@ -51,3 +51,4 @@ export default function Breadcrumbs({ items, lang = "vi", className = "" }: Brea
     </nav>
   );
 }
+

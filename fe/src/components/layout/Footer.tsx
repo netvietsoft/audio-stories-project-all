@@ -15,7 +15,7 @@ export default async function Footer() {
           {/* Cột 1: Logo và giới thiệu */}
           <div className="space-y-4">
             <Link href={withLang("/")} className="inline-block">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 bg-clip-text text-transparent">
                 Netviet Audio
               </h2>
             </Link>
@@ -28,7 +28,7 @@ export default async function Footer() {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
+                className="text-gray-500 hover:text-pink-600 dark:text-gray-400 dark:hover:text-pink-400 transition-colors"
                 aria-label="Facebook"
               >
                 <Facebook className="w-5 h-5" />
@@ -37,7 +37,7 @@ export default async function Footer() {
                 href="https://twitter.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-500 hover:text-blue-400 dark:text-gray-400 dark:hover:text-blue-300 transition-colors"
+                className="text-gray-500 hover:text-pink-400 dark:text-gray-400 dark:hover:text-pink-300 transition-colors"
                 aria-label="Twitter"
               >
                 <Twitter className="w-5 h-5" />
@@ -72,7 +72,7 @@ export default async function Footer() {
               <li>
                 <Link
                   href={withLang("/stories")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("allStories")}
                 </Link>
@@ -80,7 +80,7 @@ export default async function Footer() {
               <li>
                 <Link
                   href={withLang("/categories")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("categories")}
                 </Link>
@@ -88,7 +88,7 @@ export default async function Footer() {
               <li>
                 <Link
                   href={withLang("/authors")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("authors")}
                 </Link>
@@ -96,7 +96,7 @@ export default async function Footer() {
               <li>
                 <Link
                   href={withLang("/hall-of-fame")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("hallOfFame")}
                 </Link>
@@ -113,7 +113,7 @@ export default async function Footer() {
               <li>
                 <Link
                   href={withLang("/about")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("about")}
                 </Link>
@@ -121,7 +121,7 @@ export default async function Footer() {
               <li>
                 <Link
                   href={withLang("/contact")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("contact")}
                 </Link>
@@ -129,7 +129,7 @@ export default async function Footer() {
               <li>
                 <Link
                   href={withLang("/faq")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("faq")}
                 </Link>
@@ -137,7 +137,7 @@ export default async function Footer() {
               <li>
                 <Link
                   href={withLang("/help")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("help")}
                 </Link>
@@ -154,7 +154,7 @@ export default async function Footer() {
               <li>
                 <Link
                   href={withLang("/terms")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("terms")}
                 </Link>
@@ -162,7 +162,7 @@ export default async function Footer() {
               <li>
                 <Link
                   href={withLang("/privacy")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("privacy")}
                 </Link>
@@ -170,7 +170,7 @@ export default async function Footer() {
               <li>
                 <Link
                   href={withLang("/dmca")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("dmca")}
                 </Link>

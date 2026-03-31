@@ -66,8 +66,8 @@ export default function AdminDashboard() {
             label: 'Tổng người dùng',
             value: stats?.totalUsers.toLocaleString() || '0',
             icon: Users,
-            color: 'text-blue-600',
-            bg: 'bg-blue-50'
+            color: 'text-pink-600',
+            bg: 'bg-pink-50'
         },
         {
             label: 'Số bài viết',

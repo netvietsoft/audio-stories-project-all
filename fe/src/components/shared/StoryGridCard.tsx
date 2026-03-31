@@ -72,7 +72,7 @@ export default function StoryGridCard({
   const statusClass =
     story.status === "completed"
       ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-200"
-      : "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200";
+      : "bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-200";
 
   const rating = Number(story.averageRating || 0).toFixed(1);
   const viewsLabel = Number(story.totalViews || 0).toLocaleString(
@@ -118,7 +118,7 @@ export default function StoryGridCard({
   return (
     <Link
       href={`/story/${story.slug}`}
-      className="group relative flex items-stretch gap-4 rounded-2xl border border-slate-200 p-4 transition-all duration-300 hover:border-blue-300 hover:shadow-md dark:border-slate-800 dark:hover:border-blue-500 dark:hover:shadow-blue-900/20"
+      className="group relative flex items-stretch gap-4 rounded-2xl border border-slate-200 p-4 transition-all duration-300 hover:border-pink-300 hover:shadow-md dark:border-slate-800 dark:hover:border-pink-500 dark:hover:shadow-pink-900/20"
     >
       {/* Thumbnail - Small Left Side */}
       <div className="relative w-24 shrink-0 overflow-hidden rounded-lg sm:w-28">
@@ -135,7 +135,7 @@ export default function StoryGridCard({
       {/* Content - Right Side */}
       <div className="min-w-0 flex flex-1 flex-col h-full">
         {/* Title */}
-        <h3 className="line-clamp-2 text-base font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400 sm:text-lg">
+        <h3 className="line-clamp-2 text-base font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-pink-600 dark:text-white dark:group-hover:text-pink-400 sm:text-lg">
           {localizedTitle}
         </h3>
 
@@ -199,3 +199,4 @@ export default function StoryGridCard({
     </Link>
   );
 }
+

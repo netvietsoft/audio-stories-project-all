@@ -92,7 +92,7 @@ export default function PopularStoriesGrid({ stories, isLoading = false }: Popul
             </div>
 
             <div className="min-w-0 flex flex-1 flex-col">
-              <h3 className="line-clamp-2 text-xs font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300 sm:text-sm">
+              <h3 className="line-clamp-2 text-xs font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-pink-700 dark:text-white dark:group-hover:text-pink-300 sm:text-sm">
                 {title}
               </h3>
 

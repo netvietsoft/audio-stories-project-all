@@ -86,8 +86,8 @@ export class StoriesController {
   }
 
   @Get('recommended')
-  getRecommended(@Query('limit') limit?: string) {
-    return this.storiesService.getRecommendedStories(Number(limit) || 12);
+  getRecommended(@Query('limit') limit?: string, @Query('lang') lang?: string) {
+    return this.storiesService.getRecommendedStories(Number(limit) || 12, lang);
   }
 
   @Get('categories/top')

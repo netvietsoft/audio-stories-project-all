@@ -76,7 +76,7 @@ export default async function ContactPage({ params }: PageProps) {
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">{t.social}</p>
                   <p>{t.followUs}</p>
-                  <div className="mt-2 flex items-center gap-3 text-blue-600 dark:text-blue-400">
+                  <div className="mt-2 flex items-center gap-3 text-pink-600 dark:text-pink-400">
                     <a href="https://facebook.com" target="_blank" rel="noreferrer">Facebook</a>
                     <a href="https://youtube.com" target="_blank" rel="noreferrer">YouTube</a>
                     <a href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a>
@@ -122,7 +122,7 @@ export default async function ContactPage({ params }: PageProps) {
                 </div>
                 <button
                   type="submit"
-                  className="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                  className="w-full rounded-lg bg-pink-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-pink-700"
                 >
                   {t.send}
                 </button>

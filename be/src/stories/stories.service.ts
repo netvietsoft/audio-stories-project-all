@@ -176,22 +176,39 @@ export class StoriesService {
     };
   }
 
-  async getRecommendedStories(limit = 12) {
+  async getRecommendedStories(limit = 12, lang?: string) {
     const safeLimit = Math.min(Math.max(limit || 12, 1), 15);
-    const stories = await this.prisma.story.findMany({
-      where: {
-        deletedAt: null,
-        isRecommended: true,
+    
+    const whereClause: any = {
+      deletedAt: null,
+      averageRating: {
+        gte: 2.5, // Lower threshold to get more stories
       },
-      take: safeLimit,
-      orderBy: [{ updatedAt: 'desc' }, { totalViews: 'desc' }],
+    };
+    
+    if (lang) {
+      whereClause.language = lang;
+    }
+    
+    // Fetch more stories than needed to randomize
+    const fetchLimit = Math.min(safeLimit * 3, 50); // Fetch 3x or max 50 stories
+    
+    const stories = await this.prisma.story.findMany({
+      where: whereClause,
+      take: fetchLimit,
+      orderBy: [
+        { averageRating: 'desc' },
+        { totalViews: 'desc' },
+      ],
       select: {
         id: true,
         slug: true,
         title: true,
+        language: true,
         thumbnailUrl: true,
         status: true,
         totalViews: true,
+        averageRating: true,
         isInteractive: true,
         totalChapters: true,
         _count: {
@@ -205,9 +222,13 @@ export class StoriesService {
         },
       } as any,
     });
+    
+    // Shuffle and take only the requested amount
+    const shuffled = stories.sort(() => Math.random() - 0.5);
+    const selected = shuffled.slice(0, safeLimit);
 
     return {
-      data: stories.map((story) => this.serializeStory(story)),
+      data: selected.map((story) => this.serializeStory(story)),
     };
   }
 

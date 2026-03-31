@@ -312,7 +312,7 @@ export default function StoriesPage() {
             {/* Quick Stats Overlay */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-pink-50 text-pink-600 flex items-center justify-center">
                         <BookOpen className="w-6 h-6" />
                     </div>
                     <div>
@@ -429,7 +429,7 @@ export default function StoriesPage() {
                                         <td className="px-8 py-5 text-center">
                                             <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border
                                                 ${story.status === 'ongoing'
-                                                    ? 'bg-blue-50 text-blue-700 border-blue-100'
+                                                    ? 'bg-pink-50 text-pink-700 border-pink-100'
                                                     : 'bg-emerald-50 text-emerald-700 border-emerald-100'}
                                             `}>
                                                 {story.status === 'ongoing' ? 'Đang ra' : 'Hoàn thành'}

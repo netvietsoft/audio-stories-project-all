@@ -121,7 +121,7 @@ export default function UsersPage() {
             case 'admin':
                 return 'text-amber-600';
             case 'user':
-                return 'text-blue-600';
+                return 'text-pink-600';
             default:
                 return 'text-slate-600';
         }
@@ -159,7 +159,7 @@ export default function UsersPage() {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                    <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-pink-50 text-pink-600 rounded-2xl flex items-center justify-center">
                         <Users className="w-6 h-6" />
                     </div>
                     <div>

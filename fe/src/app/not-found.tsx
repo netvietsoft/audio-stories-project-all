@@ -17,7 +17,7 @@ export default function NotFound() {
           404
         </h1>
         <div className="absolute inset-0 flex items-center justify-center">
-          <Headphones className="h-20 w-20 text-blue-600 dark:text-blue-500 animate-bounce" />
+          <Headphones className="h-20 w-20 text-pink-600 dark:text-pink-500 animate-bounce" />
         </div>
       </div>
 
@@ -32,7 +32,7 @@ export default function NotFound() {
       <div className="flex flex-col sm:flex-row gap-4 mb-12">
         <Link 
           href="/" 
-          className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-medium transition-colors"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-pink-600 hover:bg-pink-700 text-white rounded-full font-medium transition-colors"
         >
           <Home className="h-5 w-5" /> Về trang chủ
         </Link>
@@ -54,9 +54,9 @@ export default function NotFound() {
             <Link 
               key={story.id} 
               href={`/story/${story.id}`}
-              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 transition-colors group"
+              className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-pink-500 dark:hover:border-pink-500 transition-colors group"
             >
-              <h4 className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 line-clamp-1">
+              <h4 className="font-medium text-gray-900 dark:text-white group-hover:text-pink-600 dark:group-hover:text-pink-400 line-clamp-1">
                 {story.title}
               </h4>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">

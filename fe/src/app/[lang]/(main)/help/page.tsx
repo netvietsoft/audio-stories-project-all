@@ -56,7 +56,7 @@ export default async function HelpPage({ params }: PageProps) {
 
               return (
                 <div key={index} className="rounded-xl bg-transparent p-5 outline-none transition-colors hover:bg-white/40 dark:hover:bg-gray-900/30">
-                  <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                  <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300">
                     <Icon className="h-5 w-5" />
                   </div>
                   <h2 className="text-base font-bold text-gray-900 dark:text-white">{item.title}</h2>

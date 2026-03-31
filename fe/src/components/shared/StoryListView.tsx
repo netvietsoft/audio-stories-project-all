@@ -114,7 +114,7 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
                 />
               </div>
               <div className="flex min-w-0 flex-col">
-                <h3 className="truncate text-sm font-semibold text-gray-900 transition-colors group-hover:text-blue-600 dark:text-gray-100 dark:group-hover:text-blue-400">
+                <h3 className="truncate text-sm font-semibold text-gray-900 transition-colors group-hover:text-pink-600 dark:text-gray-100 dark:group-hover:text-pink-400">
                   {storyTitle}
                 </h3>
                 <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">

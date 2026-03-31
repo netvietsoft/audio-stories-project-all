@@ -510,7 +510,7 @@ export default function HomePage() {
           <section className="space-y-4">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
-              <Link href="/stories" className="text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              <Link href="/stories" className="text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
                 {t("viewAll")}
               </Link>
             </div>
@@ -520,11 +520,11 @@ export default function HomePage() {
                 const gradients = [
                   'from-pink-400 to-rose-400',
                   'from-purple-400 to-violet-400',
-                  'from-blue-400 to-cyan-400',
+                  'from-pink-400 to-cyan-400',
                   'from-emerald-400 to-teal-400',
                   'from-amber-400 to-orange-400',
                   'from-fuchsia-400 to-pink-400',
-                  'from-indigo-400 to-blue-400',
+                  'from-indigo-400 to-pink-400',
                   'from-lime-400 to-green-400',
                 ];
                 const gradient = gradients[index % gradients.length];
@@ -582,7 +582,7 @@ export default function HomePage() {
               <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "High-Rating Stories" : "Truyện Rating Cao"}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">{locale === "en" ? "Top-rated stories from our collection" : "Những truyện được đánh giá cao nhất"}</p>
             </div>
-            <Link href="/search?sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            <Link href="/search?sort=rating" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
               {t("viewAll")}
             </Link>
           </div>
@@ -596,7 +596,7 @@ export default function HomePage() {
               <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("trendingTitle")}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">{t("trendingSubtitle")}</p>
             </div>
-            <Link href="/trending" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            <Link href="/trending" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
               {t("viewAll")}
             </Link>
           </div>
@@ -613,7 +613,7 @@ export default function HomePage() {
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("newestTitle")}</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">{t("newestSubtitle")}</p>
               </div>
-              <Link href="/new" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              <Link href="/new" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
                 {t("viewAll")}
               </Link>
             </div>
@@ -635,7 +635,7 @@ export default function HomePage() {
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "Completed Stories" : "Truyện Đã Hoàn Thành"}</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">{locale === "en" ? "Finished series with excellent ratings" : "Những câu chuyện được hoàn chỉnh với đánh giá xuất sắc"}</p>
               </div>
-              <Link href="/search?status=completed&sort=rating" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              <Link href="/search?status=completed&sort=rating" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
                 {t("viewAll")}
               </Link>
             </div>
@@ -663,7 +663,7 @@ export default function HomePage() {
                 </div>
                 <Link 
                   href={`/explore?categoryId=${category.id}`} 
-                  className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400"
+                  className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400"
                 >
                   {t("viewAll")}
                 </Link>
@@ -689,7 +689,7 @@ export default function HomePage() {
               <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("hallTitle")}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">{t("hallSubtitle")}</p>
             </div>
-            <Link href="/hall" className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+            <Link href="/hall" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
               {t("viewFullRanking")}
             </Link>
           </div>
@@ -705,7 +705,7 @@ export default function HomePage() {
                   <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("continueTitle")}</h2>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("continueSubtitle")}</p>
                 </div>
-                <Link href="/profile/history" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-50 dark:border-slate-700 dark:text-blue-400 dark:hover:bg-slate-800">
+                <Link href="/profile/history" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-pink-600 hover:bg-slate-50 dark:border-slate-700 dark:text-pink-400 dark:hover:bg-slate-800">
                   <Headphones className="h-4 w-4" />
                   {tNavbar("listeningHistory")}
                 </Link>
@@ -730,7 +730,7 @@ export default function HomePage() {
                       <Link
                         key={item.id}
                         href={`/story/${item.story.slug}/chuong-${item.chapter.chapterNumber}`}
-                        className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-blue-100 dark:bg-slate-800 dark:hover:bg-slate-700"
+                        className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-slate-800 dark:hover:bg-slate-700"
                       >
                         <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
                           <Image
@@ -748,7 +748,7 @@ export default function HomePage() {
                           </div>
                           <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{t("continueProgress", { percent: progressPercent })}</p>
                         </div>
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-sm">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-sm">
                           <PlayCircle className="h-5 w-5" />
                         </div>
                       </Link>
@@ -768,7 +768,7 @@ export default function HomePage() {
                   <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("favoritesListTitle")}</h2>
                   <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("favoritesListSubtitle")}</p>
                 </div>
-                <Link href="/profile?panel=favorites" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-50 dark:border-slate-700 dark:text-blue-400 dark:hover:bg-slate-800">
+                <Link href="/profile?panel=favorites" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-pink-600 hover:bg-slate-50 dark:border-slate-700 dark:text-pink-400 dark:hover:bg-slate-800">
                   <Heart className="h-4 w-4" />
                   {tNavbar("favorites")}
                 </Link>

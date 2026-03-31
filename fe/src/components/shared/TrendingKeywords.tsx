@@ -80,3 +80,4 @@ export default function TrendingKeywords({ title, keywords = DEFAULT_KEYWORDS }:
     </section>
   );
 }
+

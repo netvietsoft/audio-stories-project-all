@@ -109,6 +109,7 @@ export default function StoryDetailClient() {
           const recommendedRes = await apiClient.get<{ data: StoryDetail[] }>('/stories/recommended', {
             params: {
               limit: 6,
+              lang: locale,
             },
           });
           setRecommendedStories(recommendedRes.data.data || []);
@@ -122,6 +123,7 @@ export default function StoryDetailClient() {
               sort: 'latest',
               page: 1,
               limit: 6,
+              lang: locale,
             },
           });
           setNewStories(newRes.data.data || []);
@@ -196,8 +198,8 @@ export default function StoryDetailClient() {
     <div className="space-y-2 md:space-y-3">
       <section className="flex w-full flex-col items-start gap-3 rounded-xl p-3 sm:p-4 md:flex-row md:items-stretch md:gap-6 md:p-6">
         {/* Thumbnail - proper 2:3 book cover ratio */}
-        <div className="w-[140px] shrink-0 self-end md:w-[155px] lg:w-[175px]">
-          <div className="relative w-full overflow-hidden rounded-lg shadow-xl" style={{ aspectRatio: "2/3" }}>
+        <div className="w-full md:w-[155px] lg:w-[175px] md:shrink-0 self-center md:self-end">
+          <div className="relative w-[140px] md:w-full mx-auto overflow-hidden rounded-lg shadow-xl" style={{ aspectRatio: "2/3" }}>
             <Image
               src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
               alt={storyTitle}
@@ -212,63 +214,51 @@ export default function StoryDetailClient() {
           {/* Title */}
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">{storyTitle}</h1>
 
-          {/* Metadata grid - 2 columns */}
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          {/* Metadata grid - centered layout */}
+          <div className="flex flex-col gap-y-2 text-sm max-w-md">
             {/* Row 1: Tác giả + Trạng thái */}
-            <div className="text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("author")}</p>
-              <p className="font-semibold text-gray-900 dark:text-white">{story.author?.name || t("authorUpdating")}</p>
-            </div>
-            <div className="text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("status")}</p>
-              <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${
-                story.status === "completed"
-                  ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
-                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400"
-              }`}>
-                {story.status === "completed" ? t("statusCompleted") : t("statusOngoing")}
-              </span>
-              {story.isInteractive && (
-                <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 ml-1">
-                  {t("interactiveStoryBadge")}
+            <div className="flex justify-between items-start">
+              <div className="text-left">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("author")}</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{story.author?.name || t("authorUpdating")}</p>
+              </div>
+              <div className="text-left w-40">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("status")}</p>
+                <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  story.status === "completed"
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                    : "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400"
+                }`}>
+                  {story.status === "completed" ? t("statusCompleted") : t("statusOngoing")}
                 </span>
-              )}
+                {story.isInteractive && (
+                  <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 ml-1">
+                    {t("interactiveStoryBadge")}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Row 2: Cập nhật lần cuối + Ngôn ngữ */}
-            <div className="text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("lastUpdated")}</p>
-              <p className="font-medium text-gray-900 dark:text-white">{formatDate(story.updatedAt)}</p>
-            </div>
-            <div className="text-left">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("language")}</p>
-              <p className="font-medium text-gray-900 dark:text-white">{t("languageCurrent")}</p>
+            <div className="flex justify-between items-start">
+              <div className="text-left">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("lastUpdated")}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{formatDate(story.updatedAt)}</p>
+              </div>
+              <div className="text-left w-40">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("language")}</p>
+                <p className="font-medium text-gray-900 dark:text-white">{t("languageCurrent")}</p>
+              </div>
             </div>
 
-            {/* Row 3: Độ tuổi + Thể loại */}
+            {/* Row 3: Độ tuổi */}
             <div className="text-left">
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("ageRating")}</p>
               <p className="font-medium text-gray-900 dark:text-white">{t("ageRatingAll")}</p>
             </div>
-            {story.categories.length > 0 && (
-              <div className="text-left">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("genre")}</p>
-                <div className="flex flex-wrap gap-1">
-                  {story.categories.map(({ category }) => (
-                    <Link
-                      key={category.id}
-                      href={`/categories/${category.slug}`}
-                      className="inline-flex items-center px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 font-medium text-xs transition-colors"
-                    >
-                      {category.name}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Row 4 (bottom): Lượt đọc + Đánh giá */}
-            <div className="col-span-2 flex items-center gap-4 pt-1 text-sm border-t border-gray-100 dark:border-gray-800">
+            <div className="flex items-center gap-4 pt-1 text-sm border-t border-gray-100 dark:border-gray-800">
               <span className="inline-flex items-center gap-1.5">
                 <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
                 <span className="font-semibold text-gray-900 dark:text-white">{Number(story.averageRating).toFixed(1)}</span>
@@ -290,7 +280,7 @@ export default function StoryDetailClient() {
             {firstChapter ? (
               <Link
                 href={chapterHref(story.slug, firstChapter.chapterNumber)}
-                className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap"
               >
                 <Play className="h-3.5 w-3.5" />
                 {t("readNow")}
@@ -325,7 +315,7 @@ export default function StoryDetailClient() {
             <button
               type="button"
               onClick={() => { void onShare(); }}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full border text-sm shadow-sm transition-colors border-gray-300 bg-white text-black hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-blue-800/60 dark:hover:bg-blue-900/20 dark:hover:text-blue-300 whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full border text-sm shadow-sm transition-colors border-gray-300 bg-white text-black hover:border-pink-300 hover:bg-pink-50 hover:text-pink-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-pink-800/60 dark:hover:bg-pink-900/20 dark:hover:text-pink-300 whitespace-nowrap"
               aria-label={t("share")}
             >
               <Share2 className="h-3.5 w-3.5" />
@@ -338,7 +328,7 @@ export default function StoryDetailClient() {
                 <select
                   value={currentLang}
                   onChange={(event) => handleSwitchLanguage(event.target.value as "vi" | "en")}
-                  className="appearance-none rounded-full border border-gray-300 bg-white py-2 pl-8 pr-7 text-sm font-medium text-gray-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  className="appearance-none rounded-full border border-gray-300 bg-white py-2 pl-8 pr-7 text-sm font-medium text-gray-700 shadow-sm transition focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                   aria-label={t("languageSwitcherLabel")}
                 >
                   {hasVi ? <option value="vi">{t("languageOptionVi")}</option> : null}
@@ -353,7 +343,7 @@ export default function StoryDetailClient() {
                 href={siteSocial.facebook_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-blue-700 shadow-sm transition-colors hover:bg-blue-100 dark:border-blue-800/60 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/40"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-pink-200 bg-pink-50 text-pink-700 shadow-sm transition-colors hover:bg-pink-100 dark:border-pink-800/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/40"
                 aria-label={t("joinFacebook")}
                 title={t("joinFacebook")}
               >
@@ -370,6 +360,24 @@ export default function StoryDetailClient() {
           {storyDescription || t("introUpdating")}
         </p>
       </section>
+
+      {/* Tags Section */}
+      {story.categories.length > 0 && (
+        <section className="p-3 sm:p-4 md:p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Tags</h2>
+          <div className="flex flex-wrap gap-2">
+            {story.categories.map(({ category }) => (
+              <Link
+                key={category.id}
+                href={`/categories/${category.slug}`}
+                className="inline-flex items-center px-3 py-1.5 rounded-full bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 hover:bg-pink-100 dark:hover:bg-pink-900/30 font-medium text-sm transition-colors"
+              >
+                {category.name}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Categories section moved into metadata grid above */}
       <section className="p-3 sm:p-4 md:p-6">
@@ -396,7 +404,7 @@ export default function StoryDetailClient() {
                 href={chapterHref(story.slug, chapter.chapterNumber)}
                 className="flex items-center gap-3 rounded-xl px-4 py-3 transition hover:bg-gray-100 dark:hover:bg-gray-800"
               >
-                <PlayCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                <PlayCircle className="h-5 w-5 text-pink-600 flex-shrink-0" />
 
                 <div className="min-w-0">
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -443,7 +451,7 @@ export default function StoryDetailClient() {
                     )}
                   </div>
                   <div className="flex flex-col gap-1">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
                       {title}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
@@ -490,7 +498,7 @@ export default function StoryDetailClient() {
                     )}
                   </div>
                   <div className="flex flex-col gap-1">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
                       {title}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">

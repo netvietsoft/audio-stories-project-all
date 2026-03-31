@@ -99,7 +99,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
 
             <div className="mt-2 px-1">
               <Link href={`/story/${story.slug}`}>
-                <h3 className="line-clamp-2 text-sm font-bold leading-tight text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400">
+                <h3 className="line-clamp-2 text-sm font-bold leading-tight text-gray-900 hover:text-pink-600 dark:text-white dark:hover:text-pink-400">
                   {title}
                 </h3>
               </Link>

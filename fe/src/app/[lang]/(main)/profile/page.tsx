@@ -305,11 +305,11 @@ export default function ProfilePage() {
                                 <Award className="h-6 w-6 text-amber-500" />
                             </h1>
                             <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-700 dark:bg-blue-900/40 dark:text-blue-400">
+                                <span className="rounded-full bg-pink-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-pink-700 dark:bg-pink-900/40 dark:text-pink-400">
                                     {user.roles?.[0] || t("member")}
                                 </span>
                                 <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400">
-                                    <Clock className="h-4 w-4 text-blue-500" /> {t("joinedSystem")}
+                                    <Clock className="h-4 w-4 text-pink-500" /> {t("joinedSystem")}
                                 </span>
                             </div>
                         </div>
@@ -322,7 +322,7 @@ export default function ProfilePage() {
                         <div className="space-y-2">
                             <label className="ml-1 text-xs font-extrabold uppercase tracking-widest text-gray-400">{t("accountName")}</label>
                             <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-900/50">
-                                <User className="h-5 w-5 text-blue-500" />
+                                <User className="h-5 w-5 text-pink-500" />
                                 <span className="font-bold text-gray-700 dark:text-gray-200">{user.name || "N/A"}</span>
                             </div>
                         </div>
@@ -376,7 +376,7 @@ export default function ProfilePage() {
                                 <span className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
                                     <BookOpen className="h-4 w-4" /> {t("audiosListened")}
                                 </span>
-                                <span className="font-extrabold text-blue-600 dark:text-blue-400">{listenedTotal}</span>
+                                <span className="font-extrabold text-pink-600 dark:text-pink-400">{listenedTotal}</span>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -410,7 +410,7 @@ export default function ProfilePage() {
                         </button>
                         <button
                             onClick={() => router.push(`/${currentLang}/topup`)}
-                            className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-blue-600 transition-colors hover:bg-blue-50 dark:border-gray-700 dark:text-blue-400 dark:hover:bg-blue-900/10"
+                            className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-pink-600 transition-colors hover:bg-pink-50 dark:border-gray-700 dark:text-pink-400 dark:hover:bg-pink-900/10"
                         >
                             <CreditCard className="h-5 w-5" />
                             <span className="font-semibold">{t("topUpCredits")}</span>
@@ -436,7 +436,7 @@ export default function ProfilePage() {
                             onClick={() => setActivePanel("history")}
                             className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
                         >
-                            <History className="h-5 w-5 text-blue-500" />
+                            <History className="h-5 w-5 text-pink-500" />
                             <span className="font-semibold">{t("listeningHistory")}</span>
                             <ChevronRight className="ml-auto h-4 w-4 text-gray-300" />
                         </button>
@@ -485,8 +485,8 @@ export default function ProfilePage() {
                                     const history = historyItems.find((entry) => entry.id === item.id);
                                     return (
                                     <div key={item.id} className="group flex items-center gap-4 rounded-2xl border border-transparent p-4 transition-all hover:border-gray-100 hover:bg-gray-50 dark:hover:border-gray-700 dark:hover:bg-gray-700/50">
-                                        <div className="rounded-2xl bg-blue-50 p-3 dark:bg-blue-900/20">
-                                            <BookOpen className="h-5 w-5 text-blue-500" />
+                                        <div className="rounded-2xl bg-pink-50 p-3 dark:bg-pink-900/20">
+                                            <BookOpen className="h-5 w-5 text-pink-500" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="line-clamp-1 text-base font-bold text-gray-800 dark:text-gray-100">{item.text}</p>
@@ -547,7 +547,7 @@ export default function ProfilePage() {
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <span className="text-gray-500 dark:text-gray-400">{t("chaptersCount", { count: chapterTotal })}</span>
                                                             <span className="text-gray-400 dark:text-gray-500">-</span>
-                                                            <span className="rounded bg-blue-100 px-2 py-1 font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                                                            <span className="rounded bg-pink-100 px-2 py-1 font-semibold text-pink-700 dark:bg-pink-900/40 dark:text-pink-300">
                                                                 {story.status === "completed" ? t("full") : t("ongoing")}
                                                             </span>
                                                         </div>
@@ -601,12 +601,12 @@ export default function ProfilePage() {
                                                             {t("listenedProgress", { current: formatDuration(item.progressSeconds), total: formatDuration(item.chapter.audioDuration) })}
                                                         </p>
                                                         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
-                                                            <div className="h-full rounded-full bg-blue-600" style={{ width: `${progress}%` }} />
+                                                            <div className="h-full rounded-full bg-pink-600" style={{ width: `${progress}%` }} />
                                                         </div>
                                                         <div className="mt-3">
                                                             <button
                                                                 onClick={() => resumeFromHistory(item)}
-                                                                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+                                                                className="inline-flex items-center gap-2 rounded-lg bg-pink-600 px-3 py-2 text-xs font-semibold text-white hover:bg-pink-700"
                                                             >
                                                                 <PlayCircle className="h-4 w-4" /> {t("continueListening")}
                                                             </button>

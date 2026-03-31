@@ -159,7 +159,7 @@ export default function InteractiveStoriesSection() {
           </div>
           <Link
             href="/interactive"
-            className="text-base font-extrabold text-blue-600 transition-colors hover:text-blue-500"
+            className="text-base font-extrabold text-pink-600 transition-colors hover:text-pink-500"
           >
             {t("viewAll")}
           </Link>
@@ -174,7 +174,7 @@ export default function InteractiveStoriesSection() {
                 <div className="flex flex-wrap items-baseline gap-2">
                   <Link
                     href={`/story/${activeStory.slug}`}
-                    className="line-clamp-2 text-3xl font-black leading-tight text-slate-900 transition-colors hover:text-blue-700 dark:text-white dark:hover:text-blue-300"
+                    className="line-clamp-2 text-3xl font-black leading-tight text-slate-900 transition-colors hover:text-pink-700 dark:text-white dark:hover:text-pink-300"
                   >
                     {getLocalizedValue(locale, activeStory.titleVi, activeStory.titleEn, activeStory.title)}
                   </Link>
@@ -186,7 +186,7 @@ export default function InteractiveStoriesSection() {
                   {(activeStory.categories?.length ? activeStory.categories : [{ category: { id: 0, name: t("uncategorized"), slug: "uncategorized" } }]).map((item) => (
                     <span
                       key={item.category.id}
-                      className="rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                      className="rounded-full bg-pink-50 px-2.5 py-1 font-semibold text-pink-700 dark:bg-pink-900/30 dark:text-pink-300"
                     >
                       #{item.category.name}
                     </span>
@@ -209,29 +209,29 @@ export default function InteractiveStoriesSection() {
                 <div className="mb-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
                   {/* 4 Ô Thống kê đã thu nhỏ */}
                   <div className="grid grid-cols-4 gap-2 sm:gap-3 flex-1 w-full">
-                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
-                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-blue-700 dark:text-blue-300">
+                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
+                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-pink-700 dark:text-pink-300">
                         <BookOpenText className="h-3.5 w-3.5" />
                         {getChapterCount(activeStory).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
                       </p>
                       <p className="mt-1 text-center text-[10px] sm:text-xs text-slate-500">{t("chaptersLabel")}</p>
                     </div>
-                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
-                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-blue-700 dark:text-blue-300">
+                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
+                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-pink-700 dark:text-pink-300">
                         <Eye className="h-3.5 w-3.5" />
                         {Number(activeStory.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
                       </p>
                       <p className="mt-1 text-center text-[10px] sm:text-xs text-slate-500">{t("viewsLabel")}</p>
                     </div>
-                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
-                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-blue-700 dark:text-blue-300">
+                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
+                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-pink-700 dark:text-pink-300">
                         <Star className="h-3.5 w-3.5 fill-current" />
                         {formatRating(activeStory.averageRating)}
                       </p>
                       <p className="mt-1 text-center text-[10px] sm:text-xs text-slate-500">{t("ratingLabel")}</p>
                     </div>
-                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
-                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-blue-700 dark:text-blue-300">
+                    <div className="rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600 flex flex-col items-center justify-center">
+                      <p className="flex items-center justify-center gap-1.5 text-sm sm:text-base font-extrabold text-pink-700 dark:text-pink-300">
                         <GitBranch className="h-3.5 w-3.5" />
                         {getBranchCount(activeStory)}
                       </p>
@@ -242,7 +242,7 @@ export default function InteractiveStoriesSection() {
                   {/* Nút Đọc ngay */}
                   <Link
                     href={`/story/${activeStory.slug}`}
-                    className="shrink-0 inline-flex items-center justify-center rounded-2xl lg:rounded-full bg-blue-600 px-6 py-2 h-[48px] text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:bg-blue-500 whitespace-nowrap"
+                    className="shrink-0 inline-flex items-center justify-center rounded-2xl lg:rounded-full bg-pink-600 px-6 py-2 h-[48px] text-sm font-bold text-white shadow-md transition-all hover:scale-105 hover:bg-pink-500 whitespace-nowrap"
                   >
                     {t("readNow")}
                   </Link>
@@ -308,13 +308,13 @@ export default function InteractiveStoriesSection() {
             <div className="flex flex-wrap items-baseline gap-2">
               <Link
                 href={`/story/${activeStory.slug}`}
-                className="line-clamp-2 text-xl font-extrabold text-slate-900 transition-colors hover:text-blue-700 dark:text-white dark:hover:text-blue-300"
+                className="line-clamp-2 text-xl font-extrabold text-slate-900 transition-colors hover:text-pink-700 dark:text-white dark:hover:text-pink-300"
               >
                 {getLocalizedValue(locale, activeStory.titleVi, activeStory.titleEn, activeStory.title)}
               </Link>
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">- {activeStory.author?.name || tStory("authorUpdating")}</span>
             </div>
-            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">
+            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-pink-600 dark:text-pink-300">
               {activeStory.categories?.[0]?.category?.name || t("uncategorized")}
             </p>
             <p className="mt-3 line-clamp-6 text-sm leading-6 text-slate-600 dark:text-slate-300">
@@ -327,35 +327,35 @@ export default function InteractiveStoriesSection() {
             </p>
             <Link
               href={`/story/${activeStory.slug}`}
-              className="mt-4 inline-flex items-center rounded-full bg-blue-600 px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-blue-500"
+              className="mt-4 inline-flex items-center rounded-full bg-pink-600 px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-pink-500"
             >
               {t("readNow")}
             </Link>
 
             <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600">
-                <p className="flex items-center justify-center gap-1.5 font-extrabold text-blue-700 dark:text-blue-300">
+              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600">
+                <p className="flex items-center justify-center gap-1.5 font-extrabold text-pink-700 dark:text-pink-300">
                   <BookOpenText className="h-3.5 w-3.5" />
                   {getChapterCount(activeStory).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
                 </p>
                 <p className="mt-1 text-center text-slate-500">{t("chaptersLabel")}</p>
               </div>
-              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600">
-                <p className="flex items-center justify-center gap-1.5 font-extrabold text-blue-700 dark:text-blue-300">
+              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600">
+                <p className="flex items-center justify-center gap-1.5 font-extrabold text-pink-700 dark:text-pink-300">
                   <Eye className="h-3.5 w-3.5" />
                   {Number(activeStory.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
                 </p>
                 <p className="mt-1 text-center text-slate-500">{t("viewsLabel")}</p>
               </div>
-              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600">
-                <p className="flex items-center justify-center gap-1.5 font-extrabold text-blue-700 dark:text-blue-300">
+              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600">
+                <p className="flex items-center justify-center gap-1.5 font-extrabold text-pink-700 dark:text-pink-300">
                   <Star className="h-3.5 w-3.5 fill-current" />
                   {formatRating(activeStory.averageRating)}
                 </p>
                 <p className="mt-1 text-center text-slate-500">{t("ratingLabel")}</p>
               </div>
-              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-blue-200 dark:bg-slate-800 dark:ring-slate-600">
-                <p className="flex items-center justify-center gap-1.5 font-extrabold text-blue-700 dark:text-blue-300">
+              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600">
+                <p className="flex items-center justify-center gap-1.5 font-extrabold text-pink-700 dark:text-pink-300">
                   <GitBranch className="h-3.5 w-3.5" />
                   {getBranchCount(activeStory)}
                 </p>
@@ -421,7 +421,7 @@ export default function InteractiveStoriesSection() {
                 }}
                 aria-label={`interactive-story-${index + 1}`}
                 className={`h-2.5 rounded-full transition-all ${
-                  index === activeIndex ? "w-6 bg-blue-600" : "w-2.5 bg-slate-300 dark:bg-slate-600"
+                  index === activeIndex ? "w-6 bg-pink-600" : "w-2.5 bg-slate-300 dark:bg-slate-600"
                 }`}
               />
             ))}

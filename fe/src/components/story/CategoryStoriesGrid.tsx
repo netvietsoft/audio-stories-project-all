@@ -78,7 +78,7 @@ export default function CategoryStoriesGrid({ stories, isLoading = false }: Cate
           <Link
             key={story.id}
             href={`/story/${story.slug}`}
-            className="group flex min-h-[160px] sm:min-h-[220px] gap-3 rounded-2xl p-3 transition-all duration-300 hover:-translate-y-0.5 bg-white dark:bg-slate-900 hover:shadow-lg"
+            className="group flex min-h-[160px] sm:min-h-[220px] gap-3 rounded-2xl p-3 transition-all duration-300 hover:-translate-y-0.5 bg-white dark:bg-transparent hover:shadow-lg"
           >
             <div className="relative w-[110px] sm:w-[120px] xl:w-[140px] shrink-0 overflow-hidden rounded-lg">
               <Image
@@ -91,7 +91,7 @@ export default function CategoryStoriesGrid({ stories, isLoading = false }: Cate
             </div>
 
             <div className="min-w-0 flex flex-1 flex-col">
-              <h3 className="line-clamp-2 text-sm sm:text-base font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-300 xl:text-lg">
+              <h3 className="line-clamp-2 text-sm sm:text-base font-extrabold leading-tight text-slate-900 transition-colors group-hover:text-pink-700 dark:text-white dark:group-hover:text-pink-300 xl:text-lg">
                 {title}
               </h3>
 

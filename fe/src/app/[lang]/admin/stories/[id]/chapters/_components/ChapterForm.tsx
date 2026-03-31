@@ -998,7 +998,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         </button>
                     </div>
                     <div className="flex items-center gap-2">
-                       <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest ${lang === 'vi' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
+                       <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest ${lang === 'vi' ? 'bg-pink-100 text-pink-700' : 'bg-red-100 text-red-700'}`}>
                            {lang === 'vi' ? 'Tiếng Việt' : 'English'}
                        </span>
                     </div>

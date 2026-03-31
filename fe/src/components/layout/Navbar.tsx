@@ -273,7 +273,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full overflow-x-clip bg-blue-50/90 backdrop-blur-md dark:bg-slate-900/90">
+      <header className="sticky top-0 z-50 w-full overflow-x-clip bg-pink-50/70 backdrop-blur-md dark:bg-slate-900/90">
         <div className="mx-auto w-full max-w-[1920px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
           <div className="flex h-16 min-w-0 items-center justify-between gap-2">
 
@@ -283,7 +283,7 @@ export default function Navbar() {
                 <span className="sm:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-white text-xl shadow-md">
                   N
                 </span>
-                <span className="hidden sm:inline truncate flex-shrink text-blue-600 dark:text-blue-400">Netviet Audio</span>
+                <span className="hidden sm:inline truncate flex-shrink text-pink-600 dark:text-pink-400">Netviet Audio</span>
               </Link>
 
 
@@ -322,7 +322,7 @@ export default function Navbar() {
                       <Link 
                         href="/stories" 
                         onClick={() => setIsCategoryOpen(false)}
-                        className="block px-4 py-2 text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="block px-4 py-2 text-pink-600 dark:text-pink-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         {t("viewAll")} &rarr;
                       </Link>
@@ -392,7 +392,7 @@ export default function Navbar() {
                     }}
                     placeholder={t("searchPlaceholder")}
                     autoFocus
-                    className="w-full pl-9 pr-9 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none transition-all"
+                    className="w-full pl-9 pr-9 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-pink-500 text-sm outline-none transition-all"
                   />
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   
@@ -412,7 +412,7 @@ export default function Navbar() {
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-[100] max-h-[60vh] overflow-y-auto">
                       {isSearching ? (
                         <div className="px-4 py-8 text-center">
-                          <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-blue-600 border-r-transparent"></div>
+                          <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-pink-600 border-r-transparent"></div>
                           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Đang tìm kiếm...</p>
                         </div>
                       ) : searchResults.length > 0 ? (
@@ -448,7 +448,7 @@ export default function Navbar() {
                               setSearchQuery("");
                               setIsMobileSearchOpen(false);
                             }}
-                            className="block px-4 py-3 text-center text-sm text-blue-600 dark:text-blue-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
+                            className="block px-4 py-3 text-center text-sm text-pink-600 dark:text-pink-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
                           >
                             Xem tất cả kết quả
                           </Link>
@@ -475,7 +475,7 @@ export default function Navbar() {
                     if (searchResults.length > 0) setShowSearchDropdown(true);
                   }}
                   placeholder={t("searchPlaceholder")}
-                  className="w-full pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-blue-500 text-sm outline-none transition-all"
+                  className="w-full pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-pink-500 text-sm outline-none transition-all"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
 
@@ -484,7 +484,7 @@ export default function Navbar() {
                   <div className="absolute top-full left-0 mt-2 w-full max-w-[90vw] md:min-w-[320px] lg:min-w-[400px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-[100] max-h-[500px] overflow-y-auto">
                     {isSearching ? (
                       <div className="px-4 py-8 text-center">
-                        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-blue-600 border-r-transparent"></div>
+                        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-pink-600 border-r-transparent"></div>
                         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Đang tìm kiếm...</p>
                       </div>
                     ) : searchResults.length > 0 ? (
@@ -516,7 +516,7 @@ export default function Navbar() {
                             setShowSearchDropdown(false);
                             setSearchQuery("");
                           }}
-                          className="block px-4 py-3 text-center text-sm text-blue-600 dark:text-blue-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
+                          className="block px-4 py-3 text-center text-sm text-pink-600 dark:text-pink-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
                         >
                           Xem tất cả kết quả
                         </Link>
@@ -568,7 +568,7 @@ export default function Navbar() {
                         setIsLangOpen(false);
                       }}
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                        currentLang === "vi" ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-700 dark:text-gray-200"
+                        currentLang === "vi" ? "text-pink-600 dark:text-pink-400 font-semibold" : "text-gray-700 dark:text-gray-200"
                       }`}
                     >
                       Tiếng Việt
@@ -579,7 +579,7 @@ export default function Navbar() {
                         setIsLangOpen(false);
                       }}
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                        currentLang === "en" ? "text-blue-600 dark:text-blue-400 font-semibold" : "text-gray-700 dark:text-gray-200"
+                        currentLang === "en" ? "text-pink-600 dark:text-pink-400 font-semibold" : "text-gray-700 dark:text-gray-200"
                       }`}
                     >
                       English
@@ -626,11 +626,11 @@ export default function Navbar() {
                             onClick={() => void markRead(item.id)}
                             className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors relative ${item.isRead
                                 ? "bg-white dark:bg-gray-800"
-                                : "bg-blue-50 dark:bg-blue-900/20"
+                                : "bg-pink-50 dark:bg-pink-900/20"
                               }`}
                           >
                             {!item.isRead && (
-                              <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 bg-blue-500 rounded-full"></span>
+                              <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 bg-pink-500 rounded-full"></span>
                             )}
                             <div className={item.isRead ? "ml-0" : "ml-4"}>
                               <p className={`font-semibold ${item.isRead ? "text-gray-600 dark:text-gray-400" : "text-gray-900 dark:text-gray-100"}`}>
@@ -658,7 +658,7 @@ export default function Navbar() {
                       </div>
                       <Link
                         href={`/${locale}/notifications`}
-                        className="block px-4 py-3 text-center text-sm text-blue-600 dark:text-blue-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
+                        className="block px-4 py-3 text-center text-sm text-pink-600 dark:text-pink-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
                       >
                         {t("viewAllNotifications")}
                       </Link>
@@ -777,7 +777,7 @@ export default function Navbar() {
                   <img 
                     src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} 
                     alt="Avatar" 
-                    className="h-12 w-12 rounded-full border-2 border-blue-500 object-cover" 
+                    className="h-12 w-12 rounded-full border-2 border-pink-500 object-cover" 
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 dark:text-white truncate text-sm">{user.name || user.email}</p>

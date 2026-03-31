@@ -340,7 +340,7 @@ export default function GlobalPlayer() {
           </button>
           <button
             onClick={() => togglePlay(!isPlaying)}
-            className="rounded-full bg-blue-600 p-2.5 text-white hover:bg-blue-700"
+            className="rounded-full bg-pink-600 p-2.5 text-white hover:bg-pink-700"
           >
             {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </button>
@@ -362,7 +362,7 @@ export default function GlobalPlayer() {
           </button>
           <button
             onClick={() => togglePlay(!isPlaying)}
-            className="rounded-full bg-blue-600 p-2.5 text-white hover:bg-blue-700"
+            className="rounded-full bg-pink-600 p-2.5 text-white hover:bg-pink-700"
           >
             {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </button>
@@ -380,7 +380,7 @@ export default function GlobalPlayer() {
             step={1}
             value={Math.min(currentTime, duration || 0)}
             onChange={(event) => seekTo(Number(event.target.value))}
-            className="w-full accent-blue-600"
+            className="w-full accent-pink-600"
             aria-label={t("audioProgress")}
           />
           <span className="text-xs text-gray-500 dark:text-gray-400">{formatDuration(duration)}</span>
@@ -407,7 +407,7 @@ export default function GlobalPlayer() {
             step={0.01}
             value={volume}
             onChange={(event) => setVolume(Number(event.target.value))}
-            className="hidden w-20 accent-blue-600 md:block"
+            className="hidden w-20 accent-pink-600 md:block"
             aria-label={t("volume")}
           />
           <button
@@ -434,7 +434,7 @@ export default function GlobalPlayer() {
               step={1}
               value={Math.min(currentTime, duration || 0)}
               onChange={(event) => seekTo(Number(event.target.value))}
-              className="w-full accent-blue-600"
+              className="w-full accent-pink-600"
               aria-label={t("audioProgress")}
             />
             <span className="text-[11px] text-gray-500 dark:text-gray-400">{formatDuration(duration)}</span>
@@ -455,7 +455,7 @@ export default function GlobalPlayer() {
                 step={0.01}
                 value={volume}
                 onChange={(event) => setVolume(Number(event.target.value))}
-                className="w-24 accent-blue-600"
+                className="w-24 accent-pink-600"
                 aria-label={t("volume")}
               />
               <button
@@ -482,8 +482,9 @@ export default function GlobalPlayer() {
       ) : null}
 
       <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800 md:hidden">
-        <div className="h-full bg-blue-600 transition-all" style={{ width: `${progress}%` }} />
+        <div className="h-full bg-pink-600 transition-all" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );
 }
+

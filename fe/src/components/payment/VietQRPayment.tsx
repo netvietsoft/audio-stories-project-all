@@ -212,9 +212,9 @@ export default function VietQRPayment({
 
       {/* Status */}
       {status === 'checking' && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 flex items-center gap-3">
-          <Loader2 className="w-5 h-5 text-blue-600 dark:text-blue-400 animate-spin" />
-          <p className="text-sm font-bold text-blue-900 dark:text-blue-300">{t("checkingPayment")}</p>
+        <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-xl p-4 flex items-center gap-3">
+          <Loader2 className="w-5 h-5 text-pink-600 dark:text-pink-400 animate-spin" />
+          <p className="text-sm font-bold text-pink-900 dark:text-pink-300">{t("checkingPayment")}</p>
         </div>
       )}
 
@@ -262,3 +262,4 @@ export default function VietQRPayment({
     </div>
   );
 }
+

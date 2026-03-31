@@ -30,7 +30,7 @@ export default function LanguageSwitcher() {
         onClick={() => switchLocale("vi")}
         className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
           currentLang === "vi"
-            ? "bg-blue-600 text-white"
+            ? "bg-pink-600 text-white"
             : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
         }`}
         type="button"
@@ -41,7 +41,7 @@ export default function LanguageSwitcher() {
         onClick={() => switchLocale("en")}
         className={`rounded-full px-2 py-1 text-xs font-semibold transition ${
           currentLang === "en"
-            ? "bg-blue-600 text-white"
+            ? "bg-pink-600 text-white"
             : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
         }`}
         type="button"
@@ -51,3 +51,4 @@ export default function LanguageSwitcher() {
     </div>
   );
 }
+

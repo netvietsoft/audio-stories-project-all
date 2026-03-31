@@ -617,7 +617,7 @@ export default function StoryReader({
           <button
             type="button"
             onClick={onUnlockRequest}
-            className="mt-3 rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
+            className="mt-3 rounded-md bg-pink-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-pink-700"
           >
             Mở khóa ngay
           </button>
@@ -773,7 +773,7 @@ export default function StoryReader({
                                   [paragraph.id]: comment.id,
                                 }))
                               }
-                              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-300 dark:hover:bg-blue-900/20"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-pink-300 text-pink-600 hover:bg-pink-50 dark:border-pink-800 dark:text-pink-300 dark:hover:bg-pink-900/20"
                               aria-label="Trả lời"
                               title="Trả lời"
                             >
@@ -822,7 +822,7 @@ export default function StoryReader({
                           {(comment.repliesCount || 0) > (comment.replies?.length || 0) ? (
                             <button
                               onClick={() => void loadMoreReplies(comment.id, paragraph.id)}
-                              className="mt-2 ml-10 text-[11px] font-semibold text-blue-600 hover:underline"
+                              className="mt-2 ml-10 text-[11px] font-semibold text-pink-600 hover:underline"
                             >
                               Xem thêm phản hồi
                             </button>
@@ -836,7 +836,7 @@ export default function StoryReader({
 
                   <div className="mt-3 flex gap-2">
                     {replyTargetByParagraph[paragraph.id] ? (
-                      <div className="absolute -mt-7 rounded-md bg-blue-50 px-2 py-1 text-[11px] text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                      <div className="absolute -mt-7 rounded-md bg-pink-50 px-2 py-1 text-[11px] text-pink-700 dark:bg-pink-900/20 dark:text-pink-300">
                         Đang trả lời bình luận.
                         <button
                           onClick={() =>
@@ -871,12 +871,12 @@ export default function StoryReader({
                         }
                       }}
                       placeholder={user ? "Viết bình luận cho đoạn này..." : "Đăng nhập để bình luận..."}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-pink-500 dark:border-gray-700 dark:bg-gray-800"
                     />
                     <button
                       onClick={() => void submitParagraphComment(paragraph)}
                       disabled={isSubmittingParagraph}
-                      className="rounded-md bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+                      className="rounded-md bg-pink-600 px-3 py-2 text-white hover:bg-pink-700 disabled:opacity-50"
                       aria-label="Gửi bình luận"
                     >
                       <Send className="h-4 w-4" />
@@ -912,10 +912,10 @@ export default function StoryReader({
                     <img src={item.ad.imageUrl} alt={item.ad.title} className="h-full w-full object-cover" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">{item.ad.partnerName}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-pink-600 dark:text-pink-300">{item.ad.partnerName}</p>
                     <h3 className="mt-1 line-clamp-2 text-sm font-bold text-gray-900 dark:text-gray-100">{item.ad.title}</h3>
                     <div className="mt-2">
-                      <span className="inline-flex items-center rounded-full bg-blue-600 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-white transition group-hover:bg-blue-700">
+                      <span className="inline-flex items-center rounded-full bg-pink-600 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-white transition group-hover:bg-pink-700">
                         {locale === 'en' ? 'Shop now' : 'Mua ngay'}
                       </span>
                     </div>
@@ -974,4 +974,5 @@ export default function StoryReader({
     </>
   );
 }
+
 

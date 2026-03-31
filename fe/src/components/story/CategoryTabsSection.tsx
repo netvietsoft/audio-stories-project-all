@@ -65,7 +65,7 @@ export default function CategoryTabsSection({ tabs, isLoading = false }: Categor
           <p className="text-sm text-slate-500 dark:text-slate-400">{t("categoryTabsSubtitle")}</p>
         </div>
         {activeItem ? (
-          <Link href={activeItem.href} className="shrink-0 text-sm font-semibold text-blue-600 hover:underline dark:text-blue-400">
+          <Link href={activeItem.href} className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
             {t("viewAll")}
           </Link>
         ) : null}
@@ -82,7 +82,7 @@ export default function CategoryTabsSection({ tabs, isLoading = false }: Categor
                 onClick={() => setActiveTab(tab.key)}
                 className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
                   isActive
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200"
+                    ? "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-200"
                     : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
                 }`}
               >

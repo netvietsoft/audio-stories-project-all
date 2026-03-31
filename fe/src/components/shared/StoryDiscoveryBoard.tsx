@@ -152,7 +152,7 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
         <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-[40%_1fr]">
 
           {/* Left: Top 1 Featured Story */}
-          <div className="flex h-full flex-col gap-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 p-5">
+          <div className="flex h-full flex-col gap-4 rounded-2xl bg-slate-50 dark:bg-transparent p-5">
             {topStory ? (
               <>
                 {/* Thumbnail */}
@@ -172,7 +172,7 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
                 {/* Content */}
                 <div className="flex flex-[0.3] flex-col items-center text-center justify-center w-[70%] mx-auto">
                   <Link href={`/story/${topStory.slug}`}>
-                    <h4 className="line-clamp-2 text-xl font-extrabold leading-tight text-gray-900 hover:text-blue-600 dark:text-white dark:hover:text-blue-400">
+                    <h4 className="line-clamp-2 text-xl font-extrabold leading-tight text-gray-900 hover:text-pink-600 dark:text-white dark:hover:text-pink-400">
                       {getLocalizedValue(lang, topStory.titleVi, topStory.titleEn, topStory.title)}
                     </h4>
                   </Link>

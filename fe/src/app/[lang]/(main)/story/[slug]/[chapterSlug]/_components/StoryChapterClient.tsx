@@ -1231,14 +1231,14 @@ export default function StoryChapterClient() {
   if (!selectedChapter) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-10">
-        <div className="rounded-3xl border border-blue-200 bg-blue-50/80 p-6 text-blue-900 dark:border-blue-900/40 dark:bg-blue-950/20 dark:text-blue-100">
+        <div className="rounded-3xl border border-pink-200 bg-pink-50/80 p-6 text-pink-900 dark:border-pink-900/40 dark:bg-pink-950/20 dark:text-pink-100">
           <h1 className="text-2xl font-bold">{story.title}</h1>
           <p className="mt-3 text-sm leading-7">{translationPendingMessage}</p>
           <div className="mt-5 flex flex-wrap gap-3">
             <StoryUpdateSubscriptionButton storyId={story.id} />
             <Link
               href={`/story/${story.slug}`}
-              className="inline-flex items-center justify-center rounded-full border border-blue-300 px-5 py-2.5 text-sm font-semibold text-blue-800 hover:bg-blue-100 dark:border-blue-800 dark:text-blue-100 dark:hover:bg-blue-900/40"
+              className="inline-flex items-center justify-center rounded-full border border-pink-300 px-5 py-2.5 text-sm font-semibold text-pink-800 hover:bg-pink-100 dark:border-pink-800 dark:text-pink-100 dark:hover:bg-pink-900/40"
             >
               {t("backToStory")}
             </Link>
@@ -1406,7 +1406,7 @@ export default function StoryChapterClient() {
 
               <button
                 onClick={() => setIsChapterMenuOpen((prev) => !prev)}
-                className="flex w-full items-center justify-between rounded-lg border border-blue-300 px-3 py-2 text-left hover:bg-blue-50 dark:border-blue-700 dark:hover:bg-blue-900/30"
+                className="flex w-full items-center justify-between rounded-lg border border-pink-300 px-3 py-2 text-left hover:bg-pink-50 dark:border-pink-700 dark:hover:bg-pink-900/30"
               >
                 <div className="min-w-0">
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">{selectedChapterTitle}</p>
@@ -1431,7 +1431,7 @@ export default function StoryChapterClient() {
                     value={chapterQuery}
                     onChange={(event) => setChapterQuery(event.target.value)}
                     placeholder={t("searchChapterPlaceholder")}
-                    className="mb-2 w-full rounded-md bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    className="mb-2 w-full rounded-md bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-pink-500 dark:bg-gray-700 dark:text-white"
                   />
                   <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
                     {/* Branch navigation option */}
@@ -1466,7 +1466,7 @@ export default function StoryChapterClient() {
                           key={chapter.id}
                           onClick={() => goToChapter(chapter, true)}
                           className={`w-full rounded-md px-2 py-2 text-left text-xs transition ${isCurrent
-                            ? "bg-blue-600 text-white"
+                            ? "bg-pink-600 text-white"
                             : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
                             }`}
                         >
@@ -1485,7 +1485,7 @@ export default function StoryChapterClient() {
 
               <div className="mt-4 grid gap-3 md:grid-cols-[120px_minmax(0,1fr)] lg:grid-cols-[136px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
                 <div className="flex flex-col items-center justify-center gap-3">
-                  <div className={`relative h-24 w-24 overflow-hidden rounded-full border-4 border-blue-200 dark:border-blue-900 lg:h-28 lg:w-28 ${isSelectedChapterPlaying ? "animate-spin [animation-duration:10s]" : ""}`}>
+                  <div className={`relative h-24 w-24 overflow-hidden rounded-full border-4 border-pink-200 dark:border-pink-900 lg:h-28 lg:w-28 ${isSelectedChapterPlaying ? "animate-spin [animation-duration:10s]" : ""}`}>
                     <img
                       src={playerCoverUrl}
                       alt={story.title}
@@ -1512,7 +1512,7 @@ export default function StoryChapterClient() {
                       if (!canSeekSelectedChapter) return;
                       seekTo(Number(event.target.value));
                     }}
-                    className="w-full accent-blue-600 h-2.5 sm:h-2"
+                    className="w-full accent-pink-600 h-2.5 sm:h-2"
                     style={{
                       WebkitAppearance: 'none',
                       appearance: 'none',
@@ -1601,7 +1601,7 @@ export default function StoryChapterClient() {
                         togglePlay(!isSelectedChapterPlaying);
                       }}
                       disabled={!hasPlayableAudio}
-                      className="rounded-full bg-blue-600 p-3 text-white shadow-lg transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+                      className="rounded-full bg-pink-600 p-3 text-white shadow-lg transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-gray-400"
                     >
                       {isSelectedChapterPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                     </button>
@@ -1628,7 +1628,7 @@ export default function StoryChapterClient() {
                       step={0.01}
                       value={volume}
                       onChange={(event) => setVolume(Number(event.target.value))}
-                      className="volume-slider w-12 sm:w-16 accent-blue-600 h-1.5"
+                      className="volume-slider w-12 sm:w-16 accent-pink-600 h-1.5"
                       style={{
                         WebkitAppearance: 'none',
                         appearance: 'none',
@@ -1642,7 +1642,7 @@ export default function StoryChapterClient() {
 
                     <button
                       onClick={() => setIsShuffle((prev) => !prev)}
-                      className={`rounded-full border p-2 ${isShuffle ? "border-blue-500 text-blue-600" : "border-gray-300 text-gray-500"}`}
+                      className={`rounded-full border p-2 ${isShuffle ? "border-pink-500 text-pink-600" : "border-gray-300 text-gray-500"}`}
                     >
                       <Shuffle className="h-4 w-4" />
                     </button>
@@ -1655,7 +1655,7 @@ export default function StoryChapterClient() {
                           return "off";
                         })
                       }
-                      className={`rounded-full border p-2 ${repeatMode !== "off" ? "border-blue-500 text-blue-600" : "border-gray-300 text-gray-500"}`}
+                      className={`rounded-full border p-2 ${repeatMode !== "off" ? "border-pink-500 text-pink-600" : "border-gray-300 text-gray-500"}`}
                     >
                       {repeatMode === "one" ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}
                     </button>
@@ -1679,7 +1679,7 @@ export default function StoryChapterClient() {
                         <button
                           key={rate}
                           onClick={() => setPlaybackRate(rate)}
-                          className={`rounded-md px-2 py-1 text-xs ${playbackRate === rate ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200"}`}
+                          className={`rounded-md px-2 py-1 text-xs ${playbackRate === rate ? "bg-pink-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200"}`}
                         >
                           {rate}x
                         </button>
@@ -1716,14 +1716,14 @@ export default function StoryChapterClient() {
                           const value = Number(customMinutes);
                           if (value > 0) setSleepTimer(value);
                         }}
-                        className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white"
+                        className="rounded-md bg-pink-600 px-3 py-1 text-xs font-medium text-white"
                       >
                         {t("setTimer")}
                       </button>
                     </div>
 
                     {sleepMinutesLeft ? (
-                      <p className="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-300">
+                      <p className="mt-2 inline-flex items-center gap-1 text-xs text-pink-600 dark:text-pink-300">
                         <Timer className="h-3.5 w-3.5" /> {t("sleepTimerActive", { minutes: sleepMinutesLeft })}
                       </p>
                     ) : null}
@@ -1742,7 +1742,7 @@ export default function StoryChapterClient() {
                   <p className="mt-1">{lockReasonLabel}</p>
                   <button
                     onClick={openUnlockModal}
-                    className="mt-3 rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
+                    className="mt-3 rounded-md bg-pink-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-pink-700"
                   >
                     {t("unlockYoutube")}
                   </button>
@@ -1815,12 +1815,12 @@ export default function StoryChapterClient() {
                           // Define color schemes for each variant (always visible)
                           const colorSchemes = [
                             { // Blue
-                              base: "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/30",
-                              hover: "hover:bg-blue-100 dark:hover:bg-blue-900/50",
-                              selected: "border-blue-400 bg-blue-100 dark:border-blue-600 dark:bg-blue-900/60 ring-2 ring-blue-300/50",
-                              text: "text-blue-900 dark:text-blue-100",
-                              textNormal: "text-blue-800 dark:text-blue-200",
-                              icon: "text-blue-600 dark:text-blue-400"
+                              base: "border-pink-300 bg-pink-50 dark:border-pink-700 dark:bg-pink-900/30",
+                              hover: "hover:bg-pink-100 dark:hover:bg-pink-900/50",
+                              selected: "border-pink-400 bg-pink-100 dark:border-pink-600 dark:bg-pink-900/60 ring-2 ring-pink-300/50",
+                              text: "text-pink-900 dark:text-pink-100",
+                              textNormal: "text-pink-800 dark:text-pink-200",
+                              icon: "text-pink-600 dark:text-pink-400"
                             },
                             { // Pink/Rose
                               base: "border-pink-300 bg-pink-50 dark:border-pink-700 dark:bg-pink-900/30",
@@ -1927,7 +1927,7 @@ export default function StoryChapterClient() {
                             const rootVariants = variants.filter(v => !v.parentId);
                             const variantIndex = rootVariants.findIndex(v => v.id === currentV.id);
                             const rootColors = [
-                              { bg: "bg-blue-50 dark:bg-blue-900/30", border: "border-blue-200 dark:border-blue-800" },
+                              { bg: "bg-pink-50 dark:bg-pink-900/30", border: "border-pink-200 dark:border-pink-800" },
                               { bg: "bg-pink-50 dark:bg-pink-900/30", border: "border-pink-200 dark:border-pink-800" },
                               { bg: "bg-amber-50 dark:bg-amber-900/30", border: "border-amber-200 dark:border-amber-800" }
                             ];
@@ -2278,7 +2278,7 @@ export default function StoryChapterClient() {
                     value={reviewDraft}
                     onChange={(event) => setReviewDraft(event.target.value)}
                     placeholder={t("shareThoughts")}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm outline-none focus:border-pink-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                     rows={3}
                   />
                   <button
@@ -2309,7 +2309,7 @@ export default function StoryChapterClient() {
                 <button
                   onClick={() => void submitReview()}
                   disabled={isSubmittingReview}
-                  className="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="mt-3 rounded-lg bg-pink-600 px-4 py-2 text-sm font-semibold text-white hover:bg-pink-700 disabled:opacity-50"
                 >
                   {t("submitReview")}
                 </button>
@@ -2325,7 +2325,7 @@ export default function StoryChapterClient() {
               <button
                 onClick={() => setReviewSort("newest")}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium ${reviewSort === "newest"
-                  ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-200"
+                  ? "border-pink-500 bg-pink-50 text-pink-700 dark:border-pink-400 dark:bg-pink-900/30 dark:text-pink-200"
                   : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
                   }`}
               >
@@ -2334,7 +2334,7 @@ export default function StoryChapterClient() {
               <button
                 onClick={() => setReviewSort("helpful")}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium ${reviewSort === "helpful"
-                  ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-200"
+                  ? "border-pink-500 bg-pink-50 text-pink-700 dark:border-pink-400 dark:bg-pink-900/30 dark:text-pink-200"
                   : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
                   }`}
               >
@@ -2343,7 +2343,7 @@ export default function StoryChapterClient() {
               <button
                 onClick={() => setReviewSort("highest")}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium ${reviewSort === "highest"
-                  ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-200"
+                  ? "border-pink-500 bg-pink-50 text-pink-700 dark:border-pink-400 dark:bg-pink-900/30 dark:text-pink-200"
                   : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
                   }`}
               >
@@ -2421,13 +2421,13 @@ export default function StoryChapterClient() {
                             [review.id]: event.target.value,
                           }))
                         }
-                        className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs outline-none focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                        className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs outline-none focus:border-pink-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                         placeholder={t("reviewReplyPlaceholder")}
                       />
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => void submitReviewReply(review.id)}
-                          className="rounded-md bg-blue-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-700"
+                          className="rounded-md bg-pink-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-pink-700"
                         >
                           {t("send")}
                         </button>
@@ -2535,7 +2535,7 @@ export default function StoryChapterClient() {
                     <button
                       disabled={isUnlocking}
                       onClick={pendingVariantId ? handleUnlockVariant : handleBuyVip}
-                      className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                      className="rounded-md bg-pink-600 px-3 py-2 text-sm font-semibold text-white hover:bg-pink-700 disabled:opacity-50"
                     >
                       {isUnlocking ? "..." : (pendingVariantId ? t("unlockNow") : t("buyVip"))}
                     </button>

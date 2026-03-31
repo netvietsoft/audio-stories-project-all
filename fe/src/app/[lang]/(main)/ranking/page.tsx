@@ -70,7 +70,7 @@ export default function RankingPage() {
     { value: "gifts", label: t("tabGifts"), icon: Gift, color: "text-rose-500", bg: "bg-rose-50 dark:bg-rose-900/20" },
     { value: "rating", label: t("tabRating"), icon: Star, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-900/20" },
     { value: "favorites", label: t("tabFavorites"), icon: Heart, color: "text-pink-500", bg: "bg-pink-50 dark:bg-pink-900/20" },
-    { value: "views", label: t("tabViews"), icon: Eye, color: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20" },
+    { value: "views", label: t("tabViews"), icon: Eye, color: "text-pink-500", bg: "bg-pink-50 dark:bg-pink-900/20" },
     { value: "latest", label: t("tabLatest"), icon: Zap, color: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
   ];
 
@@ -308,7 +308,7 @@ function RankingListRow({ story, rank, sortBy }: { story: StoryItem, rank: numbe
       case "gifts": return { icon: Gift, value: story.totalGifts || 0, label: "gifts", color: "text-rose-500" };
       case "rating": return { icon: Star, value: story.averageRating || 0, label: "★", color: "text-amber-500" };
       case "favorites": return { icon: Heart, value: story.favoritesCount || 0, label: "favs", color: "text-pink-500" };
-      case "views": return { icon: Eye, value: story.totalViews || 0, label: "views", color: "text-blue-500" };
+      case "views": return { icon: Eye, value: story.totalViews || 0, label: "views", color: "text-pink-500" };
       default: return null;
     }
   };
@@ -318,10 +318,10 @@ function RankingListRow({ story, rank, sortBy }: { story: StoryItem, rank: numbe
   return (
     <Link
       href={`/story/${story.slug}`}
-      className="group flex items-center gap-4 p-4 rounded-3xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-blue-500/30 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
+      className="group flex items-center gap-4 p-4 rounded-3xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-pink-500/30 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
     >
       {/* Rank Number */}
-      <div className="w-10 text-center font-black text-xl italic text-slate-300 dark:text-slate-700 group-hover:text-blue-500 transition-colors">
+      <div className="w-10 text-center font-black text-xl italic text-slate-300 dark:text-slate-700 group-hover:text-pink-500 transition-colors">
         {rank}
       </div>
 
@@ -336,7 +336,7 @@ function RankingListRow({ story, rank, sortBy }: { story: StoryItem, rank: numbe
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-blue-600 transition-colors">
+        <h3 className="font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-pink-600 transition-colors">
           {story.title}
         </h3>
         <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1 italic">

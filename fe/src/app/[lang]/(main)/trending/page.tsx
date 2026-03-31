@@ -74,7 +74,7 @@ export default function TrendingPage() {
             }}
             className={`rounded-full px-4 py-2 text-sm font-semibold ${
               trendWindow === item.value
-                ? "bg-blue-600 text-white"
+                ? "bg-pink-600 text-white"
                 : "border border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-200"
             }`}
           >

@@ -1252,7 +1252,9 @@ export default function StoryChapterClient() {
     <div className="w-full space-y-3 md:space-y-4">
         <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px] lg:items-start">
           {/* Story Info */}
-          <section className="rounded-2xl bg-white p-1 sm:p-2 md:p-3 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
+          <div className="-mx-4 md:mx-0 bg-white md:bg-transparent">
+            <div className="px-4 md:px-0 lg:px-0">
+              <section className="rounded-2xl bg-transparent sm:bg-white sm:dark:bg-gray-900 p-1 sm:p-2 md:p-3 lg:bg-white lg:dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
 
             <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
@@ -1273,7 +1275,7 @@ export default function StoryChapterClient() {
                 <p className="font-medium text-gray-900 dark:text-white">{formatDate(story.updatedAt, locale, t("updating"))}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("listens", { count: "" })}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("listensLabel")}</p>
                 <p className="font-medium text-gray-900 dark:text-white inline-flex items-center gap-1">
                   <Headphones className="h-4 w-4" />
                   {Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
@@ -1284,23 +1286,25 @@ export default function StoryChapterClient() {
             <div className="mt-1 flex items-center gap-2 md:gap-3">
               <FavoriteButton
                 storyId={story.id}
-                size="sm"
+                size="md"
                 label={t("favorite")}
                 labelClassName="hidden md:inline"
-                className="px-3 py-2 text-sm font-medium border shadow-sm"
-                activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
-                inactiveClassName="border-gray-300 bg-white text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                className="px-3 py-2 text-sm font-medium"
+                activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600 transform transition hover:-translate-y-0.5 shadow-sm"
+                inactiveClassName="border-gray-200 bg-gray-100 text-gray-700 hover:bg-white transform transition hover:-translate-y-0.5 shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
               />
 
               <StoryUpdateSubscriptionButton 
                 storyId={story.id} 
-                className="px-3 py-2 md:px-6 md:py-2.5"
+                className="px-3 py-2 text-sm font-medium"
                 labelClassName="hidden md:inline"
+                activeClassName="border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 transform transition hover:-translate-y-0.5 shadow-sm"
+                inactiveClassName="border-gray-200 bg-gray-100 text-gray-700 hover:bg-white transform transition hover:-translate-y-0.5 shadow-sm dark:bg-gray-800 dark:border-gray-700"
               />
 
               <button
                 onClick={onShare}
-                className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-white transform transition hover:-translate-y-0.5 shadow-sm dark:bg-gray-800 dark:hover:bg-gray-700"
                 aria-label={t("share")}
               >
                 <Share2 className="h-4 w-4" />
@@ -1308,7 +1312,9 @@ export default function StoryChapterClient() {
               </button>
             </div>
             
-          </section>
+              </section>
+            </div>
+          </div>
 
           {/* Chapter Introduction */}
           <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-4 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-2">
@@ -1378,7 +1384,9 @@ export default function StoryChapterClient() {
 
 
             {/* Side Panel 1: Chapter List */}
-            <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-4 dark:bg-gray-900">
+            <div className="-mx-4 md:mx-0 bg-gray-200 md:bg-transparent lg:bg-transparent">
+              <div className="px-4 md:px-0">
+                <section className="rounded-2xl bg-gray-200 p-2 sm:p-3 md:p-4 dark:bg-gray-900">
               <h2 className="mb-3 flex items-center justify-between text-base font-semibold text-gray-900 dark:text-gray-100">
                 <span className="inline-flex items-center gap-2"><ListMusic className="h-4 w-4" /> {t("currentChapter")}
                 </span>
@@ -1458,10 +1466,14 @@ export default function StoryChapterClient() {
                   </div>
                 </div>
               ) : null}
-            </section>
+                </section>
+              </div>
+            </div>
 
             {/* Side Panel 2: Audio Player */}
-            <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-4 dark:bg-gray-900">
+            <div className="-mx-4 md:mx-0 bg-gray-200 md:bg-transparent lg:bg-transparent">
+              <div className="px-4 md:px-0">
+                <section className="rounded-2xl bg-gray-200 p-2 sm:p-3 md:p-4 dark:bg-gray-900">
               <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("audioPlayer")}</h2>
 
               <div className="mt-4 grid gap-2 md:grid-cols-[100px_minmax(0,1fr)] lg:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
@@ -1711,7 +1723,9 @@ export default function StoryChapterClient() {
                   </div>
                 ) : null}
               </div>
-            </section>
+                </section>
+              </div>
+            </div>
 
             {/* Side Panel 3: YouTube Player */}
             {selectedChapter.youtubeVideoId ? (

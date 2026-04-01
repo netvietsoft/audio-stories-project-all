@@ -508,6 +508,9 @@ export default function StoryChapterClient() {
     return () => clearInterval(timer);
   }, [sleepMinutesLeft]);
 
+  // COMMENTED OUT: Anti-debugging and DevTools blocking code
+  // Uncomment if you want to prevent users from opening DevTools in production
+  /*
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
 
@@ -552,6 +555,7 @@ export default function StoryChapterClient() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+  */
 
   const chapterCount = useMemo(() => story?.chapters?.length ?? 0, [story?.chapters]);
 

@@ -99,6 +99,22 @@ fi
 read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
 SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 
+# Ask if user wants to reset database
+read -p "Do you want to RESET database? (yes/no, default: no): " RESET_DB
+RESET_DB=$(echo "${RESET_DB:-no}" | tr -d '\r' | tr '[:upper:]' '[:lower:]')
+
+if [ "$RESET_DB" == "yes" ]; then
+    echo "⚠️  WARNING: This will DELETE ALL DATA in the database!"
+    read -p "Are you absolutely sure? Type 'CONFIRM' to proceed: " CONFIRM
+    CONFIRM=$(echo "$CONFIRM" | tr -d '\r')
+    if [ "$CONFIRM" != "CONFIRM" ]; then
+        echo "❌ Database reset cancelled"
+        RESET_DB="no"
+    else
+        echo "✅ Database reset confirmed"
+    fi
+fi
+
 # Server path
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
 
@@ -171,6 +187,26 @@ npm install --legacy-peer-deps
 
 echo "📦 Generating Prisma client..."
 npx prisma generate
+
+# Reset database if requested
+if [ "$RESET_DB" = "yes" ]; then
+    echo "🗑️  Resetting database..."
+    echo "  ⚠️  Dropping all tables and data..."
+    npx prisma migrate reset --force --skip-seed
+    echo "  ✅ Database reset complete"
+    
+    echo "🌱 Running migrations..."
+    npx prisma migrate deploy
+    echo "  ✅ Migrations applied"
+    
+    echo "🌱 Seeding database..."
+    npx prisma db seed
+    echo "  ✅ Database seeded"
+else
+    echo "📦 Running migrations..."
+    npx prisma migrate deploy
+    echo "  ✅ Migrations applied"
+fi
 
 echo "📦 Building application on server..."
 npm run build

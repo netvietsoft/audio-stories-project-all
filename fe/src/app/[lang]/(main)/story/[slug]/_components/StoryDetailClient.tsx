@@ -437,9 +437,9 @@ export default function StoryDetailClient() {
                   href={`/story/${recommendedStory.slug}`}
                   className="group flex flex-col gap-2"
                 >
-                  <div className="relative w-full aspect-square overflow-hidden rounded-lg shadow-md group-hover:shadow-xl transition-shadow">
+                  <div className="relative w-full overflow-hidden rounded-lg shadow-md group-hover:shadow-xl transition-shadow" style={{ aspectRatio: "2/3" }}>
                     <Image
-                      src={recommendedStory.thumbnailUrl || "https://placehold.co/300x300?text=No+Cover"}
+                      src={recommendedStory.thumbnailUrl || "https://placehold.co/200x300?text=No+Cover"}
                       alt={title}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -484,9 +484,9 @@ export default function StoryDetailClient() {
                   href={`/story/${newStory.slug}`}
                   className="group flex flex-col gap-2"
                 >
-                  <div className="relative w-full aspect-square overflow-hidden rounded-lg shadow-md group-hover:shadow-xl transition-shadow">
+                  <div className="relative w-full overflow-hidden rounded-lg shadow-md group-hover:shadow-xl transition-shadow" style={{ aspectRatio: "2/3" }}>
                     <Image
-                      src={newStory.thumbnailUrl || "https://placehold.co/300x300?text=No+Cover"}
+                      src={newStory.thumbnailUrl || "https://placehold.co/200x300?text=No+Cover"}
                       alt={title}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"

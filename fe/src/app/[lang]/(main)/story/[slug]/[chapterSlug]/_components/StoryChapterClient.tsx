@@ -508,6 +508,9 @@ export default function StoryChapterClient() {
     return () => clearInterval(timer);
   }, [sleepMinutesLeft]);
 
+  // COMMENTED OUT: Anti-debugging and DevTools blocking code
+  // Uncomment if you want to prevent users from opening DevTools in production
+  /*
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
 
@@ -552,6 +555,8 @@ export default function StoryChapterClient() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+  */
+
 
   const chapterCount = useMemo(() => story?.chapters?.length ?? 0, [story?.chapters]);
 
@@ -1384,9 +1389,9 @@ export default function StoryChapterClient() {
 
 
             {/* Side Panel 1: Chapter List */}
-            <div className="-mx-4 md:mx-0 bg-gray-200 md:bg-transparent lg:bg-transparent">
+            <div className="-mx-4 md:mx-0 md:bg-transparent lg:bg-transparent">
               <div className="px-4 md:px-0">
-                <section className="rounded-2xl bg-gray-200 p-2 sm:p-3 md:p-4 dark:bg-gray-900">
+                <section className="rounded-2xl p-2 sm:p-3 md:p-4">
               <h2 className="mb-3 flex items-center justify-between text-base font-semibold text-gray-900 dark:text-gray-100">
                 <span className="inline-flex items-center gap-2"><ListMusic className="h-4 w-4" /> {t("currentChapter")}
                 </span>
@@ -1471,9 +1476,9 @@ export default function StoryChapterClient() {
             </div>
 
             {/* Side Panel 2: Audio Player */}
-            <div className="-mx-4 md:mx-0 bg-gray-200 md:bg-transparent lg:bg-transparent">
+            <div className="-mx-4 md:mx-0 md:bg-transparent lg:bg-transparent">
               <div className="px-4 md:px-0">
-                <section className="rounded-2xl bg-gray-200 p-2 sm:p-3 md:p-4 dark:bg-gray-900">
+                <section className="rounded-2xl p-2 sm:p-3 md:p-4">
               <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("audioPlayer")}</h2>
 
               <div className="mt-4 grid gap-2 md:grid-cols-[100px_minmax(0,1fr)] lg:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">

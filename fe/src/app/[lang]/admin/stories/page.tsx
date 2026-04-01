@@ -721,7 +721,7 @@ export default function StoriesPage() {
                                                     </p>
                                                 </div>
                                                 <Link
-                                                    href={`/admin/stories/${selectedStoryForChapters.id}/chapters/${chapter.id}`}
+                                                    href={`/admin/chapters/${chapter.id}`}
                                                     className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                                                 >
                                                     <Edit2 className="w-4 h-4" />

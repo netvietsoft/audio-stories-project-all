@@ -56,7 +56,7 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
               <input
                 {...register('partnerName')}
                 placeholder="Shopee, Lazada..."
-                className="w-full rounded-2xl bg-slate-50 border border-slate-300 px-5 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
+                className="admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
               />
               {errors.partnerName ? <p className="text-xs font-bold text-red-500">{errors.partnerName.message}</p> : null}
             </div>
@@ -74,7 +74,7 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
             <input
               {...register('title')}
               placeholder="Tai nghe Bluetooth chống ồn..."
-              className="w-full rounded-2xl bg-slate-50 border border-slate-300 px-5 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
+              className="admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
             />
             {errors.title ? <p className="text-xs font-bold text-red-500">{errors.title.message}</p> : null}
           </div>
@@ -96,7 +96,7 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
             <input
               {...register('targetUrl')}
               placeholder="https://..."
-              className="w-full rounded-2xl bg-slate-50 border border-slate-300 px-5 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
+              className="admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
             />
             {errors.targetUrl ? <p className="text-xs font-bold text-red-500">{errors.targetUrl.message}</p> : null}
           </div>

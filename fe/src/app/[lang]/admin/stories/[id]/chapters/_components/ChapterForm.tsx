@@ -402,7 +402,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         value={watch(titleField) || ''}
                         onChange={(e) => handleI18nChange('title', lang, e.target.value)}
                         placeholder={lang === 'vi' ? 'Chương 1: Khởi đầu...' : 'Chapter 1: Beginning...'}
-                        className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20"
                     />
                     {lang === 'vi' && errors.titleVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleVi.message as string}</p>}
                     {lang === 'en' && errors.titleEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleEn.message as string}</p>}
@@ -415,7 +415,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         onChange={(e) => handleI18nChange('description', lang, e.target.value)}
                         rows={3}
                         placeholder={lang === 'vi' ? 'Nhập giới thiệu chương...' : 'Enter chapter description...'}
-                        className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 resize-none"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 resize-none"
                     />
                 </div>
 
@@ -520,7 +520,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         rows={8}
                         placeholder={lang === 'vi' ? 'Dán nội dung chương tiếng Việt...' : 'Paste chapter content in English...'}
                         onPaste={handleContentPaste(lang)}
-                        className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 resize-none"
+                        className="w-full bg-slate-50 border border-slate-300 rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 resize-none"
                     />
                     <p className="text-xs text-slate-500 ml-2 flex items-start gap-2">
                         <Scissors className="w-3 h-3 mt-0.5 shrink-0" />

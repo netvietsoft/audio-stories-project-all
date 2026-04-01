@@ -605,7 +605,7 @@ export default function InteractiveStoriesPage() {
           <input
             type="text"
             placeholder="Tìm kiếm truyện theo tiêu đề hoặc tác giả..."
-            className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 transition-all"
+            className="w-full bg-slate-50 border border-slate-300 rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-amber-500/20 transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -1145,7 +1145,7 @@ export default function InteractiveStoriesPage() {
                       if (e.key === 'Escape') setIsAddingVariant(false);
                     }}
                     placeholder="Nhập tiêu đề (vd: Chiến đấu, Chạy trốn...)"
-                    className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-500/20 focus:bg-white rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 transition-all outline-none"
+                    className="w-full bg-slate-50 border border-slate-300 focus:border-indigo-500/20 focus:bg-white rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 transition-all outline-none"
                   />
                 </div>
                 

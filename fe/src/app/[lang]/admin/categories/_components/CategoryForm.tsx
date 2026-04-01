@@ -70,7 +70,7 @@ export const CategoryForm = ({ initialData, onSubmit, onCancel, isLoading }: Cat
                 <input
                     {...register('name')}
                     placeholder="Nhập tên danh mục..."
-                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                 />
                 {errors.name && <p className="text-xs font-bold text-red-500 ml-2">{errors.name.message}</p>}
             </div>
@@ -80,7 +80,7 @@ export const CategoryForm = ({ initialData, onSubmit, onCancel, isLoading }: Cat
                 <input
                     {...register('slug')}
                     placeholder="ten-danh-muc-slug..."
-                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                 />
                 {errors.slug && <p className="text-xs font-bold text-red-500 ml-2">{errors.slug.message}</p>}
             </div>
@@ -92,7 +92,7 @@ export const CategoryForm = ({ initialData, onSubmit, onCancel, isLoading }: Cat
                     {...register('description')}
                     rows={3}
                     placeholder="Nhập mô tả danh mục..."
-                    className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
                 />
             </div>
 
@@ -101,7 +101,7 @@ export const CategoryForm = ({ initialData, onSubmit, onCancel, isLoading }: Cat
                 <input
                     {...register('iconUrl')}
                     placeholder="https://example.com/icon.png"
-                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                 />
             </div>
 

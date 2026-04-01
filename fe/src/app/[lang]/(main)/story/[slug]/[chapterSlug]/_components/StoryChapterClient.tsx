@@ -1249,13 +1249,13 @@ export default function StoryChapterClient() {
   }
 
   return (
-    <div className="w-full space-y-6 md:space-y-8">
+    <div className="w-full space-y-3 md:space-y-4">
         <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px] lg:items-start">
           {/* Story Info */}
-          <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
+          <section className="rounded-2xl bg-white p-1 sm:p-2 md:p-3 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
 
-            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
+            <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("author")}</p>
                 <p className="font-semibold text-gray-900 dark:text-white">{story.author?.name || t("updating")}</p>
@@ -1279,58 +1279,39 @@ export default function StoryChapterClient() {
                   {Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
                 </p>
               </div>
-              <div className="col-span-2">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("rating")}</p>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-yellow-500 text-base">{Number(story.averageRating || 0).toFixed(1)}</span>
-                  {(story.ratingCount || 0) > 0 && <span className="text-gray-500 dark:text-gray-400 text-xs">({story.ratingCount})</span>}
-                  <div className="flex items-center gap-0.5">
-                    {[1, 2, 3, 4, 5].map((starIndex) => {
-                      const rating = Number(story.averageRating || 0);
-                      const isFilled = starIndex <= Math.round(rating);
-                      return (
-                        <Star
-                          key={starIndex}
-                          className={`h-4 w-4 ${isFilled ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-gray-600"}`}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
             </div>
 
-            <div className="mt-4 flex flex-col gap-3 md:flex-row md:flex-wrap">
-              <div className="flex items-center justify-center gap-3 md:justify-start">
-                <FavoriteButton
-                  storyId={story.id}
-                  size="sm"
-                  label=""
-                  className="px-3 py-2 text-sm font-medium border shadow-sm"
-                  activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
-                  inactiveClassName="border-gray-300 bg-white text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-300"
-                />
+            <div className="mt-1 flex items-center gap-2 md:gap-3">
+              <FavoriteButton
+                storyId={story.id}
+                size="sm"
+                label={t("favorite")}
+                labelClassName="hidden md:inline"
+                className="px-3 py-2 text-sm font-medium border shadow-sm"
+                activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
+                inactiveClassName="border-gray-300 bg-white text-gray-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-red-800/60 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+              />
 
-                <StoryUpdateSubscriptionButton 
-                  storyId={story.id} 
-                  className="px-3 py-2 md:px-6 md:py-2.5"
-                  labelClassName="hidden md:inline"
-                />
+              <StoryUpdateSubscriptionButton 
+                storyId={story.id} 
+                className="px-3 py-2 md:px-6 md:py-2.5"
+                labelClassName="hidden md:inline"
+              />
 
-                <button
-                  onClick={onShare}
-                  className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                  aria-label={t("share")}
-                >
-                  <Share2 className="h-4 w-4" />
-                  <span className="hidden md:inline">{t("share")}</span>
-                </button>
-              </div>
+              <button
+                onClick={onShare}
+                className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                aria-label={t("share")}
+              >
+                <Share2 className="h-4 w-4" />
+                <span className="hidden md:inline">{t("share")}</span>
+              </button>
             </div>
+            
           </section>
 
           {/* Chapter Introduction */}
-          <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-2">
+          <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-4 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-2">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("chapterIntro")}</h2>
             <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
               {selectedChapterDescription || translationPendingMessage}
@@ -1342,7 +1323,7 @@ export default function StoryChapterClient() {
 
             {/* Side Panel 1.5: Variant Selection (Interactive Stories) - Moved Inline if hasInlineChoice */}
             {variants.length > 0 && !hasInlineChoice && (
-              <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900">
+              <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-4 dark:bg-gray-900">
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {variants.map((v) => {
@@ -1397,7 +1378,7 @@ export default function StoryChapterClient() {
 
 
             {/* Side Panel 1: Chapter List */}
-            <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900">
+            <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-4 dark:bg-gray-900">
               <h2 className="mb-3 flex items-center justify-between text-base font-semibold text-gray-900 dark:text-gray-100">
                 <span className="inline-flex items-center gap-2"><ListMusic className="h-4 w-4" /> {t("currentChapter")}
                 </span>
@@ -1480,12 +1461,12 @@ export default function StoryChapterClient() {
             </section>
 
             {/* Side Panel 2: Audio Player */}
-            <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900">
+            <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-4 dark:bg-gray-900">
               <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("audioPlayer")}</h2>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-[120px_minmax(0,1fr)] lg:grid-cols-[136px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
-                <div className="flex flex-col items-center justify-center gap-3">
-                  <div className={`relative h-24 w-24 overflow-hidden rounded-full border-4 border-pink-200 dark:border-pink-900 lg:h-28 lg:w-28 ${isSelectedChapterPlaying ? "animate-spin [animation-duration:10s]" : ""}`}>
+              <div className="mt-4 grid gap-2 md:grid-cols-[100px_minmax(0,1fr)] lg:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
+                <div className="flex flex-col shrink-0 items-center justify-center gap-2">
+                  <div className={`relative h-16 w-16 sm:h-20 sm:w-20 overflow-hidden rounded-full border-4 border-pink-200 dark:border-pink-900 lg:h-28 lg:w-28 ${isSelectedChapterPlaying ? "animate-spin [animation-duration:10s]" : ""}`}>
                     <img
                       src={playerCoverUrl}
                       alt={story.title}
@@ -1497,7 +1478,7 @@ export default function StoryChapterClient() {
                   </p>
                 </div>
 
-                <div className="min-w-0 space-y-2.5">
+                <div className="flex-1 min-w-0 space-y-2">
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {t("chapterTitle", { number: selectedChapter.chapterNumber, title: selectedChapterTitle })}
                   </p>
@@ -1574,15 +1555,15 @@ export default function StoryChapterClient() {
                     <span>{formatDuration(playerDuration)}</span>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                    <button onClick={playPrev} className="rounded-full border border-gray-300 p-2 text-gray-600">
-                      <SkipBack className="h-4 w-4" />
+                  <div className="w-full flex items-center justify-center flex-nowrap gap-1 sm:gap-2 md:gap-3">
+                    <button onClick={playPrev} className="rounded-full border border-gray-300 p-1.5 sm:p-2 text-gray-600">
+                      <SkipBack className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
 
                     <button
                       onClick={() => seekBy(-10)}
                       disabled={!canSeekSelectedChapter}
-                      className="rounded-full border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-full border border-gray-300 px-1.5 py-1 text-[11px] font-semibold text-gray-600 sm:px-2.5 sm:py-1.5 sm:text-xs whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       -10s
                     </button>
@@ -1601,26 +1582,26 @@ export default function StoryChapterClient() {
                         togglePlay(!isSelectedChapterPlaying);
                       }}
                       disabled={!hasPlayableAudio}
-                      className="rounded-full bg-pink-600 p-3 text-white shadow-lg transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+                      className="rounded-full bg-pink-600 p-2 sm:p-2.5 text-white shadow-lg transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-gray-400"
                     >
-                      {isSelectedChapterPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                      {isSelectedChapterPlaying ? <Pause className="w-4 h-4 sm:w-5 sm:h-5" /> : <Play className="w-4 h-4 sm:w-5 sm:h-5" />}
                     </button>
 
                     <button
                       onClick={() => seekBy(10)}
                       disabled={!canSeekSelectedChapter}
-                      className="rounded-full border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-full border border-gray-300 px-1.5 py-1 text-[11px] font-semibold text-gray-600 sm:px-2.5 sm:py-1.5 sm:text-xs whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       +10s
                     </button>
 
-                    <button onClick={playNext} className="rounded-full border border-gray-300 p-2 text-gray-600">
-                      <SkipForward className="h-4 w-4" />
+                    <button onClick={playNext} className="rounded-full border border-gray-300 p-1.5 sm:p-2 text-gray-600">
+                      <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                    <button onClick={() => toggleMute()} className="rounded-full border border-gray-300 p-2 text-gray-600">{isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button>
+                  <div className="flex items-center flex-nowrap justify-center gap-1 sm:gap-2 mt-1">
+                    <button onClick={() => toggleMute()} className="rounded-full border border-gray-300 p-1.5 sm:p-2 text-gray-600">{isMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}</button>
                     <input
                       type="range"
                       min={0}
@@ -1628,7 +1609,7 @@ export default function StoryChapterClient() {
                       step={0.01}
                       value={volume}
                       onChange={(event) => setVolume(Number(event.target.value))}
-                      className="volume-slider w-12 sm:w-16 accent-pink-600 h-1.5"
+                      className="volume-slider w-10 sm:w-14 md:w-20 accent-pink-600 h-1.5"
                       style={{
                         WebkitAppearance: 'none',
                         appearance: 'none',
@@ -1644,7 +1625,7 @@ export default function StoryChapterClient() {
                       onClick={() => setIsShuffle((prev) => !prev)}
                       className={`rounded-full border p-2 ${isShuffle ? "border-pink-500 text-pink-600" : "border-gray-300 text-gray-500"}`}
                     >
-                      <Shuffle className="h-4 w-4" />
+                      <Shuffle className="w-4 h-4" />
                     </button>
 
                     <button
@@ -1657,14 +1638,14 @@ export default function StoryChapterClient() {
                       }
                       className={`rounded-full border p-2 ${repeatMode !== "off" ? "border-pink-500 text-pink-600" : "border-gray-300 text-gray-500"}`}
                     >
-                      {repeatMode === "one" ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}
+                      {repeatMode === "one" ? <Repeat1 className="w-4 h-4" /> : <Repeat className="w-4 h-4" />}
                     </button>
 
                     <button
                       onClick={() => setShowSettings((prev) => !prev)}
                       className="rounded-full bg-gray-100 p-2 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
                     >
-                      <Settings2 className="h-4 w-4" />
+                      <Settings2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

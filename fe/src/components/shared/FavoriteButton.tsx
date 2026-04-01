@@ -69,8 +69,8 @@ export default function FavoriteButton({
         }
       }}
       className={`${padding} rounded-full backdrop-blur-sm transition inline-flex items-center gap-2 ${className} ${stateClassName}`}
-      aria-label="Them vao yeu thich"
-      title={user ? "Them vao yeu thich" : "Dang nhap de luu yeu thich"}
+      aria-label={label || "Yêu thích"}
+      title={label || (user ? "Yêu thích" : "Đăng nhập để lưu yêu thích")}
     >
       {icon === "bookmark" ? (
         <Bookmark className={iconSize} fill={isFavorite ? "currentColor" : "none"} />

@@ -185,6 +185,7 @@
     "updatedAt": "Cập nhật",
     "rating": "Đánh giá",
     "listens": "{count} lượt nghe",
+    "listensLabel": "Lượt nghe",
     "favorite": "Thêm vào mục yêu thích",
     "share": "Chia sẻ",
     "sharePrompt": "Nghe truyện này cùng mình nhé",

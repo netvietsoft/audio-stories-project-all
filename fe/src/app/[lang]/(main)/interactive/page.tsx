@@ -61,9 +61,9 @@ export default function InteractiveStoriesPage() {
   return (
     <div className="space-y-6">
       <div className="relative rounded-3xl p-8 text-black dark:text-white shadow-xl">
-        <div className="relative z-10 max-w-2xl">
-          <h1 className="text-4xl font-black">{t("title")}</h1>
-          <p className="mt-2 text-lg font-medium opacity-90">{t("subtitle")}</p>
+        <div className="relative z-10 max-w-2xl text-center md:text-left">
+          <h1 className="text-3xl font-black">{t("title")}</h1>
+          <p className="mt-2 text-base font-medium opacity-90">{t("subtitle")}</p>
         </div>
         <div className="absolute -bottom-12 -right-12 h-64 w-64 rounded-full bg-white/10 blur-3xl transition-transform hover:scale-110"></div>
         <div className="absolute -top-12 -left-12 h-48 w-48 rounded-full bg-orange-400/20 blur-2xl"></div>

@@ -99,21 +99,24 @@ fi
 read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
 SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 
-# Ask if user wants to reset database
-read -p "Do you want to RESET database? (yes/no, default: no): " RESET_DB
-RESET_DB=$(echo "${RESET_DB:-no}" | tr -d '\r' | tr '[:upper:]' '[:lower:]')
+# Ask if user wants to reset database (COMMENTED OUT - uncomment if needed)
+# read -p "Do you want to RESET database? (yes/no, default: no): " RESET_DB
+# RESET_DB=$(echo "${RESET_DB:-no}" | tr -d '\r' | tr '[:upper:]' '[:lower:]')
+# 
+# if [ "$RESET_DB" == "yes" ]; then
+#     echo "⚠️  WARNING: This will DELETE ALL DATA in the database!"
+#     read -p "Are you absolutely sure? Type 'CONFIRM' to proceed: " CONFIRM
+#     CONFIRM=$(echo "$CONFIRM" | tr -d '\r')
+#     if [ "$CONFIRM" != "CONFIRM" ]; then
+#         echo "❌ Database reset cancelled"
+#         RESET_DB="no"
+#     else
+#         echo "✅ Database reset confirmed"
+#     fi
+# fi
 
-if [ "$RESET_DB" == "yes" ]; then
-    echo "⚠️  WARNING: This will DELETE ALL DATA in the database!"
-    read -p "Are you absolutely sure? Type 'CONFIRM' to proceed: " CONFIRM
-    CONFIRM=$(echo "$CONFIRM" | tr -d '\r')
-    if [ "$CONFIRM" != "CONFIRM" ]; then
-        echo "❌ Database reset cancelled"
-        RESET_DB="no"
-    else
-        echo "✅ Database reset confirmed"
-    fi
-fi
+# Force RESET_DB to "no" (change to "yes" if you want to reset on every deploy)
+RESET_DB="no"
 
 # Server path
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
@@ -191,11 +194,9 @@ npx prisma generate
 # Reset database if requested
 if [ "$RESET_DB" = "yes" ]; then
     echo "🗑️  Resetting database..."
-    echo "  ⚠️  Dropping database completely..."
     
     # Extract database credentials from DATABASE_URL
-    # Format: mysql://user:password@host:port/database
-    DB_URL=\$(grep '^DATABASE_URL=' .env | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+    DB_URL=\$(grep '^DATABASE_URL=' .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     
     if [ -z "\$DB_URL" ]; then
         echo "  ❌ Could not find DATABASE_URL in .env"
@@ -203,27 +204,51 @@ if [ "$RESET_DB" = "yes" ]; then
     fi
     
     # Parse DATABASE_URL
-    DB_USER=\$(echo "\$DB_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
-    DB_PASS=\$(echo "\$DB_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
-    DB_HOST=\$(echo "\$DB_URL" | sed -n 's|.*@\([^:]*\):.*|\1|p')
-    DB_PORT=\$(echo "\$DB_URL" | sed -n 's|.*:\([0-9]*\)/.*|\1|p')
-    DB_NAME=\$(echo "\$DB_URL" | sed -n 's|.*/\([^?]*\).*|\1|p')
+    DB_URL_CLEAN=\$(echo "\$DB_URL" | sed 's|^mysql://||')
+    DB_USER=\$(echo "\$DB_URL_CLEAN" | cut -d':' -f1)
+    DB_PASS=\$(echo "\$DB_URL_CLEAN" | sed 's|^[^:]*:||' | sed 's|@.*||')
+    DB_HOST=\$(echo "\$DB_URL_CLEAN" | sed 's|.*@||' | cut -d':' -f1)
+    DB_PORT=\$(echo "\$DB_URL_CLEAN" | sed 's|.*@[^:]*:||' | cut -d'/' -f1)
+    DB_NAME=\$(echo "\$DB_URL_CLEAN" | sed 's|.*/||' | cut -d'?' -f1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     
-    echo "  Database: \$DB_NAME"
+    echo "  Database: [\$DB_NAME]"
     echo "  Host: \$DB_HOST:\$DB_PORT"
     echo "  User: \$DB_USER"
     
-    # Drop and recreate database using credentials from .env
-    MYSQL_PWD="\$DB_PASS" mysql -u "\$DB_USER" -h "\$DB_HOST" -P "\$DB_PORT" -e "DROP DATABASE IF EXISTS \$DB_NAME; CREATE DATABASE \$DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    # Get list of tables
+    echo "  Getting table list..."
+    TABLES=\$(MYSQL_PWD="\$DB_PASS" mysql -u "\$DB_USER" -h "\$DB_HOST" -P "\$DB_PORT" "\$DB_NAME" -N -e "SHOW TABLES;" 2>/dev/null)
     
-    if [ \$? -ne 0 ]; then
-        echo "  ❌ Failed to drop/create database"
-        exit 1
+    if [ -n "\$TABLES" ]; then
+        echo "  Found tables, creating drop script..."
+        
+        # Create a single SQL script that drops all tables in one transaction
+        echo "SET FOREIGN_KEY_CHECKS = 0;" > /tmp/drop_all.sql
+        
+        for TABLE in \$TABLES; do
+            echo "DROP TABLE IF EXISTS \\\`\$TABLE\\\`;" >> /tmp/drop_all.sql
+        done
+        
+        echo "SET FOREIGN_KEY_CHECKS = 1;" >> /tmp/drop_all.sql
+        
+        echo "  Executing drop script..."
+        MYSQL_PWD="\$DB_PASS" mysql -u "\$DB_USER" -h "\$DB_HOST" -P "\$DB_PORT" "\$DB_NAME" < /tmp/drop_all.sql
+        
+        if [ \$? -ne 0 ]; then
+            echo "  ❌ Failed to drop tables"
+            rm -f /tmp/drop_all.sql
+            exit 1
+        fi
+        
+        rm -f /tmp/drop_all.sql
+        echo "  ✅ All tables dropped"
+    else
+        echo "  ℹ️  No tables found or database is empty"
     fi
     
-    echo "  ✅ Database dropped and recreated"
+    echo "  ✅ Database reset complete"
     
-    echo "🌱 Running migrations..."
+    echo "🌱 Running migrations from scratch..."
     npx prisma migrate deploy
     
     if [ \$? -ne 0 ]; then

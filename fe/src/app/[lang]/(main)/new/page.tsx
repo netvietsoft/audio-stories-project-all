@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import StoryGridCard from "@/components/shared/StoryGridCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
@@ -34,6 +34,8 @@ const LIMIT = 12;
 export default function NewStoriesPage() {
   const t = useTranslations("NewPage");
   const tCommon = useTranslations("Common");
+  const locale = useLocale();
+  const lang = locale === "en" ? "en" : "vi";
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [authors, setAuthors] = useState<Author[]>([]);
@@ -65,6 +67,7 @@ export default function NewStoriesPage() {
           page,
           limit: LIMIT,
           sort: filter.sort,
+          lang,
           ...(filter.categoryId ? { categoryId: filter.categoryId } : {}),
           ...(filter.authorId ? { authorId: filter.authorId } : {}),
           ...(filter.status ? { status: filter.status } : {}),
@@ -75,7 +78,7 @@ export default function NewStoriesPage() {
     };
 
     void loadStories();
-  }, [filter.categoryId, filter.authorId, filter.status, filter.sort, page]);
+  }, [filter.categoryId, filter.authorId, filter.status, filter.sort, page, lang]);
 
   const handleApplyFilter = () => {
     setPage(1);

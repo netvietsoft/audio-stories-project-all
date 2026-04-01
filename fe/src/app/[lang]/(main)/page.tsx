@@ -627,12 +627,12 @@ export default function HomePage() {
       <div className="space-y-10 md:space-y-8">
         <InteractiveStoriesSection />
 
-        {/* ─── Truyện đã hoàn thành (Grid 2 hàng x 4) ─ */}
+        {/* ─── Truyện hoàn thành (Grid 2 hàng x 4) ─ */}
         {completedStories.length > 0 && (
           <section className="space-y-3">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "Completed Stories" : "Truyện Đã Hoàn Thành"}</h2>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{locale === "en" ? "Completed Stories" : "Truyện Hoàn Thành"}</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">{locale === "en" ? "Finished series with excellent ratings" : "Những câu chuyện được hoàn chỉnh với đánh giá xuất sắc"}</p>
               </div>
               <Link href="/search?status=completed&sort=rating" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">

@@ -10,7 +10,7 @@ export default async function Footer() {
 
   return (
     <footer className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
-      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 py-12">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 pt-8 pb-12 md:py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Cột 1: Logo và giới thiệu */}
           <div className="space-y-4">

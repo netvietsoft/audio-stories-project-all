@@ -152,14 +152,14 @@ export default function InteractiveStoriesSection() {
   return (
     <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-slate-200/70 py-10 dark:bg-slate-800/70">
       <div className="mx-auto w-full space-y-3 px-3 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
-      <div className="flex items-end justify-between gap-x-4">
-          <div>
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+          <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("interactiveSectionTitle")}</h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">{t("interactiveSectionSubtitle")}</p>
           </div>
           <Link
             href="/interactive"
-            className="text-base font-extrabold text-pink-600 transition-colors hover:text-pink-500"
+            className="shrink-0 text-sm font-extrabold text-pink-600 transition-colors hover:text-pink-500 whitespace-nowrap"
           >
             {t("viewAll")}
           </Link>

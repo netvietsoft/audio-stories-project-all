@@ -212,7 +212,7 @@ export default function StoryDetailClient() {
 
         <div className="flex w-full flex-1 flex-col gap-2 md:gap-3">
           {/* Title */}
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">{storyTitle}</h1>
+          <h1 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">{storyTitle}</h1>
 
           {/* Metadata grid - centered layout */}
           <div className="flex flex-col gap-y-2 text-sm max-w-md">
@@ -426,7 +426,7 @@ export default function StoryDetailClient() {
       </section>
       {/* Recommended Stories Section */}
       {recommendedStories.length > 0 && (
-        <section className="rounded-2xl p-3 sm:p-4 md:p-6">
+        <section className="p-3 sm:p-4 md:p-6 pb-2 md:pb-4">
           <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">{t("youMightLike")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {recommendedStories.map((recommendedStory) => {
@@ -473,7 +473,7 @@ export default function StoryDetailClient() {
       )}
       {/* New Arrivals Section */}
       {newStories.length > 0 && (
-        <section className="rounded-2xlp-3 sm:p-4 md:p-6">
+        <section className="p-3 sm:p-4 md:p-6 pb-2 md:pb-4">
           <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">{t("newArrivals")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {newStories.map((newStory) => {

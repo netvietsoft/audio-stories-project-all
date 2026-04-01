@@ -238,7 +238,7 @@ export default function TopupPage() {
                     <div className="w-full lg:w-[70%]">
                         <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl rounded-[2rem] p-2 sm:p-4 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-700/50 mb-6 sm:mb-8">
                             {packages.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-5">
                                     {packages.map((pkg) => {
                                         // Use database flags for badges
                                         const isPopular = pkg.isPopular || false;

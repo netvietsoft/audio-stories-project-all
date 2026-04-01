@@ -208,7 +208,7 @@ export default function AdminLayout({
             {/* Main Content */}
             <main className="flex-1 h-screen overflow-y-auto w-full transition-all duration-300">
                 {/* Mobile Header */}
-                <div className="md:hidden h-20 bg-pink-50 dark:bg-slate-900 flex items-center justify-between px-6">
+                <div className="md:hidden h-20 bg-white dark:bg-slate-900 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
@@ -239,7 +239,7 @@ export default function AdminLayout({
                         ></div>
 
                         {/* Sheet */}
-                        <aside className="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-pink-50 shadow-2xl flex flex-col animate-in slide-in-from-left duration-300 dark:bg-slate-900">
+                        <aside className="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-300 dark:bg-slate-900">
                             <div className="h-20 flex items-center justify-between px-6">
                                 <span className="font-bold text-xl text-indigo-600 flex items-center gap-2">
                                     <Shield className="w-6 h-6" />
@@ -278,17 +278,8 @@ export default function AdminLayout({
                             </nav>
 
                             <div className="p-6 space-y-4">
-                                <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 shrink-0 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
-                                            A
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-slate-800">Admin</p>
-                                            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Quản trị viên</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
+                                <div className="rounded-2xl p-4">
+                                    <div className="gap-3 flex">
                                         <button
                                             onClick={handleLogout}
                                             disabled={isLoggingOut}
@@ -301,8 +292,7 @@ export default function AdminLayout({
                                                     <LogOut className="w-4 h-4" />
                                                 </>
                                             )}
-                                        </button>
-                                        <div className="h-px bg-slate-200"></div>
+                                        </button>   
                                         <Link
                                             href="/"
                                             onClick={() => setIsMobileMenuOpen(false)}

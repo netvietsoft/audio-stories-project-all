@@ -69,7 +69,7 @@ export const AuthorForm = ({ initialData, onSubmit, onCancel, isLoading }: Autho
                 <input
                     {...register('name')}
                     placeholder="Nhập tên tác giả..."
-                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                 />
                 {errors.name && <p className="text-xs font-bold text-red-500 ml-2">{errors.name.message}</p>}
             </div>
@@ -79,7 +79,7 @@ export const AuthorForm = ({ initialData, onSubmit, onCancel, isLoading }: Autho
                 <input
                     {...register('slug')}
                     placeholder="ten-tac-gia-slug..."
-                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                 />
                 {errors.slug && <p className="text-xs font-bold text-red-500 ml-2">{errors.slug.message}</p>}
             </div>
@@ -90,7 +90,7 @@ export const AuthorForm = ({ initialData, onSubmit, onCancel, isLoading }: Autho
                     {...register('bio')}
                     rows={4}
                     placeholder="Nhập tiểu sử tác giả..."
-                    className="w-full bg-slate-50 border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                    className="admin-input w-full bg-white rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
                 />
             </div>
 
@@ -99,7 +99,7 @@ export const AuthorForm = ({ initialData, onSubmit, onCancel, isLoading }: Autho
                 <input
                     {...register('avatarUrl')}
                     placeholder="https://example.com/avatar.png"
-                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                 />
             </div>
 

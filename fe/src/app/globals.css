@@ -66,3 +66,59 @@ body {
   --tw-ring-shadow: 0 0 #0000 !important;
   --tw-ring-offset-shadow: 0 0 #0000 !important;
 }
+
+/* Override for admin form inputs to show borders */
+.admin-input {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: #cbd5e1 !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.admin-input:focus {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: #6366f1 !important;
+}
+
+/* Apply to all inputs, textareas, and selects in admin pages */
+[class*="admin"] input[type="text"],
+[class*="admin"] input[type="email"],
+[class*="admin"] input[type="password"],
+[class*="admin"] input[type="number"],
+[class*="admin"] input[type="url"],
+[class*="admin"] input[type="search"],
+[class*="admin"] textarea,
+[class*="admin"] select {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: #cbd5e1 !important;
+  transition: border-color 0.2s ease !important;
+}
+
+[class*="admin"] input[type="text"]:focus,
+[class*="admin"] input[type="email"]:focus,
+[class*="admin"] input[type="password"]:focus,
+[class*="admin"] input[type="number"]:focus,
+[class*="admin"] input[type="url"]:focus,
+[class*="admin"] input[type="search"]:focus,
+[class*="admin"] textarea:focus,
+[class*="admin"] select:focus {
+  border-color: #6366f1 !important;
+}
+
+/* Apply to all inputs with border-slate-300 class (for modals without admin class) */
+input.border-slate-300,
+textarea.border-slate-300,
+select.border-slate-300 {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: #cbd5e1 !important;
+  transition: border-color 0.2s ease !important;
+}
+
+input.border-slate-300:focus,
+textarea.border-slate-300:focus,
+select.border-slate-300:focus {
+  border-color: #6366f1 !important;
+}

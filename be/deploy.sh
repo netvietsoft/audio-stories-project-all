@@ -191,17 +191,56 @@ npx prisma generate
 # Reset database if requested
 if [ "$RESET_DB" = "yes" ]; then
     echo "🗑️  Resetting database..."
-    echo "  ⚠️  Dropping all tables and data..."
-    npx prisma migrate reset --force --skip-seed
-    echo "  ✅ Database reset complete"
+    echo "  ⚠️  Dropping database completely..."
+    
+    # Extract database credentials from DATABASE_URL
+    # Format: mysql://user:password@host:port/database
+    DB_URL=\$(grep '^DATABASE_URL=' .env | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+    
+    if [ -z "\$DB_URL" ]; then
+        echo "  ❌ Could not find DATABASE_URL in .env"
+        exit 1
+    fi
+    
+    # Parse DATABASE_URL
+    DB_USER=\$(echo "\$DB_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
+    DB_PASS=\$(echo "\$DB_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+    DB_HOST=\$(echo "\$DB_URL" | sed -n 's|.*@\([^:]*\):.*|\1|p')
+    DB_PORT=\$(echo "\$DB_URL" | sed -n 's|.*:\([0-9]*\)/.*|\1|p')
+    DB_NAME=\$(echo "\$DB_URL" | sed -n 's|.*/\([^?]*\).*|\1|p')
+    
+    echo "  Database: \$DB_NAME"
+    echo "  Host: \$DB_HOST:\$DB_PORT"
+    echo "  User: \$DB_USER"
+    
+    # Drop and recreate database using credentials from .env
+    MYSQL_PWD="\$DB_PASS" mysql -u "\$DB_USER" -h "\$DB_HOST" -P "\$DB_PORT" -e "DROP DATABASE IF EXISTS \$DB_NAME; CREATE DATABASE \$DB_NAME CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    
+    if [ \$? -ne 0 ]; then
+        echo "  ❌ Failed to drop/create database"
+        exit 1
+    fi
+    
+    echo "  ✅ Database dropped and recreated"
     
     echo "🌱 Running migrations..."
     npx prisma migrate deploy
+    
+    if [ \$? -ne 0 ]; then
+        echo "  ❌ Failed to apply migrations"
+        exit 1
+    fi
+    
     echo "  ✅ Migrations applied"
     
     echo "🌱 Seeding database..."
     npx prisma db seed
-    echo "  ✅ Database seeded"
+    
+    if [ \$? -ne 0 ]; then
+        echo "  ⚠️  Warning: Seeding failed or partially completed"
+    else
+        echo "  ✅ Database seeded"
+    fi
 else
     echo "📦 Running migrations..."
     npx prisma migrate deploy

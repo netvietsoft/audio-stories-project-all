@@ -100,6 +100,25 @@ export default function Navbar() {
   const [topCategories, setTopCategories] = useState<TopCategoryItem[]>([]);
   
   const searchPlaceholder = t("searchPlaceholder");
+  const normalizedPathname = (pathname || "").replace(/^\/(vi|en)(?=\/|$)/, "") || "/";
+
+  const isRouteActive = (href: string) => {
+    if (href === "/") {
+      return normalizedPathname === "/";
+    }
+
+    return normalizedPathname === href || normalizedPathname.startsWith(`${href}/`);
+  };
+
+  const navItemClassName = (href: string) =>
+    `flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors whitespace-nowrap ${
+      isRouteActive(href)
+        ? "text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/30"
+        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+    }`;
+
+  const navLabelClassName = (href: string) =>
+    isRouteActive(href) ? "text-pink-600 dark:text-pink-400" : "text-inherit";
 
   // Debug log
   useEffect(() => {
@@ -289,9 +308,9 @@ export default function Navbar() {
 
               {/* Menu Desktop (Responsive: text on 2xl+, icons on xl and below) */}
               <nav className="hidden lg:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">
-                <Link href="/" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("home")} title={t("home")}>
+                <Link href="/" className={navItemClassName("/")} aria-label={t("home")} title={t("home")}>
                   <Home className="w-5 h-5 2xl:hidden" />
-                  <span className="hidden 2xl:inline">{t("home")}</span>
+                  <span className={`hidden 2xl:inline ${navLabelClassName("/")}`}>{t("home")}</span>
                 </Link>
                 <div
                   ref={categoryMenuRef}
@@ -299,12 +318,12 @@ export default function Navbar() {
                 >
                   <button 
                     onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                    className={navItemClassName("/stories")}
                     aria-label={t("categories")}
                     title={t("categories")}
                   >
                     <LayoutGrid className="w-5 h-5 2xl:hidden" />
-                    <span className="hidden 2xl:inline">{t("categories")}</span>
+                    <span className={`hidden 2xl:inline ${navLabelClassName("/stories")}`}>{t("categories")}</span>
                     <ChevronDown className="w-4 h-4" />
                   </button>
                   {isCategoryOpen && (
@@ -329,17 +348,17 @@ export default function Navbar() {
                     </div>
                   )}
                 </div>
-                <Link href="/new" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("new")} title={t("new")}>
+                <Link href="/new" className={navItemClassName("/new")} aria-label={t("new")} title={t("new")}>
                   <Zap className="w-5 h-5 2xl:hidden" />
-                  <span className="hidden 2xl:inline">{t("new")}</span>
+                  <span className={`hidden 2xl:inline ${navLabelClassName("/new")}`}>{t("new")}</span>
                 </Link>
-                <Link href="/trending" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("trending")} title={t("trending")}>
+                <Link href="/trending" className={navItemClassName("/trending")} aria-label={t("trending")} title={t("trending")}>
                   <Flame className="w-5 h-5 2xl:hidden" />
-                  <span className="hidden 2xl:inline">{t("trending")}</span>
+                  <span className={`hidden 2xl:inline ${navLabelClassName("/trending")}`}>{t("trending")}</span>
                 </Link>
-                <Link href="/interactive" className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap" aria-label={t("interactiveStories")} title={t("interactiveStories")}>
+                <Link href="/interactive" className={navItemClassName("/interactive")} aria-label={t("interactiveStories")} title={t("interactiveStories")}>
                   <Sparkles className="w-5 h-5 2xl:hidden" />
-                  <span className="hidden 2xl:inline">{t("interactiveStories")}</span>
+                  <span className={`hidden 2xl:inline ${navLabelClassName("/interactive")}`}>{t("interactiveStories")}</span>
                 </Link>
                 <div
                   ref={rankingMenuRef}
@@ -347,12 +366,12 @@ export default function Navbar() {
                 >
                   <button 
                     onClick={() => setIsRankingOpen(!isRankingOpen)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors whitespace-nowrap"
+                    className={navItemClassName("/ranking")}
                     aria-label={t("ranking")}
                     title={currentLang === "vi" ? "BXH" : "Ranking"}
                   >
                     <Trophy className="w-5 h-5 2xl:hidden" />
-                    <span className="hidden 2xl:inline">{currentLang === "vi" ? "BXH" : "Ranking"}</span>
+                    <span className={`hidden 2xl:inline ${navLabelClassName("/ranking")}`}>{currentLang === "vi" ? "BXH" : "Ranking"}</span>
                     <ChevronDown className="w-4 h-4" />
                   </button>
                   {isRankingOpen && (
@@ -806,45 +825,45 @@ export default function Navbar() {
                 <Link 
                   href="/" 
                   onClick={closeMobileMenu} 
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
                 >
-                  <Home className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <Home className={`w-5 h-5 ${isRouteActive("/") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
                   <span className="text-sm font-medium">{t("home")}</span>
                 </Link>
 
                 <Link 
                   href="/stories" 
                   onClick={closeMobileMenu} 
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/stories") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
                 >
-                  <LayoutGrid className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <LayoutGrid className={`w-5 h-5 ${isRouteActive("/stories") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
                   <span className="text-sm font-medium">{t("categories")}</span>
                 </Link>
 
                 <Link 
                   href="/new" 
                   onClick={closeMobileMenu} 
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/new") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
                 >
-                  <Zap className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <Zap className={`w-5 h-5 ${isRouteActive("/new") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
                   <span className="text-sm font-medium">{t("new")}</span>
                 </Link>
 
                 <Link 
                   href="/trending" 
                   onClick={closeMobileMenu} 
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/trending") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
                 >
-                  <Flame className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <Flame className={`w-5 h-5 ${isRouteActive("/trending") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
                   <span className="text-sm font-medium">{t("trending")}</span>
                 </Link>
 
                 <Link 
                   href="/interactive" 
                   onClick={closeMobileMenu} 
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/interactive") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
                 >
-                  <Sparkles className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  <Sparkles className={`w-5 h-5 ${isRouteActive("/interactive") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
                   <span className="text-sm font-medium">{t("interactiveStories")}</span>
                 </Link>
 
@@ -852,10 +871,10 @@ export default function Navbar() {
                 <div>
                   <button 
                     onClick={() => setIsRankingOpen(!isRankingOpen)}
-                    className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/ranking") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
                   >
                     <div className="flex items-center gap-3">
-                      <Trophy className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <Trophy className={`w-5 h-5 ${isRouteActive("/ranking") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
                       <span className="text-sm font-medium">BXH</span>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isRankingOpen ? 'rotate-180' : ''}`} />

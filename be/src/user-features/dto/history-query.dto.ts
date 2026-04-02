@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsPositive } from 'class-validator';
+import { IsInt, IsOptional, IsPositive, IsString, IsUUID } from 'class-validator';
 
 export class HistoryQueryDto {
   @IsOptional()
@@ -13,4 +13,14 @@ export class HistoryQueryDto {
   @IsInt()
   @IsPositive()
   limit?: number = 20;
+
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  chapterId?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  variantId?: string;
 }

@@ -29,13 +29,9 @@ export class AudioUploadService {
   constructor(private readonly configService: ConfigService) {
     const endpoint = this.configService.get<string>('R2_ENDPOINT');
     const accessKeyId = this.configService.get<string>('R2_ACCESS_KEY_ID');
-    const secretAccessKey =
-      this.configService.get<string>('R2_SECRET_ACCESS_KEY') || this.configService.get<string>('R2_SECRET_KEY_ID');
+    const secretAccessKey = this.configService.get<string>('R2_SECRET_KEY_ID');
     const bucketName = this.configService.get<string>('R2_BUCKET_NAME');
-    const publicBaseUrl =
-      this.configService.get<string>('R2_PUBLIC_URL') ||
-      this.configService.get<string>('R2_CUSTOM_DOMAIN') ||
-      this.configService.get<string>('R2_URL');
+    const publicBaseUrl = this.configService.get<string>('R2_URL');
 
     if (!endpoint || !accessKeyId || !secretAccessKey || !bucketName || !publicBaseUrl) {
       throw new BadRequestException('Missing required Cloudflare R2 configuration');

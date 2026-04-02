@@ -530,11 +530,18 @@ export class UserFeaturesService {
   async getHistory(userId: string, query: HistoryQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
+    const chapterId = query.chapterId;
+    const variantId = query.variantId;
+    const where = {
+      userId,
+      ...(chapterId ? { chapterId } : {}),
+      ...(variantId ? { variantId } : {}),
+    };
 
     const [total, rows] = await Promise.all([
-      this.prisma.listeningHistory.count({ where: { userId } }),
+      this.prisma.listeningHistory.count({ where }),
       this.prisma.listeningHistory.findMany({
-        where: { userId },
+        where,
         orderBy: { lastListenedAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,

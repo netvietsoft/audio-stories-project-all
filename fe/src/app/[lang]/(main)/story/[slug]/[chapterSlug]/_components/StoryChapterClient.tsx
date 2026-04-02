@@ -311,6 +311,7 @@ export default function StoryChapterClient() {
   const [pendingVariantId, setPendingVariantId] = useState<string | null>(null);
   const [openNestedDropdowns, setOpenNestedDropdowns] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
+  const lastRestoredHistoryKeyRef = useRef<string | null>(null);
 
   const setUser = useUserStore((state) => state.setUser);
 
@@ -688,20 +689,20 @@ export default function StoryChapterClient() {
 
   const selectedChapterAudioUrl = useMemo(() => {
     if (selectedVariant) {
-      return getRequestedLocaleValue(
+      return getLocalizedValue(
         locale,
         selectedVariant.audioUrlVi,
         selectedVariant.audioUrlEn,
         !selectedVariant.audioUrlVi && !selectedVariant.audioUrlEn ? selectedVariant.audioUrl : "",
-      ) || "";
+      ).trim();
     }
     if (selectedChapter) {
-      return getRequestedLocaleValue(
+      return getLocalizedValue(
         locale,
         selectedChapter.audioUrlVi,
         selectedChapter.audioUrlEn,
         !selectedChapter.audioUrlVi && !selectedChapter.audioUrlEn ? selectedChapter.r2AudioUrl : "",
-      ) || "";
+      ).trim();
     }
     return "";
   }, [locale, selectedChapter, selectedVariant]);
@@ -725,6 +726,94 @@ export default function StoryChapterClient() {
   const canSeekSelectedChapter = hasPlayableAudio && isSelectedChapterTrack;
 
   useEffect(() => {
+    if (!story || !selectedChapter || !selectedChapterAudioUrl || !user) return;
+
+    const historyKey = `${selectedChapter.id}:${selectedVariant?.id || "null"}`;
+    if (lastRestoredHistoryKeyRef.current === historyKey) return;
+
+    if (currentTrack?.storyId === story.id && currentTrack?.id === selectedChapter.id && isPlaying) {
+      lastRestoredHistoryKeyRef.current = historyKey;
+      return;
+    }
+
+    const restoreProgress = async () => {
+      try {
+        const response = await apiClient.get<{ data: Array<{ progressSeconds: number }> }>("/history", {
+          params: {
+            page: 1,
+            limit: 1,
+            chapterId: selectedChapter.id,
+            ...(selectedVariant?.id ? { variantId: selectedVariant.id } : {}),
+          },
+        });
+
+        const historyItem = response.data?.data?.[0];
+        const resumeSeconds = Math.max(0, Math.floor(historyItem?.progressSeconds || 0));
+
+        if (!resumeSeconds) {
+          lastRestoredHistoryKeyRef.current = historyKey;
+          return;
+        }
+
+        const resumeTrack = {
+          id: selectedChapter.id,
+          storyId: story.id,
+          chapterId: selectedChapter.id,
+          title: selectedChapterTitle,
+          storySlug: story.slug,
+          chapterNumber: selectedChapter.chapterNumber,
+          author: story.author?.name,
+          audioUrl: selectedChapterAudioUrl,
+          coverUrl: selectedChapter.thumbnailUrl || story.thumbnailUrl || undefined,
+        };
+
+        setQueue(
+          story.chapters.map((chapter) => ({
+            id: chapter.id,
+            storyId: story.id,
+            chapterId: chapter.id,
+            title: t("chapterTitle", { number: chapter.chapterNumber, title: cleanChapterTitle(chapter.title) }),
+            storySlug: story.slug,
+            chapterNumber: chapter.chapterNumber,
+            author: story.author?.name,
+            audioUrl: getLocalizedValue(
+              locale,
+              chapter.audioUrlVi,
+              chapter.audioUrlEn,
+              !chapter.audioUrlVi && !chapter.audioUrlEn ? chapter.r2AudioUrl : "",
+            ).trim(),
+            coverUrl: chapter.thumbnailUrl || story.thumbnailUrl || undefined,
+          })),
+        );
+        setTrack(resumeTrack);
+        seekTo(resumeSeconds);
+        togglePlay(false);
+        lastRestoredHistoryKeyRef.current = historyKey;
+      } catch {
+        // Ignore resume lookup failures; the chapter can still be played normally.
+      }
+    };
+
+    void restoreProgress();
+  }, [
+    currentTrack?.id,
+    currentTrack?.storyId,
+    isPlaying,
+    locale,
+    selectedChapter,
+    selectedChapterAudioUrl,
+    selectedChapterTitle,
+    selectedVariant?.id,
+    setQueue,
+    setTrack,
+    seekTo,
+    story,
+    t,
+    togglePlay,
+    user,
+  ]);
+
+  useEffect(() => {
     if (!story || !currentTrack || currentTrack.storyId !== story.id) return;
 
     const refreshedQueue = story.chapters.map((item) => ({
@@ -735,12 +824,12 @@ export default function StoryChapterClient() {
       storySlug: story.slug,
       chapterNumber: item.chapterNumber,
       author: story.author?.name,
-      audioUrl: getRequestedLocaleValue(
+      audioUrl: getLocalizedValue(
         locale,
         item.audioUrlVi,
         item.audioUrlEn,
         !item.audioUrlVi && !item.audioUrlEn ? item.r2AudioUrl : "",
-      ) || "",
+      ).trim(),
       coverUrl: item.thumbnailUrl || story.thumbnailUrl || undefined,
     }));
     setQueue(refreshedQueue);
@@ -810,12 +899,12 @@ export default function StoryChapterClient() {
         storySlug: selectedStory.slug,
         chapterNumber: item.chapterNumber,
         author: selectedStory.author?.name,
-        audioUrl: getRequestedLocaleValue(
+        audioUrl: getLocalizedValue(
           locale,
           item.audioUrlVi,
           item.audioUrlEn,
           !item.audioUrlVi && !item.audioUrlEn ? item.r2AudioUrl : "",
-        ) || "",
+        ).trim(),
         coverUrl: item.thumbnailUrl || selectedStory.thumbnailUrl || undefined,
       }));
 
@@ -823,21 +912,21 @@ export default function StoryChapterClient() {
       let chapterTitle = t("chapterTitle", { number: chapter.chapterNumber, title: cleanChapterTitle(chapter.title) });
 
       if (targetVariant) {
-        chapterAudioUrl = getRequestedLocaleValue(
+        chapterAudioUrl = getLocalizedValue(
           locale,
           targetVariant.audioUrlVi,
           targetVariant.audioUrlEn,
           !targetVariant.audioUrlVi && !targetVariant.audioUrlEn ? targetVariant.audioUrl : "",
-        ) || "";
+        ).trim();
         const variantTitle = getLocalizedValue(locale, targetVariant.titleVi, targetVariant.titleEn, targetVariant.title);
         chapterTitle = `${chapterTitle} - ${variantTitle}`;
       } else {
-        chapterAudioUrl = getRequestedLocaleValue(
+        chapterAudioUrl = getLocalizedValue(
           locale,
           chapter.audioUrlVi,
           chapter.audioUrlEn,
           !chapter.audioUrlVi && !chapter.audioUrlEn ? chapter.r2AudioUrl : "",
-        ) || "";
+        ).trim();
       }
 
       const track = {
@@ -868,7 +957,7 @@ export default function StoryChapterClient() {
         togglePlay(false);
       }
     },
-    [isVipActive, locale, playTrack, selectedChapterId, selectedVariant, selectedVariantId, setQueue, setTrack, t, togglePlay],
+    [currentTime, isVipActive, locale, playTrack, selectedChapterId, selectedVariant, selectedVariantId, setQueue, setTrack, t, togglePlay],
   );
 
   const goToChapter = useCallback(
@@ -1478,7 +1567,7 @@ export default function StoryChapterClient() {
             {/* Side Panel 2: Audio Player */}
             <div className="-mx-4 md:mx-0 md:bg-transparent lg:bg-transparent">
               <div className="px-4 md:px-0">
-                <section className="rounded-2xl p-2 sm:p-3 md:p-4">
+                <section className="rounded-[5px] border border-gray-300 bg-white p-2 sm:p-3 md:p-4 dark:border-gray-700 dark:bg-gray-900">
               <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("audioPlayer")}</h2>
 
               <div className="mt-4 grid gap-2 md:grid-cols-[100px_minmax(0,1fr)] lg:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
@@ -1514,9 +1603,7 @@ export default function StoryChapterClient() {
                     style={{
                       WebkitAppearance: 'none',
                       appearance: 'none',
-                      background: 'linear-gradient(to right, rgb(37 99 235) 0%, rgb(37 99 235) ' + 
-                        ((playerCurrentTime / (playerDuration || 1)) * 100) + '%, rgb(229 231 235) ' + 
-                        ((playerCurrentTime / (playerDuration || 1)) * 100) + '%, rgb(229 231 235) 100%)',
+                      background: `linear-gradient(to right, rgb(236 72 153) 0%, rgb(236 72 153) ${Math.min((playerCurrentTime / (playerDuration || 1)) * 100, 100)}%, rgb(209 213 219) ${Math.min((playerCurrentTime / (playerDuration || 1)) * 100, 100)}%, rgb(209 213 219) 100%)`,
                       borderRadius: '9999px',
                       outline: 'none',
                     }}

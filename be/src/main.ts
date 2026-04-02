@@ -59,7 +59,15 @@ async function bootstrap() {
   if (!existsSync(uploadsPath)) {
     mkdirSync(uploadsPath, { recursive: true });
   }
-  app.use('/uploads', express.static(uploadsPath));
+  
+  // Configure express.static with proper MIME types for webp
+  app.use('/uploads', express.static(uploadsPath, {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.webp')) {
+        res.setHeader('Content-Type', 'image/webp');
+      }
+    },
+  }));
 
   const port = Number(process.env.PORT ?? 8035);
   await app.listen(port);

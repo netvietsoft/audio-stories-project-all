@@ -14,6 +14,9 @@ import {
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { AuthorForm } from './_components/AuthorForm';
+import { useParams } from 'next/navigation';
+import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
+import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
 interface Author {
     id: string;
@@ -33,6 +36,10 @@ export default function AuthorsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAuthor, setEditingAuthor] = useState<Author | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const params = useParams<{ lang?: string }>();
+    const urlLang = params?.lang === 'en' ? 'en' : 'vi';
+    const [selectedLocale, setSelectedLocale] = useState(urlLang);
+    const { languages } = useAdminLanguages();
 
     useEffect(() => {
         fetchAuthors();
@@ -108,13 +115,20 @@ export default function AuthorsPage() {
                     </h1>
                     <p className="text-slate-500 mt-2 font-medium">Quản lý thông tin và hồ sơ của các tác giả.</p>
                 </div>
-                <button
-                    onClick={handleCreate}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200"
-                >
-                    <Plus className="w-4 h-4" />
-                    Thêm tác giả
-                </button>
+                <div className="flex items-center gap-3">
+                    <AdminLanguageDropdown
+                        languages={languages}
+                        value={selectedLocale}
+                        onChange={setSelectedLocale}
+                    />
+                    <button
+                        onClick={handleCreate}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Thêm tác giả
+                    </button>
+                </div>
             </div>
 
             {/* Filters and Search */}

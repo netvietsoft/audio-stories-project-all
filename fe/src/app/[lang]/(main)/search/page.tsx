@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 
 import StoryCard from "@/components/shared/StoryCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
@@ -85,6 +85,9 @@ function SearchPageContent() {
     void loadOptions();
   }, []);
 
+  const params = useParams<{ lang?: string }>();
+  const currentLang = params?.lang === "en" ? "en" : "vi";
+
   // Auto-apply khi keyword debounced thay đổi
   useEffect(() => {
     if (debouncedKeyword !== appliedFilters.keyword) {
@@ -100,6 +103,7 @@ function SearchPageContent() {
         params: {
           page: 1,
           limit: LIMIT,
+          lang: currentLang,
           ...(appliedFilters.keyword ? { search: appliedFilters.keyword } : {}),
           ...(appliedFilters.categoryId ? { categoryId: appliedFilters.categoryId } : {}),
           ...(appliedFilters.authorId ? { authorId: appliedFilters.authorId } : {}),
@@ -112,7 +116,7 @@ function SearchPageContent() {
     };
 
     void loadStories();
-  }, [appliedFilters]);
+  }, [appliedFilters, currentLang]);
 
   useEffect(() => {
     if (page === 1) return;
@@ -121,6 +125,7 @@ function SearchPageContent() {
         params: {
           page,
           limit: LIMIT,
+          lang: currentLang,
           ...(appliedFilters.keyword ? { search: appliedFilters.keyword } : {}),
           ...(appliedFilters.categoryId ? { categoryId: appliedFilters.categoryId } : {}),
           ...(appliedFilters.authorId ? { authorId: appliedFilters.authorId } : {}),
@@ -132,7 +137,7 @@ function SearchPageContent() {
       setLastPage(res.data.meta?.lastPage || 1);
     };
     void loadStories();
-  }, [appliedFilters, page]);
+  }, [appliedFilters, page, currentLang]);
 
   const title = useMemo(
     () => (appliedFilters.keyword ? t("titleWithKeyword", { keyword: appliedFilters.keyword }) : t("titleDefault")),

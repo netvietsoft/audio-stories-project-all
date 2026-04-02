@@ -19,7 +19,7 @@ import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import type { Chapter } from '@/types/admin';
 import { useAdminStore } from '@/stores/admin-store';
 
@@ -80,7 +80,9 @@ export default function ChaptersGlobalPage() {
     const [page, setPage] = useState(1);
     const [filterAccess, setFilterAccess] = useState('all');
     const [filterStoryId, setFilterStoryId] = useState('all');
-    const [selectedLocale, setSelectedLocale] = useState('vi');
+    const params = useParams<{ lang?: string }>();
+    const urlLang = params?.lang === 'en' ? 'en' : 'vi';
+    const [selectedLocale, setSelectedLocale] = useState(urlLang);
     const { languages } = useAdminLanguages();
     const [selectedChapters, setSelectedChapters] = useState<Set<string>>(new Set());
     const [isDeletingBulk, setIsDeletingBulk] = useState(false);
@@ -105,10 +107,10 @@ export default function ChaptersGlobalPage() {
     useEffect(() => {
         const fetchStories = async () => {
             try {
+                // Don't pass lang to get all stories
                 const res = await apiClient.get('/stories/admin', {
                     params: {
                         all: true,
-                        lang: selectedLocale,
                     },
                 });
                 setStories(Array.isArray(res.data) ? res.data : res.data.data || []);

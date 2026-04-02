@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import {
     LayoutGrid,
     Plus,
@@ -45,7 +46,9 @@ export default function CategoriesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedLocale, setSelectedLocale] = useState('vi');
+    const params = useParams<{ lang?: string }>();
+    const urlLang = params?.lang === 'en' ? 'en' : 'vi';
+    const [selectedLocale, setSelectedLocale] = useState(urlLang);
     const { languages } = useAdminLanguages();
     
     // Pagination & Bulk Selection

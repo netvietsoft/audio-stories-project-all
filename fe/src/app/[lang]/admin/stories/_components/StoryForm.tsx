@@ -29,11 +29,11 @@ const storySchema = z.object({
     slug: z.string().min(1, 'Slug không được để trống'),
     descriptionVi: z.string().optional(),
     descriptionEn: z.string().optional(),
-    thumbnailUrl: z.string().optional(),
+    thumbnailUrl: z.string().optional().nullable(),
     authorId: z.string().uuid('Vui lòng chọn tác giả'),
     status: z.enum(['ongoing', 'completed']),
     categoryIds: z.array(z.number()).min(1, 'Chọn ít nhất một thể loại'),
-    audioUrl: z.string().optional(),
+    audioUrl: z.string().optional().nullable(),
     isRecommended: z.boolean().optional(),
     isInteractive: z.boolean().optional(),
     language: z.string().optional(),
@@ -137,7 +137,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
         const fetchMetadata = async () => {
             try {
                 const [catsRes, authorsRes, allChaptersRes] = await Promise.all([
-                    apiClient.get('/stories/categories'),
+                    apiClient.get(`/stories/categories?language=${selectedLocale}`),
                     apiClient.get('/stories/authors'),
                     apiClient.get(`/chapters?limit=1000&lang=${selectedLocale}`),
                 ]);
@@ -387,7 +387,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                         <input
                             {...register(isEnglishLocale ? 'titleEn' : 'titleVi')}
                             placeholder={isEnglishLocale ? 'Enter story title in English' : 'Nhập tên truyện tiếng Việt'}
-                            className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                            className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-2xl py-4 px-6 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-sm"
                         />
                         {!isEnglishLocale && errors.titleVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleVi.message}</p>}
                         {isEnglishLocale && errors.titleEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleEn.message}</p>}
@@ -400,7 +400,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             <input
                                 {...register('slug')}
                                 placeholder="ten-truyen-slug..."
-                                className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-2xl py-4 px-6 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-sm"
                             />
                             {errors.slug && <p className="text-xs font-bold text-red-500 ml-2">{errors.slug.message}</p>}
                         </div>
@@ -410,7 +410,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             <div className="relative">
                                 <select
                                     {...register('status')}
-                                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
+                                    className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer shadow-sm transition-all"
                                 >
                                     <option value="ongoing">Đang ra (Ongoing)</option>
                                     <option value="completed">Hoàn thành (Completed)</option>
@@ -461,7 +461,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             <button
                                 type="button"
                                 onClick={() => setIsAuthorOpen(!isAuthorOpen)}
-                                className="admin-input w-full bg-white text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between"
+                                className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-indigo-500/10 transition-all flex items-center justify-between shadow-sm"
                             >
                                 <span className={selectedAuthor ? 'text-slate-900' : 'text-slate-400'}>
                                     {selectedAuthor ? selectedAuthor.name : 'Chọn tác giả'}
@@ -478,7 +478,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                 type="text"
                                                 autoFocus
                                                 placeholder="Tìm tên tác giả..."
-                                                className="w-full bg-white border-2 border-slate-300 rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                                                className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all"
                                                 value={authorSearch}
                                                 onChange={(e) => setAuthorSearch(e.target.value)}
                                             />
@@ -531,7 +531,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             <button
                                 type="button"
                                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                                className="admin-input w-full bg-white text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between min-h-[56px]"
+                                className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-indigo-500/10 transition-all flex items-center justify-between min-h-[56px] shadow-sm"
                             >
                                 <div className="flex flex-wrap gap-2">
                                     {selectedCategoryIds.length > 0 ? (
@@ -582,7 +582,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                 type="text"
                                                 autoFocus
                                                 placeholder="Tìm thể loại..."
-                                                className="w-full bg-white border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                                                className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all"
                                                 value={categorySearch}
                                                 onChange={(e) => setCategorySearch(e.target.value)}
                                             />
@@ -618,19 +618,12 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                         <div className="space-y-4" ref={chapterRef}>
                             <div className="flex items-center justify-between">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Chương</label>
-                                <Link
-                                    href="/admin/chapters"
-                                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                    title="Quản lý chương"
-                                >
-                                    <Plus className="w-5 h-5 text-pink-600" />
-                                </Link>
                             </div>
                             <div className="relative">
                                 <button
                                     type="button"
                                     onClick={() => setIsChapterOpen(!isChapterOpen)}
-                                    className="w-full bg-white text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 transition-all flex items-center justify-between min-h-[56px]"
+                                    className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-indigo-500/10 transition-all flex items-center justify-between min-h-[56px] shadow-sm"
                                 >
                                     <div className="flex flex-wrap gap-2">
                                         {selectedChapterIds.length > 0 ? (
@@ -655,7 +648,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                     type="text"
                                                     autoFocus
                                                     placeholder="Tìm theo tên hoặc số chương..."
-                                                    className="w-full bg-white border-none rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20"
+                                                    className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-xl py-2.5 pl-11 pr-4 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all"
                                                     value={chapterSearch}
                                                     onChange={(e) => setChapterSearch(e.target.value)}
                                                 />
@@ -723,7 +716,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             {...register(isEnglishLocale ? 'descriptionEn' : 'descriptionVi')}
                             rows={5}
                             placeholder={isEnglishLocale ? 'Enter English description...' : 'Nhập giới thiệu tiếng Việt...'}
-                            className="w-full bg-white border-none rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                            className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none shadow-sm"
                         />
                         {!isEnglishLocale && errors.descriptionVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionVi.message}</p>}
                         {isEnglishLocale && errors.descriptionEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionEn.message}</p>}
@@ -736,7 +729,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                         {/* Preview if either a selected local file or existing URL is present */}
                         {selectedFilePreview || watch('thumbnailUrl') ? (
                             <div className="relative group w-full aspect-[2/3] md:w-48 overflow-hidden rounded-[32px] border-4 border-white shadow-2xl transition-transform hover:scale-[1.02] mx-auto md:mx-0">
-                                <img src={selectedFilePreview ?? watch('thumbnailUrl')} alt="Thumbnail" className="w-full h-full object-cover" />
+                                <img src={selectedFilePreview ?? watch('thumbnailUrl') ?? ''} alt="Thumbnail" className="w-full h-full object-cover" />
                                 <div className="absolute top-4 right-4 flex items-center gap-2">
                                     {selectedFile && (
                                         <button
@@ -776,17 +769,17 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                             if (v) setSelectedFile(null);
                                         }}
                                         placeholder="https://..."
-                                        className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                        className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-2xl py-4 px-6 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-sm"
                                         disabled={!!selectedFile}
                                     />
                                 </div>
 
                                 <div className="space-y-2">
                                     <label className="text-xs font-black uppercase tracking-wider text-slate-700">Hoặc chọn file</label>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 bg-white border border-slate-200 hover:border-slate-300 rounded-2xl py-[9px] px-4 shadow-sm transition-all focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 h-[52px]">
                                         <input
                                             type="file"
-                                            accept="image/*"
+                                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/svg+xml"
                                             onChange={(e) => {
                                                 const f = e.target.files?.[0] ?? null;
                                                 setSelectedFile(f);
@@ -796,7 +789,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                                 }
                                             }}
                                             disabled={!!urlText}
-                                            className="text-sm"
+                                            className="text-sm font-medium text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 transition-colors cursor-pointer w-full"
                                         />
                                         {selectedFile && (
                                             <button type="button" onClick={() => setSelectedFile(null)} className="px-3 py-2 bg-white border rounded-lg text-sm">

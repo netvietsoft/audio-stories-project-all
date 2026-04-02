@@ -206,6 +206,7 @@ export default function Navbar() {
             search: debouncedSearchQuery,
             page: 1,
             limit: 5,
+            lang: currentLang,
           },
         });
         console.log("Search response:", response.data);

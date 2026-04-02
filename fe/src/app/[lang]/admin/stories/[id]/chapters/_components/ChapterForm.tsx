@@ -123,7 +123,7 @@ interface StoryOption {
     language?: 'vi' | 'en' | string | null;
 }
 
-const toLocalizedText = (value: unknown): LocalizedText => {
+const toLocalizedText = (value: unknown, locale: string = 'vi'): LocalizedText => {
     if (typeof value === 'string') {
         try {
             const parsed = JSON.parse(value) as Record<string, unknown>;
@@ -136,7 +136,8 @@ const toLocalizedText = (value: unknown): LocalizedText => {
         } catch {
             // Keep backward compatibility for legacy plain string content.
         }
-        return { vi: value, en: '' };
+        // Fallback flat string to current locale
+        return locale === 'en' ? { vi: '', en: value } : { vi: value, en: '' };
     }
 
     if (value && typeof value === 'object') {
@@ -195,12 +196,22 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
     const [isUploadingAudioVi, setIsUploadingAudioVi] = useState(false);
     const [isUploadingAudioEn, setIsUploadingAudioEn] = useState(false);
 
-    const initialTitle = toLocalizedText(initialData?.title);
-    const initialDescription = toLocalizedText(initialData?.description);
-    const initialContent = toLocalizedText(initialData?.content);
-    const initialAudio = toLocalizedText(initialData?.audioUrl);
+    // Debug: Log initialData
+    useEffect(() => {
+        console.log('ChapterForm initialData:', initialData);
+        console.log('ChapterForm initialData.storyId:', initialData?.storyId);
+    }, [initialData]);
+
+    const initialTitle = toLocalizedText(initialData?.title, selectedLocale);
+    const initialDescription = toLocalizedText(initialData?.description, selectedLocale);
+    const initialContent = toLocalizedText(initialData?.content, selectedLocale);
+    const initialAudio = toLocalizedText(initialData?.audioUrl, selectedLocale);
     if (!initialAudio.vi && !initialAudio.en && initialData?.r2AudioUrl) {
-        initialAudio.vi = initialData.r2AudioUrl;
+        if (selectedLocale === 'en') {
+            initialAudio.en = initialData.r2AudioUrl;
+        } else {
+            initialAudio.vi = initialData.r2AudioUrl;
+        }
     }
 
     const safeString = (value: unknown, fallback = ''): string =>
@@ -343,24 +354,31 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
     useEffect(() => {
         const fetchStories = async () => {
             try {
-                const res = await adminApiClient.get('/stories', {
+                // Don't pass lang param to get all stories regardless of language
+                const res = await adminApiClient.get('/stories/admin', {
                     params: {
                         all: true,
-                        lang: selectedLocale,
+                        // Remove lang filter to show all stories
                     },
                 });
                 const fetchedStories = Array.isArray(res.data) ? res.data : res.data.data || [];
-                setStories(
-                    fetchedStories.filter(
-                        (story: StoryOption) => story.language === selectedLocale,
-                    ),
-                );
+                
+                // Don't filter by language - show all stories
+                // Users can choose any story regardless of language
+                setStories(fetchedStories);
+                
+                console.log('Fetched stories:', fetchedStories.length);
+                
+                // After stories are loaded, ensure storyId is set if it exists in initialData
+                if (initialData?.storyId && fetchedStories.some((s: StoryOption) => s.id === initialData.storyId)) {
+                    setValue('storyId', initialData.storyId);
+                }
             } catch (error) {
                 console.error('Failed to fetch stories:', error);
             }
         };
         fetchStories();
-    }, [selectedLocale]);
+    }, [selectedLocale, initialData?.storyId, setValue]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -374,6 +392,14 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
 
     const selectedStoryId = watch('storyId');
     const selectedStory = stories.find((s) => s.id === selectedStoryId);
+    
+    // Debug: Log selected story
+    useEffect(() => {
+        console.log('Selected storyId:', selectedStoryId);
+        console.log('Selected story:', selectedStory);
+        console.log('Available stories:', stories.length);
+    }, [selectedStoryId, selectedStory, stories]);
+    
     const filteredStories = stories.filter((s) =>
         getLocalizedText(s.title, selectedLocale).toLowerCase().includes(storySearch.toLowerCase()),
     );

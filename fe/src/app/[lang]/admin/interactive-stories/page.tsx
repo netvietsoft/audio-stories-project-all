@@ -23,7 +23,7 @@ import {
   Loader2,
   Trash2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
@@ -81,7 +81,9 @@ export default function InteractiveStoriesPage() {
   const [storyChapters, setStoryChapters] = useState<Record<string, ChapterInfo[]>>({});
   const [loadingChapters, setLoadingChapters] = useState<string | null>(null);
   const [expandedChapterId, setExpandedChapterId] = useState<string | null>(null);
-  const [selectedLocale, setSelectedLocale] = useState('vi');
+  const params = useParams<{ lang?: string }>();
+  const urlLang = params?.lang === 'en' ? 'en' : 'vi';
+  const [selectedLocale, setSelectedLocale] = useState(urlLang);
   const { languages } = useAdminLanguages();
 
   // Modal States

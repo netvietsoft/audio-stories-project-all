@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import {
     Package,
     Plus,
@@ -39,7 +40,9 @@ export default function PackagesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCode, setEditingCode] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [selectedLocale, setSelectedLocale] = useState('vi');
+    const params = useParams<{ lang?: string }>();
+    const urlLang = params?.lang === 'en' ? 'en' : 'vi';
+    const [selectedLocale, setSelectedLocale] = useState(urlLang);
     const { languages } = useAdminLanguages();
     const [formData, setFormData] = useState<Partial<PaymentPackage>>({
         code: '',

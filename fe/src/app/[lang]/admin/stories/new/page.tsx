@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Newspaper, ChevronLeft } from 'lucide-react';
 import Link from '@/components/shared/LocalizedLink';
 import { StoryForm } from '../_components/StoryForm';
@@ -15,7 +15,9 @@ export default function NewStoryPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
-    const initialLocale = searchParams.get('lang') || 'vi';
+    const urlParams = useParams<{ lang?: string }>();
+    const urlLang = urlParams?.lang === 'en' ? 'en' : 'vi';
+    const initialLocale = searchParams.get('lang') || urlLang;
     const isInteractive = searchParams.get('isInteractive') === 'true';
     const [selectedLocale, setSelectedLocale] = useState(initialLocale);
     const { languages } = useAdminLanguages();

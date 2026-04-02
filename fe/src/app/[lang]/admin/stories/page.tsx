@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import {
     Newspaper,
     Search,
@@ -85,7 +86,9 @@ export default function StoriesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
-    const [selectedLocale, setSelectedLocale] = useState('vi');
+    const params = useParams<{ lang?: string }>();
+    const urlLang = params?.lang === 'en' ? 'en' : 'vi';
+    const [selectedLocale, setSelectedLocale] = useState(urlLang);
     const { languages } = useAdminLanguages();
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
@@ -97,13 +100,17 @@ export default function StoriesPage() {
     const [isFetchingStoryData, setIsFetchingStoryData] = useState(false);
     const [isSubmittingStory, setIsSubmittingStory] = useState(false);
 
-    const [chaptersModalOpen, setChaptersModalOpen] = useState(false);
-    const [selectedStoryForChapters, setSelectedStoryForChapters] = useState<Story | null>(null);
-    const [chapters, setChapters] = useState<any[]>([]);
-    const [isFetchingChapters, setIsFetchingChapters] = useState(false);
+    const [expandedStoryId, setExpandedStoryId] = useState<string | null>(null);
+    const [storyChapters, setStoryChapters] = useState<Record<string, any[]>>({});
+    const [loadingChapters, setLoadingChapters] = useState<string | null>(null);
 
     const [isCreatingChapter, setIsCreatingChapter] = useState(false);
+    const [storyIdForNewChapter, setStoryIdForNewChapter] = useState<string | null>(null);
     const [isSubmittingNewChapter, setIsSubmittingNewChapter] = useState(false);
+
+    const [editingChapterId, setEditingChapterId] = useState<string | null>(null);
+    const [editingChapterData, setEditingChapterData] = useState<any | null>(null);
+    const [isSubmittingChapter, setIsSubmittingChapter] = useState(false);
 
     useEffect(() => {
         fetchStories();
@@ -185,22 +192,37 @@ export default function StoriesPage() {
             const res = await apiClient.get(`/stories/admin/${story.id}`);
             const data = res.data;
             
+            // Extract category IDs from various possible structures
+            let categoryIds: number[] = [];
+            if (data.categories && Array.isArray(data.categories)) {
+                categoryIds = data.categories.map((item: any) => {
+                    // Handle different response structures
+                    if (typeof item === 'number') return item;
+                    if (item.category?.id) return item.category.id;
+                    if (item.categoryId) return item.categoryId;
+                    if (item.id) return item.id;
+                    return null;
+                }).filter((id: any): id is number => typeof id === 'number');
+            }
+            
             const mappedData = {
                 ...data,
-                titleVi: data.titleVi || data.title || "",
-                titleEn: data.titleEn || "",
+                titleVi: data.language === 'en' ? (data.titleVi || "") : (data.titleVi || data.title || ""),
+                titleEn: data.language === 'en' ? (data.titleEn || data.title || "") : (data.titleEn || ""),
                 slug: data.slug || "",
-                descriptionVi: data.descriptionVi || data.description || "",
-                descriptionEn: data.descriptionEn || "",
-                categoryIds: (data.categories || []).map((item: any) => 
-                    item.category?.id || item.categoryId || (typeof item === 'number' ? item : item.id)
-                ).filter(Boolean),
+                descriptionVi: data.language === 'en' ? (data.descriptionVi || "") : (data.descriptionVi || data.description || ""),
+                descriptionEn: data.language === 'en' ? (data.descriptionEn || data.description || "") : (data.descriptionEn || ""),
+                thumbnailUrl: data.thumbnailUrl || "",
+                audioUrl: data.audioUrl || "",
+                categoryIds,
                 authorId: data.author?.id || data.authorId,
                 status: data.status || "ongoing",
                 isInteractive: !!data.isInteractive,
                 isRecommended: !!data.isRecommended,
+                language: data.language,
             };
             
+            console.log('Mapped story data for editing:', mappedData);
             setEditingStoryData(mappedData);
         } catch (error) {
             console.error('Failed to fetch story details:', error);
@@ -227,36 +249,110 @@ export default function StoriesPage() {
         }
     };
 
-    const handleOpenChapters = async (story: Story) => {
-        setSelectedStoryForChapters(story);
-        setChaptersModalOpen(true);
-        setIsFetchingChapters(true);
+    const toggleStory = async (storyId: string) => {
+        if (expandedStoryId === storyId) {
+            setExpandedStoryId(null);
+            return;
+        }
+        setExpandedStoryId(storyId);
+
+        if (storyChapters[storyId]) return;
+
+        setLoadingChapters(storyId);
         try {
-            const res = await apiClient.get(`/chapters?storyId=${story.id}&limit=100`);
-            setChapters(res.data.data || res.data || []);
+            const res = await apiClient.get(`/chapters?storyId=${storyId}&limit=100`);
+            setStoryChapters((prev) => ({ ...prev, [storyId]: res.data.data || res.data || [] }));
         } catch (error) {
             console.error('Failed to fetch chapters:', error);
-            alert('Không thể tải danh sách chương.');
         } finally {
-            setIsFetchingChapters(false);
+            setLoadingChapters(null);
         }
     };
 
     const handleChapterCreateSubmit = async (data: any) => {
-        if (!selectedStoryForChapters) return;
+        if (!storyIdForNewChapter) return;
         setIsSubmittingNewChapter(true);
         try {
-            await apiClient.post(`/stories/${selectedStoryForChapters.id}/chapters`, data);
-            setIsCreatingChapter(false);
+            await apiClient.post(`/stories/${storyIdForNewChapter}/chapters`, data);
             
-            // Refresh chapters list
-            const res = await apiClient.get(`/chapters?storyId=${selectedStoryForChapters.id}&limit=100`);
-            setChapters(res.data.data || res.data || []);
+            // Refetch chapters for this story
+            const res = await apiClient.get(`/chapters?storyId=${storyIdForNewChapter}&limit=100`);
+            setStoryChapters((prev) => ({ ...prev, [storyIdForNewChapter]: res.data.data || res.data || [] }));
+            
+            // Update UI count
+            setStories(prev => prev.map(s => 
+                s.id === storyIdForNewChapter 
+                    ? { ...s, _count: { ...s._count, chapters: (s._count?.chapters || 0) + 1 } } 
+                    : s
+            ));
+            
+            setStoryIdForNewChapter(null);
+            setIsCreatingChapter(false);
         } catch (error) {
             console.error('Failed to create chapter:', error);
             alert('Không thể tạo chương mới.');
         } finally {
             setIsSubmittingNewChapter(false);
+        }
+    };
+
+    const handleEditChapter = async (storyId: string, chapter: any) => {
+        setEditingChapterId(chapter.id);
+        // Copy the data as needed for the form
+        setEditingChapterData({ ...chapter, storyId });
+    };
+
+    const handleChapterSubmit = async (data: ChapterSubmitPayload) => {
+        if (!editingChapterId || !editingChapterData) return;
+        setIsSubmittingChapter(true);
+        try {
+            const payload = {
+                ...data,
+                thumbnailUrl: data.thumbnailUrl || undefined,
+                youtubeVideoId: data.youtubeVideoId || undefined,
+                r2AudioUrl: data.r2AudioUrl || undefined,
+                storyId: data.storyId || undefined,
+            };
+
+            await apiClient.patch(`/chapters/${editingChapterId}`, payload);
+            
+            // Optimistic update
+            const updatedTitle = payload.title || editingChapterData.title;
+            setStoryChapters((prev) => ({
+                ...prev,
+                [editingChapterData.storyId]: (prev[editingChapterData.storyId] || []).map(ch => 
+                    ch.id === editingChapterId ? { ...ch, title: updatedTitle } : ch
+                ),
+            }));
+            
+            setEditingChapterId(null);
+            setEditingChapterData(null);
+        } catch (error) {
+            console.error('Failed to update chapter:', error);
+            alert('Không thể cập nhật chương.');
+        } finally {
+            setIsSubmittingChapter(false);
+        }
+    };
+
+    const handleDeleteChapter = async (storyId: string, chapterId: string, title: string) => {
+        if (!confirm(`Bạn có chắc muốn xóa chương "${title}"?`)) return;
+        try {
+            await apiClient.delete(`/chapters/${chapterId}`);
+            setStoryChapters((prev) => ({
+                ...prev,
+                [storyId]: (prev[storyId] || []).filter((ch) => ch.id !== chapterId),
+            }));
+            
+            // Update total count
+            setStories(prev => prev.map(s => 
+                s.id === storyId 
+                    ? { ...s, _count: { ...s._count, chapters: Math.max(0, (s._count?.chapters || 0) - 1) } } 
+                    : s
+            ));
+        } catch (error) {
+            console.error('Failed to delete chapter:', error);
+            alert('Không thể xóa chương.');
         }
     };
 
@@ -402,104 +498,178 @@ export default function StoriesPage() {
                                 ))
                             ) : stories.length > 0 ? (
                                 stories.map((story) => (
-                                    <tr key={story.id} className="group hover:bg-slate-50/50 transition-all duration-300">
-                                        <td className="px-8 py-5">
-                                            <div className="flex items-center gap-4">
-                                                <StoryThumbnail story={story} />
-                                                <div className="min-w-0">
-                                                    <p className="text-sm font-black text-slate-900 truncate group-hover:text-indigo-600 transition-colors" title={selectedLocale === 'en' ? (story.titleEn || story.titleVi || story.title) : (story.titleVi || story.titleEn || story.title)}>
-                                                        {(() => {
-                                                            const displayTitle = selectedLocale === 'en' ? (story.titleEn || story.titleVi || story.title) : (story.titleVi || story.titleEn || story.title);
-                                                            return displayTitle.length > 26 ? `${displayTitle.substring(0, 26)}...` : displayTitle;
-                                                        })()}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500 font-bold mt-0.5">
-                                                        By <span className="text-slate-700">{story.author.name}</span>
-                                                    </p>
-                                                    <div className="flex gap-1 mt-1.5 overflow-hidden">
-                                                        {story.categories.slice(0, 2).map((c, idx) => (
-                                                            <span key={idx} className="text-[9px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md uppercase tracking-tight">
-                                                                {c.category.name}
-                                                            </span>
-                                                        ))}
+                                    <React.Fragment key={story.id}>
+                                        <tr 
+                                            onClick={() => toggleStory(story.id)}
+                                            className="group hover:bg-slate-50/50 transition-all duration-300 cursor-pointer"
+                                        >
+                                            <td className="px-8 py-5">
+                                                <div className="flex items-center gap-4">
+                                                    <StoryThumbnail story={story} />
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-black text-slate-900 truncate group-hover:text-indigo-600 transition-colors" title={selectedLocale === 'en' ? (story.titleEn || story.titleVi || story.title) : (story.titleVi || story.titleEn || story.title)}>
+                                                            {(() => {
+                                                                const displayTitle = selectedLocale === 'en' ? (story.titleEn || story.titleVi || story.title) : (story.titleVi || story.titleEn || story.title);
+                                                                return displayTitle.length > 26 ? `${displayTitle.substring(0, 26)}...` : displayTitle;
+                                                            })()}
+                                                        </p>
+                                                        <p className="text-xs text-slate-500 font-bold mt-0.5">
+                                                            By <span className="text-slate-700">{story.author?.name}</span>
+                                                        </p>
+                                                        <div className="flex gap-1 mt-1.5 overflow-hidden">
+                                                            {story.categories.slice(0, 2).map((c, idx) => (
+                                                                <span key={idx} className="text-[9px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md uppercase tracking-tight">
+                                                                    {c.category.name}
+                                                                </span>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-5 text-center">
-                                            <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border
-                                                ${story.status === 'ongoing'
-                                                    ? 'bg-pink-50 text-pink-700 border-pink-100'
-                                                    : 'bg-emerald-50 text-emerald-700 border-emerald-100'}
-                                            `}>
-                                                {story.status === 'ongoing' ? 'Đang ra' : 'Hoàn thành'}
-                                            </span>
-                                        </td>
-                                        <td className="px-8 py-5 text-center">
-                                            <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border
-                                                ${story.language === 'vi'
-                                                    ? 'bg-red-50 text-red-700 border-red-100'
-                                                    : 'bg-indigo-50 text-indigo-700 border-indigo-100'}
-                                            `}>
-                                                {story.language === 'vi' ? '🇻🇳 VI' : '🇬🇧 EN'}
-                                            </span>
-                                        </td>
-                                        <td className="px-8 py-5 text-center">
-                                            <p className="text-sm font-black text-slate-700">{story._count.chapters}</p>
-                                        </td>
-                                        <td className="px-8 py-5 text-center">
-                                            <div className="flex items-center justify-center gap-1.5 text-slate-500">
-                                                <Eye className="w-3.5 h-3.5" />
-                                                <span className="text-sm font-bold text-slate-700">{story.totalViews.toLocaleString()}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-5 text-center">
-                                            <button
-                                                disabled={updatingRecommendId === story.id}
-                                                onClick={() => void toggleRecommended(story)}
-                                                className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider transition ${story.isRecommended
-                                                    ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'} disabled:opacity-50`}
-                                            >
-                                                {story.isRecommended ? 'Đang bật' : 'Đang tắt'}
-                                            </button>
-                                        </td>
-                                        <td className="px-8 py-5 text-center">
-                                            <div className="flex items-center justify-center gap-1 text-amber-500 bg-amber-50 px-2 py-1 rounded-lg border border-amber-100 max-w-fit mx-auto">
-                                                <Star className="w-3.5 h-3.5 fill-amber-500" />
-                                                <span className="text-xs font-black">{Number(story.averageRating).toFixed(1)}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-5">
-                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
-                                                {formatDate(story.createdAt)}
-                                            </p>
-                                        </td>
-                                        <td className="px-8 py-5 text-right">
-                                            <div className="flex items-center justify-end gap-2">
+                                            </td>
+                                            <td className="px-8 py-5 text-center">
+                                                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border
+                                                    ${story.status === 'ongoing'
+                                                        ? 'bg-pink-50 text-pink-700 border-pink-100'
+                                                        : 'bg-emerald-50 text-emerald-700 border-emerald-100'}
+                                                `}>
+                                                    {story.status === 'ongoing' ? 'Đang ra' : 'Hoàn thành'}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-5 text-center">
+                                                <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border
+                                                    ${story.language === 'vi'
+                                                        ? 'bg-red-50 text-red-700 border-red-100'
+                                                        : 'bg-indigo-50 text-indigo-700 border-indigo-100'}
+                                                `}>
+                                                    {story.language === 'vi' ? '🇻🇳 VI' : '🇬🇧 EN'}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-5 text-center">
+                                                <p className="text-sm font-black text-slate-700">{story._count.chapters}</p>
+                                            </td>
+                                            <td className="px-8 py-5 text-center">
+                                                <div className="flex items-center justify-center gap-1.5 text-slate-500">
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                    <span className="text-sm font-bold text-slate-700">{story.totalViews.toLocaleString()}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-5 text-center">
                                                 <button
-                                                    onClick={() => handleOpenChapters(story)}
-                                                    title="Danh sách chương"
-                                                    className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                                    onClick={(e) => { e.stopPropagation(); toggleRecommended(story); }}
+                                                    disabled={updatingRecommendId === story.id}
+                                                    className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider transition ${story.isRecommended
+                                                        ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                                                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'} disabled:opacity-50`}
                                                 >
-                                                    <Music className="w-4 h-4" />
+                                                    {story.isRecommended ? 'Đang bật' : 'Đang tắt'}
                                                 </button>
-                                                <button
-                                                    onClick={() => handleEditStory(story)}
-                                                    className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </button>
-                                                <button 
-                                                    onClick={() => handleDelete(story.id, story.title)}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-
-                                    </tr>
+                                            </td>
+                                            <td className="px-8 py-5 text-center">
+                                                <div className="flex items-center justify-center gap-1 text-amber-500 bg-amber-50 px-2 py-1 rounded-lg border border-amber-100 max-w-fit mx-auto">
+                                                    <Star className="w-3.5 h-3.5 fill-amber-500" />
+                                                    <span className="text-xs font-black">{Number(story.averageRating || 0).toFixed(1)}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-5">
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-tighter">
+                                                    {new Date(story.createdAt).toLocaleDateString()}
+                                                </p>
+                                            </td>
+                                            <td className="px-8 py-5 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setStoryIdForNewChapter(story.id);
+                                                            setIsCreatingChapter(true);
+                                                        }}
+                                                        className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                                                        title="Thêm chương"
+                                                    >
+                                                        <Plus className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleEditStory(story);
+                                                        }}
+                                                        className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                                        title="Sửa truyện"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDelete(story.id, story.title);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                                        title="Xóa truyện"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                    <ChevronDown
+                                                        className={`w-5 h-5 ml-2 text-slate-400 transition-transform duration-200 ${expandedStoryId === story.id ? "rotate-180" : ""}`}
+                                                    />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {expandedStoryId === story.id && (
+                                            <tr className="bg-slate-50/50">
+                                                <td colSpan={9} className="p-0 border-b border-slate-100">
+                                                    <div className="px-8 py-6 border-t border-slate-100">
+                                                        {loadingChapters === story.id ? (
+                                                            <div className="flex justify-center py-8">
+                                                                <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                                                            </div>
+                                                        ) : (storyChapters[story.id]?.length || 0) === 0 ? (
+                                                            <p className="text-center text-sm text-slate-500 py-8">Chưa có chương nào.</p>
+                                                        ) : (
+                                                            <div className="space-y-3">
+                                                                {(storyChapters[story.id] || []).map((chapter) => (
+                                                                    <div key={chapter.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all">
+                                                                        <div className="flex items-center gap-3">
+                                                                            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-black">
+                                                                                {chapter.chapterNumber}
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="text-sm font-bold text-slate-900">
+                                                                                    Chương {chapter.chapterNumber}: {chapter.title}
+                                                                                </p>
+                                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                                    {chapter.unlockPrice > 0 ? (
+                                                                                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                                                                                            {chapter.unlockPrice} credit
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Miễn phí</span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <button
+                                                                                onClick={() => handleEditChapter(story.id, chapter)}
+                                                                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                                                                            >
+                                                                                <Edit2 className="w-4 h-4" />
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleDeleteChapter(story.id, chapter.id, chapter.title)}
+                                                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                                                            >
+                                                                                <Trash2 className="w-4 h-4" />
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
                                 ))
                             ) : (
                                 <tr>
@@ -527,39 +697,106 @@ export default function StoriesPage() {
                         stories.map((story) => {
                             const displayTitle = selectedLocale === 'en' ? (story.titleEn || story.titleVi || story.title) : (story.titleVi || story.titleEn || story.title);
                             return (
-                                <div key={story.id} className="space-y-4 p-5">
-                                    <div className="min-w-0 flex items-center gap-4">
-                                        <StoryThumbnail story={story} />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-base font-black leading-6 text-slate-900 break-words">{displayTitle}</p>
-                                            <p className="mt-1 text-sm font-bold text-slate-500">
-                                                By <span className="text-slate-700">{story.author.name}</span>
-                                            </p>
+                                <div key={story.id} className="bg-white">
+                                    <div 
+                                        onClick={() => toggleStory(story.id)}
+                                        className="space-y-4 p-5 hover:bg-slate-50 transition-colors cursor-pointer"
+                                    >
+                                        <div className="min-w-0 flex items-center gap-4">
+                                            <StoryThumbnail story={story} />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-base font-black leading-6 text-slate-900 break-words">{displayTitle}</p>
+                                                <p className="mt-1 text-sm font-bold text-slate-500">
+                                                    By <span className="text-slate-700">{story.author?.name}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 pl-[72px]">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setStoryIdForNewChapter(story.id);
+                                                    setIsCreatingChapter(true);
+                                                }}
+                                                title="Thêm chương"
+                                                className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-emerald-50 hover:text-emerald-600"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleEditStory(story);
+                                                }}
+                                                title="Chỉnh sửa truyện"
+                                                className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDelete(story.id, story.title);
+                                                }}
+                                                className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-red-50 hover:text-red-600"
+                                                title="Xóa truyện"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                            <div className="flex-1" />
+                                            <ChevronDown
+                                                className={`w-5 h-5 text-slate-400 transition-transform duration-200 ${expandedStoryId === story.id ? "rotate-180" : ""}`}
+                                            />
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2 pl-[72px]">
-                                        <button
-                                            onClick={() => handleOpenChapters(story)}
-                                            title="Danh sách chương"
-                                            className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
-                                        >
-                                            <Music className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleEditStory(story)}
-                                            title="Chỉnh sửa truyện"
-                                            className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-indigo-50 hover:text-indigo-600"
-                                        >
-                                            <Edit2 className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(story.id, story.title)}
-                                            className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-500 transition-all hover:bg-red-50 hover:text-red-600"
-                                            title="Xóa truyện"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                                    {expandedStoryId === story.id && (
+                                        <div className="bg-slate-50/50 border-t border-slate-100 px-5 py-4">
+                                            {loadingChapters === story.id ? (
+                                                <div className="flex justify-center py-6">
+                                                    <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
+                                                </div>
+                                            ) : (storyChapters[story.id]?.length || 0) === 0 ? (
+                                                <p className="text-center text-sm text-slate-500 py-6">Chưa có chương nào.</p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {(storyChapters[story.id] || []).map((chapter) => (
+                                                        <div key={chapter.id} className="bg-white rounded-2xl border border-slate-200 p-4">
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div>
+                                                                    <p className="text-sm font-bold text-slate-900">
+                                                                        Chương {chapter.chapterNumber}: {chapter.title}
+                                                                    </p>
+                                                                    <div className="mt-1">
+                                                                        {chapter.unlockPrice > 0 ? (
+                                                                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                                                                                {chapter.unlockPrice} credit
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Miễn phí</span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center gap-1">
+                                                                    <button
+                                                                        onClick={() => handleEditChapter(story.id, chapter)}
+                                                                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                                    >
+                                                                        <Edit2 className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteChapter(story.id, chapter.id, chapter.title)}
+                                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })
@@ -659,105 +896,8 @@ export default function StoriesPage() {
                 </div>
             )}
 
-            {/* MODAL: Chapters List */}
-            {chaptersModalOpen && selectedStoryForChapters && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-900/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-[32px] max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-                        <div className="bg-white border-b border-slate-100 px-8 py-6 rounded-t-[32px] flex-shrink-0">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                                            <Music className="w-5 h-5" />
-                                        </div>
-                                        Danh sách chương
-                                    </h2>
-                                    <p className="text-sm text-slate-500 mt-1">
-                                        {selectedStoryForChapters.titleVi || selectedStoryForChapters.titleEn || selectedStoryForChapters.title}
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setIsCreatingChapter(true)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-all shadow-md shadow-emerald-100"
-                                        title="Thêm chương mới"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                        Thêm chương mới
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            setChaptersModalOpen(false);
-                                            setSelectedStoryForChapters(null);
-                                            setChapters([]);
-                                        }}
-                                        className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-600"
-                                    >
-                                        <X className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-8 flex-1 overflow-y-auto custom-scrollbar bg-slate-50/50">
-                            {isFetchingChapters ? (
-                                <div className="flex justify-center py-12">
-                                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-                                </div>
-                            ) : chapters.length > 0 ? (
-                                <div className="space-y-3">
-                                    {chapters.map((chapter: any) => (
-                                        <div key={chapter.id} className="bg-white rounded-2xl border border-slate-200 p-5 hover:shadow-md transition-all">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-black">
-                                                    {chapter.chapterNumber}
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-bold text-slate-900 truncate">
-                                                        {chapter.title || chapter.titleVi || chapter.titleEn || `Chương ${chapter.chapterNumber}`}
-                                                    </p>
-                                                    <p className="text-xs text-slate-500 mt-0.5">
-                                                        {chapter.accessType === 'free' ? 'Miễn phí' : `${chapter.unlockPrice || 0} credits`}
-                                                    </p>
-                                                </div>
-                                                <Link
-                                                    href={`/admin/chapters/${chapter.id}`}
-                                                    className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-3xl bg-white">
-                                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Music className="w-8 h-8 text-slate-300" />
-                                    </div>
-                                    <h3 className="text-base font-bold text-slate-900 mb-1">Chưa có chương</h3>
-                                    <p className="text-sm text-slate-500">Truyện này chưa có chương nào.</p>
-                                </div>
-                            )}
-                        </div>
-                        
-                        <div className="px-8 py-5 border-t border-slate-100 bg-white rounded-b-[32px] flex items-center justify-between">
-                            <p className="text-xs font-medium text-slate-400">
-                                Tổng số: {chapters.length} chương
-                            </p>
-                            <Link
-                                href={`/admin/stories/${selectedStoryForChapters.id}/chapters`}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-all"
-                            >
-                                Quản lý chi tiết
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* MODAL: Create Chapter */}
-            {isCreatingChapter && selectedStoryForChapters && (
+            {isCreatingChapter && storyIdForNewChapter && (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
                     <div className="bg-white rounded-[40px] max-w-5xl w-full max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden border border-slate-100 flex flex-col">
                         <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
@@ -768,13 +908,14 @@ export default function StoriesPage() {
                                 <div>
                                     <h3 className="text-xl font-black text-slate-900">Thêm Chương Mới</h3>
                                     <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-wider">
-                                        {selectedStoryForChapters.titleVi || selectedStoryForChapters.titleEn || selectedStoryForChapters.title}
+                                        {stories.find(s => s.id === storyIdForNewChapter)?.titleVi || stories.find(s => s.id === storyIdForNewChapter)?.titleEn || stories.find(s => s.id === storyIdForNewChapter)?.title}
                                     </p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => {
                                     setIsCreatingChapter(false);
+                                    setStoryIdForNewChapter(null);
                                 }}
                                 className="p-3 hover:bg-slate-50 rounded-2xl transition-colors text-slate-400 hover:text-slate-600"
                             >
@@ -785,19 +926,63 @@ export default function StoriesPage() {
                         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                             <ChapterForm
                                 initialData={{
-                                    chapterNumber: chapters.length + 1,
+                                    chapterNumber: (storyChapters[storyIdForNewChapter]?.length || 0) + 1,
                                     titleVi: '',
                                     descriptionVi: '',
                                     contentVi: '',
                                     accessType: 'free',
-                                    storyId: selectedStoryForChapters.id,
+                                    storyId: storyIdForNewChapter,
                                 }}
                                 selectedLocale={selectedLocale}
                                 onSubmit={handleChapterCreateSubmit}
                                 onCancel={() => {
                                     setIsCreatingChapter(false);
+                                    setStoryIdForNewChapter(null);
                                 }}
                                 isLoading={isSubmittingNewChapter}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: Edit Chapter */}
+            {editingChapterId && editingChapterData && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[40px] max-w-5xl w-full max-h-[90vh] shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden border border-slate-100 flex flex-col">
+                        <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-600 shadow-lg shadow-indigo-100 flex items-center justify-center text-white">
+                                    <Edit2 className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900">Chi tiết chương</h3>
+                                    <p className="text-xs font-bold text-slate-400 mt-0.5 uppercase tracking-wider">
+                                        Chỉnh sửa nội dung chương
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setEditingChapterId(null);
+                                    setEditingChapterData(null);
+                                }}
+                                className="p-3 hover:bg-slate-50 rounded-2xl transition-colors text-slate-400 hover:text-slate-600"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                            <ChapterForm
+                                initialData={editingChapterData}
+                                selectedLocale={selectedLocale}
+                                onSubmit={handleChapterSubmit}
+                                onCancel={() => {
+                                    setEditingChapterId(null);
+                                    setEditingChapterData(null);
+                                }}
+                                isLoading={isSubmittingChapter}
                             />
                         </div>
                     </div>

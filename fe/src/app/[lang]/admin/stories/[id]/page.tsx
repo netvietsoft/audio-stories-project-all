@@ -20,7 +20,7 @@ export default function EditStoryPage() {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialData, setInitialData] = useState<(Partial<StoryFormValues> & { id?: string; language?: string }) | null>(null);
-  const [selectedLocale, setSelectedLocale] = useState('vi');
+  const [selectedLocale, setSelectedLocale] = useState(currentLang);
 
   useEffect(() => {
     if (!storyId) return;

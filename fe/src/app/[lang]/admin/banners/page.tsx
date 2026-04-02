@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import { Image as ImageIcon, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import Link from '@/components/shared/LocalizedLink';
+import { useParams } from 'next/navigation';
+import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
+import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 
@@ -25,6 +28,10 @@ export default function BannersPage() {
   const [items, setItems] = useState<BannerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+  const params = useParams<{ lang?: string }>();
+  const urlLang = params?.lang === 'en' ? 'en' : 'vi';
+  const [selectedLocale, setSelectedLocale] = useState(urlLang);
+  const { languages } = useAdminLanguages();
 
   const fetchBanners = async () => {
     setIsLoading(true);
@@ -72,13 +79,21 @@ export default function BannersPage() {
           <p className="mt-2 font-medium text-slate-500">Quản lý slideshow quảng cáo hiển thị tại Hero Section trang chủ.</p>
         </div>
 
-        <Link
-          href="/admin/banners/new"
-          className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700"
-        >
-          <Plus className="h-4 w-4" />
-          Thêm banner
-        </Link>
+        <div className="flex items-center gap-3">
+          <AdminLanguageDropdown
+            languages={languages}
+            value={selectedLocale}
+            onChange={setSelectedLocale}
+            className="w-48"
+          />
+          <Link
+            href={`/admin/banners/new?lang=${selectedLocale}`}
+            className="inline-flex items-center gap-2 rounded-2xl bg-indigo-600 px-5 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-indigo-100 transition hover:bg-indigo-700"
+          >
+            <Plus className="h-4 w-4" />
+            Thêm banner
+          </Link>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">

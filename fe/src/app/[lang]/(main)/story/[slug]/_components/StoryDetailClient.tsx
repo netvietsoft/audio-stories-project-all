@@ -198,10 +198,10 @@ export default function StoryDetailClient() {
     <div className="space-y-2 md:space-y-3 -mt-2 md:mt-0">
       <section className="flex w-full flex-col items-start gap-3 rounded-xl p-2 sm:p-4 md:flex-row md:items-stretch md:gap-6 md:p-6">
         {/* Thumbnail - proper 2:3 book cover ratio */}
-        <div className="w-full md:w-[155px] lg:w-[175px] md:shrink-0 self-center md:self-end">
-          <div className="relative w-[140px] md:w-full mx-auto overflow-hidden rounded-lg shadow-xl" style={{ aspectRatio: "2/3" }}>
+        <div className="w-full md:w-[130px] lg:w-[175px] md:shrink-0 self-center md:self-end">
+          <div className="relative w-[110px] md:w-full mx-auto overflow-hidden rounded-lg shadow-xl" style={{ aspectRatio: "2/3" }}>
             <Image
-              src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
+              src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
               alt={storyTitle}
               fill
               priority
@@ -224,11 +224,10 @@ export default function StoryDetailClient() {
               </div>
               <div className="text-left w-40">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("status")}</p>
-                <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${
-                  story.status === "completed"
-                    ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
-                    : "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400"
-                }`}>
+                <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${story.status === "completed"
+                  ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
+                  : "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400"
+                  }`}>
                   {story.status === "completed" ? t("statusCompleted") : t("statusOngoing")}
                 </span>
                 {story.isInteractive && (
@@ -439,7 +438,7 @@ export default function StoryDetailClient() {
                 >
                   <div className="relative w-full overflow-hidden rounded-lg shadow-md group-hover:shadow-xl transition-shadow" style={{ aspectRatio: "2/3" }}>
                     <Image
-                      src={recommendedStory.thumbnailUrl || "https://placehold.co/200x300?text=No+Cover"}
+                      src={recommendedStory.thumbnailUrl || "/thumbnaildefault.jpg"}
                       alt={title}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -486,7 +485,7 @@ export default function StoryDetailClient() {
                 >
                   <div className="relative w-full overflow-hidden rounded-lg shadow-md group-hover:shadow-xl transition-shadow" style={{ aspectRatio: "2/3" }}>
                     <Image
-                      src={newStory.thumbnailUrl || "https://placehold.co/200x300?text=No+Cover"}
+                      src={newStory.thumbnailUrl || "/thumbnaildefault.jpg"}
                       alt={title}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"

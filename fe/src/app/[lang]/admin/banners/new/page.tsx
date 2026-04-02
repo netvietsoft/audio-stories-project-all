@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, Image as ImageIcon } from 'lucide-react';
 import Link from '@/components/shared/LocalizedLink';
 
@@ -13,7 +13,9 @@ import BannerForm, { type BannerSubmitPayload } from '../_components/BannerForm'
 export default function NewBannerPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedLocale, setSelectedLocale] = useState('vi');
+  const params = useParams<{ lang?: string }>();
+  const urlLang = params?.lang === 'en' ? 'en' : 'vi';
+  const [selectedLocale, setSelectedLocale] = useState(urlLang);
   const { languages } = useAdminLanguages();
 
   const handleSubmit = async (payload: BannerSubmitPayload) => {

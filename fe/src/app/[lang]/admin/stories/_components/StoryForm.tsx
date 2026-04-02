@@ -60,9 +60,10 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
     const [authors, setAuthors] = useState<Author[]>([]);
     const [isFetchingMeta, setIsFetchingMeta] = useState(true);
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
+    const [thumbnailUploadError, setThumbnailUploadError] = useState<string | null>(null);
 
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [selectedFilePreview, setSelectedFilePreview] = useState<string | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
     const [urlText, setUrlText] = useState<string>(initialData?.thumbnailUrl || '');
 
     // Available chapters for selection (all chapters in system)
@@ -183,14 +184,14 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
 
     // Create object URL for preview when a file is selected
     useEffect(() => {
-        if (!selectedFile) {
-            setSelectedFilePreview(null);
+        if (!imageFile) {
+            setImagePreviewUrl(null);
             return;
         }
-        const objUrl = URL.createObjectURL(selectedFile);
-        setSelectedFilePreview(objUrl);
+        const objUrl = URL.createObjectURL(imageFile);
+        setImagePreviewUrl(objUrl);
         return () => URL.revokeObjectURL(objUrl);
-    }, [selectedFile]);
+    }, [imageFile]);
 
     // Close dropdowns on outside click
     useEffect(() => {
@@ -227,6 +228,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
 
     const handleFormSubmit = async (values: StoryFormValues) => {
         try {
+            setThumbnailUploadError(null);
             const cleanText = (value?: string) => {
                 const trimmed = value?.trim();
                 return trimmed ? trimmed : undefined;
@@ -245,18 +247,18 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
 
             const description = isEnglishLocale ? (descriptionEn || descriptionVi) : (descriptionVi || descriptionEn);
 
-            // If a local file is selected, upload it first to backend and get local URL
             setIsUploadingThumbnail(true);
-            let finalThumbnailUrl = values.thumbnailUrl;
-            if (selectedFile) {
+            let finalThumbnailUrl = cleanText(values.thumbnailUrl);
+
+            if (imageFile) {
                 const formData = new FormData();
-                formData.append('file', selectedFile);
+                formData.append('file', imageFile);
                 try {
-                    const uploadRes = await apiClient.post('/upload/image', formData);
+                    const uploadRes = await apiClient.post<{ url: string }>('/upload/image', formData);
                     finalThumbnailUrl = uploadRes.data?.url;
                 } catch (err) {
                     console.error('Failed to upload image:', err);
-                    alert('Lỗi khi tải ảnh lên server. Vui lòng thử lại.');
+                    setThumbnailUploadError('Lỗi khi tải ảnh lên server. Vui lòng thử lại.');
                     return;
                 }
             }
@@ -733,81 +735,86 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     <div className="space-y-4">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ảnh bìa (Thumbnail)</label>
 
-                        {/* Preview if either a selected local file or existing URL is present */}
-                        {selectedFilePreview || watch('thumbnailUrl') ? (
+                        {(imagePreviewUrl || urlText.trim()) ? (
                             <div className="relative group w-full aspect-[2/3] md:w-48 overflow-hidden rounded-[32px] border-4 border-white shadow-2xl transition-transform hover:scale-[1.02] mx-auto md:mx-0">
-                                <img src={selectedFilePreview ?? watch('thumbnailUrl')} alt="Thumbnail" className="w-full h-full object-cover" />
+                                <img src={imagePreviewUrl ?? urlText} alt="Thumbnail" className="w-full h-full object-cover" />
                                 <div className="absolute top-4 right-4 flex items-center gap-2">
-                                    {selectedFile && (
+                                    {imageFile && (
                                         <button
                                             type="button"
-                                            onClick={() => setSelectedFile(null)}
+                                            onClick={() => setImageFile(null)}
                                             className="p-2 bg-white/90 text-slate-700 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg"
                                             title="Xóa file đã chọn"
                                         >
                                             X
                                         </button>
                                     )}
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setValue('thumbnailUrl', '');
-                                            setUrlText('');
-                                            setSelectedFile(null);
-                                        }}
-                                        className="p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg"
-                                        title="Xóa ảnh hiện tại"
-                                    >
-                                        <Trash2 className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-wider text-slate-700">Link ảnh (URL)</label>
-                                    <input
-                                        type="url"
-                                        value={urlText}
-                                        onChange={(e) => {
-                                            const v = e.target.value;
-                                            setUrlText(v);
-                                            setValue('thumbnailUrl', v);
-                                            if (v) setSelectedFile(null);
-                                        }}
-                                        placeholder="https://..."
-                                        className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                                        disabled={!!selectedFile}
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black uppercase tracking-wider text-slate-700">Hoặc chọn file</label>
-                                    <div className="flex items-center gap-3">
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => {
-                                                const f = e.target.files?.[0] ?? null;
-                                                setSelectedFile(f);
-                                                if (f) {
-                                                    setValue('thumbnailUrl', '');
-                                                    setUrlText('');
-                                                }
+                                    {urlText.trim() && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setValue('thumbnailUrl', '');
+                                                setUrlText('');
                                             }}
-                                            disabled={!!urlText}
-                                            className="text-sm"
-                                        />
-                                        {selectedFile && (
-                                            <button type="button" onClick={() => setSelectedFile(null)} className="px-3 py-2 bg-white border rounded-lg text-sm">
-                                                X, xóa file
-                                            </button>
-                                        )}
-                                    </div>
-                                    <input {...register('thumbnailUrl')} type="hidden" />
+                                            className="p-2 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg"
+                                            title="Xóa link ảnh"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
-                        )}
+                        ) : null}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-wider text-slate-700">Link ảnh (URL)</label>
+                                <input
+                                    type="url"
+                                    value={urlText}
+                                    onChange={(e) => {
+                                        const v = e.target.value;
+                                        setUrlText(v);
+                                        setValue('thumbnailUrl', v);
+                                        if (v) {
+                                            setImageFile(null);
+                                        }
+                                    }}
+                                    placeholder="https://..."
+                                    className="w-full bg-white border-none rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all disabled:opacity-60"
+                                    disabled={!!imageFile}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-wider text-slate-700">Hoặc chọn file</label>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const f = e.target.files?.[0] ?? null;
+                                            setImageFile(f);
+                                            if (f) {
+                                                setValue('thumbnailUrl', '');
+                                                setUrlText('');
+                                                setThumbnailUploadError(null);
+                                            }
+                                        }}
+                                        disabled={!!urlText.trim()}
+                                        className="text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                                    />
+                                    {imageFile && (
+                                        <button type="button" onClick={() => setImageFile(null)} className="px-3 py-2 bg-white border rounded-lg text-sm">
+                                            X, xóa file
+                                        </button>
+                                    )}
+                                </div>
+                                <input {...register('thumbnailUrl')} type="hidden" />
+                            </div>
+                        </div>
+
+                        {thumbnailUploadError ? <p className="text-xs font-bold text-red-500 ml-2">{thumbnailUploadError}</p> : null}
                     </div>
                 </div>
 

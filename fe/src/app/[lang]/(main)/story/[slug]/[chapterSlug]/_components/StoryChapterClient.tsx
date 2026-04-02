@@ -1280,7 +1280,7 @@ export default function StoryChapterClient() {
                 <p className="font-medium text-gray-900 dark:text-white">{formatDate(story.updatedAt, locale, t("updating"))}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("listensLabel")}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{locale === "en" ? "Listens" : "Lượt nghe"}</p>
                 <p className="font-medium text-gray-900 dark:text-white inline-flex items-center gap-1">
                   <Headphones className="h-4 w-4" />
                   {Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
@@ -1510,13 +1510,12 @@ export default function StoryChapterClient() {
                       if (!canSeekSelectedChapter) return;
                       seekTo(Number(event.target.value));
                     }}
-                    className="w-full accent-pink-600 h-2.5 sm:h-2"
+                    className="w-full h-2.5 sm:h-2"
                     style={{
                       WebkitAppearance: 'none',
                       appearance: 'none',
-                      background: 'linear-gradient(to right, rgb(37 99 235) 0%, rgb(37 99 235) ' + 
-                        ((playerCurrentTime / (playerDuration || 1)) * 100) + '%, rgb(229 231 235) ' + 
-                        ((playerCurrentTime / (playerDuration || 1)) * 100) + '%, rgb(229 231 235) 100%)',
+                      background: 'rgb(255 255 255)',
+                      border: '1px solid rgb(15 23 42)',
                       borderRadius: '9999px',
                       outline: 'none',
                     }}
@@ -1528,18 +1527,18 @@ export default function StoryChapterClient() {
                       width: 18px;
                       height: 18px;
                       border-radius: 50%;
-                      background: rgb(37 99 235);
+                      background: rgb(255 255 255);
                       cursor: pointer;
-                      border: 2px solid white;
+                      border: 2px solid rgb(15 23 42);
                       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
                     }
                     input[type="range"]::-moz-range-thumb {
                       width: 18px;
                       height: 18px;
                       border-radius: 50%;
-                      background: rgb(37 99 235);
+                      background: rgb(255 255 255);
                       cursor: pointer;
-                      border: 2px solid white;
+                      border: 2px solid rgb(15 23 42);
                       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
                     }
                     /* Volume slider - smaller thumb */

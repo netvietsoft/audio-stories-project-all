@@ -1,27 +1,15 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { randomUUID } from 'node:crypto';
 
-type UploadedAudioFile = {
+type UploadedImageFile = {
   originalname: string;
   mimetype: string;
   buffer: Buffer;
 };
 
-export type AudioUploadFolder = 'chapters' | 'bgm';
-
-const AUDIO_UPLOAD_FOLDERS: Record<AudioUploadFolder, string> = {
-  chapters: 'audio/chapters',
-  bgm: 'audio/bgm',
-};
-
 @Injectable()
-export class AudioUploadService {
+export class UploadService {
   private readonly s3Client: S3Client;
   private readonly bucketName: string;
   private readonly publicBaseUrl: string;
@@ -54,25 +42,28 @@ export class AudioUploadService {
     });
   }
 
-  async uploadAudio(file: UploadedAudioFile, folder: AudioUploadFolder = 'chapters'): Promise<string> {
+  async uploadImage(file: UploadedImageFile): Promise<string> {
     const extension = this.getExtension(file.originalname, file.mimetype);
-    const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
-    const folderPath = AUDIO_UPLOAD_FOLDERS[folder];
-    const key = `${folderPath}/${fileName}`;
+    const baseName = file.originalname
+      .replace(/\.[^/.]+$/, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9-_]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    const fileName = `${Date.now()}-${baseName || 'image'}.${extension}`;
 
     try {
       await this.s3Client.send(
         new PutObjectCommand({
           Bucket: this.bucketName,
-          Key: key,
+          Key: fileName,
           Body: file.buffer,
           ContentType: file.mimetype,
         }),
       );
 
-      return `${this.publicBaseUrl}/${key}`;
-    } catch (error) {
-      throw new InternalServerErrorException('Failed to upload audio to Cloudflare R2');
+      return `${this.publicBaseUrl}/${fileName}`;
+    } catch {
+      throw new InternalServerErrorException('Failed to upload image to Cloudflare R2');
     }
   }
 
@@ -83,16 +74,15 @@ export class AudioUploadService {
     }
 
     const mimeToExt: Record<string, string> = {
-      'audio/mpeg': 'mp3',
-      'audio/mp3': 'mp3',
-      'audio/wav': 'wav',
-      'audio/x-wav': 'wav',
-      'audio/ogg': 'ogg',
-      'audio/aac': 'aac',
-      'audio/mp4': 'm4a',
-      'audio/webm': 'webm',
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+      'image/avif': 'avif',
+      'image/svg+xml': 'svg',
     };
 
-    return mimeToExt[mimetype] ?? 'mp3';
+    return mimeToExt[mimetype] ?? 'jpg';
   }
 }

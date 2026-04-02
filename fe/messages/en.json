@@ -186,6 +186,7 @@
     "updatedAt": "Updated",
     "rating": "Rating",
     "listens": "{count} listens",
+    "listensLabel": "Listens",
     "favorite": "Add to favorites",
     "share": "Share",
     "sharePrompt": "Listen to this story with me",

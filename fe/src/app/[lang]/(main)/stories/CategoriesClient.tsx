@@ -468,9 +468,6 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
           sizes="(max-width: 640px) 100px, (max-width: 768px) 120px, 140px"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-sm rounded px-1.5 py-0.5 flex flex-col items-center">
-          <span className="text-[10px] text-white font-bold leading-none">G</span>
-        </div>
       </div>
 
       <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
@@ -496,7 +493,7 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
           <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mt-1 sm:mt-1.5 truncate">
             {story.author?.name || t("updating")}
           </p>
-          <p className="hidden sm:block text-sm text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-2 leading-relaxed">
+          <p className="hidden sm:block text-sm text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-3 leading-relaxed">
             {story.description || t("storyFallbackDescription")}
           </p>
         </div>

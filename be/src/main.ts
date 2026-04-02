@@ -2,8 +2,6 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { json } from 'express';
-import * as express from 'express';
-import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { AppModule } from './app.module';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
@@ -54,12 +52,11 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Serve uploads folder statically at /uploads
-  const uploadsPath = join(process.cwd(), 'uploads');
+  // Ensure the uploads folder exists for the static file server.
+  const uploadsPath = `${process.cwd()}/uploads`;
   if (!existsSync(uploadsPath)) {
     mkdirSync(uploadsPath, { recursive: true });
   }
-  app.use('/uploads', express.static(uploadsPath));
 
   const port = Number(process.env.PORT ?? 8035);
   await app.listen(port);

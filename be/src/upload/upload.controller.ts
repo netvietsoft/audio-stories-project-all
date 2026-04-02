@@ -11,18 +11,19 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
 
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { AudioUploadFolder, AudioUploadService } from './audio-upload.service';
+import { UploadService } from './upload.service';
 
 @Controller('upload')
 export class UploadController {
-  constructor(private readonly audioUploadService: AudioUploadService) {}
+  constructor(
+    private readonly audioUploadService: AudioUploadService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   @Post('audio')
   @HttpCode(HttpStatus.CREATED)
@@ -51,24 +52,7 @@ export class UploadController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (req, file, cb) => {
-          const uploadPath = join(process.cwd(), 'uploads', 'images');
-          if (!existsSync(uploadPath)) {
-            mkdirSync(uploadPath, { recursive: true });
-          }
-          cb(null, uploadPath);
-        },
-        filename: (req, file, cb) => {
-          const extension = extname(file.originalname) || '';
-          const name = `${Date.now()}${extension}`;
-          cb(null, name);
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   async uploadImage(
     @UploadedFile(
       new ParseFilePipeBuilder()
@@ -79,10 +63,10 @@ export class UploadController {
           errorHttpStatusCode: HttpStatus.BAD_REQUEST,
         }),
     )
-    file: Express.Multer.File,
+    file: { originalname: string; mimetype: string; buffer: Buffer },
   ) {
-    const publicUrl = `/uploads/images/${file.filename}`;
-    return { url: publicUrl };
+    const url = await this.uploadService.uploadImage(file);
+    return { url };
   }
 
   private resolveAudioFolder(folder?: string): AudioUploadFolder {

@@ -151,7 +151,7 @@ export default async function AboutPage({ params }: PageProps) {
   const t = content[lang as keyof typeof content] || content.vi;
 
   return (
-    <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 -mb-32 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">
+    <div className="relative left-1/2 w-dvw -translate-x-1/2 -mt-8 bg-slate-50 dark:bg-gray-950 min-h-screen py-12">
       <div className="mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
         <div className="p-2 md:p-4">
           <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">{t.title}</h1>

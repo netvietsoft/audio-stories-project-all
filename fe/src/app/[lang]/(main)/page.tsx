@@ -605,7 +605,7 @@ export default function HomePage() {
       </div>
 
       {/* ─── Truyện mới đăng (Stripe layout) ─────────── */}
-      <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-slate-100 py-12 dark:bg-slate-800/50">
+      <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-slate-800/50">
           <div className={HOME_AXIS_CLASS}>
           <div className="space-y-4">
             <div className="flex items-end justify-between gap-4">

@@ -1260,7 +1260,7 @@ export default function StoryChapterClient() {
           <div className="-mx-4 md:mx-0 bg-white md:bg-transparent">
             <div className="px-4 md:px-0 lg:px-0">
               <section className="rounded-2xl bg-transparent sm:bg-white sm:dark:bg-gray-900 p-1 sm:p-2 md:p-3 lg:bg-white lg:dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
+            <h1 className="text-base md:text-lg font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
 
             <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
               <div>

@@ -107,9 +107,10 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
             <div className="flex min-w-0 flex-1 items-center gap-x-4">
               <div className="relative h-14 w-10 overflow-hidden rounded bg-gray-200 shadow-sm dark:bg-gray-700 shrink-0">
                 <Image
-                  src={story?.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
+                  src={story?.thumbnailUrl || "/thumbnaildefault.jpg"}
                   alt={storyTitle}
                   fill
+                  loading="lazy"
                   className="object-cover"
                 />
               </div>

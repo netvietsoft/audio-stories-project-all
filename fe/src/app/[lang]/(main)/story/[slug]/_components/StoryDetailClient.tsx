@@ -195,8 +195,8 @@ export default function StoryDetailClient() {
   }
 
   return (
-    <div className="space-y-2 md:space-y-3">
-      <section className="flex w-full flex-col items-start gap-3 rounded-xl p-3 sm:p-4 md:flex-row md:items-stretch md:gap-6 md:p-6">
+    <div className="space-y-2 md:space-y-3 -mt-2 md:mt-0">
+      <section className="flex w-full flex-col items-start gap-3 rounded-xl p-2 sm:p-4 md:flex-row md:items-stretch md:gap-6 md:p-6">
         {/* Thumbnail - proper 2:3 book cover ratio */}
         <div className="w-full md:w-[155px] lg:w-[175px] md:shrink-0 self-center md:self-end">
           <div className="relative w-[140px] md:w-full mx-auto overflow-hidden rounded-lg shadow-xl" style={{ aspectRatio: "2/3" }}>
@@ -212,7 +212,7 @@ export default function StoryDetailClient() {
 
         <div className="flex w-full flex-1 flex-col gap-2 md:gap-3">
           {/* Title */}
-          <h1 className="text-xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">{storyTitle}</h1>
+          <h1 className="text-base md:text-lg font-bold text-gray-900 dark:text-white leading-tight">{storyTitle}</h1>
 
           {/* Metadata grid - centered layout */}
           <div className="flex flex-col gap-y-2 text-sm max-w-md">

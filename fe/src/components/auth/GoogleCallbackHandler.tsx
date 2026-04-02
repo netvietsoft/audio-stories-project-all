@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useLocale } from "next-intl";
 
 import { apiClient } from "@/lib/api/api-client";
 import { setAuthCookies } from "@/lib/auth/cookies";
@@ -22,6 +23,7 @@ export default function GoogleCallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setAuth = useUserStore((state) => state.setAuth);
+  const locale = useLocale();
 
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +34,7 @@ export default function GoogleCallbackHandler() {
         const refreshToken = searchParams.get("refresh_token");
 
         if (!accessToken || !refreshToken) {
-          setError("Thiếu token đăng nhập Google. Vui lòng thử lại.");
+          setError(locale === "en" ? "Missing Google login token. Please try again." : "Thiếu token đăng nhập Google. Vui lòng thử lại.");
           return;
         }
 
@@ -62,16 +64,16 @@ export default function GoogleCallbackHandler() {
         const redirect = searchParams.get("redirect") || "/";
         router.replace(redirect);
       } catch {
-        setError("Đăng nhập Google thất bại. Vui lòng thử lại.");
+        setError(locale === "en" ? "Google login failed. Please try again." : "Đăng nhập Google thất bại. Vui lòng thử lại.");
       }
     };
 
     processCallback();
-  }, [router, searchParams, setAuth]);
+  }, [router, searchParams, setAuth, locale]);
 
   if (error) {
     return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;
   }
 
-  return <p className="text-sm text-gray-600 dark:text-gray-300">Đang xử lý đăng nhập Google...</p>;
+  return <p className="text-sm text-gray-600 dark:text-gray-300">{locale === "en" ? "Processing Google login..." : "Đang xử lý đăng nhập Google..."}</p>;
 }

@@ -83,10 +83,11 @@ export default function PopularStoriesGrid({ stories, isLoading = false }: Popul
           >
             <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800 sm:h-32">
               <Image
-                src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
+                src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
                 alt={title}
                 width={120}
-                height={160}
+                height={180}
+                loading="lazy"
                 className="aspect-[2/3] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             </div>

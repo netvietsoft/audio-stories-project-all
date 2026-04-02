@@ -123,10 +123,11 @@ export default function StoryGridCard({
       {/* Thumbnail - Small Left Side */}
       <div className="relative w-24 shrink-0 overflow-hidden rounded-lg sm:w-28">
         <Image
-          src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
+          src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
           alt={localizedTitle}
           width={112}
           height={168}
+          loading="lazy"
           className="aspect-[2/3] h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />

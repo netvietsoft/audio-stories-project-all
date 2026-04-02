@@ -111,10 +111,11 @@ export default function HighRatingStoriesGrid({ stories, isLoading = false }: Hi
 
             <div className="relative w-[110px] sm:w-[120px] xl:w-[140px] shrink-0 overflow-hidden rounded-lg">
               <Image
-                src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
+                src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
                 alt={title}
                 width={200}
                 height={300}
+                loading="lazy"
                 className="aspect-[2/3] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             </div>

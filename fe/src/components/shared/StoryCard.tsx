@@ -110,10 +110,11 @@ export default function StoryCard({ story, className, variant = "default", lang 
       >
         <div className="relative">
           <Image
-            src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
+            src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
             alt={localizedTitle}
             width={400}
             height={600}
+            loading="lazy"
             sizes="(max-width: 640px) 62vw, (max-width: 1024px) 31vw, 22vw"
             className="aspect-[2/3] w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
@@ -158,10 +159,11 @@ export default function StoryCard({ story, className, variant = "default", lang 
       >
         <div className="relative overflow-hidden rounded-lg">
           <Image
-            src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
+            src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
             alt={localizedTitle}
             width={400}
             height={600}
+            loading="lazy"
             sizes="(max-width: 768px) 160px, 260px"
             className="aspect-[3/4] w-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
           />
@@ -205,10 +207,11 @@ export default function StoryCard({ story, className, variant = "default", lang 
     >
       <div className="relative overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
         <Image
-          src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
+          src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
           alt={localizedTitle}
           width={400}
           height={600}
+          loading="lazy"
           sizes={isFeatured ? "(max-width: 768px) 180px, 260px" : "(max-width: 768px) 150px, 230px"}
           className="aspect-[2/3] w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />

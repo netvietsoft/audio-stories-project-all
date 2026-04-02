@@ -267,10 +267,11 @@ export default function InteractiveStoriesSection() {
                         aria-label={title}
                       >
                         <Image
-                          src={story.thumbnailUrl || "https://placehold.co/300x450?text=No+Cover"}
+                          src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
                           alt={title}
                           width={170}
-                          height={260}
+                          height={255}
+                          loading="lazy"
                           className="aspect-[2/3] w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                       </button>
@@ -290,7 +291,7 @@ export default function InteractiveStoriesSection() {
                 className="relative block h-full min-h-[560px] w-full overflow-hidden rounded-2xl shadow-lg"
               >
                 <Image
-                  src={activeStory.thumbnailUrl || "https://placehold.co/1200x800?text=Interactive+Story"}
+                  src={activeStory.thumbnailUrl || "/thumbnaildefault.jpg"}
                   alt={getLocalizedValue(locale, activeStory.titleVi, activeStory.titleEn, activeStory.title)}
                   width={780}
                   height={1040}
@@ -398,10 +399,11 @@ export default function InteractiveStoriesSection() {
                     aria-label={title}
                   >
                     <Image
-                      src={story.thumbnailUrl || "https://placehold.co/300x450?text=No+Cover"}
+                      src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
                       alt={title}
                       width={220}
                       height={330}
+                      loading="lazy"
                       className="aspect-[2/3] w-full rounded-xl object-cover"
                     />
                   </button>

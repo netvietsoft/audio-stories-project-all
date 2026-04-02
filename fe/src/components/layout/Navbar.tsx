@@ -427,7 +427,7 @@ export default function Navbar() {
                               className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
                             >
                               <img
-                                src={story.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
+                                src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
                                 alt={story.title}
                                 className="w-12 h-12 rounded-lg object-cover shrink-0"
                               />
@@ -496,7 +496,7 @@ export default function Navbar() {
                             className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
                           >
                             <img
-                              src={story.thumbnailUrl || "https://placehold.co/100x100?text=No+Cover"}
+                              src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
                               alt={story.title}
                               className="w-12 h-12 rounded-lg object-cover shrink-0"
                             />

@@ -173,9 +173,9 @@ export default function AdminLayout({
                     })}
                 </nav>
 
-                <div className={`p-4 space-y-4 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-6'}`}>
+                <div className={`p-4 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-6'}`}>
                     <div>
-                        <div className={`px-4 pb-4 space-y-3 transition-all duration-300 ${isCollapsed ? 'px-2 pb-3' : ''}`}>
+                        <div className={`px-4 flex gap-3 transition-all duration-300 ${isCollapsed ? 'px-2 pb-3' : ''}`}>
                             <button
                                 onClick={handleLogout}
                                 disabled={isLoggingOut}
@@ -187,7 +187,7 @@ export default function AdminLayout({
                                 ) : (
                                     <>
                                         <LogOut className="w-4 h-4 shrink-0" />
-                                        {!isCollapsed && <span>Đăng xuất</span>}
+                                        {!isCollapsed}
                                     </>
                                 )}
                             </button>
@@ -198,7 +198,7 @@ export default function AdminLayout({
                                 className={`w-full flex items-center justify-center text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all active:scale-[0.98] ${isCollapsed ? 'p-2' : 'gap-2 px-4 py-2.5'}`}
                             >
                                 <Home className="w-4 h-4 shrink-0" />
-                                {!isCollapsed && <span>Về trang chủ</span>}
+                                {!isCollapsed}
                             </Link>
                         </div>
                     </div>

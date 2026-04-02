@@ -80,10 +80,11 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
             >
               <div className="relative">
                 <Image
-                  src={story.thumbnailUrl || "https://placehold.co/400x600?text=No+Cover"}
+                  src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
                   alt={title}
                   width={128}
-                  height={179}
+                  height={192}
+                  loading="lazy"
                   sizes="(max-width: 640px) 30vw, (max-width: 768px) 20vw, (max-width: 1024px) 15vw, 11vw"
                   className="aspect-[5/7] h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />

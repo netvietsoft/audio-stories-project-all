@@ -684,12 +684,12 @@ export default function HomePage() {
       {/* ─── Hall of Fame ─────────────────────────────────────────── */}
       <div className="space-y-10 md:space-y-8">
         <section className="space-y-3">
-          <div className="flex items-end justify-between gap-4">
-            <div>
+          <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+            <div className="flex-1 min-w-0">
               <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("hallTitle")}</h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">{t("hallSubtitle")}</p>
             </div>
-            <Link href="/hall" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
+            <Link href="/vinh-danh" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400 whitespace-nowrap">
               {t("viewFullRanking")}
             </Link>
           </div>

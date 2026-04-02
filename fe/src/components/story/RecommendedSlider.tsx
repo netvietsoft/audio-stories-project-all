@@ -46,10 +46,16 @@ export default function RecommendedSlider({ stories, lang }: RecommendedSliderPr
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{localContent.title || t("title")}</h3>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 md:grid-cols-8 md:gap-3">
-        {stories.map((story) => (
-          <div key={story.id} className="min-w-0">
-            <StoryCard story={story} className="h-full w-full" lang={resolvedLang} />
+      <div className="grid grid-cols-3 gap-2 md:grid-cols-8 md:gap-3">
+        {stories.slice(0, 8).map((story, index) => (
+          <div key={story.id} className={`min-w-0 ${index >= 6 ? "hidden md:block" : ""}`}>
+            <StoryCard
+              story={story}
+              className="h-full w-full"
+              lang={resolvedLang}
+              showFavoriteButton={false}
+              compactMobile
+            />
           </div>
         ))}
       </div>

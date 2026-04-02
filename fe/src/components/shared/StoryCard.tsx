@@ -42,6 +42,8 @@ type StoryCardProps = {
   className?: string;
   variant?: "default" | "newly-posted" | "featured" | "overlay";
   lang?: string;
+  showFavoriteButton?: boolean;
+  compactMobile?: boolean;
 };
 
 const content = {
@@ -55,7 +57,14 @@ const content = {
   },
 } as const;
 
-export default function StoryCard({ story, className, variant = "default", lang }: StoryCardProps) {
+export default function StoryCard({
+  story,
+  className,
+  variant = "default",
+  lang,
+  showFavoriteButton = true,
+  compactMobile = false,
+}: StoryCardProps) {
   const t = useTranslations("StoryCard");
   const locale = useLocale();
   const resolvedLang = lang === "en" ? "en" : (locale === "en" ? "en" : "vi");
@@ -132,10 +141,12 @@ export default function StoryCard({ story, className, variant = "default", lang 
             ) : null}
           </div>
 
-          <FavoriteButton
-            storyId={story.id}
-            className="absolute right-2 top-2 z-10 rounded-full bg-black/45 p-1.5 text-white shadow-sm backdrop-blur-sm hover:bg-black/65 hover:text-red-400"
-          />
+          {showFavoriteButton ? (
+            <FavoriteButton
+              storyId={story.id}
+              className="absolute right-2 top-2 z-10 rounded-full bg-black/45 p-1.5 text-white shadow-sm backdrop-blur-sm hover:bg-black/65 hover:text-red-400"
+            />
+          ) : null}
 
           <div className="absolute inset-x-0 bottom-0 p-3 text-white">
             <h3 className="line-clamp-2 text-base font-extrabold leading-tight">{localizedTitle}</h3>
@@ -172,10 +183,12 @@ export default function StoryCard({ story, className, variant = "default", lang 
             {statusLabel}
           </span>
 
-          <FavoriteButton
-            storyId={story.id}
-            className="absolute right-2 top-2 z-10 p-1.5 rounded-full bg-black/40 text-white hover:bg-black/70 hover:text-red-400 transition-colors pointer-events-auto"
-          />
+          {showFavoriteButton ? (
+            <FavoriteButton
+              storyId={story.id}
+              className="absolute right-2 top-2 z-10 p-1.5 rounded-full bg-black/40 text-white hover:bg-black/70 hover:text-red-400 transition-colors pointer-events-auto"
+            />
+          ) : null}
         </div>
 
         <h3 className="mt-3 line-clamp-1 text-base font-bold text-slate-900 dark:text-white group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">{localizedTitle}</h3>
@@ -199,13 +212,13 @@ export default function StoryCard({ story, className, variant = "default", lang 
   return (
     <Link
       href={`/story/${story.slug}`}
-      className={`group block rounded-2xl p-2 transition-all duration-300 hover:-translate-y-1 ${
+      className={`group block rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
         isFeatured
           ? "bg-amber-50/70 shadow-sm hover:shadow-lg hover:shadow-amber-100/60 dark:bg-slate-900/90 dark:hover:shadow-none"
           : "bg-white/90 shadow-sm hover:shadow-md dark:bg-gray-900/80"
       } ${className || ""}`}
     >
-      <div className="relative overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+      <div className="relative overflow-hidden bg-slate-100 dark:bg-slate-800">
         <Image
           src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
           alt={localizedTitle}
@@ -220,20 +233,28 @@ export default function StoryCard({ story, className, variant = "default", lang 
           {statusLabel}
         </span>
 
-        <FavoriteButton
-          storyId={story.id}
-          className="absolute right-2 top-2 z-10 rounded-full bg-white/85 p-1.5 text-slate-600 shadow-sm hover:bg-white hover:text-red-400 dark:bg-slate-900/70 dark:text-slate-200"
-        />
+        {showFavoriteButton ? (
+          <FavoriteButton
+            storyId={story.id}
+            className="absolute right-2 top-2 z-10 rounded-full bg-white/85 p-1.5 text-slate-600 shadow-sm hover:bg-white hover:text-red-400 dark:bg-slate-900/70 dark:text-slate-200"
+          />
+        ) : null}
       </div>
 
-      <div className="mt-2 space-y-1">
-        <h3 className="mt-2 line-clamp-2 text-sm font-bold text-gray-900 transition-colors group-hover:text-pink-700 dark:text-white dark:group-hover:text-pink-300">
+      <div className="p-2 pt-2 space-y-1">
+        <h3
+          className={`line-clamp-2 font-bold text-gray-900 transition-colors group-hover:text-pink-700 dark:text-white dark:group-hover:text-pink-300 ${
+            compactMobile ? "text-[13px] sm:text-sm" : "text-sm"
+          }`}
+        >
           {localizedTitle}
         </h3>
 
-        <p className="truncate text-xs text-gray-500 dark:text-gray-400">{story.author?.name || t("updating")}</p>
+        <p className={`truncate text-gray-500 dark:text-gray-400 ${compactMobile ? "text-[11px] sm:text-xs" : "text-xs"}`}>
+          {story.author?.name || t("updating")}
+        </p>
 
-        <div className="flex items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <div className="hidden items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 sm:flex">
           <div className="flex items-center gap-1">
             <Eye className="h-3.5 w-3.5" />
             <span>{viewsLabel}</span>

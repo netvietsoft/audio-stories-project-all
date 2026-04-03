@@ -9,7 +9,7 @@
   --app-component-bg: #ffffff;
   --app-navbar-bg: rgba(255, 255, 255, 0.9);
   --app-button-bg: #f3f4f6;
-  --app-component-radius: 5px;
+  --app-component-radius: 10px;
   color-scheme: light;
 }
 
@@ -42,6 +42,21 @@ body {
 .app-component-surface {
   background: var(--app-component-bg);
   border-radius: var(--app-component-radius);
+}
+
+/* Global corner standardization: all non-pill rounded corners use 10px */
+:where(
+  .rounded,
+  .rounded-sm,
+  .rounded-md,
+  .rounded-lg,
+  .rounded-xl,
+  .rounded-2xl,
+  .rounded-3xl,
+  .rounded-4xl,
+  .rounded-\[5px\]
+) {
+  border-radius: 10px !important;
 }
 
 .app-navbar-surface {
@@ -153,7 +168,7 @@ select.border-slate-300:focus {
    Outer wrapper has rounded corners; individual items are not rounded. Uses CSS variables so colors adapt to dark mode. */
 .chapter-list-wrapper {
   position: relative;
-  border-radius: 5px;
+  border-radius: 10px;
   overflow: hidden;
   /* defaults for light mode */
   --chapter-col-border: #db2777; /* pink-600 */

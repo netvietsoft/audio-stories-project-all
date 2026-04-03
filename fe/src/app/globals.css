@@ -67,6 +67,19 @@ body {
   background: var(--app-button-bg);
 }
 
+body.admin-shell table {
+  border-collapse: collapse;
+}
+
+body.admin-shell th,
+body.admin-shell td {
+  border: 1px solid #e5e7eb !important;
+}
+
+body.admin-shell tbody tr:hover {
+  background-color: rgba(249, 250, 251, 0.55) !important;
+}
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -98,9 +111,9 @@ body {
 }
 
 /* Global rule per UI requirement: disable visible borders site-wide */
-*,
-*::before,
-*::after {
+body:not(.admin-shell) *,
+body:not(.admin-shell) *::before,
+body:not(.admin-shell) *::after {
   border-width: 0 !important;
   border-style: none !important;
   outline: none !important;

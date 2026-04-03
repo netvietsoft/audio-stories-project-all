@@ -430,11 +430,52 @@ export class StoriesService {
   async findAllAdmin(query: ExploreQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
+    const hasStatusFilter = query.status && query.status !== 'all';
+    const hasLangFilter = query.lang && query.lang !== 'all';
+
+    const parsedRating = query.rating !== undefined ? Number(query.rating) : undefined;
+    const minRating = Number.isFinite(parsedRating) ? parsedRating : undefined;
+
+    let resolvedIsRecommended: boolean | undefined;
+    if (query.isRecommended !== undefined) {
+      resolvedIsRecommended = typeof query.isRecommended === 'boolean'
+        ? query.isRecommended
+        : String(query.isRecommended) === 'true';
+    } else if (query.recommended !== undefined) {
+      resolvedIsRecommended = typeof query.recommended === 'boolean'
+        ? query.recommended
+        : String(query.recommended) === 'true';
+    }
+
+    let createdAtRange: { gte: Date; lte: Date } | undefined;
+    const createdDateInput = query.date || query.createdAt;
+    if (createdDateInput) {
+      const startOfDay = new Date(createdDateInput);
+      if (!Number.isNaN(startOfDay.getTime())) {
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(createdDateInput);
+        endOfDay.setHours(23, 59, 59, 999);
+        createdAtRange = { gte: startOfDay, lte: endOfDay };
+      }
+    }
+
+    const sortField = query.sortBy;
+    const sortOrder: Prisma.SortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+    const orderBy: Prisma.StoryOrderByWithRelationInput =
+      sortField === 'views'
+        ? { totalViews: sortOrder }
+        : sortField === 'rating'
+          ? { averageRating: sortOrder }
+          : sortField === 'chapters' || sortField === 'chapters_count' || sortField === 'totalChapters'
+            ? { totalChapters: sortOrder }
+            : sortField === 'createdAt'
+              ? { createdAt: sortOrder }
+              : { createdAt: 'desc' };
 
     const where: Prisma.StoryWhereInput = {
       deletedAt: null, // Don't show soft-deleted stories in the active list
-      ...(query.status ? { status: query.status as StoryStatus } : {}),
-      ...(query.lang ? { language: query.lang } : {}),
+      ...(hasStatusFilter ? { status: query.status as StoryStatus } : {}),
+      ...(hasLangFilter ? { language: query.lang } : {}),
       ...(query.search
         ? {
           OR: [
@@ -444,11 +485,20 @@ export class StoriesService {
         }
         : {}),
       ...(query.isInteractive !== undefined ? { isInteractive: query.isInteractive } : {}),
+      ...(resolvedIsRecommended !== undefined ? { isRecommended: resolvedIsRecommended } : {}),
+      ...(minRating !== undefined
+        ? {
+          averageRating: {
+            gte: Math.max(0, minRating),
+          },
+        }
+        : {}),
+      ...(createdAtRange ? { createdAt: createdAtRange } : {}),
     } as any;
 
     const isAll = query.all === 'true';
 
-    const [total, stories] = await Promise.all([
+    const [total, stories, maxViewsAggregate] = await Promise.all([
       this.prisma.story.count({ where }),
       this.prisma.story.findMany({
         where,
@@ -456,7 +506,7 @@ export class StoriesService {
           skip: (page - 1) * limit,
           take: limit,
         }),
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
           author: {
             select: { id: true, name: true },
@@ -471,7 +521,19 @@ export class StoriesService {
           },
         },
       }),
+      this.prisma.story.aggregate({
+        where: { deletedAt: null },
+        _max: { totalViews: true },
+      }),
     ]);
+
+    const maxViewsRaw = maxViewsAggregate._max.totalViews;
+    const maxViewsNumeric = maxViewsRaw === null
+      ? 0
+      : typeof maxViewsRaw === 'bigint'
+        ? Number(maxViewsRaw)
+        : Number(maxViewsRaw);
+    const maxViewsRounded = maxViewsNumeric > 0 ? Math.ceil(maxViewsNumeric / 1000) * 1000 : 0;
 
     return {
       data: stories.map((s) => this.serializeStory(s)),
@@ -479,6 +541,7 @@ export class StoriesService {
         total,
         page,
         lastPage: Math.ceil(total / limit),
+        maxViews: maxViewsRounded,
       },
     };
   }

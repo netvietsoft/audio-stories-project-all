@@ -23,6 +23,14 @@ export default function AdminLayout({
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
+        document.body.classList.add('admin-shell');
+
+        return () => {
+            document.body.classList.remove('admin-shell');
+        };
+    }, []);
+
+    useEffect(() => {
         // Check if current path is login page (with or without locale)
         const isLoginPage = pathname?.includes('/admin/login');
 
@@ -129,22 +137,22 @@ export default function AdminLayout({
 
 
     return (
-        <div className="flex h-screen bg-slate-50 dark:bg-slate-950">
+        <div className="flex h-screen bg-gray-50 text-slate-900 dark:bg-[#161616] dark:text-white">
             {/* Sidebar */}
             <aside
-                className={`bg-white dark:bg-slate-900 flex flex-col hidden md:flex transition-all duration-300 relative ${isCollapsed ? 'w-20' : 'w-72'}`}
+                className={`relative hidden flex-col border-r border-gray-200 bg-white/95 backdrop-blur transition-all duration-300 md:flex dark:border-[#2f3031] dark:bg-[#242526] ${isCollapsed ? 'w-20' : 'w-72'}`}
             >
                 {/* Toggle Button */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-24 bg-white dark:bg-slate-800 rounded-full p-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm z-10"
+                    className="absolute -right-3 top-24 z-10 rounded-full border border-gray-200 bg-white p-1.5 shadow-sm transition-colors hover:bg-gray-50 dark:border-[#2f3031] dark:bg-[#242526] dark:hover:bg-[#2f3031]"
                 >
-                    {isCollapsed ? <ChevronRight className="w-4 h-4 text-slate-600" /> : <ChevronLeft className="w-4 h-4 text-slate-600" />}
+                    {isCollapsed ? <ChevronRight className="h-4 w-4 text-slate-600 dark:text-slate-300" /> : <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" />}
                 </button>
 
                 <div className={`h-20 flex items-center transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'px-8'}`}>
-                    <Link href="/" className="font-bold text-2xl text-indigo-600 flex items-center gap-2 overflow-hidden">
-                        <Shield className="w-7 h-7 shrink-0" />
+                    <Link href="/" className="flex items-center gap-2 overflow-hidden text-2xl font-bold text-pink-600">
+                        <Shield className="h-7 w-7 shrink-0" />
                         {!isCollapsed && <span className="whitespace-nowrap opacity-100 transition-opacity duration-300">Admin Panel</span>}
                     </Link>
                 </div>
@@ -161,12 +169,12 @@ export default function AdminLayout({
                                 key={item.href}
                                 href={item.href}
                                 title={isCollapsed ? item.label : ''}
-                                className={`flex items-center rounded-2xl font-medium transition-all group relative overflow-hidden ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} ${isActive
-                                    ? 'bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-600/5 dark:bg-indigo-950/50 dark:text-indigo-300'
-                                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
+                                className={`relative flex items-center overflow-hidden rounded-2xl font-medium transition-all group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} ${isActive
+                                    ? 'bg-[#ffddef] text-pink-700 shadow-sm dark:bg-pink-950/30 dark:text-pink-200'
+                                    : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-[#2f3031] dark:hover:text-slate-100'
                                     }`}
                             >
-                                <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
+                                <Icon className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-pink-600 dark:text-pink-300' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
                                 {!isCollapsed && <span className="whitespace-nowrap opacity-100 transition-opacity duration-300">{item.label}</span>}
                             </Link>
                         );
@@ -180,14 +188,14 @@ export default function AdminLayout({
                                 onClick={handleLogout}
                                 disabled={isLoggingOut}
                                 title={isCollapsed ? 'Đăng xuất' : ''}
-                                className={`w-full flex items-center justify-center text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50 ${isCollapsed ? 'p-2' : 'gap-2 px-4 py-2.5'}`}
+                                className={`flex w-full items-center justify-center rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-gray-200 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2f3031] dark:text-slate-200 dark:hover:bg-[#3a3b3c] ${isCollapsed ? 'p-2' : 'gap-2 px-4 py-2.5'}`}
                             >
                                 {isLoggingOut ? (
-                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                     <>
-                                        <LogOut className="w-4 h-4 shrink-0" />
-                                        {!isCollapsed}
+                                        <LogOut className="h-4 w-4 shrink-0" />
+                                        {!isCollapsed ? 'Đăng xuất' : null}
                                     </>
                                 )}
                             </button>
@@ -195,10 +203,10 @@ export default function AdminLayout({
                             <Link
                                 href="/"
                                 title={isCollapsed ? 'Về trang chủ' : ''}
-                                className={`w-full flex items-center justify-center text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all active:scale-[0.98] ${isCollapsed ? 'p-2' : 'gap-2 px-4 py-2.5'}`}
+                                className={`flex w-full items-center justify-center rounded-xl bg-[#ffddef] px-4 py-2.5 text-sm font-bold text-pink-700 transition-all active:scale-[0.98] hover:bg-pink-100 dark:bg-pink-950/30 dark:text-pink-200 dark:hover:bg-pink-950/45 ${isCollapsed ? 'p-2' : 'gap-2 px-4 py-2.5'}`}
                             >
-                                <Home className="w-4 h-4 shrink-0" />
-                                {!isCollapsed}
+                                <Home className="h-4 w-4 shrink-0" />
+                                {!isCollapsed ? 'Về trang chủ' : null}
                             </Link>
                         </div>
                     </div>
@@ -206,26 +214,26 @@ export default function AdminLayout({
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 h-screen overflow-y-auto w-full transition-all duration-300">
+            <main className="h-screen w-full flex-1 overflow-y-auto transition-all duration-300">
                 {/* Mobile Header */}
-                <div className="md:hidden h-20 bg-white dark:bg-slate-900 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex h-20 items-center justify-between border-b border-gray-200 bg-white px-6 md:hidden dark:border-[#2f3031] dark:bg-[#242526]">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
-                            className="p-2 text-slate-600 hover:bg-slate-50 rounded-xl"
+                            className="rounded-xl p-2 text-slate-600 hover:bg-gray-50 dark:text-slate-300 dark:hover:bg-[#2f3031]"
                         >
-                            <Menu className="w-6 h-6" />
+                            <Menu className="h-6 w-6" />
                         </button>
-                        <span className="font-bold text-xl text-indigo-600 flex items-center gap-2">
-                            <Shield className="w-6 h-6" />
+                        <span className="flex items-center gap-2 text-xl font-bold text-pink-600">
+                            <Shield className="h-6 w-6" />
                             Admin
                         </span>
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="p-2 text-red-600 bg-red-50 rounded-xl"
+                        className="rounded-xl bg-gray-100 p-2 text-slate-700 dark:bg-[#2f3031] dark:text-slate-200"
                     >
-                        <LogOut className="w-5 h-5" />
+                        <LogOut className="h-5 w-5" />
                     </button>
                 </div>
 
@@ -239,21 +247,21 @@ export default function AdminLayout({
                         ></div>
 
                         {/* Sheet */}
-                        <aside className="absolute inset-y-0 left-0 w-[80%] max-w-sm bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-300 dark:bg-slate-900">
-                            <div className="h-20 flex items-center justify-between px-6">
-                                <span className="font-bold text-xl text-indigo-600 flex items-center gap-2">
-                                    <Shield className="w-6 h-6" />
+                        <aside className="absolute inset-y-0 left-0 flex w-[80%] max-w-sm flex-col bg-white shadow-2xl animate-in slide-in-from-left duration-300 dark:bg-[#242526]">
+                            <div className="flex h-20 items-center justify-between px-6">
+                                <span className="flex items-center gap-2 text-xl font-bold text-pink-600">
+                                    <Shield className="h-6 w-6" />
                                     Admin Panel
                                 </span>
                                 <button
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors"
+                                    className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-gray-50 hover:text-slate-600 dark:hover:bg-[#2f3031] dark:hover:text-slate-200"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="h-5 w-5" />
                                 </button>
                             </div>
 
-                            <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-1.5">
+                            <nav className="flex-1 space-y-1.5 overflow-y-auto px-4 py-6">
                                 {navItems.map((item) => {
                                     const Icon = item.icon;
                                     // Remove locale prefix from pathname for comparison
@@ -265,12 +273,12 @@ export default function AdminLayout({
                                             key={item.href}
                                             href={item.href}
                                             onClick={() => setIsMobileMenuOpen(false)}
-                                            className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all group relative overflow-hidden ${isActive
-                                                ? 'bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-600/5 dark:bg-indigo-950/50 dark:text-indigo-300'
-                                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
+                                            className={`relative flex items-center overflow-hidden rounded-2xl px-4 py-3 font-medium transition-all group gap-3 ${isActive
+                                                ? 'bg-[#ffddef] text-pink-700 shadow-sm dark:bg-pink-950/30 dark:text-pink-200'
+                                                : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-[#2f3031] dark:hover:text-slate-100'
                                                 }`}
                                         >
-                                            <Icon className={`w-5 h-5 shrink-0 transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
+                                            <Icon className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-pink-600 dark:text-pink-300' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
                                             <span className="whitespace-nowrap">{item.label}</span>
                                         </Link>
                                     );
@@ -278,27 +286,27 @@ export default function AdminLayout({
                             </nav>
 
                             <div className="p-6 space-y-4">
-                                <div className="rounded-2xl p-4">
-                                    <div className="gap-3 flex">
+                                <div className="rounded-2xl bg-gray-50 p-4 dark:bg-[#2f3031]">
+                                    <div className="flex gap-3">
                                         <button
                                             onClick={handleLogout}
                                             disabled={isLoggingOut}
-                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50"
+                                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-gray-200 active:scale-[0.98] disabled:opacity-50 dark:bg-[#3a3b3c] dark:text-slate-200 dark:hover:bg-[#464749]"
                                         >
                                             {isLoggingOut ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                <Loader2 className="h-4 w-4 animate-spin" />
                                             ) : (
                                                 <>
-                                                    <LogOut className="w-4 h-4" />
+                                                    <LogOut className="h-4 w-4" />
                                                 </>
                                             )}
                                         </button>   
                                         <Link
                                             href="/"
                                             onClick={() => setIsMobileMenuOpen(false)}
-                                            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-all active:scale-[0.98]"
+                                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#ffddef] px-4 py-2.5 text-sm font-bold text-pink-700 transition-all active:scale-[0.98] hover:bg-pink-100 dark:bg-pink-950/30 dark:text-pink-200 dark:hover:bg-pink-950/45"
                                         >
-                                            <Home className="w-4 h-4" />
+                                            <Home className="h-4 w-4" />
                                         </Link>
                                     </div>
                                 </div>
@@ -307,7 +315,7 @@ export default function AdminLayout({
                     </div>
                 )}
 
-                <div className="p-6 md:p-8 xl:p-10">
+                <div className="p-4 sm:p-6 md:p-8 xl:p-10">
                     <div className="mx-auto w-full max-w-[1920px]">{children}</div>
                 </div>
             </main>

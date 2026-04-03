@@ -31,8 +31,8 @@ export class ExploreQueryDto {
   authorId?: string;
 
   @IsOptional()
-  @IsIn(['ongoing', 'completed'])
-  status?: 'ongoing' | 'completed';
+  @IsIn(['ongoing', 'completed', 'all'])
+  status?: 'ongoing' | 'completed' | 'all';
 
   @IsOptional()
   @IsString()
@@ -69,6 +69,61 @@ export class ExploreQueryDto {
   })
   @IsBoolean()
   isRecommended?: boolean;
+
+  @Allow()
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @IsBoolean()
+  recommended?: boolean;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  minViews?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  maxViews?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  rating?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  chapters?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  minChapters?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  maxChapters?: number;
+
+  @IsOptional()
+  @IsString()
+  createdAt?: string;
+
+  @IsOptional()
+  @IsString()
+  date?: string;
+
+  @IsOptional()
+  @IsIn(['views', 'chapters', 'chapters_count', 'totalChapters', 'createdAt', 'rating'])
+  sortBy?: 'views' | 'chapters' | 'chapters_count' | 'totalChapters' | 'createdAt' | 'rating';
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
 
   @IsOptional()
   @IsString()

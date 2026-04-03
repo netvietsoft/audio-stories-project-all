@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
     Newspaper,
     Search,
@@ -84,15 +84,24 @@ const StoryThumbnail = ({ story }: { story: Story }) => {
 export default function StoriesPage() {
     const [stories, setStories] = useState<Story[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState('all');
+    const searchParams = useSearchParams();
+    const searchParamsKey = searchParams.toString();
+    const router = useRouter();
+    const pathname = usePathname();
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+    const [filterStatus, setFilterStatus] = useState(searchParams.get('status') || 'all');
     const params = useParams<{ lang?: string }>();
     const urlLang = params?.lang === 'en' ? 'en' : 'vi';
     const [selectedLocale, setSelectedLocale] = useState(urlLang);
     const { languages } = useAdminLanguages();
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(() => {
+        const nextPage = Number(searchParams.get('page') || '1');
+        return Number.isFinite(nextPage) && nextPage > 0 ? nextPage : 1;
+    });
     const [total, setTotal] = useState(0);
     const [updatingRecommendId, setUpdatingRecommendId] = useState<string | null>(null);
+    const [localSearch, setLocalSearch] = useState(searchParams.get('q') || '');
+    const [localDate, setLocalDate] = useState(searchParams.get('date') || searchParams.get('createdAt') || '');
 
     // Modal States
     const [editingStoryId, setEditingStoryId] = useState<string | null>(null);
@@ -145,9 +154,87 @@ export default function StoriesPage() {
         return reordered;
     };
 
+    const updateUrlParams = (mutate: (params: URLSearchParams) => void) => {
+        const nextParams = new URLSearchParams(searchParams.toString());
+        mutate(nextParams);
+
+        nextParams.set('page', '1');
+        setPage(1);
+
+        const nextQuery = nextParams.toString();
+        const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+        router.push(nextUrl, { scroll: false });
+        router.refresh();
+    };
+
+    const handleFilterChange = (key: string, value: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (value === 'all' || value === '') {
+            params.delete(key);
+            if (key === 'isRecommended') {
+                params.delete('recommended');
+            }
+        } else {
+            params.set(key, value);
+        }
+
+        params.set('page', '1');
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+        router.refresh();
+
+        if (key === 'q') {
+            setSearchTerm(value);
+        }
+
+        if (key === 'status') {
+            setFilterStatus(value || 'all');
+        }
+
+    };
+
+    const handleSortChange = (field: 'chapters_count' | 'views', order: string) => {
+        updateUrlParams((nextParams) => {
+            if (!order || order === 'all') {
+                nextParams.delete('sortBy');
+                nextParams.delete('sortOrder');
+            } else {
+                nextParams.set('sortBy', field);
+                nextParams.set('sortOrder', order);
+            }
+        });
+    };
+
     useEffect(() => {
         fetchStories();
-    }, [page, filterStatus, selectedLocale]);
+    }, [page, filterStatus, selectedLocale, searchTerm, searchParamsKey]);
+
+    useEffect(() => {
+        const nextPage = Number(searchParams.get('page') || '1');
+        const safeNextPage = Number.isFinite(nextPage) && nextPage > 0 ? nextPage : 1;
+        const nextStatus = searchParams.get('status') || 'all';
+        const nextSearchTerm = searchParams.get('q') || '';
+        const nextDate = searchParams.get('date') || searchParams.get('createdAt') || '';
+
+        setPage((prev) => (prev === safeNextPage ? prev : safeNextPage));
+        setFilterStatus((prev) => (prev === nextStatus ? prev : nextStatus));
+        setSearchTerm((prev) => (prev === nextSearchTerm ? prev : nextSearchTerm));
+        setLocalSearch((prev) => (prev === nextSearchTerm ? prev : nextSearchTerm));
+        setLocalDate((prev) => (prev === nextDate ? prev : nextDate));
+    }, [searchParams]);
+
+    useEffect(() => {
+        const currentQ = searchParams.get('q') || '';
+        if (localSearch === currentQ) return;
+
+        const debounceId = setTimeout(() => {
+            handleFilterChange('q', localSearch);
+        }, 500);
+
+        return () => clearTimeout(debounceId);
+    }, [localSearch, searchParams]);
+
+
 
     useEffect(() => {
         if (!languages.some((language) => language.key === selectedLocale)) {
@@ -166,6 +253,24 @@ export default function StoriesPage() {
                 ...(filterStatus !== 'all' ? { status: filterStatus } : {}),
                 ...(searchTerm ? { search: searchTerm } : {}),
             });
+
+            const advancedKeys = [
+                'isRecommended',
+                'recommended',
+                'rating',
+                'sortBy',
+                'sortOrder',
+                'date',
+                'createdAt',
+            ];
+
+            advancedKeys.forEach((key) => {
+                const value = searchParams.get(key);
+                if (value && value !== 'all') {
+                    params.set(key, value);
+                }
+            });
+
             const res = await apiClient.get(`/stories/admin?${params.toString()}`);
             setStories(res.data.data);
             setTotal(res.data.meta.total);
@@ -178,8 +283,7 @@ export default function StoriesPage() {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        setPage(1);
-        fetchStories();
+        handleFilterChange('q', localSearch);
     };
 
     const toggleRecommended = async (story: Story) => {
@@ -480,8 +584,8 @@ export default function StoriesPage() {
                             type="text"
                             placeholder="Tìm kiếm theo tiêu đề hoặc tác giả..."
                             className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-12 pr-4 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            value={localSearch}
+                            onChange={(e) => setLocalSearch(e.target.value)}
                         />
                     </form>
                     <div className="flex items-center gap-3 w-full lg:w-auto">
@@ -489,10 +593,7 @@ export default function StoriesPage() {
                             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <select
                                 value={filterStatus}
-                                onChange={(e) => {
-                                    setFilterStatus(e.target.value);
-                                    setPage(1);
-                                }}
+                                onChange={(e) => handleFilterChange('status', e.target.value)}
                                 className="w-full bg-slate-50 border-none rounded-2xl py-3 pl-10 pr-10 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer"
                             >
                                 <option value="all">Tất cả trạng thái</option>
@@ -513,13 +614,96 @@ export default function StoriesPage() {
                             <tr className="bg-slate-50/50 border-b border-slate-100">
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Truyện</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Trạng thái</th>
-                                <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Ngôn ngữ</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Chương</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Lượt nghe</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Đề xuất</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">Đánh giá</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">Ngày tạo</th>
                                 <th className="px-8 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
+                            </tr>
+                            <tr className="bg-[#ffddef]/35 border-b border-gray-200">
+                                <td className="bg-gray-50/50 border-b border-gray-200 px-4 py-3">
+                                    <input
+                                        type="text"
+                                        placeholder="Tìm tên..."
+                                        className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-pink-200 focus:border-pink-300 outline-none"
+                                        value={localSearch}
+                                        onChange={(e) => setLocalSearch(e.target.value)}
+                                    />
+                                </td>
+                                <td className="bg-gray-50/50 border-b border-gray-200 px-4 py-3">
+                                    <select
+                                        className="w-full border border-gray-200 rounded px-1 py-1 text-xs focus:ring-1 focus:ring-pink-200 outline-none"
+                                        value={searchParams.get('status') ?? 'all'}
+                                        onChange={(e) => handleFilterChange('status', e.target.value)}
+                                    >
+                                        <option value="all">Tất cả</option>
+                                        <option value="ongoing">Đang ra</option>
+                                        <option value="completed">Hoàn thành</option>
+                                    </select>
+                                </td>
+                                <td className="bg-gray-50/50 border-b border-gray-200 px-4 py-3">
+                                    <div className="flex flex-col gap-1.5">
+                                        <select
+                                            className="w-full border border-gray-200 rounded px-1 py-1 text-xs focus:ring-1 focus:ring-pink-200 outline-none"
+                                            value={searchParams.get('sortBy') === 'chapters_count' ? (searchParams.get('sortOrder') ?? 'all') : 'all'}
+                                            onChange={(e) => handleSortChange('chapters_count', e.target.value)}
+                                        >
+                                            <option value="all">Sắp xếp</option>
+                                            <option value="desc">Nhiều -&gt; Ít</option>
+                                            <option value="asc">Ít -&gt; Nhiều</option>
+                                        </select>
+                                    </div>
+                                </td>
+                                <td className="bg-gray-50/50 border-b border-gray-200 px-4 py-3">
+                                    <div className="flex flex-col gap-1.5">
+                                        <select
+                                            className="w-full border border-gray-200 rounded px-1 py-1 text-xs focus:ring-1 focus:ring-pink-200 outline-none"
+                                            value={searchParams.get('sortBy') === 'views' ? (searchParams.get('sortOrder') ?? 'all') : 'all'}
+                                            onChange={(e) => handleSortChange('views', e.target.value)}
+                                        >
+                                            <option value="all">Sắp xếp</option>
+                                            <option value="desc">Nhiều -&gt; Ít</option>
+                                            <option value="asc">Ít -&gt; Nhiều</option>
+                                        </select>
+                                    </div>
+                                </td>
+                                <td className="bg-gray-50/50 border-b border-gray-200 px-4 py-3">
+                                    <select
+                                        className="w-full border border-gray-200 rounded px-1 py-1 text-xs focus:ring-1 focus:ring-pink-200 outline-none"
+                                        value={searchParams.get('isRecommended') || searchParams.get('recommended') || 'all'}
+                                        onChange={(e) => handleFilterChange('isRecommended', e.target.value)}
+                                    >
+                                        <option value="all">Tất cả</option>
+                                        <option value="true">Có</option>
+                                        <option value="false">Không</option>
+                                    </select>
+                                </td>
+                                <td className="bg-gray-50/50 border-b border-gray-200 px-4 py-3">
+                                    <select
+                                        className="w-full border border-gray-200 rounded px-1 py-1 text-xs focus:ring-1 focus:ring-pink-200 outline-none"
+                                        value={searchParams.get('rating') ?? 'all'}
+                                        onChange={(e) => handleFilterChange('rating', e.target.value)}
+                                    >
+                                        <option value="all">Tất cả</option>
+                                        <option value="4">&gt;= 4 sao</option>
+                                        <option value="3">&gt;= 3 sao</option>
+                                        <option value="2">&gt;= 2 sao</option>
+                                        <option value="1">&gt;= 1 sao</option>
+                                    </select>
+                                </td>
+                                <td className="bg-gray-50/50 border-b border-gray-200 px-4 py-3">
+                                    <input
+                                        type="date"
+                                        className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-pink-200 focus:border-pink-300 outline-none"
+                                        value={localDate}
+                                        onChange={(e) => {
+                                            setLocalDate(e.target.value);
+                                            handleFilterChange('date', e.target.value);
+                                        }}
+                                    />
+                                </td>
+                                <td className="bg-gray-50/50 border-b border-gray-200"></td>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
@@ -568,15 +752,6 @@ export default function StoriesPage() {
                                                         : 'bg-emerald-50 text-emerald-700 border-emerald-100'}
                                                 `}>
                                                     {story.status === 'ongoing' ? 'Đang ra' : 'Hoàn thành'}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-5 text-center">
-                                                <span className={`inline-flex px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border
-                                                    ${story.language === 'vi'
-                                                        ? 'bg-red-50 text-red-700 border-red-100'
-                                                        : 'bg-indigo-50 text-indigo-700 border-indigo-100'}
-                                                `}>
-                                                    {story.language === 'vi' ? '🇻🇳 VI' : '🇬🇧 EN'}
                                                 </span>
                                             </td>
                                             <td className="px-8 py-5 text-center">
@@ -651,7 +826,7 @@ export default function StoriesPage() {
                                         </tr>
                                         {expandedStoryId === story.id && (
                                             <tr className="bg-slate-50/50">
-                                                <td colSpan={9} className="p-0 border-b border-slate-100">
+                                                <td colSpan={8} className="p-0 border-b border-slate-100">
                                                     <div className="px-8 py-6 border-t border-slate-100">
                                                         {loadingChapters === story.id ? (
                                                             <div className="flex justify-center py-8">

@@ -421,6 +421,7 @@
     "scrollRight": "Cuộn phải"
   },
   "ProfilePage": {
+    "personalProfile": "Hồ sơ cá nhân",
     "currentProfile": "Hồ sơ hiện tại",
     "userFallback": "Người dùng",
     "member": "Thành viên",
@@ -442,7 +443,7 @@
     "topUpCredits": "Nạp credits",
     "transactionHistory": "Lịch sử giao dịch",
     "listeningHistory": "Lịch sử nghe",
-    "recentActivity": "Hoạt động gần đây",
+    "recentActivity": "Thông tin cá nhân",
     "clearAll": "Xóa toàn bộ",
     "delete": "Xóa",
     "author": "Tác giả",

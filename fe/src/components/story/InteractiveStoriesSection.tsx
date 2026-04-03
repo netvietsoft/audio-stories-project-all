@@ -150,7 +150,7 @@ export default function InteractiveStoriesSection() {
   if (!stories.length) return null;
 
   return (
-    <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-slate-200/70 py-10 dark:bg-slate-800/70">
+    <section className="py-10">
       <div className="mx-auto w-full space-y-3 px-3 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
           <div className="flex-1 min-w-0">

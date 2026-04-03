@@ -71,8 +71,8 @@ export default function StoryUpdateSubscriptionButton({ storyId, className = "",
     }
   };
 
-  const defaultActive = "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 transform transition hover:-translate-y-0.5 dark:border-emerald-400 dark:bg-emerald-500 dark:hover:bg-emerald-600";
-  const defaultInactive = "border-gray-300 bg-gray-100 text-gray-700 hover:bg-white transform transition hover:-translate-y-0.5 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700";
+  const defaultActive = "border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 transform transition hover:-translate-y-0.5";
+  const defaultInactive = "border-gray-300 bg-gray-100 text-gray-700 hover:bg-white transform transition hover:-translate-y-0.5 dark:bg-gray-900 dark:hover:bg-gray-800";
   const stateClassName = isSubscribed ? (activeClassNameProp || defaultActive) : (inactiveClassNameProp || defaultInactive);
   const buttonLabel = isSubscribed ? t("subscribedUpdates") : t("subscribeUpdates");
 
@@ -81,7 +81,7 @@ export default function StoryUpdateSubscriptionButton({ storyId, className = "",
       type="button"
       onClick={() => void handleClick()}
       disabled={isLoading || isHydrating}
-      className={`inline-flex items-center justify-center gap-2 rounded-full border px-6 py-2.5 text-sm font-semibold shadow-sm transform transition disabled:cursor-not-allowed disabled:opacity-60 ${stateClassName} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-full border transform transition disabled:cursor-not-allowed disabled:opacity-60 ${stateClassName} ${className}`}
       title={user ? t("subscribeHint") : t("subscribeLoginHint")}
       aria-label={buttonLabel}
     >

@@ -187,8 +187,8 @@ export default function TopupPage() {
                 const res = await apiClient.post('/billing/create-checkout-session', {
                     package_code: selectedPackage.code,
                     provider: 'STRIPE',
-                    success_url: `${window.location.origin}/${locale}/topup/success`,
-                    cancel_url: `${window.location.origin}/${locale}/topup`,
+                    success_url: `${window.location.origin}/${locale}/profile/topup/success`,
+                    cancel_url: `${window.location.origin}/${locale}/profile/topup`,
                 });
                 if (res.data.url) {
                     window.location.href = res.data.url;
@@ -219,8 +219,10 @@ export default function TopupPage() {
 
     if (isLoading) {
         return (
-            <div className="flex m-auto mt-60 justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-violet-600 dark:text-violet-400" />
+            <div className="rounded-2xl border border-gray-100 bg-white px-6 py-16 dark:border-gray-800 dark:bg-gray-900">
+                <div className="flex justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-violet-600 dark:text-violet-400" />
+                </div>
             </div>
         );
     }
@@ -228,7 +230,7 @@ export default function TopupPage() {
     const selectedDisplayPrice = selectedPackage ? getDisplayPrice(selectedPackage) : null;
 
     return (
-        <div className="min-h-screen font-sans">
+        <div className="rounded-2xl border border-gray-100 bg-white font-sans dark:border-gray-800 dark:bg-gray-900">
 
             {/* Main Content Area */}
             <div className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-20">
@@ -572,7 +574,7 @@ export default function TopupPage() {
                                 expiresAt={vietqrData.expires_at}
                                 onSuccess={() => {
                                     setShowPaymentModal(false);
-                                    window.location.href = `/${locale}/topup/success`;
+                                    window.location.href = `/${locale}/profile/topup/success`;
                                 }}
                                 onCancel={() => {
                                     setShowPaymentModal(false);

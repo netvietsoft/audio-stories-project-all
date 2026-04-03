@@ -640,7 +640,7 @@ export default function Navbar() {
                       setIsNotifOpen(!isNotifOpen);
                       setIsUserMenuOpen(false); // Đóng menu user nếu đang mở
                     }}
-                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 relative"
+                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#3a3b3c] text-gray-600 dark:text-gray-300 relative"
                   >
                     <Bell className="h-5 w-5" />
                     {unreadNotifs > 0 && (
@@ -650,8 +650,8 @@ export default function Navbar() {
 
                   {/* Dropdown Thông báo */}
                   {isNotifOpen && (
-                    <div className="fixed top-16 inset-x-2 mt-0 w-auto sm:absolute sm:top-auto sm:inset-x-auto sm:right-0 sm:mt-2 sm:w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-50 max-h-[70vh] sm:max-h-[500px] overflow-hidden flex flex-col">
-                      <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                    <div className="fixed top-16 inset-x-2 mt-0 w-auto sm:absolute sm:top-auto sm:inset-x-auto sm:right-0 sm:mt-2 sm:w-80 bg-white dark:bg-[#242526] border border-gray-200 dark:border-[#303133] rounded-[10px] shadow-2xl py-2 z-50 max-h-[70vh] sm:max-h-[500px] overflow-hidden flex flex-col">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-[#303133] flex items-center justify-between">
                         <h3 className="font-bold text-gray-900 dark:text-gray-100">{t("notifications")}</h3>
                         {unreadNotifs > 0 && (
                           <span className="px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">
@@ -664,8 +664,8 @@ export default function Navbar() {
                           <button
                             key={item.id}
                             onClick={() => void markRead(item.id)}
-                            className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors relative ${item.isRead
-                                ? "bg-white dark:bg-gray-800"
+                            className={`w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-[#3a3b3c] border-b border-gray-100 dark:border-[#303133] last:border-b-0 transition-colors relative ${item.isRead
+                                ? "bg-white dark:bg-[#242526]"
                                 : "bg-pink-50 dark:bg-pink-900/20"
                               }`}
                           >
@@ -691,14 +691,14 @@ export default function Navbar() {
                           </button>
                         )) : (
                           <div className="px-4 py-8 text-center">
-                            <Bell className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+                            <Bell className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-400 mb-2" />
                             <p className="text-sm text-gray-500 dark:text-gray-400">{t("emptyNotifications")}</p>
                           </div>
                         )}
                       </div>
                       <Link
                         href={`/${locale}/notifications`}
-                        className="block px-4 py-3 text-center text-sm text-pink-600 dark:text-pink-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
+                        className="block px-4 py-3 text-center text-sm text-pink-600 dark:text-pink-400 font-semibold hover:bg-gray-50 dark:hover:bg-[#3a3b3c] border-t border-gray-100 dark:border-[#303133] transition-colors rounded-b-[10px]"
                       >
                         {t("viewAllNotifications")}
                       </Link>

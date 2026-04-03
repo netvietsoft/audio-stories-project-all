@@ -1329,7 +1329,11 @@ export default function StoryChapterClient() {
           <h1 className="text-2xl font-bold">{story.title}</h1>
           <p className="mt-3 text-sm leading-7">{translationPendingMessage}</p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <StoryUpdateSubscriptionButton storyId={story.id} />
+            <StoryUpdateSubscriptionButton
+              storyId={story.id}
+              className="px-3 py-2 text-sm font-medium"
+              inactiveClassName="border-gray-200 bg-white text-black hover:bg-pink-50 transform transition hover:-translate-y-0.5 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            />
             <Link
               href={`/story/${story.slug}`}
               className="inline-flex items-center justify-center rounded-full border border-pink-300 px-5 py-2.5 text-sm font-semibold text-pink-800 hover:bg-pink-100 dark:border-pink-800 dark:text-pink-100 dark:hover:bg-pink-900/40"
@@ -1346,9 +1350,9 @@ export default function StoryChapterClient() {
     <div className="w-full space-y-3 md:space-y-4">
         <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px] lg:items-start">
           {/* Story Info */}
-          <div className="-mx-4 md:mx-0 bg-white md:bg-transparent">
+          <div className="-mx-4 md:mx-0 bg-transparent">
             <div className="px-4 md:px-0 lg:px-0">
-              <section className="rounded-2xl bg-transparent sm:bg-white sm:dark:bg-gray-900 p-1 sm:p-2 md:p-3 lg:bg-white lg:dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
+              <section className="rounded-2xl bg-white p-1 sm:p-2 md:p-3 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
             <h1 className="text-base md:text-lg font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
 
             <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
@@ -1380,25 +1384,24 @@ export default function StoryChapterClient() {
             <div className="mt-1 flex items-center gap-2 md:gap-3">
               <FavoriteButton
                 storyId={story.id}
-                size="md"
+                size="sm"
                 label={t("favorite")}
-                labelClassName="hidden md:inline"
-                className="px-3 py-2 text-sm font-medium"
-                activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600 transform transition hover:-translate-y-0.5 shadow-sm"
-                inactiveClassName="border-gray-200 bg-gray-100 text-gray-700 hover:bg-white transform transition hover:-translate-y-0.5 shadow-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
+                className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium border shadow-sm transition-colors"
+                activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
+                inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800"
               />
 
-              <StoryUpdateSubscriptionButton 
-                storyId={story.id} 
-                className="px-3 py-2 text-sm font-medium"
+              <StoryUpdateSubscriptionButton
+                storyId={story.id}
+                className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium shadow-sm transition-colors"
                 labelClassName="hidden md:inline"
-                activeClassName="border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 transform transition hover:-translate-y-0.5 shadow-sm"
-                inactiveClassName="border-gray-200 bg-gray-100 text-gray-700 hover:bg-white transform transition hover:-translate-y-0.5 shadow-sm dark:bg-gray-800 dark:border-gray-700"
+                activeClassName="border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 dark:border-emerald-400 dark:bg-emerald-500 dark:hover:bg-emerald-600"
+                inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800"
               />
 
               <button
                 onClick={onShare}
-                className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-white transform transition hover:-translate-y-0.5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800"
                 aria-label={t("share")}
               >
                 <Share2 className="h-4 w-4" />

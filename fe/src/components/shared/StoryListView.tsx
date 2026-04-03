@@ -22,10 +22,12 @@ type ChapterItem = {
 interface StoryListViewProps {
   chapters: ChapterItem[];
   isLoading?: boolean;
+    tone?: "default" | "pink";
 }
 
-export default function StoryListView({ chapters, isLoading }: StoryListViewProps) {
+export default function StoryListView({ chapters, isLoading, tone = "default" }: StoryListViewProps) {
   const t = useTranslations("StoryListView");
+  const isPinkTone = tone === "pink";
 
   const formatTimeAgo = (dateString?: string) => {
     if (!dateString) return "";
@@ -98,14 +100,16 @@ export default function StoryListView({ chapters, isLoading }: StoryListViewProp
                 event.preventDefault();
               }
             }}
-            className={`group flex w-full items-center justify-between gap-x-4 bg-transparent py-1 ${
+            className={`group flex w-full items-center justify-between gap-x-4 rounded-2xl px-3 py-2 transition-all ${
               hasStoryLink
-                ? "bg-transparent"
+                ? isPinkTone
+                  ? "bg-pink-50/50 shadow-sm hover:-translate-y-0.5 hover:bg-pink-50/50 dark:bg-slate-800/50 dark:hover:bg-slate-800/50"
+                  : "bg-transparent hover:bg-pink-50/50 dark:hover:bg-slate-800/40"
                 : "opacity-80 cursor-not-allowed"
             }`}
           >
             <div className="flex min-w-0 flex-1 items-center gap-x-4">
-              <div className="relative h-14 w-10 overflow-hidden rounded bg-gray-200 shadow-sm dark:bg-gray-700 shrink-0">
+              <div className={`relative h-14 w-10 overflow-hidden rounded shadow-sm shrink-0 ${isPinkTone ? "bg-pink-50/50 dark:bg-slate-800/50" : "bg-gray-200 dark:bg-gray-700"}`}>
                 <Image
                   src={story?.thumbnailUrl || "/thumbnaildefault.jpg"}
                   alt={storyTitle}

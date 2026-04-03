@@ -27,6 +27,7 @@ type StoryItem = {
 type CategoryStoriesGridProps = {
   stories: StoryItem[];
   isLoading?: boolean;
+  tone?: "default" | "pink";
 };
 
 const formatRating = (rating?: number | string) => {
@@ -34,9 +35,10 @@ const formatRating = (rating?: number | string) => {
   return Number.isFinite(num) && num > 0 ? num.toFixed(1) : "N/A";
 };
 
-export default function CategoryStoriesGrid({ stories, isLoading = false }: CategoryStoriesGridProps) {
+export default function CategoryStoriesGrid({ stories, isLoading = false, tone = "default" }: CategoryStoriesGridProps) {
   const t = useTranslations("StoryCard");
   const locale = useLocale();
+  const isPinkTone = tone === "pink";
   const viewsSuffix = locale === "en" ? "views" : "lượt đọc";
   const emptyMessage = locale === "en" ? "No stories available." : "Chưa có truyện để hiển thị.";
 
@@ -56,7 +58,7 @@ export default function CategoryStoriesGrid({ stories, isLoading = false }: Cate
 
   if (!displayStories.length) {
     return (
-      <div className="rounded-2xl bg-white/80 p-6 text-sm text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">
+      <div className={`rounded-2xl p-6 text-sm ${isPinkTone ? "bg-pink-50/50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400" : "bg-white/80 text-slate-500 dark:bg-slate-900/70 dark:text-slate-400"}`}>
         {emptyMessage}
       </div>
     );
@@ -78,7 +80,7 @@ export default function CategoryStoriesGrid({ stories, isLoading = false }: Cate
           <Link
             key={story.id}
             href={`/story/${story.slug}`}
-            className="group flex min-h-[160px] sm:min-h-[220px] gap-x-4 rounded-2xl p-2 transition-all duration-300 hover:-translate-y-0.5 bg-white dark:bg-transparent hover:shadow-lg"
+            className={`group flex min-h-[160px] sm:min-h-[220px] gap-x-4 rounded-2xl p-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${isPinkTone ? "bg-pink-50/50 dark:bg-slate-800/50" : "bg-white dark:bg-transparent"}`}
           >
             <div className="relative w-[110px] sm:w-[120px] xl:w-[140px] shrink-0 overflow-hidden rounded-lg">
               <Image

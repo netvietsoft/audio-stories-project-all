@@ -28,6 +28,7 @@ type StoryItem = {
 type CompletedStoriesGridProps = {
   stories: StoryItem[];
   isLoading?: boolean;
+  tone?: "default" | "pink";
 };
 
 const formatRating = (rating?: number | string) => {
@@ -35,10 +36,11 @@ const formatRating = (rating?: number | string) => {
   return Number.isFinite(num) && num > 0 ? num.toFixed(1) : "N/A";
 };
 
-export default function CompletedStoriesGrid({ stories, isLoading = false }: CompletedStoriesGridProps) {
+export default function CompletedStoriesGrid({ stories, isLoading = false, tone = "default" }: CompletedStoriesGridProps) {
   const t = useTranslations("StoryCard");
   const locale = useLocale();
   const lang = locale === "en" ? "en" : "vi";
+  const isPinkTone = tone === "pink";
   const emptyMessage = locale === "en" ? "No stories available." : "Chưa có truyện để hiển thị.";
 
   if (isLoading) {
@@ -55,7 +57,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
 
   if (!displayStories.length) {
     return (
-      <div className="rounded-2xl bg-white/80 p-6 text-sm text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">
+      <div className={`rounded-2xl p-6 text-sm ${isPinkTone ? "bg-pink-50/50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400" : "bg-white/80 text-slate-500 dark:bg-slate-900/70 dark:text-slate-400"}`}>
         {emptyMessage}
       </div>
     );
@@ -76,7 +78,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false }: Com
           <div key={story.id} className={`${visibilityClass} group`}>
             <Link
               href={`/story/${story.slug}`}
-              className="block overflow-hidden rounded-2xl bg-slate-900/95 shadow-sm ring-1 ring-slate-800/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className={`block overflow-hidden rounded-2xl shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${isPinkTone ? "bg-pink-50/50 dark:bg-slate-800/50" : "bg-slate-900/95 ring-1 ring-slate-800/60"}`}
             >
               <div className="relative">
                 <Image

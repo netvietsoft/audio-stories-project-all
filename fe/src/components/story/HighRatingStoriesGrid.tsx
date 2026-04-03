@@ -27,6 +27,7 @@ type StoryItem = {
 type HighRatingStoriesGridProps = {
   stories: StoryItem[];
   isLoading?: boolean;
+  tone?: "default" | "pink";
 };
 
 const formatRating = (rating?: number | string) => {
@@ -34,9 +35,10 @@ const formatRating = (rating?: number | string) => {
   return Number.isFinite(num) && num > 0 ? num.toFixed(1) : "N/A";
 };
 
-export default function HighRatingStoriesGrid({ stories, isLoading = false }: HighRatingStoriesGridProps) {
+export default function HighRatingStoriesGrid({ stories, isLoading = false, tone = "default" }: HighRatingStoriesGridProps) {
   const t = useTranslations("StoryCard");
   const locale = useLocale();
+  const isPinkTone = tone === "pink";
   const viewsSuffix = locale === "en" ? "views" : "lượt đọc";
   const emptyMessage = locale === "en" ? "No stories available." : "Chưa có truyện để hiển thị.";
 
@@ -56,7 +58,7 @@ export default function HighRatingStoriesGrid({ stories, isLoading = false }: Hi
 
   if (!displayStories.length) {
     return (
-      <div className="rounded-2xl bg-white/80 p-6 text-sm text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">
+      <div className={`rounded-2xl p-6 text-sm ${isPinkTone ? "bg-pink-50/50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400" : "bg-white/80 text-slate-500 dark:bg-slate-900/70 dark:text-slate-400"}`}>
         {emptyMessage}
       </div>
     );
@@ -102,7 +104,7 @@ export default function HighRatingStoriesGrid({ stories, isLoading = false }: Hi
           <Link
             key={story.id}
             href={`/story/${story.slug}`}
-            className="group flex min-h-[160px] sm:min-h-[220px] gap-x-4 rounded-2xl p-2 transition-all duration-300 hover:-translate-y-0.5 bg-white dark:bg-transparent hover:shadow-lg relative"
+            className={`group relative flex min-h-[160px] gap-x-4 rounded-2xl p-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:min-h-[220px] ${isPinkTone ? "bg-pink-50/50 dark:bg-slate-800/50" : "bg-white dark:bg-transparent"}`}
           >
             {/* Badge TOP */}
             <div className={`absolute left-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full text-xs font-black text-white shadow-md ${badgeClass}`}>

@@ -314,7 +314,7 @@ export default function StoryDetailClient() {
             <button
               type="button"
               onClick={() => { void onShare(); }}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full border text-sm shadow-sm transition-colors border-gray-300 bg-white text-black hover:border-pink-300 hover:bg-pink-50 hover:text-pink-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:hover:border-pink-800/60 dark:hover:bg-pink-900/20 dark:hover:text-pink-300 whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full border text-sm shadow-sm transition-colors border-gray-300 bg-white text-black hover:border-pink-300 hover:bg-pink-50 hover:text-pink-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-pink-800/60 dark:hover:bg-pink-900/20 dark:hover:text-pink-300 whitespace-nowrap"
               aria-label={t("share")}
             >
               <Share2 className="h-3.5 w-3.5" />

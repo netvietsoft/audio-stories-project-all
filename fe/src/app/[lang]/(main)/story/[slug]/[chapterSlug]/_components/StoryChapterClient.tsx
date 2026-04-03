@@ -1398,7 +1398,7 @@ export default function StoryChapterClient() {
 
               <button
                 onClick={onShare}
-                className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-white transform transition hover:-translate-y-0.5 shadow-sm dark:bg-gray-800 dark:hover:bg-gray-700"
+                className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium bg-gray-100 text-gray-700 hover:bg-white transform transition hover:-translate-y-0.5 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
                 aria-label={t("share")}
               >
                 <Share2 className="h-4 w-4" />
@@ -1609,39 +1609,46 @@ export default function StoryChapterClient() {
                     }}
                   />
                   <style jsx>{`
+                    /* Default (light mode) - white fill, dark border */
                     input[type="range"]::-webkit-slider-thumb {
                       -webkit-appearance: none;
                       appearance: none;
                       width: 18px;
                       height: 18px;
                       border-radius: 50%;
-                      background: rgb(37 99 235);
+                      background: #ffffff;
                       cursor: pointer;
-                      border: 2px solid white;
-                      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                      border: 2px solid rgb(15 23 42);
+                      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
                     }
                     input[type="range"]::-moz-range-thumb {
                       width: 18px;
                       height: 18px;
                       border-radius: 50%;
-                      background: rgb(37 99 235);
+                      background: #ffffff;
                       cursor: pointer;
-                      border: 2px solid white;
-                      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                      border: 2px solid rgb(15 23 42);
+                      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
                     }
-                    /* Volume slider - smaller thumb */
+
+                    /* Volume slider - smaller thumb, same light/dark behavior */
                     input[type="range"].volume-slider::-webkit-slider-thumb {
                       width: 10px;
                       height: 10px;
-                      border: 1px solid white;
-                      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+                      border-radius: 50%;
+                      background: #ffffff;
+                      border: 1px solid rgb(15 23 42);
+                      box-shadow: 0 1px 2px rgba(0,0,0,0.12);
                     }
                     input[type="range"].volume-slider::-moz-range-thumb {
                       width: 10px;
                       height: 10px;
-                      border: 1px solid white;
-                      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+                      border-radius: 50%;
+                      background: #ffffff;
+                      border: 1px solid rgb(15 23 42);
+                      box-shadow: 0 1px 2px rgba(0,0,0,0.12);
                     }
+
                     @media (min-width: 640px) {
                       input[type="range"]::-webkit-slider-thumb {
                         width: 14px;
@@ -1651,6 +1658,57 @@ export default function StoryChapterClient() {
                         width: 14px;
                         height: 14px;
                       }
+                    }
+
+                    /* Focus/active ring to match app accent */
+                    input[type="range"]:focus::-webkit-slider-thumb,
+                    input[type="range"]:active::-webkit-slider-thumb {
+                      box-shadow: 0 0 0 6px rgba(236,72,153,0.12), 0 1px 3px rgba(0,0,0,0.12);
+                    }
+                    input[type="range"]:focus::-moz-range-thumb,
+                    input[type="range"]:active::-moz-range-thumb {
+                      box-shadow: 0 0 0 6px rgba(236,72,153,0.12), 0 1px 3px rgba(0,0,0,0.12);
+                    }
+
+                    input[type="range"].volume-slider:focus::-webkit-slider-thumb,
+                    input[type="range"].volume-slider:active::-webkit-slider-thumb {
+                      box-shadow: 0 0 0 4px rgba(236,72,153,0.12), 0 1px 2px rgba(0,0,0,0.12);
+                    }
+                    input[type="range"].volume-slider:focus::-moz-range-thumb,
+                    input[type="range"].volume-slider:active::-moz-range-thumb {
+                      box-shadow: 0 0 0 4px rgba(236,72,153,0.12), 0 1px 2px rgba(0,0,0,0.12);
+                    }
+
+                    /* Dark mode: invert thumb fill/border */
+                    :global(.dark) input[type="range"]::-webkit-slider-thumb {
+                      background: rgb(15 23 42);
+                      border: 2px solid white;
+                      box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+                    }
+                    :global(.dark) input[type="range"]::-moz-range-thumb {
+                      background: rgb(15 23 42);
+                      border: 2px solid white;
+                      box-shadow: 0 1px 3px rgba(0,0,0,0.35);
+                    }
+
+                    :global(.dark) input[type="range"].volume-slider::-webkit-slider-thumb {
+                      background: rgb(15 23 42);
+                      border: 1px solid white;
+                      box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+                    }
+                    :global(.dark) input[type="range"].volume-slider::-moz-range-thumb {
+                      background: rgb(15 23 42);
+                      border: 1px solid white;
+                      box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+                    }
+                    /* Dark mode focus ring */
+                    :global(.dark) input[type="range"]:focus::-webkit-slider-thumb,
+                    :global(.dark) input[type="range"]:active::-webkit-slider-thumb {
+                      box-shadow: 0 0 0 6px rgba(236,72,153,0.14), 0 1px 3px rgba(0,0,0,0.35);
+                    }
+                    :global(.dark) input[type="range"]:focus::-moz-range-thumb,
+                    :global(.dark) input[type="range"]:active::-moz-range-thumb {
+                      box-shadow: 0 0 0 6px rgba(236,72,153,0.14), 0 1px 3px rgba(0,0,0,0.35);
                     }
                   `}</style>
 
@@ -1715,14 +1773,14 @@ export default function StoryChapterClient() {
                       onChange={(event) => setVolume(Number(event.target.value))}
                       className="volume-slider w-10 sm:w-14 md:w-20 accent-pink-600 h-1.5"
                       style={{
-                        WebkitAppearance: 'none',
-                        appearance: 'none',
-                        background: 'linear-gradient(to right, rgb(37 99 235) 0%, rgb(37 99 235) ' + 
-                          (volume * 100) + '%, rgb(229 231 235) ' + 
-                          (volume * 100) + '%, rgb(229 231 235) 100%)',
-                        borderRadius: '9999px',
-                        outline: 'none',
-                      }}
+                          WebkitAppearance: 'none',
+                          appearance: 'none',
+                          background: 'linear-gradient(to right, rgb(236 72 153) 0%, rgb(236 72 153) ' + 
+                            (volume * 100) + '%, rgb(209 213 219) ' + 
+                            (volume * 100) + '%, rgb(209 213 219) 100%)',
+                          borderRadius: '9999px',
+                          outline: 'none',
+                        }}
                     />
 
                     <button

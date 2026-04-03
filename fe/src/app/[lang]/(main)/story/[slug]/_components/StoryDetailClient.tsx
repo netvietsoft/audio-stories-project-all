@@ -298,8 +298,8 @@ export default function StoryDetailClient() {
 
             <StoryUpdateSubscriptionButton
               storyId={story.id}
-              className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium shadow-sm transition-colors"
-              labelClassName="inline"
+              className="px-2.5 py-1.5 sm:px-5 sm:py-2.5 text-sm font-medium shadow-sm transition-colors"
+              labelClassName="hidden sm:inline"
               activeClassName="border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 dark:border-emerald-400 dark:bg-emerald-500 dark:hover:bg-emerald-600"
               inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
             />
@@ -309,7 +309,8 @@ export default function StoryDetailClient() {
               size="sm"
               icon="heart"
               label={t("favorite")}
-              className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium border shadow-sm transition-colors"
+              labelClassName="hidden sm:inline"
+              className="px-2.5 py-1.5 sm:px-5 sm:py-2.5 text-sm font-medium border shadow-sm transition-colors"
               activeClassName="bg-red-500 text-white hover:bg-red-600 border-red-500"
               inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
             />
@@ -317,11 +318,11 @@ export default function StoryDetailClient() {
             <button
               type="button"
               onClick={() => { void onShare(); }}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749] whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-2.5 py-1.5 sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749] whitespace-nowrap"
               aria-label={t("share")}
             >
               <Share2 className="h-3.5 w-3.5" />
-              <span>{t("share")}</span>
+              <span className="hidden sm:inline">{t("share")}</span>
             </button>
 
             {(hasVi || hasEn) ? (

@@ -28,6 +28,7 @@ type StoryItem = {
   totalChapters?: number;
   author?: { id?: string; name: string };
   categories?: Array<{ category: { id: number; name: string; slug: string } }>;
+  totalBranches?: number;
 };
 
 type ExploreResponse = {
@@ -91,28 +92,7 @@ export default function InteractiveStoriesSection() {
           })
           .slice(0, 5);
 
-        const detailResults = await Promise.allSettled(
-          sorted.map((story) => apiClient.get<StoryDetailResponse>(`/stories/${story.slug}`)),
-        );
-
-        const withChapterCount = sorted.map((story, index) => {
-          const detail = detailResults[index];
-          if (detail?.status !== "fulfilled") return story;
-
-          const payload = detail.value.data;
-          const chapterCount = Number(payload?.totalChapters || payload?.chapters?.length || 0);
-          const branchCount = Array.isArray(payload?.chapters)
-            ? payload.chapters.reduce((sum, chapter) => sum + (chapter?.variants?.length || 0), 0)
-            : 0;
-
-          return {
-            ...story,
-            totalChapters: Number.isFinite(chapterCount) ? chapterCount : story.totalChapters,
-            totalBranches: Number.isFinite(branchCount) ? branchCount : 0,
-          };
-        });
-
-        setStories(withChapterCount);
+        setStories(sorted);
         setActiveIndex(0);
       } catch (error) {
         console.error("Failed to load interactive stories section", error);

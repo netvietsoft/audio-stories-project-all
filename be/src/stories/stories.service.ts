@@ -319,6 +319,13 @@ export class StoriesService {
           totalGifts: true,
           totalChapters: true,
           favoritesCount: true,
+          chapters: {
+            select: {
+              _count: {
+                select: { variants: true }
+              }
+            }
+          },
           _count: {
             select: { chapters: true },
           },
@@ -335,7 +342,16 @@ export class StoriesService {
     ]);
 
     const result = {
-      data: stories.map((story) => this.serializeStory(story)),
+      data: stories.map((story) => {
+        let totalBranches = 0;
+        if (story.chapters && Array.isArray(story.chapters)) {
+          totalBranches = story.chapters.reduce((acc: number, c: any) => acc + (c._count?.variants || 0), 0);
+        }
+        const cloned = { ...story };
+        delete (cloned as any).chapters; // Hide internal chapters array from public feed
+        const serialized = this.serializeStory(cloned);
+        return { ...serialized, totalBranches };
+      }),
       meta: {
         total,
         page,

@@ -17,6 +17,7 @@ type StoryItem = {
   createdAt?: string;
   author?: { name: string };
   categories?: Array<{ category: { id: number; name: string; slug: string } }>;
+  totalBranches?: number;
 };
 
 type ExploreResponse = {
@@ -79,7 +80,7 @@ export default function InteractiveStoriesPage() {
         <>
           <div className="grid gap-4 md:grid-cols-2">
             {stories.map((story) => (
-              <StoryGridCard key={story.id} story={story} highlightMode="interactive" />
+              <StoryGridCard key={story.id} story={story} highlightMode="interactive" highlightValue={story.totalBranches} />
             ))}
           </div>
 

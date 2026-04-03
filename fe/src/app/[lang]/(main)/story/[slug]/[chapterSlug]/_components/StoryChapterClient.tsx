@@ -1727,14 +1727,14 @@ export default function StoryChapterClient() {
                   </div>
 
                   <div className="w-full flex items-center justify-center flex-nowrap gap-1 sm:gap-2 md:gap-3">
-                    <button onClick={playPrev} className="rounded-full border border-gray-300 p-1.5 sm:p-2 text-gray-600">
+                    <button onClick={playPrev} className="rounded-full border border-gray-300 bg-white p-1.5 sm:p-2 text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">
                       <SkipBack className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
 
                     <button
                       onClick={() => seekBy(-10)}
                       disabled={!canSeekSelectedChapter}
-                      className="rounded-full border border-gray-300 px-1.5 py-1 text-[11px] font-semibold text-gray-600 sm:px-2.5 sm:py-1.5 sm:text-xs whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-full border border-gray-300 bg-white px-1.5 py-1 text-[11px] font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100 sm:px-2.5 sm:py-1.5 sm:text-xs whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
                     >
                       -10s
                     </button>
@@ -1753,7 +1753,7 @@ export default function StoryChapterClient() {
                         togglePlay(!isSelectedChapterPlaying);
                       }}
                       disabled={!hasPlayableAudio}
-                      className="rounded-full bg-pink-600 p-2 sm:p-2.5 text-white shadow-lg transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+                      className="rounded-full bg-pink-600 p-2 sm:p-2.5 text-white shadow-[0_6px_18px_rgba(236,72,153,0.45)] transition hover:scale-105 hover:bg-pink-700 hover:shadow-[0_8px_24px_rgba(236,72,153,0.55)] disabled:cursor-not-allowed disabled:bg-gray-400"
                     >
                       {isSelectedChapterPlaying ? <Pause className="w-4 h-4 sm:w-5 sm:h-5" /> : <Play className="w-4 h-4 sm:w-5 sm:h-5" />}
                     </button>
@@ -1761,18 +1761,18 @@ export default function StoryChapterClient() {
                     <button
                       onClick={() => seekBy(10)}
                       disabled={!canSeekSelectedChapter}
-                      className="rounded-full border border-gray-300 px-1.5 py-1 text-[11px] font-semibold text-gray-600 sm:px-2.5 sm:py-1.5 sm:text-xs whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-full border border-gray-300 bg-white px-1.5 py-1 text-[11px] font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100 sm:px-2.5 sm:py-1.5 sm:text-xs whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
                     >
                       +10s
                     </button>
 
-                    <button onClick={playNext} className="rounded-full border border-gray-300 p-1.5 sm:p-2 text-gray-600">
+                    <button onClick={playNext} className="rounded-full border border-gray-300 bg-white p-1.5 sm:p-2 text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">
                       <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
 
                   <div className="flex items-center flex-nowrap justify-center gap-1 sm:gap-2 mt-1">
-                    <button onClick={() => toggleMute()} className="rounded-full border border-gray-300 p-1.5 sm:p-2 text-gray-600">{isMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}</button>
+                    <button onClick={() => toggleMute()} className="rounded-full border border-gray-300 bg-white p-1.5 sm:p-2 text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">{isMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}</button>
                     <input
                       type="range"
                       min={0}
@@ -1794,7 +1794,7 @@ export default function StoryChapterClient() {
 
                     <button
                       onClick={() => setIsShuffle((prev) => !prev)}
-                      className={`rounded-full border p-2 ${isShuffle ? "border-pink-500 text-pink-600" : "border-gray-300 text-gray-500"}`}
+                      className={`rounded-full border p-2 shadow-sm transition hover:bg-gray-100 dark:hover:bg-[#464749] ${isShuffle ? "border-pink-500 bg-pink-50 text-pink-600 dark:bg-pink-900/30" : "border-gray-300 bg-white text-gray-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300"}`}
                     >
                       <Shuffle className="w-4 h-4" />
                     </button>
@@ -1807,14 +1807,14 @@ export default function StoryChapterClient() {
                           return "off";
                         })
                       }
-                      className={`rounded-full border p-2 ${repeatMode !== "off" ? "border-pink-500 text-pink-600" : "border-gray-300 text-gray-500"}`}
+                      className={`rounded-full border p-2 shadow-sm transition hover:bg-gray-100 dark:hover:bg-[#464749] ${repeatMode !== "off" ? "border-pink-500 bg-pink-50 text-pink-600 dark:bg-pink-900/30" : "border-gray-300 bg-white text-gray-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300"}`}
                     >
                       {repeatMode === "one" ? <Repeat1 className="w-4 h-4" /> : <Repeat className="w-4 h-4" />}
                     </button>
 
                     <button
                       onClick={() => setShowSettings((prev) => !prev)}
-                      className="rounded-full bg-gray-100 p-2 text-gray-600 dark:bg-[#3a3b3c] dark:text-gray-300"
+                      className="rounded-full border border-gray-300 bg-gray-100 p-2 text-gray-600 shadow-sm transition hover:bg-gray-200 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300 dark:hover:bg-[#464749]"
                     >
                       <Settings2 className="w-4 h-4" />
                     </button>

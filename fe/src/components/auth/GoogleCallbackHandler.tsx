@@ -61,8 +61,11 @@ export default function GoogleCallbackHandler() {
 
         setAuthCookies(accessToken, refreshToken);
 
-        const redirect = searchParams.get("redirect") || "/";
-        router.replace(redirect);
+        const redirectPath = searchParams.get("redirect") || "/";
+        const finalRedirect = redirectPath.startsWith(`/${locale}`) || redirectPath === `/${locale}`
+          ? redirectPath
+          : `/${locale}${redirectPath === "/" ? "" : redirectPath}`;
+        router.replace(finalRedirect);
       } catch {
         setError(locale === "en" ? "Google login failed. Please try again." : "Đăng nhập Google thất bại. Vui lòng thử lại.");
       }

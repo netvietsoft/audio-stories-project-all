@@ -1618,14 +1618,14 @@ export default function StoryChapterClient() {
                     }}
                   />
                   <style jsx>{`
-                    /* Default (light mode) - white fill, dark border */
+                    /* Default (light mode) - pink fill, dark border */
                     input[type="range"]::-webkit-slider-thumb {
                       -webkit-appearance: none;
                       appearance: none;
                       width: 18px;
                       height: 18px;
                       border-radius: 50%;
-                      background: #ffffff;
+                      background: rgb(236 72 153);
                       cursor: pointer;
                       border: 2px solid rgb(15 23 42);
                       box-shadow: 0 1px 3px rgba(0,0,0,0.12);
@@ -1634,7 +1634,7 @@ export default function StoryChapterClient() {
                       width: 18px;
                       height: 18px;
                       border-radius: 50%;
-                      background: #ffffff;
+                      background: rgb(236 72 153);
                       cursor: pointer;
                       border: 2px solid rgb(15 23 42);
                       box-shadow: 0 1px 3px rgba(0,0,0,0.12);
@@ -1645,7 +1645,7 @@ export default function StoryChapterClient() {
                       width: 10px;
                       height: 10px;
                       border-radius: 50%;
-                      background: #ffffff;
+                      background: rgb(236 72 153);
                       border: 1px solid rgb(15 23 42);
                       box-shadow: 0 1px 2px rgba(0,0,0,0.12);
                     }
@@ -1653,7 +1653,7 @@ export default function StoryChapterClient() {
                       width: 10px;
                       height: 10px;
                       border-radius: 50%;
-                      background: #ffffff;
+                      background: rgb(236 72 153);
                       border: 1px solid rgb(15 23 42);
                       box-shadow: 0 1px 2px rgba(0,0,0,0.12);
                     }
@@ -1688,25 +1688,25 @@ export default function StoryChapterClient() {
                       box-shadow: 0 0 0 4px rgba(236,72,153,0.12), 0 1px 2px rgba(0,0,0,0.12);
                     }
 
-                    /* Dark mode: invert thumb fill/border */
+                    /* Dark mode: pink fill, white border */
                     :global(.dark) input[type="range"]::-webkit-slider-thumb {
-                      background: rgb(15 23 42);
+                      background: rgb(236 72 153);
                       border: 2px solid white;
                       box-shadow: 0 1px 3px rgba(0,0,0,0.35);
                     }
                     :global(.dark) input[type="range"]::-moz-range-thumb {
-                      background: rgb(15 23 42);
+                      background: rgb(236 72 153);
                       border: 2px solid white;
                       box-shadow: 0 1px 3px rgba(0,0,0,0.35);
                     }
 
                     :global(.dark) input[type="range"].volume-slider::-webkit-slider-thumb {
-                      background: rgb(15 23 42);
+                      background: rgb(236 72 153);
                       border: 1px solid white;
                       box-shadow: 0 1px 2px rgba(0,0,0,0.35);
                     }
                     :global(.dark) input[type="range"].volume-slider::-moz-range-thumb {
-                      background: rgb(15 23 42);
+                      background: rgb(236 72 153);
                       border: 1px solid white;
                       box-shadow: 0 1px 2px rgba(0,0,0,0.35);
                     }

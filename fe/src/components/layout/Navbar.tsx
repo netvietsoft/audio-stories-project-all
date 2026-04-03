@@ -342,7 +342,7 @@ export default function Navbar() {
             {/* LOGO & MENU CHÍNH (Desktop) */}
             <div className="flex min-w-0 flex-shrink items-center gap-2 lg:gap-8">
               <Link href="/" className="flex min-w-0 flex-shrink-0 items-center gap-2 text-2xl font-bold">
-                <span className="sm:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-white text-xl shadow-md">
+                <span className="sm:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-pink-700 text-white text-xl shadow-md">
                   N
                 </span>
                 <span className="hidden sm:inline truncate flex-shrink text-pink-600 dark:text-pink-400">Netviet Audio</span>
@@ -738,7 +738,7 @@ export default function Navbar() {
                   <div className="flex flex-shrink-0 items-center gap-2">
                     <button 
                       onClick={openLogin}
-                      className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-xs sm:text-sm font-semibold"
+                      className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-pink-500 to-pink-700 text-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-xs sm:text-sm font-semibold"
                     >
                       {t("login")}
                     </button>

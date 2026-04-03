@@ -482,6 +482,62 @@ export default function GlobalPlayer() {
       <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#3a3b3c] md:hidden">
         <div className="h-full bg-pink-600 transition-all" style={{ width: `${progress}%` }} />
       </div>
+
+      <style jsx>{`
+        /* Default (light mode) - pink fill, dark border */
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: rgb(236 72 153);
+          cursor: pointer;
+          border: 2px solid rgb(15 23 42);
+          box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+        input[type="range"]::-moz-range-thumb {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: rgb(236 72 153);
+          cursor: pointer;
+          border: 2px solid rgb(15 23 42);
+          box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+
+        /* Focus/active ring to match app accent */
+        input[type="range"]:focus::-webkit-slider-thumb,
+        input[type="range"]:active::-webkit-slider-thumb {
+          box-shadow: 0 0 0 4px rgba(236,72,153,0.12), 0 1px 2px rgba(0,0,0,0.12);
+        }
+        input[type="range"]:focus::-moz-range-thumb,
+        input[type="range"]:active::-moz-range-thumb {
+          box-shadow: 0 0 0 4px rgba(236,72,153,0.12), 0 1px 2px rgba(0,0,0,0.12);
+        }
+
+        /* Dark mode: pink fill, white border */
+        :global(.dark) input[type="range"]::-webkit-slider-thumb {
+          background: rgb(236 72 153);
+          border: 2px solid white;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+        }
+        :global(.dark) input[type="range"]::-moz-range-thumb {
+          background: rgb(236 72 153);
+          border: 2px solid white;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+        }
+
+        /* Dark mode focus ring */
+        :global(.dark) input[type="range"]:focus::-webkit-slider-thumb,
+        :global(.dark) input[type="range"]:active::-webkit-slider-thumb {
+          box-shadow: 0 0 0 4px rgba(236,72,153,0.14), 0 1px 2px rgba(0,0,0,0.35);
+        }
+        :global(.dark) input[type="range"]:focus::-moz-range-thumb,
+        :global(.dark) input[type="range"]:active::-moz-range-thumb {
+          box-shadow: 0 0 0 4px rgba(236,72,153,0.14), 0 1px 2px rgba(0,0,0,0.35);
+        }
+      `}</style>
     </div>
   );
 }

@@ -112,6 +112,39 @@ export default function StoriesPage() {
     const [editingChapterData, setEditingChapterData] = useState<any | null>(null);
     const [isSubmittingChapter, setIsSubmittingChapter] = useState(false);
 
+    const sortChaptersByNumber = (chapters: any[]) => {
+        return [...chapters].sort((a, b) => {
+            const aNumber = Number(a?.chapterNumber ?? 0);
+            const bNumber = Number(b?.chapterNumber ?? 0);
+            if (aNumber !== bNumber) return aNumber - bNumber;
+
+            const aCreatedAt = new Date(a?.createdAt || 0).getTime();
+            const bCreatedAt = new Date(b?.createdAt || 0).getTime();
+            return aCreatedAt - bCreatedAt;
+        });
+    };
+
+    const reorderForColumnFirstGrid = (chapters: any[], columnCount: number) => {
+        if (!Array.isArray(chapters) || chapters.length === 0 || columnCount <= 1) {
+            return chapters;
+        }
+
+        const sorted = sortChaptersByNumber(chapters);
+        const rowCount = Math.ceil(sorted.length / columnCount);
+        const reordered: any[] = [];
+
+        for (let rowIndex = 0; rowIndex < rowCount; rowIndex += 1) {
+            for (let colIndex = 0; colIndex < columnCount; colIndex += 1) {
+                const sourceIndex = colIndex * rowCount + rowIndex;
+                if (sourceIndex < sorted.length) {
+                    reordered.push(sorted[sourceIndex]);
+                }
+            }
+        }
+
+        return reordered;
+    };
+
     useEffect(() => {
         fetchStories();
     }, [page, filterStatus, selectedLocale]);
@@ -261,7 +294,8 @@ export default function StoriesPage() {
         setLoadingChapters(storyId);
         try {
             const res = await apiClient.get(`/chapters?storyId=${storyId}&limit=100`);
-            setStoryChapters((prev) => ({ ...prev, [storyId]: res.data.data || res.data || [] }));
+            const chapters = res.data.data || res.data || [];
+            setStoryChapters((prev) => ({ ...prev, [storyId]: sortChaptersByNumber(chapters) }));
         } catch (error) {
             console.error('Failed to fetch chapters:', error);
         } finally {
@@ -277,7 +311,8 @@ export default function StoriesPage() {
             
             // Refetch chapters for this story
             const res = await apiClient.get(`/chapters?storyId=${storyIdForNewChapter}&limit=100`);
-            setStoryChapters((prev) => ({ ...prev, [storyIdForNewChapter]: res.data.data || res.data || [] }));
+            const chapters = res.data.data || res.data || [];
+            setStoryChapters((prev) => ({ ...prev, [storyIdForNewChapter]: sortChaptersByNumber(chapters) }));
             
             // Update UI count
             setStories(prev => prev.map(s => 
@@ -626,7 +661,7 @@ export default function StoriesPage() {
                                                             <p className="text-center text-sm text-slate-500 py-8">Chưa có chương nào.</p>
                                                         ) : (
                                                             <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-                                                                {(storyChapters[story.id] || []).map((chapter) => (
+                                                                {reorderForColumnFirstGrid(storyChapters[story.id] || [], 3).map((chapter) => (
                                                                     <div key={chapter.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden px-5 py-4 flex items-start justify-between gap-3 hover:bg-slate-50 transition-all">
                                                                         <div className="flex min-w-0 items-center gap-3">
                                                                             <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-black">
@@ -759,7 +794,7 @@ export default function StoriesPage() {
                                                 <p className="text-center text-sm text-slate-500 py-6">Chưa có chương nào.</p>
                                             ) : (
                                                 <div className="space-y-3">
-                                                    {(storyChapters[story.id] || []).map((chapter) => (
+                                                    {sortChaptersByNumber(storyChapters[story.id] || []).map((chapter) => (
                                                         <div key={chapter.id} className="bg-white rounded-2xl border border-slate-200 p-4">
                                                             <div className="flex items-start justify-between gap-3">
                                                                 <div>

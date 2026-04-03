@@ -93,7 +93,6 @@ export default function Navbar() {
   ]);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   // Refs
   const categoryMenuRef = useRef<HTMLDivElement>(null);
@@ -230,16 +229,13 @@ export default function Navbar() {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setShowSearchDropdown(false);
       }
-      // Close mobile search when clicking outside (but not on the search button itself)
-      if (isMobileSearchOpen && mobileSearchRef.current && !mobileSearchRef.current.contains(event.target as Node)) {
-        // Check if click is not on the search toggle button
-        const target = event.target as HTMLElement;
-        const isSearchButton = target.closest('[aria-label="' + searchPlaceholder + '"]');
-        if (!isSearchButton) {
-          setIsMobileSearchOpen(false);
-          setSearchQuery("");
-          setShowSearchDropdown(false);
-        }
+      if (
+        mobileSearchRef.current &&
+        !mobileSearchRef.current.contains(event.target as Node) &&
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setShowSearchDropdown(false);
       }
       if (notifMenuRef.current && !notifMenuRef.current.contains(event.target as Node)) {
         setIsNotifOpen(false);
@@ -251,7 +247,7 @@ export default function Navbar() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMobileSearchOpen, searchPlaceholder]);
+  }, []);
 
   // Search with debounce
   useEffect(() => {
@@ -445,90 +441,75 @@ export default function Navbar() {
 
             {/* RIGHT SECTION */}
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
-              {/* Search Expandable - For screens below 2xl when search button clicked */}
-              {isMobileSearchOpen && (
-                <div className="relative 2xl:hidden w-full max-w-2xl lg:w-[50%] xl:w-[40%]" ref={mobileSearchRef}>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={handleSearch}
-                    onFocus={() => {
-                      if (searchResults.length > 0) setShowSearchDropdown(true);
-                    }}
-                    placeholder={t("searchPlaceholder")}
-                    autoFocus
-                    className="w-full pl-9 pr-9 py-2 rounded-full bg-gray-100 dark:bg-[#3a3b3c] border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-pink-500 text-sm outline-none transition-all"
-                  />
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setShowSearchDropdown(false);
-                      setIsMobileSearchOpen(false);
-                    }}
-                    className="app-button-surface absolute right-2 top-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
-                  >
-                    <X className="h-4 w-4 text-gray-400" />
-                  </button>
+              {/* Mobile Search Bar - Always visible inline on top row */}
+              <div className="relative flex-1 lg:hidden" ref={mobileSearchRef}>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearch}
+                  onFocus={() => {
+                    if (searchResults.length > 0) setShowSearchDropdown(true);
+                  }}
+                  placeholder={t("searchPlaceholder")}
+                  className="w-full rounded-full bg-gray-100 py-2 pl-9 pr-4 text-sm outline-none transition-all border-transparent focus:border-pink-500 focus:bg-white dark:bg-[#3a3b3c] dark:focus:bg-[#242526]"
+                />
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
 
-                  {/* Search Results Dropdown for Mobile */}
-                  {showSearchDropdown && searchQuery.trim() && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl py-2 z-[100] max-h-[60vh] overflow-y-auto">
-                      {isSearching ? (
-                        <div className="px-4 py-8 text-center">
-                          <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-pink-600 border-r-transparent"></div>
-                          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Đang tìm kiếm...</p>
-                        </div>
-                      ) : searchResults.length > 0 ? (
-                        <>
-                          {searchResults.map((story) => (
-                            <button
-                              key={story.id}
-                              onClick={() => {
-                                handleSearchResultClick(story.slug);
-                                setIsMobileSearchOpen(false);
-                              }}
-                              className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
-                            >
-                              <img
-                                src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
-                                alt={story.title}
-                                className="w-12 h-12 rounded-lg object-cover shrink-0"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
-                                  {currentLang === 'en' ? story.titleEn || story.title : story.titleVi || story.title}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
-                                  {story.author?.name || "Đang cập nhật"}
-                                </p>
-                              </div>
-                            </button>
-                          ))}
-                          <Link
-                            href={`/search?keyword=${encodeURIComponent(searchQuery)}`}
+                {showSearchDropdown && searchQuery.trim() && (
+                  <div className="absolute top-full left-0 right-0 mt-2 max-h-[60vh] overflow-y-auto rounded-xl border border-gray-200 bg-white py-2 shadow-2xl z-[100] dark:border-[#303133] dark:bg-[#242526]">
+                    {isSearching ? (
+                      <div className="px-4 py-8 text-center">
+                        <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-pink-600 border-r-transparent"></div>
+                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Đang tìm kiếm...</p>
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <>
+                        {searchResults.map((story) => (
+                          <button
+                            key={story.id}
                             onClick={() => {
-                              setShowSearchDropdown(false);
-                              setSearchQuery("");
-                              setIsMobileSearchOpen(false);
+                              handleSearchResultClick(story.slug);
+                              closeMobileMenu();
                             }}
-                            className="block px-4 py-3 text-center text-sm text-pink-600 dark:text-pink-400 font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 border-t border-gray-100 dark:border-gray-700 transition-colors"
+                            className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors text-left"
                           >
-                            Xem tất cả kết quả
-                          </Link>
-                        </>
-                      ) : (
-                        <div className="px-4 py-8 text-center">
-                          <Search className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Không tìm thấy kết quả</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+                            <img
+                              src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
+                              alt={story.title}
+                              className="w-12 h-12 rounded-lg object-cover shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
+                                {currentLang === 'en' ? story.titleEn || story.title : story.titleVi || story.title}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                                {story.author?.name || "Đang cập nhật"}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                        <Link
+                          href={`/search?keyword=${encodeURIComponent(searchQuery)}`}
+                          onClick={() => {
+                            setShowSearchDropdown(false);
+                            setSearchQuery("");
+                            closeMobileMenu();
+                          }}
+                          className="block px-4 py-3 text-center text-sm text-pink-600 dark:text-pink-400 font-semibold hover:bg-gray-50 dark:hover:bg-[#3a3b3c] border-t border-gray-100 dark:border-[#303133] transition-colors"
+                        >
+                          Xem tất cả kết quả
+                        </Link>
+                      </>
+                    ) : (
+                      <div className="px-4 py-8 text-center">
+                        <Search className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Không tìm thấy kết quả</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {/* Desktop Search Bar - Only visible on 2xl+ */}
               <div className="relative mx-2 hidden 2xl:flex flex-grow max-w-sm md:max-w-md" ref={searchRef}>
@@ -596,14 +577,6 @@ export default function Navbar() {
                   </div>
                 )}
               </div>
-
-              <button
-                onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-                className="app-button-surface lg:flex 2xl:hidden flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
-                aria-label={t("searchPlaceholder")}
-              >
-                <Search className="h-5 w-5" />
-              </button>
 
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -807,6 +780,7 @@ export default function Navbar() {
               </div>
             </div>
           </div>
+
         </div>
       </header>
 

@@ -305,7 +305,7 @@ export default function InteractiveStoriesSection() {
 
         <div className="space-y-4 lg:hidden">
         {activeStory ? (
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-[#303133] dark:bg-[#242526]">
             <div className="flex flex-wrap items-baseline gap-2">
               <Link
                 href={`/story/${activeStory.slug}`}
@@ -334,28 +334,28 @@ export default function InteractiveStoriesSection() {
             </Link>
 
             <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600">
+              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-[#3a3b3c] dark:ring-[#303133]">
                 <p className="flex items-center justify-center gap-1.5 font-extrabold text-pink-700 dark:text-pink-300">
                   <BookOpenText className="h-3.5 w-3.5" />
                   {getChapterCount(activeStory).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
                 </p>
                 <p className="mt-1 text-center text-slate-500">{t("chaptersLabel")}</p>
               </div>
-              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600">
+              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-[#3a3b3c] dark:ring-[#303133]">
                 <p className="flex items-center justify-center gap-1.5 font-extrabold text-pink-700 dark:text-pink-300">
                   <Eye className="h-3.5 w-3.5" />
                   {Number(activeStory.totalViews || 0).toLocaleString(lang === "en" ? "en-US" : "vi-VN")}
                 </p>
                 <p className="mt-1 text-center text-slate-500">{t("viewsLabel")}</p>
               </div>
-              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600">
+              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-[#3a3b3c] dark:ring-[#303133]">
                 <p className="flex items-center justify-center gap-1.5 font-extrabold text-pink-700 dark:text-pink-300">
                   <Star className="h-3.5 w-3.5 fill-current" />
                   {formatRating(activeStory.averageRating)}
                 </p>
                 <p className="mt-1 text-center text-slate-500">{t("ratingLabel")}</p>
               </div>
-              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-slate-800 dark:ring-slate-600">
+              <div className="rounded-xl bg-white/90 px-2 py-2 shadow-sm ring-1 ring-pink-200 dark:bg-[#3a3b3c] dark:ring-[#303133]">
                 <p className="flex items-center justify-center gap-1.5 font-extrabold text-pink-700 dark:text-pink-300">
                   <GitBranch className="h-3.5 w-3.5" />
                   {getBranchCount(activeStory)}
@@ -423,7 +423,7 @@ export default function InteractiveStoriesSection() {
                 }}
                 aria-label={`interactive-story-${index + 1}`}
                 className={`h-2.5 rounded-full transition-all ${
-                  index === activeIndex ? "w-6 bg-pink-600" : "w-2.5 bg-slate-300 dark:bg-slate-600"
+                  index === activeIndex ? "w-6 bg-pink-600" : "w-2.5 bg-slate-300 dark:bg-[#3a3b3c]"
                 }`}
               />
             ))}

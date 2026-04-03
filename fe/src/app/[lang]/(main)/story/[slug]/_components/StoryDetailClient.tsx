@@ -195,7 +195,7 @@ export default function StoryDetailClient() {
   }
 
   return (
-    <div className="-mt-4 space-y-2 md:mt-0 md:space-y-3">
+    <div className="space-y-2 md:space-y-3 -mt-2 md:mt-0">
       <section className="app-component-surface flex w-full flex-col items-start gap-3 rounded-[5px] p-2 sm:p-4 md:flex-row md:items-stretch md:gap-6 md:p-6">
         {/* Thumbnail - proper 2:3 book cover ratio */}
         <div className="w-full md:w-[155px] lg:w-[175px] md:shrink-0 self-center md:self-end">
@@ -212,7 +212,7 @@ export default function StoryDetailClient() {
 
         <div className="flex w-full flex-1 flex-col gap-2 md:gap-3">
           {/* Title */}
-          <h1 className="text-sm font-bold leading-tight text-gray-900 sm:text-base md:text-lg dark:text-white">{storyTitle}</h1>
+          <h1 className="text-base md:text-lg font-bold text-gray-900 dark:text-white leading-tight">{storyTitle}</h1>
 
           {/* Metadata grid - centered layout */}
           <div className="flex flex-col gap-y-2 text-sm max-w-md">
@@ -276,29 +276,29 @@ export default function StoryDetailClient() {
           </div>
 
           {/* Action buttons - compact single row */}
-          <div className="mt-1 flex w-full flex-nowrap items-center gap-1.5 overflow-x-auto pb-1">
+          <div className="flex w-full flex-wrap items-center gap-2 mt-1">
             {firstChapter ? (
               <Link
                 href={chapterHref(story.slug, firstChapter.chapterNumber)}
-                className="flex shrink-0 items-center justify-center gap-1 bg-pink-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-pink-700 sm:px-4 sm:py-2 sm:text-sm rounded-full whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap"
               >
-                <Play className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <Play className="h-3.5 w-3.5" />
                 {t("readNow")}
               </Link>
             ) : (
               <button
                 type="button"
                 disabled
-                className="flex shrink-0 items-center justify-center gap-1 rounded-full bg-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400 sm:px-4 sm:py-2 sm:text-sm whitespace-nowrap"
+                className="flex items-center justify-center gap-1.5 rounded-full bg-gray-200 px-4 py-2 text-sm font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400 whitespace-nowrap"
               >
-                <Clock3 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <Clock3 className="h-3.5 w-3.5" />
                 {t("chaptersPendingCta")}
               </button>
             )}
 
             <StoryUpdateSubscriptionButton
               storyId={story.id}
-              className="shrink-0 px-3 py-1.5 text-xs font-medium shadow-sm transition-colors sm:px-4 sm:py-2 sm:text-sm"
+              className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium shadow-sm transition-colors"
               labelClassName="inline"
               activeClassName="border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 dark:border-emerald-400 dark:bg-emerald-500 dark:hover:bg-emerald-600"
               inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
@@ -309,7 +309,7 @@ export default function StoryDetailClient() {
               size="sm"
               icon="heart"
               label={t("favorite")}
-              className="shrink-0 border px-3 py-1.5 text-xs font-medium shadow-sm transition-colors sm:px-4 sm:py-2 sm:text-sm"
+              className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium border shadow-sm transition-colors"
               activeClassName="bg-red-500 text-white hover:bg-red-600 border-red-500"
               inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
             />
@@ -317,26 +317,26 @@ export default function StoryDetailClient() {
             <button
               type="button"
               onClick={() => { void onShare(); }}
-              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749] sm:px-4 sm:py-2 sm:text-sm whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749] whitespace-nowrap"
               aria-label={t("share")}
             >
-              <Share2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <Share2 className="h-3.5 w-3.5" />
               <span>{t("share")}</span>
             </button>
 
             {(hasVi || hasEn) ? (
-              <div className="relative shrink-0">
-                <Globe className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-500 sm:left-3 sm:h-3.5 sm:w-3.5" />
+              <div className="relative">
+                <Globe className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500" />
                 <select
                   value={currentLang}
                   onChange={(event) => handleSwitchLanguage(event.target.value as "vi" | "en")}
-                  className="appearance-none rounded-full border border-gray-300 bg-white py-1.5 pl-7 pr-6 text-xs font-medium text-gray-700 shadow-sm transition focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 sm:py-2 sm:pl-8 sm:pr-7 sm:text-sm"
+                  className="appearance-none rounded-full border border-gray-300 bg-white py-2 pl-8 pr-7 text-sm font-medium text-gray-700 shadow-sm transition focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                   aria-label={t("languageSwitcherLabel")}
                 >
                   {hasVi ? <option value="vi">{t("languageOptionVi")}</option> : null}
                   {hasEn ? <option value="en">{t("languageOptionEn")}</option> : null}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-500 sm:h-4 sm:w-4" />
+                <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
               </div>
             ) : null}
 

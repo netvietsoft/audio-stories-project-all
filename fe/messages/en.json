@@ -422,6 +422,7 @@
     "scrollRight": "Scroll right"
   },
   "ProfilePage": {
+    "personalProfile": "Personal Profile",
     "currentProfile": "Current profile",
     "userFallback": "User",
     "member": "Member",
@@ -443,7 +444,7 @@
     "topUpCredits": "Top up credits",
     "transactionHistory": "Transaction history",
     "listeningHistory": "Listening history",
-    "recentActivity": "Recent activity",
+    "recentActivity": "Personal profile",
     "clearAll": "Clear all",
     "delete": "Delete",
     "author": "Author",

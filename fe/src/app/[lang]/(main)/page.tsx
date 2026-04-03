@@ -180,9 +180,8 @@ export default function HomePage() {
   const [favoriteStories, setFavoriteStories] = useState<FavoriteItem[]>([]);
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   
-  // Random categories và stories của chúng
-  const [randomCategories, setRandomCategories] = useState<CategoryItem[]>([]);
-  const [randomCategoryStories, setRandomCategoryStories] = useState<Record<number, StoryItem[]>>({});
+  const [displayCategories, setDisplayCategories] = useState<CategoryItem[]>([]);
+  const [displayCategoryStories, setDisplayCategoryStories] = useState<Record<number, StoryItem[]>>({});
   
   const [isPersonalizedLoading, setIsPersonalizedLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -312,38 +311,23 @@ export default function HomePage() {
         setShounenStories(shounenRes.status === "fulfilled" ? (shounenRes.value.data || []) : []);
         setTienHiepStories(tienHiepRes.status === "fulfilled" ? (tienHiepRes.value.data || []) : []);
 
-        // Lấy random 8 thể loại (loại trừ các thể loại đã hiển thị ở Category Tabs)
+        // Keep category order stable from API response and only exclude tabs categories.
         const excludedSlugs = ['action', 'xuyen-khong', 'shounen', 'tien-hiep'];
         const availableCategories = allCats.filter(cat => !excludedSlugs.includes(cat.slug));
 
-        const slugPriorityGroups = [
-          ["romance", "ngon-tinh"],
-          ["kiem-hiep"],
-          ["do-thi", "urban"],
-        ];
+        const selectedCategories = availableCategories.slice(0, 8);
+        setDisplayCategories(selectedCategories);
 
-        const prioritizedCategories = slugPriorityGroups
-          .map((aliases) => availableCategories.find((cat) => aliases.includes((cat.slug || "").toLowerCase())))
-          .filter((cat): cat is CategoryItem => Boolean(cat));
-        
-        // Shuffle phần còn lại, sau đó ghép với nhóm ưu tiên ở đầu
-        const prioritizedIdSet = new Set(prioritizedCategories.map((cat) => cat.id));
-        const shuffled = [...availableCategories]
-          .filter((cat) => !prioritizedIdSet.has(cat.id))
-          .sort(() => Math.random() - 0.5);
-        const selectedCategories = [...prioritizedCategories, ...shuffled].slice(0, 8);
-        setRandomCategories(selectedCategories);
-
-        // Fetch stories cho các thể loại random
-        const randomCategoryPromises = selectedCategories.map(cat =>
+        // Fetch stories for the displayed categories.
+        const displayCategoryPromises = selectedCategories.map(cat =>
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, categoryId: cat.id })
         );
 
-        const randomCategoryResults = await Promise.allSettled(randomCategoryPromises);
+        const displayCategoryResults = await Promise.allSettled(displayCategoryPromises);
         const storiesMap: Record<number, StoryItem[]> = {};
         
         selectedCategories.forEach((cat, index) => {
-          const result = randomCategoryResults[index];
+          const result = displayCategoryResults[index];
           if (result && result.status === "fulfilled") {
             storiesMap[cat.id] = result.value.data || [];
           } else {
@@ -351,7 +335,7 @@ export default function HomePage() {
           }
         });
 
-        setRandomCategoryStories(storiesMap);
+        setDisplayCategoryStories(storiesMap);
 
         setAuthors(authorRes.status === "fulfilled" ? authorRes.value : []);
         setHallContributors(hallRes.status === "fulfilled" ? hallRes.value : []);
@@ -790,17 +774,16 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* ─── Random Category Sections ─ */}
-        {randomCategories.map((category) => {
-          const stories = randomCategoryStories[category.id] || [];
+        {/* ─── Category Sections ─ */}
+        {displayCategories.map((category, index) => {
+          const stories = displayCategoryStories[category.id] || [];
           if (stories.length === 0) return null;
 
           const categoryName = getLocalizedValue(locale, category.nameVi, category.nameEn, category.name);
-          const categorySlug = (category.slug || "").toLowerCase();
-          const isNeutralCategory = ["romance", "ngon-tinh", "do-thi", "urban"].includes(categorySlug);
-          const categorySectionClassName = isNeutralCategory
-            ? "relative left-1/2 w-dvw -translate-x-1/2 py-12"
-            : "relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-slate-800/50";
+          const isPinkSection = index % 2 === 1;
+          const categorySectionClassName = isPinkSection
+            ? "relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-slate-800/50"
+            : "relative left-1/2 w-dvw -translate-x-1/2 bg-white py-12 dark:bg-[#242526]";
 
           return (
             <section key={category.id} className={categorySectionClassName}>
@@ -822,7 +805,7 @@ export default function HomePage() {
                   {t("viewAll")}
                 </Link>
               </div>
-              <CategoryStoriesGrid stories={stories} isLoading={isLoading} tone={isNeutralCategory ? "default" : "pink"} />
+              <CategoryStoriesGrid stories={stories} isLoading={isLoading} tone={isPinkSection ? "pink" : "default"} />
               </div>
               </div>
             </section>

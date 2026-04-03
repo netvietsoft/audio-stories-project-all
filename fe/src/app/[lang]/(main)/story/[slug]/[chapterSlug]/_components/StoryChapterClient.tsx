@@ -1579,8 +1579,8 @@ export default function StoryChapterClient() {
                 <section className="rounded-[5px] border border-gray-300 bg-white p-2 sm:p-3 md:p-4 dark:border-[#303133] dark:bg-[#242526]">
               <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("audioPlayer")}</h2>
 
-              <div className="mt-4 grid gap-2 md:grid-cols-[100px_minmax(0,1fr)] lg:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
-                <div className="flex flex-col shrink-0 items-center justify-center gap-2">
+              <div className="mt-4 grid grid-cols-[88px_minmax(0,1fr)] gap-2 sm:grid-cols-[104px_minmax(0,1fr)] lg:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
+                <div className="flex min-w-0 flex-col shrink-0 items-center justify-center gap-2">
                   <div className={`relative h-16 w-16 sm:h-20 sm:w-20 overflow-hidden rounded-full border-4 border-pink-200 dark:border-pink-900 lg:h-28 lg:w-28 ${isSelectedChapterPlaying ? "animate-spin [animation-duration:10s]" : ""}`}>
                     <img
                       src={playerCoverUrl}
@@ -1593,7 +1593,7 @@ export default function StoryChapterClient() {
                   </p>
                 </div>
 
-                <div className="flex-1 min-w-0 space-y-2">
+                <div className="min-w-0 space-y-2 pr-1 sm:pr-2 md:pr-3">
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {t("chapterTitle", { number: selectedChapter.chapterNumber, title: selectedChapterTitle })}
                   </p>
@@ -1726,17 +1726,17 @@ export default function StoryChapterClient() {
                     <span>{formatDuration(playerDuration)}</span>
                   </div>
 
-                  <div className="w-full flex items-center justify-center flex-nowrap gap-1 sm:gap-2 md:gap-3">
-                    <button onClick={playPrev} className="rounded-full border border-gray-300 bg-white p-1.5 sm:p-2 text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">
-                      <SkipBack className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <div className="flex w-full items-center justify-center gap-1.5 sm:gap-2">
+                    <button onClick={playPrev} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">
+                      <SkipBack className="h-4 w-4" />
                     </button>
 
                     <button
                       onClick={() => seekBy(-10)}
                       disabled={!canSeekSelectedChapter}
-                      className="rounded-full border border-gray-300 bg-white px-1.5 py-1 text-[11px] font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100 sm:px-2.5 sm:py-1.5 sm:text-xs whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-[10px] font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
                     >
-                      -10s
+                      -10
                     </button>
 
                     <button
@@ -1753,26 +1753,26 @@ export default function StoryChapterClient() {
                         togglePlay(!isSelectedChapterPlaying);
                       }}
                       disabled={!hasPlayableAudio}
-                      className="rounded-full bg-pink-600 p-2 sm:p-2.5 text-white shadow-[0_6px_18px_rgba(236,72,153,0.45)] transition hover:scale-105 hover:bg-pink-700 hover:shadow-[0_8px_24px_rgba(236,72,153,0.55)] disabled:cursor-not-allowed disabled:bg-gray-400"
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-[0_6px_18px_rgba(236,72,153,0.45)] transition hover:scale-105 hover:bg-pink-700 hover:shadow-[0_8px_24px_rgba(236,72,153,0.55)] disabled:cursor-not-allowed disabled:bg-gray-400"
                     >
-                      {isSelectedChapterPlaying ? <Pause className="w-4 h-4 sm:w-5 sm:h-5" /> : <Play className="w-4 h-4 sm:w-5 sm:h-5" />}
+                      {isSelectedChapterPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </button>
 
                     <button
                       onClick={() => seekBy(10)}
                       disabled={!canSeekSelectedChapter}
-                      className="rounded-full border border-gray-300 bg-white px-1.5 py-1 text-[11px] font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100 sm:px-2.5 sm:py-1.5 sm:text-xs whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-[10px] font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
                     >
-                      +10s
+                      +10
                     </button>
 
-                    <button onClick={playNext} className="rounded-full border border-gray-300 bg-white p-1.5 sm:p-2 text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">
-                      <SkipForward className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <button onClick={playNext} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">
+                      <SkipForward className="h-4 w-4" />
                     </button>
                   </div>
 
-                  <div className="flex items-center flex-nowrap justify-center gap-1 sm:gap-2 mt-1">
-                    <button onClick={() => toggleMute()} className="rounded-full border border-gray-300 bg-white p-1.5 sm:p-2 text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">{isMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}</button>
+                  <div className="mt-1 flex w-full min-w-0 items-center justify-center gap-1.5 sm:gap-2">
+                    <button onClick={() => toggleMute()} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">{isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}</button>
                     <input
                       type="range"
                       min={0}
@@ -1780,7 +1780,7 @@ export default function StoryChapterClient() {
                       step={0.01}
                       value={volume}
                       onChange={(event) => setVolume(Number(event.target.value))}
-                      className="volume-slider w-10 sm:w-14 md:w-20 accent-pink-600 h-1.5"
+                      className="volume-slider h-1.5 min-w-0 max-w-24 flex-1 sm:max-w-28 md:max-w-32 accent-pink-600"
                       style={{
                           WebkitAppearance: 'none',
                           appearance: 'none',
@@ -1794,9 +1794,9 @@ export default function StoryChapterClient() {
 
                     <button
                       onClick={() => setIsShuffle((prev) => !prev)}
-                      className={`rounded-full border p-2 shadow-sm transition hover:bg-gray-100 dark:hover:bg-[#464749] ${isShuffle ? "border-pink-500 bg-pink-50 text-pink-600 dark:bg-pink-900/30" : "border-gray-300 bg-white text-gray-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300"}`}
+                      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-sm transition hover:bg-gray-100 dark:hover:bg-[#464749] ${isShuffle ? "border-pink-500 bg-pink-50 text-pink-600 dark:bg-pink-900/30" : "border-gray-300 bg-white text-gray-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300"}`}
                     >
-                      <Shuffle className="w-4 h-4" />
+                      <Shuffle className="h-4 w-4" />
                     </button>
 
                     <button
@@ -1807,16 +1807,16 @@ export default function StoryChapterClient() {
                           return "off";
                         })
                       }
-                      className={`rounded-full border p-2 shadow-sm transition hover:bg-gray-100 dark:hover:bg-[#464749] ${repeatMode !== "off" ? "border-pink-500 bg-pink-50 text-pink-600 dark:bg-pink-900/30" : "border-gray-300 bg-white text-gray-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300"}`}
+                      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-sm transition hover:bg-gray-100 dark:hover:bg-[#464749] ${repeatMode !== "off" ? "border-pink-500 bg-pink-50 text-pink-600 dark:bg-pink-900/30" : "border-gray-300 bg-white text-gray-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300"}`}
                     >
-                      {repeatMode === "one" ? <Repeat1 className="w-4 h-4" /> : <Repeat className="w-4 h-4" />}
+                      {repeatMode === "one" ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}
                     </button>
 
                     <button
                       onClick={() => setShowSettings((prev) => !prev)}
-                      className="rounded-full border border-gray-300 bg-gray-100 p-2 text-gray-600 shadow-sm transition hover:bg-gray-200 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300 dark:hover:bg-[#464749]"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-gray-100 text-gray-600 shadow-sm transition hover:bg-gray-200 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300 dark:hover:bg-[#464749]"
                     >
-                      <Settings2 className="w-4 h-4" />
+                      <Settings2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>

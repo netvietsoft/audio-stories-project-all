@@ -446,7 +446,7 @@ export default function HomePage() {
     <div className="space-y-10 md:space-y-8">
 
       {/* ─── Hero Banner ─────────────────────────────────────────── */}
-      <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-slate-950 text-white -mt-8">
+      <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-[#161616] text-white -mt-8">
         {activeHero ? (
           <div className="absolute inset-y-0 left-1/2 w-2/3 -translate-x-1/2">
             <Image
@@ -460,14 +460,14 @@ export default function HomePage() {
           </div>
         ) : null}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-slate-950 via-slate-950/90 to-transparent" />
-          <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-slate-950 via-slate-950/90 to-transparent" />
+          <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#161616] via-[#161616]/90 to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-[#161616] via-[#161616]/90 to-transparent" />
         </div>
 
         {heroSlides.length > 1 && (
           <button
             onClick={() => setHeroIndex((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1))}
-            className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-black/25 p-3 backdrop-blur-sm transition-all hover:bg-black/40 hover:scale-110"
+            className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-[#3a3b3c]/60 p-3 backdrop-blur-sm transition-all hover:bg-[#3a3b3c]/85 hover:scale-110"
             aria-label="Next slide"
           >
             <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -519,13 +519,13 @@ export default function HomePage() {
 
       {accessToken ? (
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-gray-900">
+          <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-[#242526]">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("continueTitle")}</h2>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("continueSubtitle")}</p>
               </div>
-              <Link href="/profile/history" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-pink-600 hover:bg-slate-50 dark:border-slate-700 dark:text-pink-400 dark:hover:bg-slate-800">
+              <Link href="/profile/history" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-pink-600 hover:bg-slate-50 dark:border-[#303133] dark:text-pink-400 dark:hover:bg-[#3a3b3c]">
                 <Headphones className="h-4 w-4" />
                 {tNavbar("listeningHistory")}
               </Link>
@@ -534,7 +534,7 @@ export default function HomePage() {
             {isPersonalizedLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+                  <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100 dark:bg-[#3a3b3c]" />
                 ))}
               </div>
             ) : historyItems.length > 0 ? (
@@ -550,9 +550,9 @@ export default function HomePage() {
                     <Link
                       key={item.id}
                       href={`/story/${item.story.slug}/chuong-${item.chapter.chapterNumber}`}
-                      className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-slate-800 dark:hover:bg-slate-700"
+                      className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-[#212121] dark:hover:bg-[#3a3b3c]"
                     >
-                      <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
+                      <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-[#3a3b3c]">
                         <Image
                           src={item.story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
                           alt={storyTitle}
@@ -563,7 +563,7 @@ export default function HomePage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
                         <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{tProfile("chapterTitle", { number: item.chapter.chapterNumber, title: chapterTitle })}</p>
-                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-[#3a3b3c]">
                           <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${progressPercent}%` }} />
                         </div>
                         <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{t("continueProgress", { percent: progressPercent })}</p>
@@ -576,19 +576,19 @@ export default function HomePage() {
                 })}
               </div>
             ) : (
-              <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-gray-800/50 dark:text-slate-400">
+              <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-[#212121] dark:text-slate-400">
                 {t("continueEmpty")}
               </div>
             )}
           </div>
 
-          <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-gray-900">
+          <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-[#242526]">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("favoritesListTitle")}</h2>
                 <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t("favoritesListSubtitle")}</p>
               </div>
-              <Link href="/profile?panel=favorites" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-pink-600 hover:bg-slate-50 dark:border-slate-700 dark:text-pink-400 dark:hover:bg-slate-800">
+              <Link href="/profile?panel=favorites" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-pink-600 hover:bg-slate-50 dark:border-[#303133] dark:text-pink-400 dark:hover:bg-[#3a3b3c]">
                 <Heart className="h-4 w-4" />
                 {tNavbar("favorites")}
               </Link>
@@ -597,7 +597,7 @@ export default function HomePage() {
             {isPersonalizedLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+                  <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-[#3a3b3c]" />
                 ))}
               </div>
             ) : favoriteStories.length > 0 ? (
@@ -612,9 +612,9 @@ export default function HomePage() {
                     <Link
                       key={story.id}
                       href={`/story/${story.slug}`}
-                      className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-slate-800 dark:hover:bg-slate-700"
+                      className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-[#212121] dark:hover:bg-[#3a3b3c]"
                     >
-                      <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-slate-800">
+                      <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-[#3a3b3c]">
                         <Image
                           src={story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
                           alt={storyTitle}
@@ -635,7 +635,7 @@ export default function HomePage() {
                 })}
               </div>
             ) : (
-              <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-gray-800/50 dark:text-slate-400">
+              <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-[#212121] dark:text-slate-400">
                 {t("favoritesEmpty")}
               </div>
             )}

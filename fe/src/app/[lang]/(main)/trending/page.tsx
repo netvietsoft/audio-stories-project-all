@@ -59,7 +59,7 @@ export default function TrendingPage() {
         <p className="mt-1 text-sm text-slate-500">{t("subtitle")}</p>
       </div>
 
-      <div className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-4 dark:border-[#303133] dark:bg-[#242526]">
         {[
           { value: "today", label: t("today") },
           { value: "week", label: t("week") },
@@ -75,7 +75,7 @@ export default function TrendingPage() {
             className={`rounded-full px-4 py-2 text-sm font-semibold ${
               trendWindow === item.value
                 ? "bg-pink-600 text-white"
-                : "border border-slate-300 text-slate-700 dark:border-slate-700 dark:text-slate-200"
+                : "border border-slate-300 text-slate-700 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-slate-200"
             }`}
           >
             {item.label}
@@ -93,7 +93,7 @@ export default function TrendingPage() {
         <button
           disabled={page <= 1}
           onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-40 dark:border-[#303133] dark:bg-[#3a3b3c]"
         >
           {tCommon("prev")}
         </button>
@@ -101,7 +101,7 @@ export default function TrendingPage() {
         <button
           disabled={page >= lastPage}
           onClick={() => setPage((prev) => Math.min(lastPage, prev + 1))}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-40"
+          className="rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-40 dark:border-[#303133] dark:bg-[#3a3b3c]"
         >
           {tCommon("next")}
         </button>

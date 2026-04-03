@@ -9,7 +9,7 @@ export default async function Footer() {
   const withLang = (path: string) => `/${locale}${path === "/" ? "" : path}`;
 
   return (
-    <footer className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
+    <footer className="bg-gradient-to-b from-gray-50 to-white dark:from-[#242526] dark:to-[#161616]">
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 pt-8 pb-32 md:pt-12 md:pb-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
           {/* Cột 1: Logo và giới thiệu */}
@@ -192,7 +192,7 @@ export default async function Footer() {
         </div>
 
         {/* Dòng bản quyền */}
-        <div className="mt-2 pt-8 bg-white/70 rounded-2xl px-4 dark:bg-gray-900/40">
+        <div className="mt-2 pt-8 bg-white/70 rounded-2xl px-4 dark:bg-[#3a3b3c]/35">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center md:text-left">
               &copy; {new Date().getFullYear()} AudioTruyen. {t("rightsReserved")}

@@ -93,9 +93,8 @@ export default function ProfilePage() {
     return (
         <div className="max-w-7xl mx-auto pb-20">
             <div className="space-y-6">
-                <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-xl dark:border-[#303133] dark:bg-[#242526]">
                     <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">{t("personalProfile")}</h1>
-                    <h2 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">{t("currentProfile")}</h2>
                     <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-end">
                         <div className="relative group">
                             <div className="h-28 w-28 overflow-hidden rounded-3xl border-4 border-white bg-white shadow-2xl dark:border-gray-900 md:h-36 md:w-36">
@@ -125,10 +124,10 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-xl dark:border-[#303133] dark:bg-[#242526]">
                     <h2 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">{t("accountInfo")}</h2>
                     <div className="space-y-3">
-                        <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
+                        <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-[#303133] dark:bg-[#212121]">
                             <User className="h-5 w-5 text-pink-500" />
                             <div className="min-w-0 flex-1">
                                 <p className="text-xs font-extrabold uppercase tracking-widest text-gray-400">{t("accountName")}</p>
@@ -136,7 +135,7 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
+                        <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-[#303133] dark:bg-[#212121]">
                             <Mail className="h-5 w-5 text-indigo-500" />
                             <div className="min-w-0 flex-1">
                                 <p className="text-xs font-extrabold uppercase tracking-widest text-gray-400">{t("emailAddress")}</p>
@@ -144,12 +143,12 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
+                        <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-[#303133] dark:bg-[#212121]">
                             <Shield className="h-5 w-5 text-gray-400" />
                             <div className="min-w-0 flex-1">
                                 <p className="text-xs font-extrabold uppercase tracking-widest text-gray-400">{t("rank")}</p>
                                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                                    <span className="rounded bg-gray-100 px-2 py-1 font-mono text-xs font-bold text-gray-500 dark:bg-gray-800">
+                                    <span className="rounded bg-gray-100 px-2 py-1 font-mono text-xs font-bold text-gray-500 dark:bg-[#3a3b3c]">
                                         {t("level", { level: user.vipTier || 0 })}
                                     </span>
                                     {user.vipExpirationDate ? (
@@ -161,7 +160,7 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
+                        <div className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-[#303133] dark:bg-[#212121]">
                             <CreditCard className="h-5 w-5 text-amber-500" />
                             <div className="min-w-0 flex-1">
                                 <p className="text-xs font-extrabold uppercase tracking-widest text-gray-400">{t("creditsWallet")}</p>
@@ -173,8 +172,8 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800">
-                    <h3 className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 text-lg font-bold text-gray-900 dark:border-gray-700 dark:text-white">
+                <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-xl dark:border-[#303133] dark:bg-[#242526]">
+                    <h3 className="mb-5 flex items-center gap-2 border-b border-gray-100 pb-3 text-lg font-bold text-gray-900 dark:border-[#303133] dark:text-white">
                         <Award className="h-5 w-5 text-amber-500" /> {t("personalAchievements")}
                     </h3>
                     <div className="space-y-5">

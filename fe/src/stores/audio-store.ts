@@ -28,6 +28,7 @@ export type AudioTrack = {
   author?: string;
   audioUrl: string;
   coverUrl?: string;
+  storyCoverUrl?: string;
 };
 
 type AudioState = {

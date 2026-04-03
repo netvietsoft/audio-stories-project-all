@@ -38,7 +38,7 @@ export default function HallOfFamePage() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {members.slice(0, 3).map((member, idx) => (
-          <div key={member.id} className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 dark:border-amber-800 dark:from-amber-900/20 dark:to-slate-900">
+          <div key={member.id} className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 dark:border-[#303133] dark:from-[#242526] dark:to-[#242526]">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">{t("top", { rank: idx + 1 })}</p>
             <div className="mt-3 flex items-center gap-3">
               <img
@@ -48,18 +48,18 @@ export default function HallOfFamePage() {
               />
               <div>
                 <p className="font-bold text-slate-900 dark:text-slate-100">{member.displayName}</p>
-                <p className="text-xs text-slate-500">VIP {member.vipTier}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">VIP {member.vipTier}</p>
               </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#303133] dark:bg-[#242526]">
         <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t("fullRanking")}</h2>
         <div className="mt-3 space-y-2">
           {members.map((member, idx) => (
-            <div key={member.id} className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-slate-700">
+            <div key={member.id} className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm dark:border-[#303133] dark:bg-[#212121]">
               <div className="flex items-center gap-3">
                 <span className="font-semibold text-slate-500">#{idx + 1}</span>
                 <span className="font-semibold text-slate-900 dark:text-slate-100">{member.displayName}</span>

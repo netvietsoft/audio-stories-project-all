@@ -118,7 +118,7 @@ export default function StoryGridCard({
   return (
     <Link
       href={`/story/${story.slug}`}
-      className="group relative flex items-stretch gap-4 rounded-2xl border border-slate-200 p-4 transition-all duration-300 hover:border-pink-300 hover:shadow-md dark:border-slate-800 dark:hover:border-pink-500 dark:hover:shadow-pink-900/20"
+      className="group relative flex items-stretch gap-4 rounded-2xl border border-slate-200 p-4 transition-all duration-300 hover:border-pink-300 hover:shadow-md dark:border-[#303133] dark:bg-[#242526] dark:hover:border-pink-500 dark:hover:shadow-pink-900/20"
     >
       {/* Thumbnail - Small Left Side */}
       <div className="relative w-24 shrink-0 overflow-hidden rounded-lg sm:w-28">
@@ -193,8 +193,8 @@ export default function StoryGridCard({
       {/* Favorite Button */}
       <FavoriteButton
         storyId={story.id}
-        className="absolute right-4 top-4 z-10 border border-slate-200/80 shadow-md dark:border-slate-700/80"
-        inactiveClassName="bg-white/95 text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:bg-slate-900/90 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+        className="absolute right-4 top-4 z-10 border border-slate-200/80 shadow-md dark:border-[#303133]"
+        inactiveClassName="bg-white/95 text-slate-500 hover:bg-slate-50 hover:text-slate-700 dark:bg-[#3a3b3c] dark:text-slate-200 dark:hover:bg-[#464749] dark:hover:text-white"
         activeClassName="bg-rose-100 text-rose-600 hover:bg-rose-200 hover:text-rose-700 dark:bg-rose-900/50 dark:text-rose-300 dark:hover:bg-rose-900/70 dark:hover:text-rose-200"
       />
     </Link>

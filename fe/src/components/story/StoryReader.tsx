@@ -607,9 +607,9 @@ export default function StoryReader({
           <p className="text-base leading-loose text-gray-500 dark:text-gray-300 px-1 sm:px-4">Chương này hiện đang bị khóa nội dung.</p>
         )}
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-white dark:to-gray-900" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-white dark:to-[#242526]" />
 
-        <div className="absolute inset-x-3 bottom-3 z-10 rounded-xl bg-white/95 p-4 text-sm shadow-lg backdrop-blur dark:bg-gray-900/95">
+        <div className="absolute inset-x-3 bottom-3 z-10 rounded-xl bg-white/95 p-4 text-sm shadow-lg backdrop-blur dark:bg-[#242526]/95">
           <p className="font-semibold text-amber-700 dark:text-amber-300">Nội dung bị khóa</p>
           <p className="mt-1 text-gray-600 dark:text-gray-300">
             {lockLabel || "Cần mở khóa VIP để đọc toàn bộ chương này."}
@@ -685,7 +685,7 @@ export default function StoryReader({
               </div>
 
               {isOpen && (
-                <div className="mt-3 rounded-lg bg-white p-3 shadow-sm dark:bg-gray-900">
+                <div className="mt-3 rounded-lg bg-white p-3 shadow-sm dark:bg-[#242526]">
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Bình luận đoạn #{paragraph.index + 1}</p>
                     <div className="flex items-center gap-2">
@@ -696,7 +696,7 @@ export default function StoryReader({
                           setCommentSort(nextSort);
                           void loadParagraphComments(paragraph.id, paragraph.index, true);
                         }}
-                        className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] dark:border-gray-700 dark:bg-gray-800"
+                        className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] dark:border-[#303133] dark:bg-[#3a3b3c]"
                       >
                         <option value="newest">Mới nhất</option>
                         <option value="helpful">Hữu ích</option>
@@ -715,7 +715,7 @@ export default function StoryReader({
                   <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
                     {comments.length ? (
                       comments.map((comment) => (
-                        <div key={comment.id} className="rounded-md bg-gray-50 px-3 py-2 text-xs dark:bg-gray-800">
+                        <div key={comment.id} className="rounded-md bg-gray-50 px-3 py-2 text-xs dark:bg-[#3a3b3c]">
                           <div className="flex items-start gap-2">
                             <img
                               src={comment.authorAvatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.authorName}`}
@@ -741,7 +741,7 @@ export default function StoryReader({
                           <div className="mt-2 ml-10 flex flex-wrap items-center gap-2 text-[11px]">
                             <button
                               onClick={() => void toggleReaction(comment.id, "helpful", paragraph.id)}
-                              className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                              className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-[#303133] dark:text-gray-300 dark:hover:bg-[#464749]"
                               aria-label={`Hữu ích ${comment.reactions?.helpful || 0}`}
                               title="Hữu ích"
                             >
@@ -750,7 +750,7 @@ export default function StoryReader({
                             </button>
                             <button
                               onClick={() => void toggleReaction(comment.id, "like", paragraph.id)}
-                              className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                              className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-[#303133] dark:text-gray-300 dark:hover:bg-[#464749]"
                               aria-label={`Thích ${comment.reactions?.like || 0}`}
                               title="Thích"
                             >
@@ -759,7 +759,7 @@ export default function StoryReader({
                             </button>
                             <button
                               onClick={() => void toggleReaction(comment.id, "love", paragraph.id)}
-                              className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-700"
+                              className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-[#303133] dark:text-gray-300 dark:hover:bg-[#464749]"
                               aria-label={`Yêu thích ${comment.reactions?.love || 0}`}
                               title="Yêu thích"
                             >
@@ -790,9 +790,9 @@ export default function StoryReader({
                           </div>
 
                           {(comment.replies?.length || 0) > 0 ? (
-                            <div className="mt-2 space-y-1 border-l border-gray-300 pl-2 ml-10 dark:border-gray-600">
+                            <div className="mt-2 space-y-1 border-l border-gray-300 pl-2 ml-10 dark:border-[#303133]">
                               {(comment.replies || []).map((reply) => (
-                                <div key={reply.id} className="rounded bg-white/70 px-2 py-1 dark:bg-gray-700/40">
+                                <div key={reply.id} className="rounded bg-white/70 px-2 py-1 dark:bg-[#3a3b3c]/60">
                                   <div className="flex items-start gap-2">
                                     <img
                                       src={reply.authorAvatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${reply.authorName}`}
@@ -871,7 +871,7 @@ export default function StoryReader({
                         }
                       }}
                       placeholder={user ? "Viết bình luận cho đoạn này..." : "Đăng nhập để bình luận..."}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-pink-500 dark:border-gray-700 dark:bg-gray-800"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs outline-none focus:border-pink-500 dark:border-[#303133] dark:bg-[#3a3b3c]"
                     />
                     <button
                       onClick={() => void submitParagraphComment(paragraph)}
@@ -902,13 +902,13 @@ export default function StoryReader({
                 href={adHref}
                 target={isExternal ? '_blank' : undefined}
                 rel={isExternal ? 'noreferrer' : undefined}
-                className="group relative block w-full max-w-2xl overflow-hidden rounded-2xl bg-white p-3 shadow-sm transition hover:shadow-md dark:bg-gray-900"
+                className="group relative block w-full max-w-2xl overflow-hidden rounded-2xl bg-white p-3 shadow-sm transition hover:shadow-md dark:bg-[#242526]"
               >
                 <span className="absolute right-3 top-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   {locale === 'en' ? 'Sponsored' : 'Tài trợ'}
                 </span>
                 <div className="flex items-center gap-3">
-                  <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-gray-800">
+                  <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-[#3a3b3c]">
                     <img src={item.ad.imageUrl} alt={item.ad.title} className="h-full w-full object-cover" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -939,14 +939,14 @@ export default function StoryReader({
           }}
         >
           <div className="min-h-screen flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <div className="bg-white dark:bg-[#3a3b3c] rounded-2xl max-w-md w-full p-6 shadow-xl">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Báo cáo bình luận</h3>
               <textarea
                 value={reportReason}
                 onChange={(e) => setReportReason(e.target.value)}
                 placeholder="Vui lòng mô tả lý do báo cáo..."
                 rows={4}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white resize-none"
+                className="w-full border border-gray-300 dark:border-[#303133] rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 dark:bg-[#3a3b3c] dark:text-white resize-none"
               />
               <div className="flex gap-3 mt-4">
                 <button
@@ -954,7 +954,7 @@ export default function StoryReader({
                     setReportingCommentId(null);
                     setReportReason("");
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-[#303133] rounded-lg text-sm font-semibold hover:bg-gray-50 dark:hover:bg-[#464749]"
                 >
                   Hủy
                 </button>

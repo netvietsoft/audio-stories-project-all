@@ -625,15 +625,15 @@ export default function StoriesPage() {
                                                         ) : (storyChapters[story.id]?.length || 0) === 0 ? (
                                                             <p className="text-center text-sm text-slate-500 py-8">Chưa có chương nào.</p>
                                                         ) : (
-                                                            <div className="space-y-3">
+                                                            <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
                                                                 {(storyChapters[story.id] || []).map((chapter) => (
-                                                                    <div key={chapter.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden px-5 py-4 flex items-center justify-between hover:bg-slate-50 transition-all">
-                                                                        <div className="flex items-center gap-3">
+                                                                    <div key={chapter.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden px-5 py-4 flex items-start justify-between gap-3 hover:bg-slate-50 transition-all">
+                                                                        <div className="flex min-w-0 items-center gap-3">
                                                                             <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-xs font-black">
                                                                                 {chapter.chapterNumber}
                                                                             </div>
-                                                                            <div>
-                                                                                <p className="text-sm font-bold text-slate-900">
+                                                                            <div className="min-w-0">
+                                                                                <p className="text-sm font-bold text-slate-900 line-clamp-2">
                                                                                     Chương {chapter.chapterNumber}: {chapter.title}
                                                                                 </p>
                                                                                 <div className="flex items-center gap-2 mt-0.5">

@@ -765,6 +765,7 @@ export default function StoryChapterClient() {
           author: story.author?.name,
           audioUrl: selectedChapterAudioUrl,
           coverUrl: selectedChapter.thumbnailUrl || story.thumbnailUrl || undefined,
+          storyCoverUrl: story.thumbnailUrl || undefined,
         };
 
         setQueue(
@@ -783,6 +784,7 @@ export default function StoryChapterClient() {
               !chapter.audioUrlVi && !chapter.audioUrlEn ? chapter.r2AudioUrl : "",
             ).trim(),
             coverUrl: chapter.thumbnailUrl || story.thumbnailUrl || undefined,
+            storyCoverUrl: story.thumbnailUrl || undefined,
           })),
         );
         setTrack(resumeTrack);
@@ -831,6 +833,7 @@ export default function StoryChapterClient() {
         !item.audioUrlVi && !item.audioUrlEn ? item.r2AudioUrl : "",
       ).trim(),
       coverUrl: item.thumbnailUrl || story.thumbnailUrl || undefined,
+      storyCoverUrl: story.thumbnailUrl || undefined,
     }));
     setQueue(refreshedQueue);
 
@@ -853,6 +856,7 @@ export default function StoryChapterClient() {
       author: story.author?.name,
       audioUrl: latestAudioUrl,
       coverUrl: latestChapter.thumbnailUrl || story.thumbnailUrl || undefined,
+      storyCoverUrl: story.thumbnailUrl || undefined,
     });
   }, [currentTrack, locale, setQueue, setTrack, story, t]);
 
@@ -906,6 +910,7 @@ export default function StoryChapterClient() {
           !item.audioUrlVi && !item.audioUrlEn ? item.r2AudioUrl : "",
         ).trim(),
         coverUrl: item.thumbnailUrl || selectedStory.thumbnailUrl || undefined,
+        storyCoverUrl: selectedStory.thumbnailUrl || undefined,
       }));
 
       let chapterAudioUrl = "";
@@ -940,6 +945,7 @@ export default function StoryChapterClient() {
         author: selectedStory.author?.name,
         audioUrl: chapterAudioUrl,
         coverUrl: chapter.thumbnailUrl || selectedStory.thumbnailUrl || undefined,
+        storyCoverUrl: selectedStory.thumbnailUrl || undefined,
       };
 
       if (!chapterAudioUrl) {
@@ -1332,7 +1338,7 @@ export default function StoryChapterClient() {
             <StoryUpdateSubscriptionButton
               storyId={story.id}
               className="px-3 py-2 text-sm font-medium"
-              inactiveClassName="border-gray-200 bg-white text-black hover:bg-pink-50 transform transition hover:-translate-y-0.5 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              inactiveClassName="border-gray-200 bg-white text-black hover:bg-pink-50 transform transition hover:-translate-y-0.5 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300 dark:hover:bg-[#464749]"
             />
             <Link
               href={`/story/${story.slug}`}
@@ -1352,7 +1358,7 @@ export default function StoryChapterClient() {
           {/* Story Info */}
           <div className="-mx-4 md:mx-0 bg-transparent">
             <div className="px-4 md:px-0 lg:px-0">
-              <section className="rounded-2xl bg-white p-1 sm:p-2 md:p-3 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-1">
+              <section className="rounded-2xl bg-white p-1 sm:p-2 md:p-3 dark:bg-[#242526] lg:col-start-1 lg:col-end-2 lg:row-start-1">
             <h1 className="text-base md:text-lg font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
 
             <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
@@ -1388,7 +1394,7 @@ export default function StoryChapterClient() {
                 label={t("favorite")}
                 className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium border shadow-sm transition-colors"
                 activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
-                inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800"
+                inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
               />
 
               <StoryUpdateSubscriptionButton
@@ -1396,12 +1402,12 @@ export default function StoryChapterClient() {
                 className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium shadow-sm transition-colors"
                 labelClassName="hidden md:inline"
                 activeClassName="border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 dark:border-emerald-400 dark:bg-emerald-500 dark:hover:bg-emerald-600"
-                inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800"
+                inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
               />
 
               <button
                 onClick={onShare}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
                 aria-label={t("share")}
               >
                 <Share2 className="h-4 w-4" />
@@ -1414,7 +1420,7 @@ export default function StoryChapterClient() {
           </div>
 
           {/* Chapter Introduction */}
-          <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-4 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-2">
+          <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-4 dark:bg-[#242526] lg:col-start-1 lg:col-end-2 lg:row-start-2">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("chapterIntro")}</h2>
             <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
               {selectedChapterDescription || translationPendingMessage}
@@ -1426,7 +1432,7 @@ export default function StoryChapterClient() {
 
             {/* Side Panel 1.5: Variant Selection (Interactive Stories) - Moved Inline if hasInlineChoice */}
             {variants.length > 0 && !hasInlineChoice && (
-              <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-4 dark:bg-gray-900">
+              <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-4 dark:bg-[#242526]">
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {variants.map((v) => {
@@ -1442,7 +1448,7 @@ export default function StoryChapterClient() {
                         className={`w-full flex items-center justify-between gap-3 p-3 rounded-xl border transition-all ${
                           isSelected 
                             ? "border-indigo-300 bg-indigo-100 dark:border-indigo-600 dark:bg-indigo-900/60 shadow-sm ring-1 ring-indigo-300/50 cursor-default" 
-                            : "border-gray-200 bg-white/50 dark:border-gray-700 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600"
+                            : "border-gray-200 bg-white/50 dark:border-[#303133] dark:bg-[#3a3b3c] hover:border-gray-400 dark:hover:border-gray-600"
                         }`}
                         disabled={isSelected}
                       >
@@ -1512,12 +1518,12 @@ export default function StoryChapterClient() {
               ) : null}
 
               {isChapterMenuOpen ? (
-                <div className="mt-3 rounded-xl bg-gray-100 p-2 dark:bg-gray-800">
+                <div className="mt-3 rounded-xl bg-gray-100 p-2 dark:bg-[#3a3b3c]">
                   <input
                     value={chapterQuery}
                     onChange={(event) => setChapterQuery(event.target.value)}
                     placeholder={t("searchChapterPlaceholder")}
-                    className="mb-2 w-full rounded-md bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-pink-500 dark:bg-gray-700 dark:text-white"
+                    className="mb-2 w-full rounded-md bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-pink-500 dark:bg-[#3a3b3c] dark:text-white"
                   />
                   <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
                     {/* Branch navigation option */}
@@ -1553,7 +1559,7 @@ export default function StoryChapterClient() {
                           onClick={() => goToChapter(chapter, true)}
                           className={`w-full rounded-md px-2 py-2 text-left text-xs transition ${isCurrent
                             ? "bg-pink-600 text-white"
-                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+                            : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#464749]"
                             }`}
                         >
                           <span className="line-clamp-1">{formatChapterTitle(t("chapterKeyword"), chapter.chapterNumber, cleanChapterTitle(getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)))}</span>
@@ -1570,7 +1576,7 @@ export default function StoryChapterClient() {
             {/* Side Panel 2: Audio Player */}
             <div className="-mx-4 md:mx-0 md:bg-transparent lg:bg-transparent">
               <div className="px-4 md:px-0">
-                <section className="rounded-[5px] border border-gray-300 bg-white p-2 sm:p-3 md:p-4 dark:border-gray-700 dark:bg-gray-900">
+                <section className="rounded-[5px] border border-gray-300 bg-white p-2 sm:p-3 md:p-4 dark:border-[#303133] dark:bg-[#242526]">
               <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("audioPlayer")}</h2>
 
               <div className="mt-4 grid gap-2 md:grid-cols-[100px_minmax(0,1fr)] lg:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
@@ -1808,7 +1814,7 @@ export default function StoryChapterClient() {
 
                     <button
                       onClick={() => setShowSettings((prev) => !prev)}
-                      className="rounded-full bg-gray-100 p-2 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                      className="rounded-full bg-gray-100 p-2 text-gray-600 dark:bg-[#3a3b3c] dark:text-gray-300"
                     >
                       <Settings2 className="w-4 h-4" />
                     </button>
@@ -1818,14 +1824,14 @@ export default function StoryChapterClient() {
 
               <div className="mt-3 space-y-3">
                 {showSettings ? (
-                  <div className="rounded-xl bg-white p-3 shadow-sm dark:bg-gray-900">
+                  <div className="rounded-xl bg-white p-3 shadow-sm dark:bg-[#242526]">
                     <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t("playbackSpeed")}</p>
                     <div className="mt-2 grid grid-cols-5 gap-2">
                       {[0.75, 1, 1.25, 1.5, 2].map((rate) => (
                         <button
                           key={rate}
                           onClick={() => setPlaybackRate(rate)}
-                          className={`rounded-md px-2 py-1 text-xs ${playbackRate === rate ? "bg-pink-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200"}`}
+                          className={`rounded-md px-2 py-1 text-xs ${playbackRate === rate ? "bg-pink-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200"}`}
                         >
                           {rate}x
                         </button>
@@ -1838,7 +1844,7 @@ export default function StoryChapterClient() {
                         <button
                           key={minute}
                           onClick={() => setSleepTimer(minute)}
-                          className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                          className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200"
                         >
                           {minute}p
                         </button>
@@ -1854,7 +1860,7 @@ export default function StoryChapterClient() {
                         min={1}
                         value={customMinutes}
                         onChange={(event) => setCustomMinutes(event.target.value)}
-                        className="w-full rounded-md bg-white px-2 py-1 text-xs dark:bg-gray-800"
+                        className="w-full rounded-md bg-white px-2 py-1 text-xs dark:bg-[#3a3b3c]"
                         placeholder={t("customMinutesPlaceholder")}
                       />
                       <button
@@ -1882,7 +1888,7 @@ export default function StoryChapterClient() {
 
             {/* Side Panel 3: YouTube Player */}
             {selectedChapter.youtubeVideoId ? (
-            <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900">
+            <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-[#242526]">
               <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("youtubePlayer")}</h2>
               {chapterIsLocked ? (
                 <div className="rounded-xl bg-amber-50/70 p-4 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
@@ -1896,7 +1902,7 @@ export default function StoryChapterClient() {
                   </button>
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-xl bg-white dark:bg-gray-950/70">
+                <div className="overflow-hidden rounded-xl bg-white dark:bg-[#242526]">
                   <iframe
                     title="YouTube audio"
                     className="aspect-video w-full"
@@ -1912,13 +1918,13 @@ export default function StoryChapterClient() {
           </div>{/* END RIGHT STICKY SIDEBAR */}
 
           {/* Chapter Content / Text Reader */}
-          <section className="rounded-2xl bg-white p-1 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-3">
-            <div className="mb-4 flex items-center justify-between gap-3 px-2 sm:px-0">
+          <section className="rounded-2xl bg-white p-1 sm:p-4 md:p-6 dark:bg-[#242526] lg:col-start-1 lg:col-end-2 lg:row-start-3">
+            <div className="mb-4 flex items-center justify-between gap-2 sm:mb-6">
               <button
                 type="button"
                 onClick={() => previousChapter && goToChapter(previousChapter, false)}
                 disabled={!previousChapter}
-                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:bg-[#3a3b3c] dark:hover:bg-[#464749]"
               >
                 <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 <span className="hidden sm:inline">{locale === "en" ? "Previous chapter" : "Chương trước"}</span>
@@ -1929,7 +1935,7 @@ export default function StoryChapterClient() {
                 type="button"
                 onClick={() => nextChapter && goToChapter(nextChapter, false)}
                 disabled={!nextChapter}
-                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+                className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-200 dark:bg-[#3a3b3c] dark:hover:bg-[#464749]"
               >
                 <span className="hidden sm:inline">{locale === "en" ? "Next chapter" : "Chương tiếp"}</span>
                 <span className="sm:hidden">{locale === "en" ? "Next" : "Tiếp"}</span>
@@ -2214,7 +2220,7 @@ export default function StoryChapterClient() {
                                         <button
                                           key={cv.id}
                                           onClick={() => handleSelectVariant(cv)}
-                                          className="flex flex-col items-start gap-3 rounded-xl bg-gray-50 p-4 transition-all hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800 h-full w-full"
+                                          className="flex flex-col items-start gap-3 rounded-xl bg-gray-50 p-4 transition-all hover:bg-gray-100 dark:bg-[#3a3b3c] dark:hover:bg-[#464749] h-full w-full"
                                         >
                                           <div className="w-full flex items-start justify-between gap-3">
                                             <p className="text-sm font-bold text-gray-800 dark:text-gray-200 text-left">
@@ -2319,7 +2325,7 @@ export default function StoryChapterClient() {
                   />
                 )
               ) : (
-                <div className="rounded-2xl bg-white px-3 py-4 sm:px-4 sm:py-5 text-sm leading-7 text-gray-700 dark:bg-gray-900 dark:text-gray-200">
+                <div className="rounded-2xl bg-white px-3 py-4 sm:px-4 sm:py-5 text-sm leading-7 text-gray-700 dark:bg-[#242526] dark:text-gray-200">
                   {translationPendingMessage}
                 </div>
               )}
@@ -2329,7 +2335,7 @@ export default function StoryChapterClient() {
                   type="button"
                   onClick={() => previousChapter && goToChapter(previousChapter, false)}
                   disabled={!previousChapter}
-                  className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
                 >
                   <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span className="hidden sm:inline">{locale === "en" ? "Previous chapter" : "Chương trước"}</span>
@@ -2340,7 +2346,7 @@ export default function StoryChapterClient() {
                   type="button"
                   onClick={() => nextChapter && goToChapter(nextChapter, false)}
                   disabled={!nextChapter}
-                  className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm md:text-base font-semibold text-gray-700 bg-gray-100 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
                 >
                   <span className="hidden sm:inline">{locale === "en" ? "Next chapter" : "Chương tiếp"}</span>
                   <span className="sm:hidden">{locale === "en" ? "Next" : "Tiếp"}</span>
@@ -2351,7 +2357,7 @@ export default function StoryChapterClient() {
           </section>
 
           {/* Gift Section */}
-          <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 lg:col-start-1 lg:col-end-2 lg:row-start-4">
+          <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-[#242526] lg:col-start-1 lg:col-end-2 lg:row-start-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("giftChapter")}</h2>
               <button
@@ -2372,14 +2378,14 @@ export default function StoryChapterClient() {
         </div>
 
         {/* Reviews - Full Width */}
-        <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-gray-900 mb-8">
+        <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-[#242526] mb-8">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{t("readerReviews")}</h2>
 
           {/* ================= TẦNG TRÊN: THỐNG KÊ SAO & FORM ĐÁNH GIÁ ================= */}
-          <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 border-b border-gray-100 dark:border-gray-800 pb-8 mb-8">
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 border-b border-gray-100 dark:border-[#303133] pb-8 mb-8">
             
             {/* BÊN TRÁI: Thống kê tổng quan (4/12 cột) */}
-            <div className="lg:col-span-4 bg-slate-50 dark:bg-gray-800 rounded-xl p-5">
+            <div className="lg:col-span-4 bg-slate-50 dark:bg-[#3a3b3c] rounded-xl p-5">
               <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
                 {Number(ratingStats?.averageRating || 0).toFixed(1)}
               </p>
@@ -2395,7 +2401,7 @@ export default function StoryChapterClient() {
                     return (
                       <div key={item.rating} className="flex items-center gap-2 text-xs">
                         <span className="w-10 font-medium">{t("starLabel", { count: item.rating })}</span>
-                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-[#3a3b3c]">
                           <div className="h-full rounded-full bg-amber-500" style={{ width: `${width}%` }} />
                         </div>
                         <span className="w-7 text-right">{item.count}</span>
@@ -2407,7 +2413,7 @@ export default function StoryChapterClient() {
 
             {/* BÊN PHẢI: Form viết đánh giá (8/12 cột) */}
             <div className="lg:col-span-8">
-              <div className="rounded-xl bg-slate-50 dark:bg-gray-800 p-4 text-sm">
+              <div className="rounded-xl bg-slate-50 dark:bg-[#3a3b3c] p-4 text-sm">
                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("writeReview")}</p>
                 <div className="mt-2 flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -2426,18 +2432,18 @@ export default function StoryChapterClient() {
                     value={reviewDraft}
                     onChange={(event) => setReviewDraft(event.target.value)}
                     placeholder={t("shareThoughts")}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm outline-none focus:border-pink-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm outline-none focus:border-pink-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-100"
                     rows={3}
                   />
                   <button
                     type="button"
                     onClick={() => setShowEmojiPicker((prev) => !prev)}
-                    className="absolute bottom-2 right-2 rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:text-gray-400"
+                    className="absolute bottom-2 right-2 rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-[#464749] dark:text-gray-400"
                   >
                     <Smile className="h-4 w-4" />
                   </button>
                   {showEmojiPicker ? (
-                    <div className="absolute bottom-10 right-2 z-10 flex gap-1 rounded-md bg-white p-1 shadow dark:bg-gray-800">
+                    <div className="absolute bottom-10 right-2 z-10 flex gap-1 rounded-md bg-white p-1 shadow dark:bg-[#3a3b3c]">
                       {["😍", "🔥", "👏", "💯", "❤️"].map((emoji) => (
                         <button
                           key={emoji}
@@ -2445,7 +2451,7 @@ export default function StoryChapterClient() {
                             setReviewDraft((prev) => `${prev}${emoji}`);
                             setShowEmojiPicker(false);
                           }}
-                          className="rounded px-1.5 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                          className="rounded px-1.5 py-1 text-sm hover:bg-gray-100 dark:hover:bg-[#464749]"
                         >
                           {emoji}
                         </button>
@@ -2474,7 +2480,7 @@ export default function StoryChapterClient() {
                 onClick={() => setReviewSort("newest")}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium ${reviewSort === "newest"
                   ? "border-pink-500 bg-pink-50 text-pink-700 dark:border-pink-400 dark:bg-pink-900/30 dark:text-pink-200"
-                  : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                  : "border-gray-300 text-gray-600 dark:border-[#303133] dark:text-gray-300"
                   }`}
               >
                 {t("sortNewest")}
@@ -2483,7 +2489,7 @@ export default function StoryChapterClient() {
                 onClick={() => setReviewSort("helpful")}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium ${reviewSort === "helpful"
                   ? "border-pink-500 bg-pink-50 text-pink-700 dark:border-pink-400 dark:bg-pink-900/30 dark:text-pink-200"
-                  : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                  : "border-gray-300 text-gray-600 dark:border-[#303133] dark:text-gray-300"
                   }`}
               >
                 {t("sortHelpful")}
@@ -2492,7 +2498,7 @@ export default function StoryChapterClient() {
                 onClick={() => setReviewSort("highest")}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium ${reviewSort === "highest"
                   ? "border-pink-500 bg-pink-50 text-pink-700 dark:border-pink-400 dark:bg-pink-900/30 dark:text-pink-200"
-                  : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                  : "border-gray-300 text-gray-600 dark:border-[#303133] dark:text-gray-300"
                   }`}
               >
                 {t("sortHighest")}
@@ -2502,7 +2508,7 @@ export default function StoryChapterClient() {
             {/* Reviews List */}
             <div className="space-y-3">
               {reviews.map((review) => (
-                <div key={review.id} className="rounded-xl border border-gray-200 p-3 text-sm dark:border-gray-700">
+                <div key={review.id} className="rounded-xl border border-gray-200 p-3 text-sm dark:border-[#303133]">
                   <p className="text-gray-800 dark:text-gray-100">
                     <span className="font-semibold">{review.user?.displayName || t("readerFallback")}</span>
                     <span className="mx-2 text-gray-400">|</span>
@@ -2515,7 +2521,7 @@ export default function StoryChapterClient() {
                       onClick={() => void toggleReviewLike(review.id)}
                       className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 ${review.likedByMe
                         ? "border-pink-300 bg-pink-50 text-pink-700 dark:border-pink-800 dark:bg-pink-900/30 dark:text-pink-200"
-                        : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                        : "border-gray-300 text-gray-600 dark:border-[#303133] dark:text-gray-300"
                         }`}
                     >
                       <Heart className={`h-3.5 w-3.5 ${review.likedByMe ? "fill-current" : ""}`} />
@@ -2525,7 +2531,7 @@ export default function StoryChapterClient() {
                       onClick={() => void toggleReviewHelpful(review.id)}
                       className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 ${review.helpfulByMe
                         ? "border-green-300 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/30 dark:text-green-200"
-                        : "border-gray-300 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                        : "border-gray-300 text-gray-600 dark:border-[#303133] dark:text-gray-300"
                         }`}
                     >
                       <ThumbsUp className="h-3.5 w-3.5" />
@@ -2542,14 +2548,14 @@ export default function StoryChapterClient() {
                           [review.id]: prev[review.id] ? null : review.id,
                         }));
                       }}
-                      className="rounded-full border border-gray-300 px-2 py-1 text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                      className="rounded-full border border-gray-300 px-2 py-1 text-gray-600 dark:border-[#303133] dark:text-gray-300"
                     >
                       {t("reply")}{review.repliesCount ? ` (${review.repliesCount})` : ""}
                     </button>
                   </div>
 
                   {(review.replies || []).length ? (
-                    <div className="mt-2 space-y-1 rounded-md bg-gray-50 p-2 text-xs dark:bg-gray-800/50">
+                    <div className="mt-2 space-y-1 rounded-md bg-gray-50 p-2 text-xs dark:bg-[#3a3b3c]">
                       {(review.replies || []).map((reply) => (
                         <p key={reply.id} className="text-gray-700 dark:text-gray-200">
                           <span className="font-semibold">{reply.user?.displayName || t("readerFallback")}</span>: {reply.content}
@@ -2569,7 +2575,7 @@ export default function StoryChapterClient() {
                             [review.id]: event.target.value,
                           }))
                         }
-                        className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs outline-none focus:border-pink-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                        className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs outline-none focus:border-pink-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-100"
                         placeholder={t("reviewReplyPlaceholder")}
                       />
                       <div className="flex items-center gap-2">
@@ -2586,7 +2592,7 @@ export default function StoryChapterClient() {
                               [review.id]: null,
                             }))
                           }
-                          className="rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 dark:border-gray-700 dark:text-gray-300"
+                          className="rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-600 dark:border-[#303133] dark:text-gray-300"
                         >
                           {t("cancel")}
                         </button>
@@ -2602,7 +2608,7 @@ export default function StoryChapterClient() {
                 {reviewPage < reviewLastPage ? (
                   <button
                     onClick={() => void loadMoreReviews()}
-                    className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                    className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-[#303133] dark:text-gray-200 dark:hover:bg-[#464749]"
                   >
                     {t("loadMoreReviews")}
                   </button>
@@ -2610,7 +2616,7 @@ export default function StoryChapterClient() {
                 {reviews.length > 5 ? (
                   <button
                     onClick={() => void collapseReviews()}
-                    className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                    className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-[#303133] dark:text-gray-200 dark:hover:bg-[#464749]"
                   >
                     {t("collapseReviews")}
                   </button>
@@ -2635,7 +2641,7 @@ export default function StoryChapterClient() {
                   }
                 }}
               >
-                <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-900 max-h-[90vh] overflow-y-auto">
+                <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-xl dark:border-[#303133] dark:bg-[#242526] max-h-[90vh] overflow-y-auto">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
                     {pendingVariantId ? t("unlockVariant") : t("chapterLocked")}
                   </h3>
@@ -2656,7 +2662,7 @@ export default function StoryChapterClient() {
                       : t("buyVipInfo", { days: VIP_UNLOCK_DAYS, cost: VIP_UNLOCK_COST.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
                   </p>
 
-                  <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800">
+                  <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-[#303133] dark:bg-[#3a3b3c]">
                     {t("yourBalance", { balance: Number(user?.credits ?? 0).toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
                   </div>
 
@@ -2668,7 +2674,7 @@ export default function StoryChapterClient() {
                         setIsUnlockModalOpen(false);
                         setPendingVariantId(null);
                       }}
-                      className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                      className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-[#303133] dark:text-gray-200 dark:hover:bg-[#464749]"
                     >
                       {t("cancel")}
                     </button>
@@ -2705,7 +2711,7 @@ export default function StoryChapterClient() {
                   }
                 }}
               >
-                <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-900 max-h-[90vh] overflow-y-auto">
+                <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-[#303133] dark:bg-[#242526] max-h-[90vh] overflow-y-auto">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
                         <Gift className="h-6 w-6 text-white" />
@@ -2736,7 +2742,7 @@ export default function StoryChapterClient() {
                               className={`relative flex flex-col items-center justify-center gap-2 rounded-xl p-3 outline-none transition-all duration-200 ${
                                 giftAmount === String(gift.amount)
                                   ? "bg-pink-50 border-2 border-pink-500 shadow-sm dark:bg-pink-900/20"
-                                  : "bg-gray-50 border-2 border-transparent hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
+                                  : "bg-gray-50 border-2 border-transparent hover:bg-gray-100 dark:bg-[#3a3b3c] dark:hover:bg-[#464749]"
                               }`}
                             >
                               <div className="text-3xl filter drop-shadow-sm transition-transform duration-200 hover:scale-110">
@@ -2755,7 +2761,7 @@ export default function StoryChapterClient() {
                         </div>
                       </div>
 
-                      <div className="rounded-xl border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 px-4 py-3 text-sm">
+                      <div className="rounded-xl border border-gray-200 bg-gray-50 dark:border-[#303133] dark:bg-[#3a3b3c] px-4 py-3 text-sm">
                         <p className="text-gray-600 dark:text-gray-300">
                           {t("yourBalance", { balance: Number(user?.credits ?? 0).toLocaleString() })}
                         </p>
@@ -2773,7 +2779,7 @@ export default function StoryChapterClient() {
                             setGiftMessage("");
                             setGiftError("");
                           }}
-                          className="flex-1 rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                          className="flex-1 rounded-xl border border-gray-300 dark:border-[#303133] px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#464749] transition-colors"
                         >
                           {t("cancel")}
                         </button>

@@ -196,7 +196,7 @@ export default function StoryDetailClient() {
 
   return (
     <div className="space-y-2 md:space-y-3 -mt-2 md:mt-0">
-      <section className="flex w-full flex-col items-start gap-3 rounded-xl p-2 sm:p-4 md:flex-row md:items-stretch md:gap-6 md:p-6">
+      <section className="app-component-surface flex w-full flex-col items-start gap-3 rounded-[5px] p-2 sm:p-4 md:flex-row md:items-stretch md:gap-6 md:p-6">
         {/* Thumbnail - proper 2:3 book cover ratio */}
         <div className="w-full md:w-[155px] lg:w-[175px] md:shrink-0 self-center md:self-end">
           <div className="relative w-[140px] md:w-full mx-auto overflow-hidden rounded-lg shadow-xl" style={{ aspectRatio: "2/3" }}>
@@ -301,7 +301,7 @@ export default function StoryDetailClient() {
               className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium shadow-sm transition-colors"
               labelClassName="inline"
               activeClassName="border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 dark:border-emerald-400 dark:bg-emerald-500 dark:hover:bg-emerald-600"
-              inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800"
+              inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
             />
 
             <FavoriteButton
@@ -311,13 +311,13 @@ export default function StoryDetailClient() {
               label={t("favorite")}
               className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium border shadow-sm transition-colors"
               activeClassName="bg-red-500 text-white hover:bg-red-600 border-red-500"
-              inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800"
+              inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
             />
 
             <button
               type="button"
               onClick={() => { void onShare(); }}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800 whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749] whitespace-nowrap"
               aria-label={t("share")}
             >
               <Share2 className="h-3.5 w-3.5" />
@@ -356,7 +356,7 @@ export default function StoryDetailClient() {
         </div>
       </section>
 
-      <section className="p-3 sm:p-4 md:p-6">
+      <section className="app-component-surface p-3 sm:p-4 md:p-6 rounded-[5px]">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("introTitle")}</h2>
         <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
           {storyDescription || t("introUpdating")}
@@ -365,7 +365,7 @@ export default function StoryDetailClient() {
 
       {/* Tags Section */}
       {story.categories.length > 0 && (
-        <section className="p-3 sm:p-4 md:p-6">
+        <section className="app-component-surface p-3 sm:p-4 md:p-6 rounded-[5px]">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Tags</h2>
           <div className="flex flex-wrap gap-2">
             {story.categories.map(({ category }) => (
@@ -382,7 +382,7 @@ export default function StoryDetailClient() {
       )}
 
       {/* Categories section moved into metadata grid above */}
-      <section className="p-3 sm:p-4 md:p-6">
+      <section className="app-component-surface p-3 sm:p-4 md:p-6 rounded-[5px]">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="inline-flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
             <ListMusic className="h-5 w-5" /> {t("chapterList")}
@@ -397,38 +397,40 @@ export default function StoryDetailClient() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {story.chapters.map((chapter) => {
-            const unlockLabel = getUnlockLabel(chapter, t);
-            return (
-              <Link
-                key={chapter.id}
-                href={chapterHref(story.slug, chapter.chapterNumber)}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 transition hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                <PlayCircle className="h-5 w-5 text-pink-600 flex-shrink-0" />
+        <div className="chapter-list-wrapper bg-white dark:bg-[#242526]">
+          <div className="chapter-grid grid grid-cols-1 md:grid-cols-3 gap-0">
+            {story.chapters.map((chapter) => {
+              const unlockLabel = getUnlockLabel(chapter, t);
+              return (
+                <Link
+                  key={chapter.id}
+                  href={chapterHref(story.slug, chapter.chapterNumber)}
+                  className="chapter-item flex items-center gap-3 px-4 py-3 transition hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <PlayCircle className="h-5 w-5 text-pink-600 flex-shrink-0" />
 
-                <div className="min-w-0">
-                  <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {t("chapterTitle", {
-                      number: chapter.chapterNumber,
-                      title: cleanChapterTitle(getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)),
-                    })}
-                  </p>
-                  <div className="mt-1 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                    <span className="inline-flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {t("readListen")}</span>
-                    <span className="inline-flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" /> {formatDuration(chapter.audioDuration)}</span>
-                    {unlockLabel ? <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-300"><Lock className="h-3.5 w-3.5" /> {unlockLabel}</span> : null}
+                  <div className="min-w-0">
+                    <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {t("chapterTitle", {
+                        number: chapter.chapterNumber,
+                        title: cleanChapterTitle(getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)),
+                      })}
+                    </p>
+                    <div className="mt-1 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                      <span className="inline-flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {t("readListen")}</span>
+                      <span className="inline-flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" /> {formatDuration(chapter.audioDuration)}</span>
+                      {unlockLabel ? <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-300"><Lock className="h-3.5 w-3.5" /> {unlockLabel}</span> : null}
+                    </div>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </section>
       {/* Recommended Stories Section */}
       {recommendedStories.length > 0 && (
-        <section className="p-3 sm:p-4 md:p-6 pb-2 md:pb-4">
+        <section className="app-component-surface p-3 sm:p-4 md:p-6 pb-2 md:pb-4 rounded-[5px]">
           <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">{t("youMightLike")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {recommendedStories.map((recommendedStory) => {
@@ -475,7 +477,7 @@ export default function StoryDetailClient() {
       )}
       {/* New Arrivals Section */}
       {newStories.length > 0 && (
-        <section className="p-3 sm:p-4 md:p-6 pb-2 md:pb-4">
+        <section className="app-component-surface p-3 sm:p-4 md:p-6 pb-2 md:pb-4 rounded-[5px]">
           <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">{t("newArrivals")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
             {newStories.map((newStory) => {

@@ -17,6 +17,7 @@ import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
 import { useAuthModalStore } from "@/stores/auth-modal-store";
 import { useDebounce } from "@/hooks/useDebounce";
+import { locales as supportedLocales } from "@/i18n";
 
 const localeCookieName = "NEXT_LOCALE";
 
@@ -59,6 +60,14 @@ type ExploreResponse = {
   meta: { page: number; lastPage: number; total: number };
 };
 
+type LanguageItem = {
+  id: number;
+  key: string;
+  name: string;
+  isActive: boolean;
+  displayOrder: number;
+};
+
 export default function Navbar() {
   const router = useRouter();
   const params = useParams<{ lang?: string }>();
@@ -78,6 +87,10 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [availableLanguages, setAvailableLanguages] = useState<LanguageItem[]>([
+    { id: 0, key: "vi", name: "Tiếng Việt", isActive: true, displayOrder: 0 },
+    { id: 1, key: "en", name: "English", isActive: true, displayOrder: 1 },
+  ]);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -170,6 +183,37 @@ export default function Navbar() {
 
     void loadTopCategories();
   }, [currentLang]);
+
+  useEffect(() => {
+    const fetchLanguages = async () => {
+      try {
+        const response = await apiClient.get<{ data?: LanguageItem[] } | LanguageItem[]>("/languages", {
+          params: {
+            all: true,
+            active: true,
+          },
+        });
+
+        const rows = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.data)
+            ? response.data.data
+            : [];
+
+        const normalized = rows
+          .filter((item): item is LanguageItem => Boolean(item?.key && item?.name))
+          .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0) || a.key.localeCompare(b.key));
+
+        if (normalized.length > 0) {
+          setAvailableLanguages(normalized);
+        }
+      } catch {
+        // Keep default vi/en list when languages API is unavailable.
+      }
+    };
+
+    void fetchLanguages();
+  }, []);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -269,7 +313,9 @@ export default function Navbar() {
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
-  const switchLocale = (nextLocale: "vi" | "en") => {
+  const switchLocale = (nextLocale: string) => {
+    const isSupported = (supportedLocales as readonly string[]).includes(nextLocale);
+    if (!isSupported) return;
     if (nextLocale === currentLang) return;
 
     const nextPath = `/${nextLocale}`;
@@ -293,7 +339,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full overflow-x-clip bg-pink-50/70 backdrop-blur-md dark:bg-slate-900/90">
+      <header className="app-navbar-surface sticky top-0 z-50 w-full overflow-x-clip bg-pink-50/70 backdrop-blur-md dark:bg-[#252628]">
         <div className="mx-auto w-full max-w-[1920px] px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
           <div className="flex h-16 min-w-0 items-center justify-between gap-2">
 
@@ -412,7 +458,7 @@ export default function Navbar() {
                     }}
                     placeholder={t("searchPlaceholder")}
                     autoFocus
-                    className="w-full pl-9 pr-9 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-pink-500 text-sm outline-none transition-all"
+                    className="w-full pl-9 pr-9 py-2 rounded-full bg-gray-100 dark:bg-[#3a3b3c] border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-pink-500 text-sm outline-none transition-all"
                   />
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   
@@ -422,7 +468,7 @@ export default function Navbar() {
                       setShowSearchDropdown(false);
                       setIsMobileSearchOpen(false);
                     }}
-                    className="absolute right-2 top-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+                    className="app-button-surface absolute right-2 top-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
                   >
                     <X className="h-4 w-4 text-gray-400" />
                   </button>
@@ -495,7 +541,7 @@ export default function Navbar() {
                     if (searchResults.length > 0) setShowSearchDropdown(true);
                   }}
                   placeholder={t("searchPlaceholder")}
-                  className="w-full pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-pink-500 text-sm outline-none transition-all"
+                  className="w-full pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-[#3a3b3c] border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-pink-500 text-sm outline-none transition-all"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
 
@@ -553,7 +599,7 @@ export default function Navbar() {
 
               <button
                 onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-                className="lg:flex 2xl:hidden flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
+                className="app-button-surface lg:flex 2xl:hidden flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
                 aria-label={t("searchPlaceholder")}
               >
                 <Search className="h-5 w-5" />
@@ -561,7 +607,7 @@ export default function Navbar() {
 
               <button
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="hidden xl:flex flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
+                className="app-button-surface hidden xl:flex flex-shrink-0 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-300"
               >
                 {mounted && theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
@@ -572,38 +618,39 @@ export default function Navbar() {
               >
                 <button 
                   onClick={() => setIsLangOpen(!isLangOpen)}
-                  className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 dark:border-gray-700 dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 dark:border-[#303133] dark:bg-[#242526] hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors"
                 >
                   <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase">
-                    {currentLang}
+                    {(availableLanguages.find((item) => item.key === currentLang)?.key || currentLang).toUpperCase()}
                   </span>
                   <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 </button>
 
                 {isLangOpen && (
-                  <div className="absolute top-full right-0 mt-1 w-28 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 z-50">
-                    <button
-                      onClick={() => {
-                        switchLocale("vi");
-                        setIsLangOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                        currentLang === "vi" ? "text-pink-600 dark:text-pink-400 font-semibold" : "text-gray-700 dark:text-gray-200"
-                      }`}
-                    >
-                      Tiếng Việt
-                    </button>
-                    <button
-                      onClick={() => {
-                        switchLocale("en");
-                        setIsLangOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
-                        currentLang === "en" ? "text-pink-600 dark:text-pink-400 font-semibold" : "text-gray-700 dark:text-gray-200"
-                      }`}
-                    >
-                      English
-                    </button>
+                  <div className="absolute top-full right-0 mt-1 w-44 bg-white dark:bg-[#242526] border border-gray-200 dark:border-[#303133] rounded-lg shadow-lg py-1 z-50">
+                    {availableLanguages.map((language) => {
+                      const supported = (supportedLocales as readonly string[]).includes(language.key);
+                      return (
+                        <button
+                          key={language.key}
+                          onClick={() => {
+                            if (!supported) return;
+                            switchLocale(language.key);
+                            setIsLangOpen(false);
+                          }}
+                          title={supported ? language.name : `${language.name} (chua ho tro giao dien)`}
+                          className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                            !supported
+                              ? "text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                              : currentLang === language.key
+                                ? "text-pink-600 dark:text-pink-400 font-semibold"
+                                : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#3a3b3c]"
+                          }`}
+                        >
+                          {language.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -731,12 +778,12 @@ export default function Navbar() {
 
                   {/* Dropdown User */}
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 z-50">
+                    <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#242526] border border-gray-200 dark:border-[#303133] rounded-lg shadow-xl py-1 z-50">
                       <p className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{t("hello", { name: user.name || user.email })}</p>
-                      <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-[#3a3b3c]">
                         <UserCircle className="h-4 w-4" /> {t("profile")}
                       </Link>
-                      <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                      <div className="border-t border-gray-100 dark:border-[#303133] my-1"></div>
                       <button
                         onClick={() => {
                           handleLogout();
@@ -773,7 +820,7 @@ export default function Navbar() {
           ></div>
 
           {/* Side Sheet - Redesigned for better mobile UX */}
-          <div className="fixed inset-y-0 right-0 z-[70] w-[280px] bg-white dark:bg-slate-900 shadow-2xl flex flex-col lg:hidden animate-in slide-in-from-right duration-300">
+            <div className="fixed inset-y-0 right-0 z-[70] w-[280px] bg-white dark:bg-[#242526] shadow-2xl flex flex-col lg:hidden animate-in slide-in-from-right duration-300">
             
             {/* Header with Close Button */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
@@ -781,9 +828,9 @@ export default function Navbar() {
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-lg font-bold">N</div>
                 <span className="font-bold text-gray-900 dark:text-white">Menu</span>
               </div>
-              <button
+                <button
                 onClick={closeMobileMenu}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="app-button-surface p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label={t("closeMenu")}
               >
                 <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
@@ -966,12 +1013,12 @@ export default function Navbar() {
               {/* Language & Theme Toggle */}
               <div className="flex items-center gap-2">
                 {/* Language Switcher */}
-                <div className="flex-1 flex items-center p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <div className="flex-1 flex items-center p-1 bg-gray-100 dark:bg-[#3a3b3c] rounded-lg">
                   <button
                     onClick={() => switchLocale("vi")}
                     className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                       currentLang === "vi"
-                        ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                        ? "bg-white dark:bg-[#242526] text-gray-900 dark:text-white shadow-sm"
                         : "text-gray-500 dark:text-gray-400"
                     }`}
                   >
@@ -981,7 +1028,7 @@ export default function Navbar() {
                     onClick={() => switchLocale("en")}
                     className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
                       currentLang === "en"
-                        ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                        ? "bg-white dark:bg-[#242526] text-gray-900 dark:text-white shadow-sm"
                         : "text-gray-500 dark:text-gray-400"
                     }`}
                   >
@@ -992,7 +1039,7 @@ export default function Navbar() {
                 {/* Theme Toggle */}
                 <button
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="p-2.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  className="app-button-surface p-2.5 bg-gray-100 dark:bg-[#3a3b3c] rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 >
                   {mounted && theme === "dark" ? <Sun className="h-5 w-5 text-gray-600 dark:text-gray-400" /> : <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />}
                 </button>

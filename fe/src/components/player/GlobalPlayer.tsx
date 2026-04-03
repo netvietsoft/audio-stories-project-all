@@ -244,6 +244,8 @@ export default function GlobalPlayer() {
     return Math.min(100, Math.max(0, (currentTime / duration) * 100));
   }, [currentTime, duration]);
 
+  const resolvedCoverUrl = currentTrack?.coverUrl || currentTrack?.storyCoverUrl || "/thumbnaildefault.jpg";
+
   const [isVisible, setIsVisible] = useState(true);
   const [isExpandedMobile, setIsExpandedMobile] = useState(false);
   const lastScrollYRef = useRef(0);
@@ -277,21 +279,19 @@ export default function GlobalPlayer() {
         : undefined;
 
   return (
-    <div className={`fixed bottom-0 left-0 right-0 z-50 bg-gray-50/90 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-md dark:bg-gray-900/85 sm:px-4 transition-all duration-300 ${isVisible ? "translate-y-0 opacity-100" : "translate-y-[72%] opacity-70"}`}>
+    <div className={`fixed bottom-0 left-0 right-0 z-50 bg-gray-50/90 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-md dark:bg-[#242526]/95 sm:px-4 transition-all duration-300 ${isVisible ? "translate-y-0 opacity-100" : "translate-y-[72%] opacity-70"}`}>
       <div className="mx-auto flex w-full max-w-[1920px] items-center gap-3">
         {chapterHref ? (
-          <Link href={chapterHref} className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 transition hover:bg-gray-100/80 dark:hover:bg-gray-800/70">
-            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800">
-              {currentTrack.coverUrl ? (
-                <Image
-                  src={currentTrack.coverUrl}
-                  alt={currentTrack.title}
-                  width={40}
-                  height={40}
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-              ) : null}
+          <Link href={chapterHref} className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 transition hover:bg-gray-100/80 dark:hover:bg-[#3a3b3c]">
+            <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-[#3a3b3c]">
+              <Image
+                src={resolvedCoverUrl}
+                alt={currentTrack.title}
+                width={40}
+                height={40}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
               {/* Mobile Play/Pause Overlay */}
               <button
                 type="button"
@@ -313,17 +313,15 @@ export default function GlobalPlayer() {
           </Link>
         ) : (
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-gray-800">
-              {currentTrack.coverUrl ? (
-                <Image
-                  src={currentTrack.coverUrl}
-                  alt={currentTrack.title}
-                  width={40}
-                  height={40}
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-              ) : null}
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-[#3a3b3c]">
+              <Image
+                src={resolvedCoverUrl}
+                alt={currentTrack.title}
+                width={40}
+                height={40}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
             </div>
 
             <div className="min-w-0">
@@ -335,7 +333,7 @@ export default function GlobalPlayer() {
         )}
 
         <div className="flex items-center gap-1 sm:hidden">
-          <button onClick={playPrev} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+          <button onClick={playPrev} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]">
             <SkipBack className="h-4 w-4" />
           </button>
           <button
@@ -344,12 +342,12 @@ export default function GlobalPlayer() {
           >
             {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </button>
-          <button onClick={playNext} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+          <button onClick={playNext} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]">
             <SkipForward className="h-4 w-4" />
           </button>
           <button
             onClick={() => setIsExpandedMobile((prev) => !prev)}
-            className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]"
             aria-label={t("audioProgress")}
           >
             <ChevronUp className={`h-4 w-4 transition-transform ${isExpandedMobile ? "rotate-180" : ""}`} />
@@ -357,7 +355,7 @@ export default function GlobalPlayer() {
         </div>
 
         <div className="hidden items-center gap-2 sm:flex">
-          <button onClick={playPrev} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+          <button onClick={playPrev} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]">
             <SkipBack className="h-4 w-4" />
           </button>
           <button
@@ -366,7 +364,7 @@ export default function GlobalPlayer() {
           >
             {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </button>
-          <button onClick={playNext} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
+          <button onClick={playNext} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]">
             <SkipForward className="h-4 w-4" />
           </button>
         </div>
@@ -389,14 +387,14 @@ export default function GlobalPlayer() {
         <div className="hidden items-center gap-1 sm:flex">
           <button
             onClick={cycleSpeed}
-            className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+            className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-[#303133] dark:text-gray-200 dark:hover:bg-[#3a3b3c]"
             title={t("speedTitle")}
           >
             {playbackRate}x
           </button>
           <button
             onClick={() => toggleMute()}
-            className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]"
           >
             {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </button>
@@ -416,7 +414,7 @@ export default function GlobalPlayer() {
               togglePlay(false);
               setTrack(null);
             }}
-            className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -424,7 +422,7 @@ export default function GlobalPlayer() {
       </div>
 
       {isExpandedMobile ? (
-        <div className="mt-2 rounded-xl bg-white/85 p-2 dark:bg-gray-800/80 sm:hidden">
+        <div className="mt-2 rounded-xl bg-white/85 p-2 dark:bg-[#242526]/95 sm:hidden">
           <div className="mb-2 flex items-center gap-2">
             <span className="text-[11px] text-gray-500 dark:text-gray-400">{formatDuration(currentTime)}</span>
             <input
@@ -444,7 +442,7 @@ export default function GlobalPlayer() {
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => toggleMute()}
-                className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]"
               >
                 {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               </button>
@@ -460,7 +458,7 @@ export default function GlobalPlayer() {
               />
               <button
                 onClick={cycleSpeed}
-                className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200"
                 title={t("speedTitle")}
               >
                 {playbackRate}x
@@ -473,7 +471,7 @@ export default function GlobalPlayer() {
                 togglePlay(false);
                 setTrack(null);
               }}
-              className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]"
             >
               <X className="h-4 w-4" />
             </button>
@@ -481,7 +479,7 @@ export default function GlobalPlayer() {
         </div>
       ) : null}
 
-      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800 md:hidden">
+      <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#3a3b3c] md:hidden">
         <div className="h-full bg-pink-600 transition-all" style={{ width: `${progress}%` }} />
       </div>
     </div>

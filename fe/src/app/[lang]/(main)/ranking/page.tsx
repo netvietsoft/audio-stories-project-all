@@ -91,7 +91,7 @@ export default function RankingPage() {
 
       {/* Tabs / Filter Bar */}
       <div className="flex overflow-x-auto pb-2 scrollbar-hide justify-center mb-10 -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="flex gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+        <div className="flex gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-[#242526] border border-slate-200 dark:border-[#303133]">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = sortBy === tab.value;
@@ -103,7 +103,7 @@ export default function RankingPage() {
                   setPage(1);
                 }}
                 className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap shadow-sm ${isActive
-                  ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white scale-105 shadow-md"
+                  ? "bg-white dark:bg-[#3a3b3c] text-slate-900 dark:text-white scale-105 shadow-md"
                   : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                   }`}
               >
@@ -164,7 +164,7 @@ export default function RankingPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4">
             {[1, 2, 3, 4, 5].map((idx) => (
-              <div key={idx} className="h-24 w-full rounded-2xl bg-slate-100 dark:bg-slate-900 animate-pulse" />
+              <div key={idx} className="h-24 w-full rounded-2xl bg-slate-100 dark:bg-[#242526] animate-pulse" />
             ))}
           </div>
         ) : (
@@ -197,11 +197,11 @@ export default function RankingPage() {
                     setPage((prev) => Math.max(1, prev - 1));
                     window.scrollTo({ top: 300, behavior: 'smooth' });
                   }}
-                  className="px-6 py-2.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 text-sm font-black disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all font-sans"
+                  className="px-6 py-2.5 rounded-xl border-2 border-slate-200 dark:border-[#303133] text-sm font-black disabled:opacity-40 hover:bg-slate-50 dark:bg-[#3a3b3c] dark:hover:bg-[#464749] transition-all font-sans"
                 >
                   {tCommon("prev")}
                 </button>
-                <div className="flex items-center px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-900/50 text-sm font-bold text-slate-700 dark:text-slate-300">
+                <div className="flex items-center px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-[#242526] text-sm font-bold text-slate-700 dark:text-slate-300">
                   {tCommon("page", { page, lastPage })}
                 </div>
                 <button
@@ -210,7 +210,7 @@ export default function RankingPage() {
                     setPage((prev) => Math.min(lastPage, prev + 1));
                     window.scrollTo({ top: 300, behavior: 'smooth' });
                   }}
-                  className="px-6 py-2.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 text-sm font-black disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-900 transition-all font-sans"
+                  className="px-6 py-2.5 rounded-xl border-2 border-slate-200 dark:border-[#303133] text-sm font-black disabled:opacity-40 hover:bg-slate-50 dark:bg-[#3a3b3c] dark:hover:bg-[#464749] transition-all font-sans"
                 >
                   {tCommon("next")}
                 </button>
@@ -263,7 +263,7 @@ function RankingPremiumCard({
 
   return (
     <Link href={`/story/${story.slug}`} className="block relative h-full">
-      <div className={`overflow-hidden rounded-[2.5rem] border-4 ${borders[color]} bg-white dark:bg-slate-900 shadow-2xl transition-all group-hover:-translate-y-2 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)]`}>
+      <div className={`overflow-hidden rounded-[2.5rem] border-4 ${borders[color]} bg-white dark:bg-[#242526] shadow-2xl transition-all group-hover:-translate-y-2 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)]`}>
         {/* Cover Image Container */}
         <div className="aspect-[3/4] overflow-hidden relative">
           <img
@@ -318,7 +318,7 @@ function RankingListRow({ story, rank, sortBy }: { story: StoryItem, rank: numbe
   return (
     <Link
       href={`/story/${story.slug}`}
-      className="group flex items-center gap-4 p-4 rounded-3xl bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-pink-500/30 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
+      className="group flex items-center gap-4 p-4 rounded-3xl bg-white dark:bg-[#242526] border border-slate-200 dark:border-[#303133] hover:border-pink-500/30 hover:bg-slate-50 dark:hover:bg-[#3a3b3c] transition-all shadow-sm"
     >
       {/* Rank Number */}
       <div className="w-10 text-center font-black text-xl italic text-slate-300 dark:text-slate-700 group-hover:text-pink-500 transition-colors">
@@ -326,7 +326,7 @@ function RankingListRow({ story, rank, sortBy }: { story: StoryItem, rank: numbe
       </div>
 
       {/* Thumbnail */}
-      <div className="w-14 h-14 rounded-xl overflow-hidden shadow-md shrink-0 border border-slate-100 dark:border-slate-800">
+      <div className="w-14 h-14 rounded-xl overflow-hidden shadow-md shrink-0 border border-slate-100 dark:border-[#303133]">
         <img
           src={story.thumbnailUrl || "https://placehold.co/100x150?text=Cover"}
           alt={story.title}

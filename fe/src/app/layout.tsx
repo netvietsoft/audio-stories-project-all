@@ -11,7 +11,7 @@ const beVietnamPro = Be_Vietnam_Pro({
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className={`${beVietnamPro.className} antialiased min-h-screen overflow-x-hidden bg-background text-foreground transition-colors duration-300 dark:bg-gray-950 dark:text-gray-100`}>
+      <body className={`${beVietnamPro.className} antialiased min-h-screen overflow-x-hidden bg-background text-foreground transition-colors duration-300`}>
         <CustomHeadScripts />
         {children}
       </body>

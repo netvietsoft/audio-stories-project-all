@@ -61,8 +61,7 @@ export default function CategoryTabsSection({ tabs, isLoading = false }: Categor
     <section className="space-y-4">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("featuredCategoriesTitle")}</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{t("categoryTabsSubtitle")}</p>
+          <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{t("featuredCategoriesTitle")}</h2>
         </div>
         {activeItem ? (
           <Link href={activeItem.href} className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">

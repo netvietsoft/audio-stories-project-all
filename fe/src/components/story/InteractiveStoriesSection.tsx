@@ -154,8 +154,7 @@ export default function InteractiveStoriesSection() {
       <div className="mx-auto w-full space-y-3 px-3 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]">
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
           <div className="flex-1 min-w-0">
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">{t("interactiveSectionTitle")}</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t("interactiveSectionSubtitle")}</p>
+            <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{t("interactiveSectionTitle")}</h2>
           </div>
           <Link
             href="/interactive"

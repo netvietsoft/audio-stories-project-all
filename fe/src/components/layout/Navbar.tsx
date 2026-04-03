@@ -442,7 +442,7 @@ export default function Navbar() {
             {/* RIGHT SECTION */}
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
               {/* Mobile Search Bar - Always visible inline on top row */}
-              <div className="relative flex-1 lg:hidden" ref={mobileSearchRef}>
+              <div className="relative w-28 shrink-0 sm:w-32 lg:hidden" ref={mobileSearchRef}>
                 <input
                   type="text"
                   value={searchQuery}
@@ -452,9 +452,9 @@ export default function Navbar() {
                     if (searchResults.length > 0) setShowSearchDropdown(true);
                   }}
                   placeholder={t("searchPlaceholder")}
-                  className="w-full rounded-full bg-gray-100 py-2 pl-9 pr-4 text-sm outline-none transition-all border-transparent focus:border-pink-500 focus:bg-white dark:bg-[#3a3b3c] dark:focus:bg-[#242526]"
+                  className="w-full rounded-full border-transparent bg-gray-100 py-1.5 pl-8 pr-2 text-xs outline-none transition-all focus:border-pink-500 focus:bg-white dark:bg-[#3a3b3c] dark:focus:bg-[#242526]"
                 />
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400" />
 
                 {showSearchDropdown && searchQuery.trim() && (
                   <div className="absolute top-full left-0 right-0 mt-2 max-h-[60vh] overflow-y-auto rounded-xl border border-gray-200 bg-white py-2 shadow-2xl z-[100] dark:border-[#303133] dark:bg-[#242526]">
@@ -585,13 +585,20 @@ export default function Navbar() {
                 {mounted && theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
 
-              <div
-                className="hidden xl:flex flex-shrink-0 relative"
-                ref={langMenuRef}
-              >
+              <div className="relative flex-shrink-0" ref={langMenuRef}>
+                <button
+                  onClick={() => setIsLangOpen(!isLangOpen)}
+                  className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1.5 dark:border-[#303133] dark:bg-[#242526] hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors xl:hidden"
+                  aria-label={t("language")}
+                >
+                  <span className="text-sm leading-none" aria-hidden>
+                    {currentLang === "en" ? "🇺🇸" : "🇻🇳"}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
+                </button>
                 <button 
                   onClick={() => setIsLangOpen(!isLangOpen)}
-                  className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 dark:border-[#303133] dark:bg-[#242526] hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors"
+                  className="hidden items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 dark:border-[#303133] dark:bg-[#242526] hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors xl:flex"
                 >
                   <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase">
                     {(availableLanguages.find((item) => item.key === currentLang)?.key || currentLang).toUpperCase()}
@@ -600,7 +607,7 @@ export default function Navbar() {
                 </button>
 
                 {isLangOpen && (
-                  <div className="absolute top-full right-0 mt-1 w-44 bg-white dark:bg-[#242526] border border-gray-200 dark:border-[#303133] rounded-lg shadow-lg py-1 z-50">
+                  <div className="absolute top-full right-0 mt-1 w-40 xl:w-44 bg-white dark:bg-[#242526] border border-gray-200 dark:border-[#303133] rounded-lg shadow-lg py-1 z-50">
                     {availableLanguages.map((language) => {
                       const supported = (supportedLocales as readonly string[]).includes(language.key);
                       return (
@@ -984,36 +991,11 @@ export default function Navbar() {
 
             {/* Footer Settings */}
             <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
-              {/* Language & Theme Toggle */}
+              {/* Theme Toggle */}
               <div className="flex items-center gap-2">
-                {/* Language Switcher */}
-                <div className="flex-1 flex items-center p-1 bg-gray-100 dark:bg-[#3a3b3c] rounded-lg">
-                  <button
-                    onClick={() => switchLocale("vi")}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                      currentLang === "vi"
-                        ? "bg-white dark:bg-[#242526] text-gray-900 dark:text-white shadow-sm"
-                        : "text-gray-500 dark:text-gray-400"
-                    }`}
-                  >
-                    Tiếng Việt
-                  </button>
-                  <button
-                    onClick={() => switchLocale("en")}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                      currentLang === "en"
-                        ? "bg-white dark:bg-[#242526] text-gray-900 dark:text-white shadow-sm"
-                        : "text-gray-500 dark:text-gray-400"
-                    }`}
-                  >
-                    English
-                  </button>
-                </div>
-
-                {/* Theme Toggle */}
                 <button
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="app-button-surface p-2.5 bg-gray-100 dark:bg-[#3a3b3c] rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  className="app-button-surface w-full p-2.5 bg-gray-100 dark:bg-[#3a3b3c] rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 >
                   {mounted && theme === "dark" ? <Sun className="h-5 w-5 text-gray-600 dark:text-gray-400" /> : <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />}
                 </button>

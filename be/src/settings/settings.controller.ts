@@ -13,12 +13,6 @@ import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
 export class SettingsController {
     constructor(private readonly settingsService: SettingsService) { }
 
-    @Get(':key')
-    @Public()
-    findSystemConfigByKey(@Param('key') key: string) {
-        return this.settingsService.getSystemConfigByKey(key);
-    }
-
     @Get()
     @UseGuards(JwtAccessGuard, RolesGuard)
     @Roles('ADMIN')
@@ -31,12 +25,18 @@ export class SettingsController {
     async getSiteSettings() {
         const all = await this.settingsService.findAll();
         // keys we expose publicly
-        const keys = ['facebook_url', 'twitter_url', 'instagram_url', 'youtube_url', 'reddit_url', 'whatsapp_url'];
+        const keys = ['facebook_url', 'twitter_url', 'instagram_url', 'youtube_url', 'reddit_url', 'whatsapp_url', 'custom_head_scripts'];
         const result: Record<string, any> = {};
         keys.forEach((k) => {
             result[k] = all[k]?.value ?? null;
         });
         return result;
+    }
+
+    @Get(':key')
+    @Public()
+    findSystemConfigByKey(@Param('key') key: string) {
+        return this.settingsService.getSystemConfigByKey(key);
     }
 
     @Patch('site')

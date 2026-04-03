@@ -33,7 +33,7 @@ type HistoryListItem = {
   chapter: {
     id: string;
     chapterNumber: number;
-    title: string;
+    title: string | null;
     audioDuration: number | null;
     r2AudioUrl: string | null;
   };

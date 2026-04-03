@@ -292,7 +292,7 @@ model Chapter {
   id             String            @id @default(uuid()) @db.VarChar(36)
   storyId        String?           @map("story_id") @db.VarChar(36)
   chapterNumber  Float             @map("chapter_number") @db.Float
-  title          String            @db.VarChar(300)
+  title          String?           @db.VarChar(300)
   language       String            @default("vi") @db.VarChar(8)
   description    String?           @db.Text
   thumbnailUrl   String?           @map("thumbnail_url") @db.Text

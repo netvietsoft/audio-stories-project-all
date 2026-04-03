@@ -104,7 +104,7 @@ export class NotificationsService {
       storyTitle: string;
       chapterId: string;
       chapterNumber: number;
-      chapterTitle: string;
+      chapterTitle: string | null;
       updateType: 'new_chapter' | 'chapter_updated';
     },
   ) {

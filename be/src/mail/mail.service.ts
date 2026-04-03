@@ -268,7 +268,7 @@ export class MailService {
     payload: {
       storyTitle: string;
       chapterNumber: number;
-      chapterTitle: string;
+      chapterTitle: string | null;
       storyUrl: string;
       updateType: 'new_chapter' | 'chapter_updated';
     },

@@ -55,9 +55,6 @@ const chapterSchema = z.object({
         z.string().uuid('ID truyện không hợp lệ').optional(),
     ),
     unlocksAt: z.string().optional(),
-}).refine((data) => data.titleVi || data.titleEn, {
-    message: 'Phải có ít nhất một tiêu đề (Tiếng Việt hoặc English)',
-    path: ['titleVi'],
 });
 
 export type ChapterFormValues = {
@@ -80,12 +77,12 @@ export type ChapterFormValues = {
 
 export type ChapterSubmitPayload = {
     chapterNumber: number;
-    title: string;
-    description?: string;
-    content?: string;
-    r2AudioUrl?: string;
-    thumbnailUrl?: string;
-    youtubeVideoId?: string;
+    title: string | null;
+    description?: string | null;
+    content?: string | null;
+    r2AudioUrl?: string | null;
+    thumbnailUrl?: string | null;
+    youtubeVideoId?: string | null;
     audioDuration?: number;
     accessType: 'free' | 'timed' | 'vip';
     storyId?: string;
@@ -586,11 +583,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         const audioEn = cleanText(values.audioUrlEn);
 
         const title = selectedLocale === 'en' ? (titleEn || titleVi) : (titleVi || titleEn);
-        if (!title) {
-            alert('Please enter at least one chapter title.');
-            return;
-        }
-        if (title.length > 300) {
+        if (title && title.length > 300) {
             alert('Chapter title is too long (max 300 characters).');
             return;
         }
@@ -625,12 +618,12 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
 
         const payload: ChapterSubmitPayload = {
             chapterNumber,
-            title,
-            description,
-            content,
-            r2AudioUrl,
-            thumbnailUrl,
-            youtubeVideoId,
+            title: title || null,
+            description: description || null,
+            content: content || null,
+            r2AudioUrl: r2AudioUrl || null,
+            thumbnailUrl: thumbnailUrl || null,
+            youtubeVideoId: youtubeVideoId || null,
             audioDuration:
                 typeof values.audioDuration === 'number' && !Number.isNaN(values.audioDuration)
                     ? values.audioDuration

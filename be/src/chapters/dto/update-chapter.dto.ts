@@ -1,4 +1,5 @@
 import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ChapterAccessType } from '@prisma/client';
 
 export class UpdateChapterDto {
@@ -13,20 +14,22 @@ export class UpdateChapterDto {
     @IsOptional()
     @IsString()
     @MaxLength(300)
-    title?: string;
+    @Transform(({ value }) => value === '' ? null : value)
+    title?: string | null;
 
     @IsOptional()
     @IsString()
     @MaxLength(2000)
-    description?: string;
+    @Transform(({ value }) => value === '' ? null : value)
+    description?: string | null;
 
     @IsOptional()
     @IsString()
     @MaxLength(1000000)
     content?: string;
 
-    @IsString()
     @IsOptional()
+    @IsString()
     @MaxLength(500)
     thumbnailUrl?: string;
 
@@ -35,8 +38,8 @@ export class UpdateChapterDto {
     @MaxLength(500)
     r2AudioUrl?: string;
 
-    @IsString()
     @IsOptional()
+    @IsString()
     @MaxLength(20)
     youtubeVideoId?: string;
 
@@ -52,8 +55,8 @@ export class UpdateChapterDto {
     @IsBoolean()
     isInteractive?: boolean;
 
-    @IsString()
     @IsOptional()
+    @IsString()
     @MaxLength(10)
     language?: string;
 }

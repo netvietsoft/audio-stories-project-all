@@ -12,6 +12,7 @@ import {
     Trash2,
     Edit2,
     X,
+    Code,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 
@@ -39,6 +40,8 @@ export default function SettingsPage() {
         type: 'string' as 'string' | 'number' | 'boolean' | 'json',
         description: '',
     });
+    const [customScripts, setCustomScripts] = useState('');
+    const [isSavingScripts, setIsSavingScripts] = useState(false);
 
     useEffect(() => {
         fetchSettings();
@@ -55,6 +58,11 @@ export default function SettingsPage() {
                 initialData[key] = (setting as SettingItem).value;
             });
             setFormData(initialData);
+            
+            // Load custom scripts
+            if (res.data.custom_head_scripts) {
+                setCustomScripts(res.data.custom_head_scripts.value || '');
+            }
         } catch (error) {
             console.error('Failed to fetch settings:', error);
         } finally {
@@ -129,6 +137,24 @@ export default function SettingsPage() {
             fetchSettings();
         } catch (error) {
             alert('Có lỗi xảy ra khi xóa cài đặt!');
+        }
+    };
+
+    const handleSaveCustomScripts = async () => {
+        setIsSavingScripts(true);
+        try {
+            await apiClient.patch('/settings/bulk', {
+                settings: {
+                    custom_head_scripts: customScripts
+                }
+            });
+            alert('Custom scripts đã được lưu thành công!');
+            fetchSettings();
+        } catch (error) {
+            console.error('Failed to save custom scripts:', error);
+            alert('Có lỗi xảy ra khi lưu custom scripts!');
+        } finally {
+            setIsSavingScripts(false);
         }
     };
 
@@ -231,6 +257,57 @@ export default function SettingsPage() {
                         {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
                     </button>
+                </div>
+            </div>
+
+            {/* Custom Head Scripts Section */}
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+                <div className="flex items-start gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                        <Code className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1">
+                        <h2 className="text-xl font-black text-slate-900">Custom Head Scripts</h2>
+                        <p className="text-sm text-slate-500 mt-1 font-medium">
+                            Thêm các đoạn JavaScript, CSS hoặc meta tags tùy chỉnh vào thẻ &lt;head&gt; của website. 
+                            Ví dụ: Google Analytics, Facebook Pixel, Google Tag Manager, v.v.
+                        </p>
+                    </div>
+                </div>
+                
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider block mb-2">
+                            Scripts / HTML Code
+                        </label>
+                        <textarea
+                            value={customScripts}
+                            onChange={(e) => setCustomScripts(e.target.value)}
+                            rows={12}
+                            placeholder={`<!-- Ví dụ: Google Analytics -->\n<script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>\n<script>\n  window.dataLayer = window.dataLayer || [];\n  function gtag(){dataLayer.push(arguments);}\n  gtag('js', new Date());\n  gtag('config', 'GA_MEASUREMENT_ID');\n</script>`}
+                            className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-mono focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
+                        />
+                        <p className="text-xs text-slate-400 mt-2 font-medium">
+                            💡 Tip: Paste toàn bộ code từ Google Analytics, Facebook Pixel, hoặc các tracking scripts khác vào đây.
+                        </p>
+                    </div>
+                    
+                    <div className="flex items-center justify-between pt-2">
+                        <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-2 flex items-center gap-2">
+                            <Info className="w-4 h-4 text-amber-600 shrink-0" />
+                            <p className="text-xs text-amber-700 font-medium">
+                                Scripts sẽ được inject vào tất cả các trang của website
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleSaveCustomScripts}
+                            disabled={isSavingScripts}
+                            className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-700 transition-all active:scale-95 shadow-lg shadow-purple-200 disabled:opacity-50"
+                        >
+                            {isSavingScripts ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                            {isSavingScripts ? 'Đang lưu...' : 'Lưu Scripts'}
+                        </button>
+                    </div>
                 </div>
             </div>
 

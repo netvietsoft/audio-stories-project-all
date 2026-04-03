@@ -31,7 +31,7 @@ const ReactQuill: any = dynamic(() => import('react-quill-new'), {
 });
 
 const variantSchema = z.object({
-    title: z.string().min(1, 'Tiêu đề không được để trống').max(300),
+    title: z.string().max(300).optional(),
     description: z.string().max(2000).optional(),
     content: z.string().optional(),
     audioUrl: z.string().max(500).optional(),

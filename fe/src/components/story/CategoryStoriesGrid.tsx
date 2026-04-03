@@ -80,7 +80,7 @@ export default function CategoryStoriesGrid({ stories, isLoading = false, tone =
           <Link
             key={story.id}
             href={`/story/${story.slug}`}
-            className={`group flex min-h-[160px] sm:min-h-[220px] gap-x-4 rounded-2xl p-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${isPinkTone ? "bg-pink-50/50 dark:bg-slate-800/50" : "bg-white dark:bg-transparent"}`}
+            className={`group flex min-h-[160px] sm:min-h-[220px] gap-x-4 rounded-2xl p-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${isPinkTone ? "bg-pink-50/50 dark:bg-transparent dark:hover:bg-white/5" : "bg-white dark:bg-transparent dark:hover:bg-white/5"}`}
           >
             <div className="relative w-[110px] sm:w-[120px] xl:w-[140px] shrink-0 overflow-hidden rounded-lg">
               <Image

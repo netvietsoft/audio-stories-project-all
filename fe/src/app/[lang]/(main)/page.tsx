@@ -697,7 +697,7 @@ export default function HomePage() {
         )}
 
         {/* ─── Truyện Rating Cao (Grid 2 hàng x 4) ─ */}
-        <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-slate-800/50">
+        <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-[#242526]">
           <div className={HOME_AXIS_CLASS}>
             <div className="space-y-3">
               <div className="flex items-end justify-between gap-4">
@@ -728,7 +728,7 @@ export default function HomePage() {
       </div>
 
       {/* ─── Truyện mới đăng (Stripe layout) ─────────── */}
-      <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-slate-800/50">
+      <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-[#242526]">
           <div className={HOME_AXIS_CLASS}>
           <div className="space-y-4">
             <div className="flex items-end justify-between gap-4">
@@ -751,7 +751,7 @@ export default function HomePage() {
 
         {/* ─── Truyện hoàn thành (Grid 2 hàng x 4) ─ */}
         {completedStories.length > 0 && (
-          <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-slate-800/50">
+          <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-[#242526]">
             <div className={HOME_AXIS_CLASS}>
             <div className="space-y-3">
             <div className="flex items-end justify-between gap-4">
@@ -776,8 +776,8 @@ export default function HomePage() {
           const categoryName = getLocalizedValue(locale, category.nameVi, category.nameEn, category.name);
           const isPinkSection = index % 2 === 1;
           const categorySectionClassName = isPinkSection
-            ? "relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-slate-800/50"
-            : "relative left-1/2 w-dvw -translate-x-1/2 bg-white py-12 dark:bg-[#242526]";
+            ? "relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-[#242526]"
+            : "relative left-1/2 w-dvw -translate-x-1/2 bg-white py-12 dark:bg-transparent";
 
           return (
             <section key={category.id} className={categorySectionClassName}>

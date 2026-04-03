@@ -806,7 +806,7 @@ export default function Navbar() {
             {/* Header with Close Button */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white text-lg font-bold">N</div>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-pink-700 flex items-center justify-center text-white text-lg font-bold">N</div>
                 <span className="font-bold text-gray-900 dark:text-white">Menu</span>
               </div>
                 <button
@@ -840,7 +840,7 @@ export default function Navbar() {
                     openLogin();
                     closeMobileMenu();
                   }}
-                  className="w-full py-2.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-sm shadow-md active:scale-[0.98] transition-all"
+                  className="w-full py-2.5 rounded-lg bg-gradient-to-r from-pink-500 to-pink-700 text-white font-semibold text-sm shadow-md active:scale-[0.98] transition-all"
                 >
                   {t("login")}
                 </button>

@@ -78,7 +78,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false, tone 
           <div key={story.id} className={`${visibilityClass} group`}>
             <Link
               href={`/story/${story.slug}`}
-              className={`block overflow-hidden rounded-2xl shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${isPinkTone ? "bg-pink-50/50 dark:bg-slate-800/50" : "bg-slate-900/95 ring-1 ring-slate-800/60"}`}
+              className={`block overflow-hidden rounded-2xl shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${isPinkTone ? "bg-pink-50/50 dark:bg-transparent dark:hover:bg-white/5" : "bg-slate-900/95 ring-1 ring-slate-800/60 dark:bg-transparent dark:ring-0 dark:hover:bg-white/5"}`}
             >
               <div className="relative">
                 <Image

@@ -104,7 +104,7 @@ export default function HighRatingStoriesGrid({ stories, isLoading = false, tone
           <Link
             key={story.id}
             href={`/story/${story.slug}`}
-            className={`group relative flex min-h-[160px] gap-x-4 rounded-2xl p-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:min-h-[220px] ${isPinkTone ? "bg-pink-50/50 dark:bg-slate-800/50" : "bg-white dark:bg-transparent"}`}
+            className={`group relative flex min-h-[160px] gap-x-4 rounded-2xl p-2 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:min-h-[220px] ${isPinkTone ? "bg-pink-50/50 dark:bg-transparent dark:hover:bg-white/5" : "bg-white dark:bg-transparent dark:hover:bg-white/5"}`}
           >
             {/* Badge TOP */}
             <div className={`absolute left-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full text-xs font-black text-white shadow-md ${badgeClass}`}>

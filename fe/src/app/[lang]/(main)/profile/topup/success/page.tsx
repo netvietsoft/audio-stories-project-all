@@ -108,7 +108,7 @@ export default function TopupSuccessPage() {
                             <ArrowRight className="w-5 h-5" />
                         </button>
                         <button
-                            onClick={() => router.push(`/${locale}/topup`)}
+                            onClick={() => router.push(`/${locale}/profile/topup`)}
                             className="flex-1 py-4 px-6 bg-white dark:bg-gray-700 text-slate-900 dark:text-gray-100 rounded-2xl font-black text-sm uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-gray-600 transition-all active:scale-95 border-2 border-slate-200 dark:border-gray-600 flex items-center justify-center gap-2"
                         >
                             <Coins className="w-5 h-5" />

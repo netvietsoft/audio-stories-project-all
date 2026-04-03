@@ -46,7 +46,7 @@ export default function ProfileTransactionsPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-gray-100">{t("title")}</h1>
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-900">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
             <thead className="bg-gray-50 dark:bg-gray-800/40">

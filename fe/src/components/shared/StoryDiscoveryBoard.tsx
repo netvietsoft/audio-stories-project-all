@@ -144,7 +144,7 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
   };
 
   const topStory = stories[0];
-  const rankedStories = stories.slice(1, 5);
+  const rankedStories = stories.slice(1, 9);
 
   return (
     <div className="p-4 md:p-6">
@@ -203,7 +203,7 @@ export function InteractiveStoryShelf({ stories }: { stories: Story[] }) {
             ) : null}
           </div>
 
-          {/* Right: Top 2-5 Grid (2 rows x 2 cols) */}
+          {/* Right: Top 2-9 Grid (4 rows x 2 cols) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 content-center">
             {rankedStories.map((story, idx) => {
               const storyTitle = getLocalizedValue(lang, story.titleVi, story.titleEn, story.title);

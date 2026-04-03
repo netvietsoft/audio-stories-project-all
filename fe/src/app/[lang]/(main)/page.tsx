@@ -400,7 +400,7 @@ export default function HomePage() {
   }, [accessToken]);
 
   const activeHero = heroSlides[heroIndex];
-  const discoveryFeaturedStories = (trendingStories.length ? trendingStories : popularStories).slice(0, 7);
+  const discoveryFeaturedStories = (trendingStories.length ? trendingStories : popularStories).slice(0, 9);
   const categoryIdBySlug = new Map(allCategories.map((category) => [category.slug, category.id]));
   const categoryTabs = [
     {

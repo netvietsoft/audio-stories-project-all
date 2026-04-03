@@ -409,7 +409,7 @@ export default function ProfilePage() {
                             <ChevronRight className="ml-auto h-4 w-4 text-gray-300" />
                         </button>
                         <button
-                            onClick={() => router.push(`/${currentLang}/topup`)}
+                            onClick={() => router.push(`/${currentLang}/profile/topup`)}
                             className="group flex w-full items-center gap-3 border-b border-gray-100 px-6 py-4 text-pink-600 transition-colors hover:bg-pink-50 dark:border-gray-700 dark:text-pink-400 dark:hover:bg-pink-900/10"
                         >
                             <CreditCard className="h-5 w-5" />

@@ -2674,7 +2674,7 @@ export default function StoryChapterClient() {
                     </button>
                     {showTopupAction ? (
                       <button
-                        onClick={() => router.push(`/${currentLang}/topup`)}
+                        onClick={() => router.push(`/${currentLang}/profile/topup`)}
                         className="inline-flex items-center gap-1 rounded-md bg-amber-600 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-700"
                       >
                         <CreditCard className="h-4 w-4" /> {t("topUp")}

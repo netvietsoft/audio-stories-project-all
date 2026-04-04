@@ -113,6 +113,9 @@ SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 #     else
 #         echo "✅ Database reset confirmed"
 #     fi
+# else
+#     # Force RESET_DB to "no" if not explicitly set to yes
+#     RESET_DB="no"
 # fi
 
 # Force RESET_DB to "no" (change to "yes" if you want to reset on every deploy)

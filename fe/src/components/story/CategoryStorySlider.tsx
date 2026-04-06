@@ -75,7 +75,7 @@ export default function CategoryStorySlider({ stories, isLoading = false }: Cate
       </button>
 
       <div ref={scrollContainerRef} className="overflow-x-auto pb-2 scrollbar-hide">
-        <div className="flex gap-4 pr-6">
+        <div className="flex gap-4 pl-4 pr-4 sm:pl-0 sm:pr-6">
           {displayStories.map((story) => (
             <div key={story.id} className="w-[52%] shrink-0 sm:w-[35%] md:w-[24%] lg:w-[18.5%] xl:w-[16%]">
               <StoryCard story={story} variant="overlay" />

@@ -132,6 +132,8 @@ export default function Navbar() {
   const navLabelClassName = (href: string) =>
     isRouteActive(href) ? "text-pink-600 dark:text-pink-400" : "text-inherit";
 
+  const isDarkTheme = mounted && theme === "dark";
+
   // Debug log
   useEffect(() => {
     console.log("Search query:", searchQuery);
@@ -992,13 +994,36 @@ export default function Navbar() {
             {/* Footer Settings */}
             <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-3">
               {/* Theme Toggle */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="app-button-surface w-full p-2.5 bg-gray-100 dark:bg-[#3a3b3c] rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  {mounted && theme === "dark" ? <Sun className="h-5 w-5 text-gray-600 dark:text-gray-400" /> : <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />}
-                </button>
+              <div className="w-full">
+                <div className="relative grid w-full grid-cols-2 rounded-full bg-zinc-200/90 p-1 dark:bg-zinc-800/90">
+                  <div
+                    className={`pointer-events-none absolute bottom-1 top-1 w-[calc(50%-0.25rem)] rounded-full bg-white/95 shadow-sm transition-transform duration-300 ease-in-out dark:bg-zinc-950/95 ${
+                      isDarkTheme ? "translate-x-[calc(100%+0.25rem)]" : "translate-x-0"
+                    }`}
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setTheme("light")}
+                    className={`relative z-10 flex items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-colors ${
+                      !isDarkTheme ? "text-zinc-900" : "text-zinc-500 dark:text-zinc-400"
+                    }`}
+                  >
+                    <Sun className="h-4 w-4" />
+                    <span>Light</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTheme("dark")}
+                    className={`relative z-10 flex items-center justify-center gap-2 rounded-full px-3 py-2 text-sm font-semibold transition-colors ${
+                      isDarkTheme ? "text-zinc-900 dark:text-zinc-100" : "text-zinc-500 dark:text-zinc-400"
+                    }`}
+                  >
+                    <Moon className="h-4 w-4" />
+                    <span>Dark</span>
+                  </button>
+                </div>
               </div>
 
               {/* Logout Button */}

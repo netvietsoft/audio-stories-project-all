@@ -50,7 +50,7 @@ export default function TopupSuccessPage() {
 
     return (
         <div className="flex items-center justify-center p-4">
-            <div className="max-w-2xl w-full">
+            <div className="w-full md:max-w-2xl">
                 {/* Success Card */}
                 <div className="bg-white dark:bg-zinc-900 rounded-[40px] shadow-2xl shadow-emerald-200/40 dark:shadow-emerald-900/20 p-8 sm:p-12 text-center border-2 border-emerald-100 dark:border-zinc-800/80">
                     {/* Success Icon */}

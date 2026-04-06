@@ -55,7 +55,7 @@ export default function ProfileSidebar() {
   ];
 
   return (
-    <aside className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-[#232325]">
+    <aside className="rounded-none border-x-0 border-y border-gray-200 bg-white p-4 shadow-none dark:border-zinc-800 dark:bg-[#232325] md:rounded-2xl md:border md:shadow-sm">
       <p className="px-2 pb-3 text-xs font-bold uppercase tracking-widest text-gray-400">{t("management")}</p>
       <nav className="space-y-1.5">
         {menuItems.map((item) => {

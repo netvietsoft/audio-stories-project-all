@@ -45,7 +45,7 @@ export default function CompletedStoriesGrid({ stories, isLoading = false, tone 
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-x-4 gap-y-1 md:gap-x-4 md:gap-y-1">
+      <div className="grid grid-cols-3 gap-x-4 gap-y-1 px-4 md:grid-cols-6 md:gap-x-4 md:gap-y-1 md:px-0">
         {Array.from({ length: 12 }).map((_, index) => (
           <div key={index} className="aspect-[3/4] animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
         ))}
@@ -57,14 +57,14 @@ export default function CompletedStoriesGrid({ stories, isLoading = false, tone 
 
   if (!displayStories.length) {
     return (
-      <div className={`rounded-2xl p-6 text-sm ${isPinkTone ? "bg-pink-50/50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400" : "bg-white/80 text-slate-500 dark:bg-slate-900/70 dark:text-slate-400"}`}>
+      <div className={`mx-4 rounded-2xl p-6 text-sm md:mx-0 ${isPinkTone ? "bg-pink-50/50 text-slate-500 dark:bg-slate-800/50 dark:text-slate-400" : "bg-white/80 text-slate-500 dark:bg-slate-900/70 dark:text-slate-400"}`}>
         {emptyMessage}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-3 md:grid-cols-6 gap-x-4 gap-y-1 md:gap-x-4 md:gap-y-1">
+    <div className="grid grid-cols-3 gap-x-4 gap-y-1 px-4 md:grid-cols-6 md:gap-x-4 md:gap-y-1 md:px-0">
       {displayStories.map((story, index) => {
         const title = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
         const categoryName = story.categories?.[0]?.category?.name;

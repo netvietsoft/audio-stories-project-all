@@ -234,7 +234,7 @@ export default function TopupPage() {
 
             {/* Main Content Area */}
             <div className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-20">
-                <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 max-w-7xl mx-auto">
+                <div className="flex flex-col gap-6 lg:mx-auto lg:max-w-7xl lg:flex-row lg:gap-8">
 
                     {/* Left Side: Packages */}
                     <div className="w-full lg:w-[70%]">

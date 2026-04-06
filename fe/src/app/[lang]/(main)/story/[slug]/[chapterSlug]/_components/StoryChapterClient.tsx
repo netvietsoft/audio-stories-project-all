@@ -2589,7 +2589,7 @@ export default function StoryChapterClient() {
 
         </section>
 
-        <RecommendedSlider stories={recommendedStories} lang={currentLang} />
+        <RecommendedSlider stories={recommendedStories} lang={currentLang} tone="reader" />
 
         {mounted && createPortal(
           <>

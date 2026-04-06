@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
-import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
 
@@ -30,16 +29,6 @@ type FavoriteResponse = {
   };
 };
 
-type CategoryOption = {
-  id: number;
-  name: string;
-};
-
-type AuthorOption = {
-  id: string;
-  name: string;
-};
-
 const LIMIT = 20;
 
 export default function FavoriteStoriesPage() {
@@ -53,20 +42,6 @@ export default function FavoriteStoriesPage() {
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
-  const [categories, setCategories] = useState<CategoryOption[]>([]);
-  const [authors, setAuthors] = useState<AuthorOption[]>([]);
-  const [filters, setFilters] = useState<StoryFilterValue>({
-    categoryId: "",
-    authorId: "",
-    status: "",
-    sort: "latest",
-  });
-  const [appliedFilters, setAppliedFilters] = useState<StoryFilterValue>({
-    categoryId: "",
-    authorId: "",
-    status: "",
-    sort: "latest",
-  });
   const [isLoading, setIsLoading] = useState(false);
 
   const canLoadMore = useMemo(() => page < lastPage, [page, lastPage]);
@@ -78,10 +53,8 @@ export default function FavoriteStoriesPage() {
         params: {
           page: nextPage,
           limit: LIMIT,
-          ...(appliedFilters.categoryId ? { categoryId: Number(appliedFilters.categoryId) } : {}),
-          ...(appliedFilters.authorId ? { authorId: appliedFilters.authorId } : {}),
-          ...(appliedFilters.status ? { status: appliedFilters.status } : {}),
-          sort: appliedFilters.sort,
+          // Always sort favorites from newest to oldest.
+          sort: "latest",
         },
       });
       setPage(response.data.meta.page);
@@ -97,40 +70,22 @@ export default function FavoriteStoriesPage() {
       router.push(`/${currentLang}`);
       return;
     }
-
-    void (async () => {
-      const [categoryRes, authorRes] = await Promise.all([
-        apiClient.get<CategoryOption[]>("/stories/categories"),
-        apiClient.get<AuthorOption[]>("/stories/authors"),
-      ]);
-      setCategories(categoryRes.data);
-      setAuthors(authorRes.data);
-    })();
   }, [accessToken, currentLang, router]);
 
   useEffect(() => {
     if (!accessToken) return;
     void fetchFavorites(1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, appliedFilters]);
+  }, [accessToken]);
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t("title")}</h1>
 
-      <StoryFilterBar
-        categories={categories}
-        authors={authors}
-        value={filters}
-        onChange={setFilters}
-        onApply={() => setAppliedFilters(filters)}
-        isLoading={isLoading}
-      />
-
       {stories.length > 0 ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-3 gap-2.5 md:grid-cols-3 md:gap-4 lg:grid-cols-5">
           {stories.map((story) => (
-            <StoryCard key={story.id} story={story} />
+            <StoryCard key={story.id} story={story} profileCompact />
           ))}
         </div>
       ) : (

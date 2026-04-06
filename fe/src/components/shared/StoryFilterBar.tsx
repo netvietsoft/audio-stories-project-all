@@ -33,6 +33,7 @@ type StoryFilterBarProps = {
   onApply: () => void;
   isLoading?: boolean;
   showKeywordInput?: boolean;
+  variant?: "default" | "profile-favorites";
 };
 
 export default function StoryFilterBar({
@@ -43,6 +44,7 @@ export default function StoryFilterBar({
   onApply,
   isLoading = false,
   showKeywordInput = false,
+  variant = "default",
 }: StoryFilterBarProps) {
   const t = useTranslations("StoryFilterBar");
   const locale = useLocale();
@@ -107,14 +109,39 @@ export default function StoryFilterBar({
 
   const selectedStatus = statusOptions.find((s) => s.value === value.status);
   const selectedSort = sortOptions.find((s) => s.value === value.sort);
+  const isProfileFavorites = variant === "profile-favorites";
+
+  const wrapperClassName = isProfileFavorites
+    ? "rounded-2xl bg-white p-4 shadow-sm dark:bg-[#242526]"
+    : "rounded-2xl bg-white p-6 shadow-sm dark:bg-[#242526]";
+
+  const headingClassName = isProfileFavorites
+    ? "mb-3 text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+    : "mb-4 text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider";
+
+  const gridClassName = isProfileFavorites
+    ? "grid grid-cols-2 gap-2.5 lg:grid-cols-5"
+    : `grid grid-cols-1 gap-3 ${showKeywordInput ? 'md:grid-cols-2 lg:grid-cols-6' : 'md:grid-cols-2 lg:grid-cols-5'}`;
+
+  const triggerClassName = isProfileFavorites
+    ? "w-full bg-slate-50 dark:bg-[#3a3b3c] text-left rounded-xl py-2.5 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-pink-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-[#464749]"
+    : "w-full bg-slate-50 dark:bg-[#3a3b3c] text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-pink-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-[#464749]";
+
+  const dropdownItemClassName = isProfileFavorites
+    ? "w-full text-left px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#3a3b3c] hover:text-pink-600 transition-colors flex items-center justify-between"
+    : "w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#3a3b3c] hover:text-pink-600 transition-colors flex items-center justify-between";
+
+  const applyBtnClassName = isProfileFavorites
+    ? "rounded-xl bg-pink-600 px-3 py-2.5 text-xs font-semibold text-white hover:bg-pink-700 disabled:opacity-60 transition-all shadow-sm hover:shadow-md"
+    : "rounded-xl bg-pink-600 px-4 py-3 text-sm font-bold text-white hover:bg-pink-700 disabled:opacity-60 transition-all shadow-sm hover:shadow-md";
 
   return (
-    <div className="rounded-2xl bg-white p-6 shadow-sm dark:bg-[#242526]">
-      <h2 className="mb-4 text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+    <div className={wrapperClassName}>
+      <h2 className={headingClassName}>
         {t("quickFilter")}
       </h2>
 
-      <div className={`grid grid-cols-1 gap-3 ${showKeywordInput ? 'md:grid-cols-2 lg:grid-cols-6' : 'md:grid-cols-2 lg:grid-cols-5'}`}>
+      <div className={gridClassName}>
         {/* Keyword Input (if enabled) */}
         {showKeywordInput && (
           <div className="lg:col-span-1">
@@ -134,11 +161,11 @@ export default function StoryFilterBar({
         )}
 
         {/* Category Dropdown */}
-        <div className="relative" ref={categoryRef}>
+        <div className={`relative ${isProfileFavorites ? "order-2" : ""}`} ref={categoryRef}>
           <button
             type="button"
             onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-            className="w-full bg-slate-50 dark:bg-[#3a3b3c] text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-pink-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-[#464749]"
+            className={triggerClassName}
           >
             <span className={selectedCategory ? "text-slate-900 dark:text-white" : "text-slate-400"}>
               {selectedCategory 
@@ -173,7 +200,7 @@ export default function StoryFilterBar({
                     setIsCategoryOpen(false);
                     setCategorySearch("");
                   }}
-                  className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#3a3b3c] hover:text-pink-600 transition-colors flex items-center justify-between"
+                  className={dropdownItemClassName}
                 >
                   {t("allCategories")}
                   {!value.categoryId && <Check className="w-4 h-4 text-pink-600" />}
@@ -187,7 +214,7 @@ export default function StoryFilterBar({
                       setIsCategoryOpen(false);
                       setCategorySearch("");
                     }}
-                    className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#3a3b3c] hover:text-pink-600 transition-colors flex items-center justify-between"
+                    className={dropdownItemClassName}
                   >
                     {getLocalizedValue(locale, c.nameVi, c.nameEn, c.name)}
                     {String(c.id) === value.categoryId && <Check className="w-4 h-4 text-pink-600" />}
@@ -199,11 +226,11 @@ export default function StoryFilterBar({
         </div>
 
         {/* Author Dropdown */}
-        <div className="relative" ref={authorRef}>
+        <div className={`relative ${isProfileFavorites ? "order-1 col-span-2" : ""}`} ref={authorRef}>
           <button
             type="button"
             onClick={() => setIsAuthorOpen(!isAuthorOpen)}
-            className="w-full bg-slate-50 dark:bg-[#3a3b3c] text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-pink-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-[#464749]"
+            className={triggerClassName}
           >
             <span className={selectedAuthor ? "text-slate-900 dark:text-white" : "text-slate-400"}>
               {selectedAuthor ? selectedAuthor.name : t("allAuthors")}
@@ -236,7 +263,7 @@ export default function StoryFilterBar({
                     setIsAuthorOpen(false);
                     setAuthorSearch("");
                   }}
-                  className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#3a3b3c] hover:text-pink-600 transition-colors flex items-center justify-between"
+                  className={dropdownItemClassName}
                 >
                   {t("allAuthors")}
                   {!value.authorId && <Check className="w-4 h-4 text-pink-600" />}
@@ -250,7 +277,7 @@ export default function StoryFilterBar({
                       setIsAuthorOpen(false);
                       setAuthorSearch("");
                     }}
-                    className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#3a3b3c] hover:text-pink-600 transition-colors flex items-center justify-between"
+                    className={dropdownItemClassName}
                   >
                     {a.name}
                     {a.id === value.authorId && <Check className="w-4 h-4 text-pink-600" />}
@@ -262,11 +289,11 @@ export default function StoryFilterBar({
         </div>
 
         {/* Status Dropdown */}
-        <div className="relative" ref={statusRef}>
+        <div className={`relative ${isProfileFavorites ? "order-3" : ""}`} ref={statusRef}>
           <button
             type="button"
             onClick={() => setIsStatusOpen(!isStatusOpen)}
-            className="w-full bg-slate-50 dark:bg-[#3a3b3c] text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-pink-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-[#464749]"
+            className={triggerClassName}
           >
             <span className={selectedStatus?.value ? "text-slate-900 dark:text-white" : "text-slate-400"}>
               {selectedStatus?.label || t("allStatuses")}
@@ -286,7 +313,7 @@ export default function StoryFilterBar({
                     onChange({ ...value, status: s.value as StoryFilterValue["status"] });
                     setIsStatusOpen(false);
                   }}
-                  className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#3a3b3c] hover:text-pink-600 transition-colors flex items-center justify-between"
+                  className={dropdownItemClassName}
                 >
                   {s.label}
                   {s.value === value.status && <Check className="w-4 h-4 text-pink-600" />}
@@ -297,11 +324,11 @@ export default function StoryFilterBar({
         </div>
 
         {/* Sort Dropdown */}
-        <div className="relative" ref={sortRef}>
+        <div className={`relative ${isProfileFavorites ? "order-4" : ""}`} ref={sortRef}>
           <button
             type="button"
             onClick={() => setIsSortOpen(!isSortOpen)}
-            className="w-full bg-slate-50 dark:bg-[#3a3b3c] text-left rounded-xl py-3 px-4 text-sm font-bold text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-pink-500/20 transition-all flex items-center justify-between hover:bg-slate-100 dark:hover:bg-[#464749]"
+            className={triggerClassName}
           >
             <span className="text-slate-900 dark:text-white">{selectedSort?.label}</span>
             <ChevronDown
@@ -319,7 +346,7 @@ export default function StoryFilterBar({
                     onChange({ ...value, sort: s.value as StoryFilterValue["sort"] });
                     setIsSortOpen(false);
                   }}
-                  className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#3a3b3c] hover:text-pink-600 transition-colors flex items-center justify-between"
+                  className={dropdownItemClassName}
                 >
                   {s.label}
                   {s.value === value.sort && <Check className="w-4 h-4 text-pink-600" />}
@@ -334,7 +361,7 @@ export default function StoryFilterBar({
           type="button"
           onClick={onApply}
           disabled={isLoading}
-          className="rounded-xl bg-pink-600 px-4 py-3 text-sm font-bold text-white hover:bg-pink-700 disabled:opacity-60 transition-all shadow-sm hover:shadow-md"
+          className={`${applyBtnClassName} ${isProfileFavorites ? "order-5" : ""}`}
         >
           {isLoading ? t("applying") : t("apply")}
         </button>

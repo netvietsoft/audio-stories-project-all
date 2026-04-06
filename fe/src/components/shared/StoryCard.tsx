@@ -44,6 +44,7 @@ type StoryCardProps = {
   lang?: string;
   showFavoriteButton?: boolean;
   compactMobile?: boolean;
+  profileCompact?: boolean;
 };
 
 const content = {
@@ -64,6 +65,7 @@ export default function StoryCard({
   lang,
   showFavoriteButton = true,
   compactMobile = false,
+  profileCompact = false,
 }: StoryCardProps) {
   const t = useTranslations("StoryCard");
   const locale = useLocale();
@@ -212,7 +214,7 @@ export default function StoryCard({
   return (
     <Link
       href={`/story/${story.slug}`}
-      className={`group block rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
+      className={`group flex h-full flex-col rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
         isFeatured
           ? "bg-amber-50/70 shadow-sm hover:shadow-lg hover:shadow-amber-100/60 dark:bg-slate-900/90 dark:hover:shadow-none"
           : "bg-white/90 shadow-sm hover:shadow-md dark:bg-gray-900/80"
@@ -241,26 +243,32 @@ export default function StoryCard({
         ) : null}
       </div>
 
-      <div className="p-2 pt-2 space-y-1">
+      <div className={`flex flex-1 flex-col ${profileCompact ? "min-h-[62px] p-1.5 pt-1.5" : "min-h-[96px] p-2 pt-2"}`}>
         <h3
-          className={`line-clamp-2 font-bold text-gray-900 transition-colors group-hover:text-pink-700 dark:text-white dark:group-hover:text-pink-300 ${
-            compactMobile ? "text-[13px] sm:text-sm" : "text-sm"
+          className={`${profileCompact ? "line-clamp-1" : "line-clamp-2"} font-bold text-gray-900 transition-colors group-hover:text-pink-700 dark:text-white dark:group-hover:text-pink-300 ${
+            profileCompact
+              ? "text-[12px]"
+              : compactMobile
+                ? "text-[13px] sm:text-sm"
+                : "text-sm"
           }`}
         >
           {localizedTitle}
         </h3>
 
-        <p className={`truncate text-gray-500 dark:text-gray-400 ${compactMobile ? "text-[11px] sm:text-xs" : "text-xs"}`}>
+        <p className={`truncate text-gray-500 dark:text-gray-400 ${profileCompact ? "mt-0.5 text-[10px]" : compactMobile ? "text-[11px] sm:text-xs" : "text-xs"}`}>
           {story.author?.name || t("updating")}
         </p>
 
-        <div className="hidden items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 sm:flex">
-          <div className="flex items-center gap-1">
-            <Eye className="h-3.5 w-3.5" />
+        <div
+          className={`${compactMobile || profileCompact ? "flex" : "hidden sm:flex"} mt-auto items-center justify-between gap-1.5 ${profileCompact ? "pt-0.5 text-[10px]" : "pt-1 text-xs"} text-gray-500 dark:text-gray-400`}
+        >
+          <div className="flex min-w-0 items-center gap-1">
+            <Eye className={`${profileCompact ? "h-3 w-3" : "h-3.5 w-3.5"}`} />
             <span>{viewsLabel}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Star className="h-3.5 w-3.5 text-amber-500" fill="currentColor" />
+            <Star className={`${profileCompact ? "h-3 w-3" : "h-3.5 w-3.5"} text-amber-500`} fill="currentColor" />
             <span>{rating}</span>
           </div>
         </div>

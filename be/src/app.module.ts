@@ -31,6 +31,7 @@ import { LanguagesModule } from './languages/languages.module';
 import { BannersModule } from './banners/banners.module';
 import { AdsModule } from './ads/ads.module';
 import { TrackingModule } from './tracking/tracking.module';
+import { SocialLinksModule } from './social-links/social-links.module';
 
 @Module({
   imports: [
@@ -88,6 +89,7 @@ import { TrackingModule } from './tracking/tracking.module';
     BannersModule,
     AdsModule,
     TrackingModule,
+    SocialLinksModule,
   ],
   controllers: [AppController],
     providers: [

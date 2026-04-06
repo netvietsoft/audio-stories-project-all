@@ -43,7 +43,7 @@ export default function ProfileSettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="w-full space-y-6">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t("title")}</h1>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-zinc-800 dark:bg-[#232325]">

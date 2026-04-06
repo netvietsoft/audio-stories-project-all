@@ -151,7 +151,7 @@ type HeroSlide = {
 
 const NEW_LIMIT = 5;
 const POPULAR_LIMIT = 9;
-const HOME_AXIS_CLASS = "mx-auto w-full px-4 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]";
+const HOME_AXIS_CLASS = "mx-auto w-full px-0 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]";
 
 export default function HomePage() {
   const t = useTranslations("Home");

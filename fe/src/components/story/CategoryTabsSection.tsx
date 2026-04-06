@@ -58,7 +58,7 @@ export default function CategoryTabsSection({ tabs, isLoading = false }: Categor
   }
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 px-4 sm:px-0">
       <div className="flex items-end justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{t("featuredCategoriesTitle")}</h2>

@@ -51,7 +51,7 @@ export default function StoryListView({ chapters, isLoading, tone = "default" }:
   };
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-0">
+      <div className="grid grid-cols-1 gap-x-4 gap-y-0 px-4 sm:px-0 lg:grid-cols-2">
         {[...Array(10)].map((_, i) => (
           <div
             key={i}
@@ -74,14 +74,14 @@ export default function StoryListView({ chapters, isLoading, tone = "default" }:
 
   if (!validChapters.length) {
     return (
-      <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+      <div className="px-4 py-12 text-center text-gray-500 sm:px-0 dark:text-gray-400">
         {t("noChapters")}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-0">
+    <div className="grid grid-cols-1 gap-x-4 gap-y-0 px-4 sm:px-0 lg:grid-cols-2">
       {validChapters.map((chapter) => {
         const story = chapter.story;
         const hasStoryLink = Boolean(story?.slug);

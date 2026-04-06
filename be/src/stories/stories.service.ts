@@ -7,6 +7,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { ExploreQueryDto } from './dto/explore-query.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { UpdateStoryDto } from './dto/update-story.dto';
+import { handlePrismaError } from '@/common/utils/error-handler.util';
 
 @Injectable()
 export class StoriesService {

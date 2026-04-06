@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CategoryQueryDto } from './dto/category-query.dto';
 import { Prisma } from '@prisma/client';
+import { handlePrismaError } from '@/common/utils/error-handler.util';
 
 @Injectable()
 export class CategoriesService {
@@ -101,39 +102,47 @@ export class CategoriesService {
     }
 
     async create(data: CreateCategoryDto) {
-        return this.prisma.category.create({
-            data: {
-                name: data.name,
-                slug: data.slug,
-                description: data.description,
-                iconUrl: data.iconUrl,
-                language: {
-                    connect: {
-                        key: (data.language || 'vi').trim(),
+        try {
+            return await this.prisma.category.create({
+                data: {
+                    name: data.name,
+                    slug: data.slug,
+                    description: data.description,
+                    iconUrl: data.iconUrl,
+                    language: {
+                        connect: {
+                            key: (data.language || 'vi').trim(),
+                        },
                     },
                 },
-            },
-        });
+            });
+        } catch (error) {
+            handlePrismaError(error, 'Category');
+        }
     }
 
     async update(id: number, data: UpdateCategoryDto) {
-        await this.findOne(id);
+        try {
+            await this.findOne(id);
 
-        const { language, ...categoryData } = data;
+            const { language, ...categoryData } = data;
 
-        return this.prisma.category.update({
-            where: { id },
-            data: {
-                ...categoryData,
-                ...(language ? {
-                    language: {
-                        connect: {
-                            key: language.trim(),
+            return await this.prisma.category.update({
+                where: { id },
+                data: {
+                    ...categoryData,
+                    ...(language ? {
+                        language: {
+                            connect: {
+                                key: language.trim(),
+                            },
                         },
-                    },
-                } : {}),
-            },
-        });
+                    } : {}),
+                },
+            });
+        } catch (error) {
+            handlePrismaError(error, 'Category');
+        }
     }
 
     async remove(id: number) {

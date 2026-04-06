@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { UserFeaturesService } from '@/user-features/user-features.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
@@ -6,6 +6,7 @@ import { CreateStandaloneChapterDto } from './dto/create-standalone-chapter.dto'
 import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ChapterQueryDto } from './dto/chapter-query.dto';
 import { Prisma } from '@prisma/client';
+import { handlePrismaError } from '@/common/utils/error-handler.util';
 
 @Injectable()
 export class ChaptersService {
@@ -15,7 +16,9 @@ export class ChaptersService {
     ) { }
 
     private normalizeChapterFlatPayload(data: Record<string, any>) {
-        return data;
+        // Remove relation fields that should not be passed as flat values
+        const { storyId, language, ...rest } = data;
+        return rest;
     }
 
     async findAllByStory(storyId: string) {
@@ -190,22 +193,23 @@ export class ChaptersService {
     }
 
     async update(id: string, data: UpdateChapterDto) {
-        const chapter = await this.findOne(id);
-        const shouldNotifyUpdate =
-            data.storyId !== undefined ||
-            data.title !== undefined ||
-            data.description !== undefined ||
-            data.content !== undefined ||
-            data.r2AudioUrl !== undefined ||
-            data.thumbnailUrl !== undefined;
+        try {
+            const chapter = await this.findOne(id);
+            const shouldNotifyUpdate =
+                data.storyId !== undefined ||
+                data.title !== undefined ||
+                data.description !== undefined ||
+                data.content !== undefined ||
+                data.r2AudioUrl !== undefined ||
+                data.thumbnailUrl !== undefined;
 
-        console.log('Updating chapter with data:', data);
+            console.log('Updating chapter with data:', data);
 
-        // If storyId is being changed, update totalChapters for both old and new stories
-        if (data.storyId !== undefined && data.storyId !== chapter.storyId) {
-            // Validate new story exists if storyId is not null
-            if (data.storyId) {
-                const story = await this.prisma.story.findUnique({ 
+            // If storyId is being changed, update totalChapters for both old and new stories
+            if (data.storyId !== undefined && data.storyId !== chapter.storyId) {
+                // Validate new story exists if storyId is not null
+                if (data.storyId) {
+                    const story = await this.prisma.story.findUnique({ 
                     where: { id: data.storyId } 
                 });
                 if (!story) {
@@ -304,6 +308,9 @@ export class ChaptersService {
         }
 
         return updatedChapter;
+        } catch (error) {
+            handlePrismaError(error, 'Chapter');
+        }
     }
 
     async remove(id: string) {

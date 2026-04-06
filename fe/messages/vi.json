@@ -421,6 +421,9 @@
     "scrollLeft": "Cuộn trái",
     "scrollRight": "Cuộn phải"
   },
+  "SocialLinks": {
+    "communities": "Cộng đồng"
+  },
   "ProfilePage": {
     "personalProfile": "Hồ sơ cá nhân",
     "currentProfile": "Hồ sơ hiện tại",

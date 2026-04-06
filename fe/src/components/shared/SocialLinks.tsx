@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Facebook, Send, MessageCircle, Instagram, Twitter, Youtube, Music } from 'lucide-react';
 import { apiClient } from '@/lib/api/api-client';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 type SocialLink = {
   id: string;
@@ -89,6 +89,7 @@ const platformColors: Record<string, { icon: string; border: string; hover: stri
 
 export default function SocialLinks() {
   const locale = useLocale() as 'vi' | 'en';
+  const t = useTranslations('SocialLinks');
   const [links, setLinks] = useState<SocialLink[]>([]);
 
   useEffect(() => {
@@ -114,32 +115,37 @@ export default function SocialLinks() {
   };
 
   return (
-    <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
-      {links.map((link) => {
-        const Icon = platformIcons[link.platform] || MessageCircle;
-        const colors = platformColors[link.platform] || {
-          icon: 'text-gray-600 dark:text-gray-300',
-          border: 'border-gray-300 dark:border-gray-600',
-          hover: 'hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800',
-        };
-        
-        return (
-          <a
-            key={link.id}
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={link.label || getTooltip(link.platform)}
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-full border-2 bg-white dark:bg-[#242526] shadow-sm transition-all ${colors.border} ${colors.hover}`}
-          >
-            {link.iconUrl ? (
-              <img src={link.iconUrl} alt={link.label} className="h-5 w-5 object-contain" />
-            ) : (
-              <Icon className={`h-5 w-5 ${colors.icon}`} />
-            )}
-          </a>
-        );
-      })}
+    <div className="mt-6 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+      <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">
+        {t('communities')}
+      </h3>
+      <div className="flex flex-wrap items-center justify-center gap-2.5">
+        {links.map((link) => {
+          const Icon = platformIcons[link.platform] || MessageCircle;
+          const colors = platformColors[link.platform] || {
+            icon: 'text-gray-600 dark:text-gray-300',
+            border: 'border-gray-300 dark:border-gray-600',
+            hover: 'hover:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800',
+          };
+          
+          return (
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={link.label || getTooltip(link.platform)}
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border-2 bg-white dark:bg-[#242526] shadow-sm transition-all ${colors.border} ${colors.hover}`}
+            >
+              {link.iconUrl ? (
+                <img src={link.iconUrl} alt={link.label} className="h-5 w-5 object-contain" />
+              ) : (
+                <Icon className={`h-5 w-5 ${colors.icon}`} />
+              )}
+            </a>
+          );
+        })}
+      </div>
     </div>
   );
 }

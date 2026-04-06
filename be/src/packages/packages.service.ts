@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreatePackageDto } from './dto/create-package.dto';
 import { UpdatePackageDto } from './dto/update-package.dto';
+import { handlePrismaError } from '@/common/utils/error-handler.util';
 
 @Injectable()
 export class PackagesService {
@@ -67,60 +68,74 @@ export class PackagesService {
     }
 
     async create(createPackageDto: CreatePackageDto) {
-        const packages = await this.findAll();
+        try {
+            const packages = await this.findAll();
 
-        // Check if code already exists
-        if (packages.find((p: any) => p.code === createPackageDto.code)) {
-            throw new ConflictException('Package with code "' + createPackageDto.code + '" already exists');
+            // Check if code already exists
+            if (packages.find((p: any) => p.code === createPackageDto.code)) {
+                throw new ConflictException('Package with code "' + createPackageDto.code + '" already exists');
+            }
+
+            const newPackage = {
+                ...createPackageDto,
+                lang: (createPackageDto.lang || 'vi').toLowerCase(),
+                isActive: createPackageDto.isActive ?? true,
+                displayOrder: createPackageDto.displayOrder ?? packages.length,
+                createdAt: new Date().toISOString(),
+            };
+
+            packages.push(newPackage);
+
+            await this.prisma.siteSetting.upsert({
+                where: { key: 'payment_packages' },
+                update: { value: JSON.stringify(packages) },
+                create: {
+                    key: 'payment_packages',
+                    value: JSON.stringify(packages),
+                    type: 'json',
+                    description: 'Danh sÃ¡ch cÃ¡c gÃ³i thanh toÃ¡n',
+                },
+            });
+
+            return newPackage;
+        } catch (error) {
+            if (error instanceof ConflictException) {
+                throw error;
+            }
+            handlePrismaError(error, 'Package');
         }
-
-        const newPackage = {
-            ...createPackageDto,
-            lang: (createPackageDto.lang || 'vi').toLowerCase(),
-            isActive: createPackageDto.isActive ?? true,
-            displayOrder: createPackageDto.displayOrder ?? packages.length,
-            createdAt: new Date().toISOString(),
-        };
-
-        packages.push(newPackage);
-
-        await this.prisma.siteSetting.upsert({
-            where: { key: 'payment_packages' },
-            update: { value: JSON.stringify(packages) },
-            create: {
-                key: 'payment_packages',
-                value: JSON.stringify(packages),
-                type: 'json',
-                description: 'Danh sÃ¡ch cÃ¡c gÃ³i thanh toÃ¡n',
-            },
-        });
-
-        return newPackage;
     }
 
     async update(code: string, updatePackageDto: UpdatePackageDto) {
-        const packages = await this.findAll();
-        const index = packages.findIndex((p: any) => p.code === code);
+        try {
+            const packages = await this.findAll();
+            const index = packages.findIndex((p: any) => p.code === code);
 
-        if (index === -1) {
-            throw new NotFoundException('Package with code "' + code + '" not found');
+            if (index === -1) {
+                throw new NotFoundException('Package with code "' + code + '" not found');
+            }
+
+            packages[index] = {
+                ...packages[index],
+                ...updatePackageDto,
+                lang: updatePackageDto.lang
+                    ? updatePackageDto.lang.toLowerCase()
+                    : packages[index].lang,
+                updatedAt: new Date().toISOString(),
+            };
+
+            await this.prisma.siteSetting.update({
+                where: { key: 'payment_packages' },
+                data: { value: JSON.stringify(packages) },
+            });
+
+            return packages[index];
+        } catch (error) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            handlePrismaError(error, 'Package');
         }
-
-        packages[index] = {
-            ...packages[index],
-            ...updatePackageDto,
-            lang: updatePackageDto.lang
-                ? updatePackageDto.lang.toLowerCase()
-                : packages[index].lang,
-            updatedAt: new Date().toISOString(),
-        };
-
-        await this.prisma.siteSetting.update({
-            where: { key: 'payment_packages' },
-            data: { value: JSON.stringify(packages) },
-        });
-
-        return packages[index];
     }
 
     async remove(code: string) {

@@ -1839,8 +1839,8 @@ export default function StoryChapterClient() {
                 ) : null}
               </div>
 
-              {/* Social Links */}
-              <SocialLinks />
+              {/* Social Links - Only show here if NO YouTube player */}
+              {!selectedChapter.youtubeVideoId && <SocialLinks />}
                 </section>
               </div>
             </div>

@@ -103,9 +103,13 @@ export default function ChapterEditorPage() {
         await apiClient.post("/chapters", payload);
       } else {
         await apiClient.patch(`/chapters/${chapterId}`, payload);
+        // Refetch chapter data after successful update
+        const res = await apiClient.get(`/chapters/${chapterId}`);
+        setChapter(res.data as ChapterDetail);
       }
 
       router.push(`/${currentLang}/admin/chapters`);
+      router.refresh();
     } catch (error: unknown) {
       console.error("Failed to save chapter:", error);
       const detail = extractApiMessage(error);

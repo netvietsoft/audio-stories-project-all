@@ -422,6 +422,9 @@
     "scrollLeft": "Scroll left",
     "scrollRight": "Scroll right"
   },
+  "SocialLinks": {
+    "communities": "Communities"
+  },
   "ProfilePage": {
     "personalProfile": "Personal Profile",
     "currentProfile": "Current profile",

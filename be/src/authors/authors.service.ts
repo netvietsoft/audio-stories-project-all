@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateAuthorDto } from './dto/create-author.dto';
 import { UpdateAuthorDto } from './dto/update-author.dto';
+import { handlePrismaError } from '@/common/utils/error-handler.util';
 
 @Injectable()
 export class AuthorsService {
@@ -48,37 +49,45 @@ export class AuthorsService {
     }
 
     async create(data: CreateAuthorDto) {
-        const { language, ...authorData } = data;
-        return this.prisma.author.create({
-            data: {
-                ...authorData,
-                language: {
-                    connect: {
-                        key: (language || 'vi').trim(),
+        try {
+            const { language, ...authorData } = data;
+            return await this.prisma.author.create({
+                data: {
+                    ...authorData,
+                    language: {
+                        connect: {
+                            key: (language || 'vi').trim(),
+                        },
                     },
                 },
-            },
-        });
+            });
+        } catch (error) {
+            handlePrismaError(error, 'Author');
+        }
     }
 
     async update(id: string, data: UpdateAuthorDto) {
-        await this.findOne(id);
+        try {
+            await this.findOne(id);
 
-        const { language, ...authorData } = data;
+            const { language, ...authorData } = data;
 
-        return this.prisma.author.update({
-            where: { id },
-            data: {
-                ...authorData,
-                ...(language ? {
-                    language: {
-                        connect: {
-                            key: language.trim(),
+            return await this.prisma.author.update({
+                where: { id },
+                data: {
+                    ...authorData,
+                    ...(language ? {
+                        language: {
+                            connect: {
+                                key: language.trim(),
+                            },
                         },
-                    },
-                } : {}),
-            },
-        });
+                    } : {}),
+                },
+            });
+        } catch (error) {
+            handlePrismaError(error, 'Author');
+        }
     }
 
     async remove(id: string) {

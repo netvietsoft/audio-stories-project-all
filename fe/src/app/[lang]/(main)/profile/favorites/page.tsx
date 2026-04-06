@@ -145,7 +145,7 @@ export default function FavoriteStoriesPage() {
             <button
               disabled={isLoading}
               onClick={() => void fetchFavorites(page + 1)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-60 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-60 dark:border-zinc-800 dark:text-gray-200 dark:hover:bg-zinc-800"
             >
               {isLoading ? tCommon("loading") : tCommon("loadMore")}
             </button>

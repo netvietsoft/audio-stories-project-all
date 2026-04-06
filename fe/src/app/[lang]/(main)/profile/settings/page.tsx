@@ -46,9 +46,9 @@ export default function ProfileSettingsPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t("title")}</h1>
 
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-zinc-800 dark:bg-[#232325]">
         <div className="space-y-5">
-          <label className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+          <label className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 p-4 dark:border-zinc-800 dark:bg-[#262628]">
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-pink-600" />
               <div>
@@ -64,7 +64,7 @@ export default function ProfileSettingsPage() {
             />
           </label>
 
-          <label className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+          <label className="flex items-center justify-between gap-4 rounded-xl border border-gray-200 p-4 dark:border-zinc-800 dark:bg-[#262628]">
             <div className="flex items-center gap-3">
               <Bell className="h-5 w-5 text-amber-500" />
               <div>

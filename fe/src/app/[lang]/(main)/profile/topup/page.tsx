@@ -219,7 +219,7 @@ export default function TopupPage() {
 
     if (isLoading) {
         return (
-            <div className="rounded-2xl border border-gray-100 bg-white px-6 py-16 dark:border-gray-800 dark:bg-gray-900">
+            <div className="rounded-2xl border border-gray-200 bg-white px-6 py-16 dark:border-zinc-800 dark:bg-zinc-900">
                 <div className="flex justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-violet-600 dark:text-violet-400" />
                 </div>
@@ -230,7 +230,7 @@ export default function TopupPage() {
     const selectedDisplayPrice = selectedPackage ? getDisplayPrice(selectedPackage) : null;
 
     return (
-        <div className="rounded-2xl border border-gray-100 bg-white font-sans dark:border-gray-800 dark:bg-gray-900">
+        <div className="rounded-2xl border border-gray-200 bg-white font-sans dark:border-zinc-800 dark:bg-zinc-900">
 
             {/* Main Content Area */}
             <div className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-20">
@@ -238,7 +238,7 @@ export default function TopupPage() {
 
                     {/* Left Side: Packages */}
                     <div className="w-full lg:w-[70%]">
-                        <div className="bg-white/50 dark:bg-slate-800/50 backdrop-blur-xl rounded-[2rem] p-2 sm:p-4 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-700/50 mb-6 sm:mb-8">
+                        <div className="bg-white/50 dark:bg-zinc-900/50 backdrop-blur-xl rounded-[2rem] p-2 sm:p-4 shadow-xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-zinc-800 mb-6 sm:mb-8">
                             {packages.length > 0 ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-5">
                                     {packages.map((pkg) => {
@@ -255,13 +255,13 @@ export default function TopupPage() {
                                         return (
                                             <div
                                                 key={pkg.code}
-                                                className={`relative bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border-2 transition-all duration-300 cursor-pointer flex flex-col group ${isSelected
+                                                className={`relative bg-white dark:bg-zinc-900 rounded-3xl p-5 sm:p-6 border-2 transition-all duration-300 cursor-pointer flex flex-col group ${isSelected
                                                     ? 'border-violet-500 shadow-2xl shadow-violet-500/20 scale-[1.02] ring-4 ring-violet-500/10'
                                                     : isPopular
-                                                        ? 'border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl hover:border-violet-300 dark:hover:border-violet-600 hover:-translate-y-1'
+                                                        ? 'border-gray-200 dark:border-zinc-800 shadow-lg hover:shadow-xl hover:border-violet-300 dark:hover:border-violet-600 hover:-translate-y-1'
                                                         : isBestValue
-                                                            ? 'border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl hover:border-violet-300 dark:hover:border-violet-600 hover:-translate-y-1'
-                                                            : 'border-slate-100 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-xl hover:-translate-y-1'
+                                                            ? 'border-gray-200 dark:border-zinc-800 shadow-lg hover:shadow-xl hover:border-violet-300 dark:hover:border-violet-600 hover:-translate-y-1'
+                                                            : 'border-gray-200 dark:border-zinc-800 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-xl hover:-translate-y-1'
                                                     }`}
                                                 onClick={() => handleSelectPackage(pkg)}
                                             >
@@ -285,7 +285,7 @@ export default function TopupPage() {
 
                                                 {/* Package Header */}
                                                 <div className="flex items-center gap-3 mb-5 sm:mb-6 mt-2">
-                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-violet-100 dark:bg-violet-500/20' : 'bg-slate-100 dark:bg-slate-700 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/10'}`}>
+                                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-violet-100 dark:bg-violet-500/20' : 'bg-gray-100 dark:bg-zinc-800 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/10'}`}>
                                                         <Coins className={`w-6 h-6 ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-violet-500'}`} />
                                                     </div>
                                                     <h3 className={`text-xs font-black tracking-tight ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-slate-900 dark:text-white'}`}>
@@ -301,7 +301,7 @@ export default function TopupPage() {
                                                 )}
 
                                                 {/* Price & Credits */}
-                                                <div className={`mb-6 p-4 rounded-2xl border transition-colors ${isSelected ? 'bg-violet-50/50 dark:bg-violet-500/5 border-violet-100 dark:border-violet-500/20' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-700/50'}`}>
+                                                <div className={`mb-6 p-4 rounded-2xl border transition-colors ${isSelected ? 'bg-violet-50/50 dark:bg-violet-500/5 border-violet-100 dark:border-violet-500/20' : 'bg-gray-50 dark:bg-zinc-900/50 border-gray-200 dark:border-zinc-800'}`}>
                                                     {/* Price on top */}
                                                     <div className="mb-3 text-left">
                                                         <div className="text-[10px] font-bold  text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">
@@ -313,7 +313,7 @@ export default function TopupPage() {
                                                     </div>
 
                                                     {/* Divider */}
-                                                    <div className={`border-t my-3 border-dashed ${isSelected ? 'border-violet-200 dark:border-violet-500/30' : 'border-slate-200 dark:border-slate-700'}`}></div>
+                                                    <div className={`border-t my-3 border-dashed ${isSelected ? 'border-violet-200 dark:border-violet-500/30' : 'border-gray-200 dark:border-zinc-800'}`}></div>
 
                                                     {/* Credits on bottom */}
                                                     <div className="text-left">
@@ -350,7 +350,7 @@ export default function TopupPage() {
                                                 <button
                                                     className={`w-full py-3.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 mt-auto whitespace-nowrap ${isSelected
                                                         ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30'
-                                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/20 group-hover:text-violet-600 dark:group-hover:text-violet-400'
+                                                        : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-200 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/20 group-hover:text-violet-600 dark:group-hover:text-violet-400'
                                                         }`}
                                                 >
                                                     <CreditCard className="w-4 h-4 flex-shrink-0" />
@@ -362,9 +362,9 @@ export default function TopupPage() {
 
                                     {/* Custom Package Card */}
                                     <div
-                                        className={`relative bg-white dark:bg-slate-800 rounded-3xl p-5 sm:p-6 border-2 transition-all duration-300 cursor-pointer flex flex-col group ${selectedPackage?.code === 'CUSTOM'
+                                        className={`relative bg-white dark:bg-zinc-900 rounded-3xl p-5 sm:p-6 border-2 transition-all duration-300 cursor-pointer flex flex-col group ${selectedPackage?.code === 'CUSTOM'
                                             ? 'border-violet-500 shadow-2xl shadow-violet-500/20 scale-[1.02] ring-4 ring-violet-500/10'
-                                            : 'border-slate-100 dark:border-slate-700 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-xl hover:-translate-y-1'
+                                            : 'border-gray-200 dark:border-zinc-800 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-xl hover:-translate-y-1'
                                             }`}
                                         onClick={() => handleSelectPackage({
                                             code: 'CUSTOM',
@@ -377,7 +377,7 @@ export default function TopupPage() {
                                         })}
                                     >
                                         <div className="flex items-center gap-3 mb-5 sm:mb-6 mt-2">
-                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${selectedPackage?.code === 'CUSTOM' ? 'bg-violet-100 dark:bg-violet-500/20' : 'bg-slate-100 dark:bg-slate-700 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/10'}`}>
+                                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${selectedPackage?.code === 'CUSTOM' ? 'bg-violet-100 dark:bg-violet-500/20' : 'bg-gray-100 dark:bg-zinc-800 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/10'}`}>
                                                 <Coins className={`w-6 h-6 ${selectedPackage?.code === 'CUSTOM' ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-violet-500'}`} />
                                             </div>
                                             <h3 className={`text-xs font-black tracking-tight ${selectedPackage?.code === 'CUSTOM' ? 'text-violet-600 dark:text-violet-400' : 'text-slate-900 dark:text-white'}`}>
@@ -416,7 +416,7 @@ export default function TopupPage() {
                                                 />
                                             </div>
                                         ) : (
-                                            <div className="mb-6 flex justify-center items-center bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-700/50 h-[84px] group-hover:border-violet-200 dark:group-hover:border-violet-700 transition-colors">
+                                                <div className="mb-6 flex justify-center items-center bg-gray-50 dark:bg-zinc-900/50 p-5 rounded-2xl border border-gray-200 dark:border-zinc-800 h-[84px] group-hover:border-violet-200 dark:group-hover:border-violet-700 transition-colors">
                                                 <span className="text-xl font-bold text-slate-400 dark:text-slate-500 group-hover:text-violet-400 transition-colors">{t("enterAmount")}</span>
                                             </div>
                                         )}
@@ -439,7 +439,7 @@ export default function TopupPage() {
                                         <button
                                             className={`w-full py-3.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 mt-auto whitespace-nowrap ${selectedPackage?.code === 'CUSTOM'
                                                     ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30'
-                                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/20 group-hover:text-violet-600 dark:group-hover:text-violet-400'
+                                                    : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-200 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/20 group-hover:text-violet-600 dark:group-hover:text-violet-400'
                                                 }`}
                                             onClick={() => handleSelectPackage({
                                                 code: 'CUSTOM',
@@ -459,8 +459,8 @@ export default function TopupPage() {
 
                                 </div>
                             ) : (
-                                <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 p-20 text-center">
-                                    <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-5 border border-slate-100 dark:border-slate-700">
+                                <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-200 dark:border-zinc-800 p-20 text-center">
+                                    <div className="w-20 h-20 bg-gray-50 dark:bg-zinc-950 rounded-full flex items-center justify-center mx-auto mb-5 border border-gray-200 dark:border-zinc-800">
                                         <Coins className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                                     </div>
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white">{t("noPackages")}</h3>
@@ -472,7 +472,7 @@ export default function TopupPage() {
 
                     {/* Right Side: Payment Summary */}
                     <div className="w-full lg:w-[30%]">
-                        <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-6 sm:p-8 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-700 lg:sticky lg:top-24">
+                        <div className="bg-white dark:bg-zinc-900 rounded-[2rem] p-6 sm:p-8 shadow-2xl shadow-slate-200/50 dark:shadow-none border border-gray-200 dark:border-zinc-800 lg:sticky lg:top-24">
                             <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mb-6 sm:mb-8 flex items-center gap-3 tracking-tight">
                                 <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center">
                                     <Wallet className="w-5 h-5 text-violet-600 dark:text-violet-400" />
@@ -482,14 +482,14 @@ export default function TopupPage() {
 
                             {selectedPackage ? (
                                 <div className="space-y-4">
-                                    <div className="flex justify-between items-center py-4 border-b border-dashed border-slate-200 dark:border-slate-700">
+                                    <div className="flex justify-between items-center py-4 border-b border-dashed border-gray-200 dark:border-zinc-800">
                                         <span className="text-slate-500 dark:text-slate-400 font-medium">{t("selectedPackage")}</span>
                                         <span className="font-bold text-slate-900 dark:text-white text-right break-words max-w-[60%] leading-tight">
                                             {selectedPackage.code === 'CUSTOM' ? selectedPackage.name : getLocalizedPackageTitle(selectedPackage)}
                                         </span>
                                     </div>
 
-                                    <div className="flex justify-between items-center py-4 border-b border-dashed border-slate-200 dark:border-slate-700">
+                                    <div className="flex justify-between items-center py-4 border-b border-dashed border-gray-200 dark:border-zinc-800">
                                         <span className="text-slate-500 dark:text-slate-400 font-medium">{t("creditsReceived")}</span>
                                         <span className="font-black text-lg text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                                             {selectedPackage.credits.toLocaleString()}
@@ -517,7 +517,7 @@ export default function TopupPage() {
                                     <button
                                         disabled={isProcessing}
                                         className={`w-full mt-6 py-4 rounded-xl font-black text-base uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${isProcessing
-                                            ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                                            ? 'bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                                             : 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-xl shadow-violet-500/30 hover:shadow-violet-500/50 hover:-translate-y-1'
                                             }`}
                                         onClick={handleCheckout}
@@ -545,8 +545,8 @@ export default function TopupPage() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-center py-12 px-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
-                                    <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100 dark:border-slate-700">
+                                <div className="text-center py-12 px-4 bg-gray-50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-zinc-800">
+                                    <div className="w-16 h-16 bg-white dark:bg-zinc-900 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-gray-200 dark:border-zinc-800">
                                         <Wallet className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                                     </div>
                                     <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{t("notSelected")}</h3>
@@ -562,8 +562,8 @@ export default function TopupPage() {
             {/* VietQR Payment Modal */}
             {showPaymentModal && vietqrData && (
                 <div className="fixed inset-0 flex items-center justify-center z-50 p-4 sm:p-6">
-                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowPaymentModal(false)}></div>
-                    <div className="relative bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-violet-100 dark:border-slate-700 animate-in fade-in zoom-in duration-300">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPaymentModal(false)}></div>
+                    <div className="relative bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-violet-100 dark:border-zinc-800 animate-in fade-in zoom-in duration-300">
                         <div className="p-2 sm:p-4">
                             <VietQRPayment
                                 orderId={vietqrData.order_id}

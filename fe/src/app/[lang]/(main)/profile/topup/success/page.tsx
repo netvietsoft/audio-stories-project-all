@@ -52,7 +52,7 @@ export default function TopupSuccessPage() {
         <div className="flex items-center justify-center p-4">
             <div className="max-w-2xl w-full">
                 {/* Success Card */}
-                <div className="bg-white dark:bg-gray-800 rounded-[40px] shadow-2xl shadow-emerald-200/40 dark:shadow-emerald-900/20 p-8 sm:p-12 text-center border-2 border-emerald-100 dark:border-emerald-900/30">
+                <div className="bg-white dark:bg-zinc-900 rounded-[40px] shadow-2xl shadow-emerald-200/40 dark:shadow-emerald-900/20 p-8 sm:p-12 text-center border-2 border-emerald-100 dark:border-zinc-800/80">
                     {/* Success Icon */}
                     <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-6 animate-in zoom-in duration-500">
                         <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 text-emerald-600 dark:text-emerald-400" />

@@ -156,10 +156,10 @@ export default function ProfileHistoryPage() {
           return (
             <div
               key={item.id}
-              className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+              className="rounded-xl border border-gray-200 bg-white p-4 dark:border-zinc-800 dark:bg-[#232325]"
             >
               <div className="flex gap-4">
-                <Link href={`/story/${item.story.slug}`} className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-800">
+                <Link href={`/story/${item.story.slug}`} className="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-gray-100 dark:bg-[#2b2b2d]">
                   <img
                     src={item.story.thumbnailUrl || "https://placehold.co/140x200?text=No+Cover"}
                     alt={getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title)}
@@ -177,7 +177,7 @@ export default function ProfileHistoryPage() {
                     {t("updatedAt", { time: new Date(item.lastListenedAt).toLocaleString(locale === "en" ? "en-US" : "vi-VN") })}
                   </p>
 
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#2b2b2d]">
                     <div className="h-full rounded-full bg-pink-600" style={{ width: `${progress}%` }} />
                   </div>
 
@@ -190,7 +190,7 @@ export default function ProfileHistoryPage() {
                     </button>
                     <button
                       onClick={() => void handleDelete(item.id)}
-                      className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                      className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:border-zinc-800 dark:text-gray-200 dark:hover:bg-[#2b2b2d]"
                     >
                       <Trash2 className="h-4 w-4" /> {t("delete")}
                     </button>

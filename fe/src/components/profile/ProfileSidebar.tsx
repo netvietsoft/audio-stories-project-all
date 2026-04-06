@@ -55,7 +55,7 @@ export default function ProfileSidebar() {
   ];
 
   return (
-    <aside className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-[#303133] dark:bg-[#242526]">
+    <aside className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-[#232325]">
       <p className="px-2 pb-3 text-xs font-bold uppercase tracking-widest text-gray-400">{t("management")}</p>
       <nav className="space-y-1.5">
         {menuItems.map((item) => {
@@ -69,7 +69,7 @@ export default function ProfileSidebar() {
               className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors ${
                 active
                   ? "bg-pink-50 text-pink-700 dark:bg-pink-900/20 dark:text-pink-300"
-                  : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-[#3a3b3c]"
+                    : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-[#2b2b2d]"
               }`}
             >
               <Icon

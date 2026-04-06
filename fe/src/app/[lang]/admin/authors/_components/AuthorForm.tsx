@@ -10,23 +10,28 @@ import {
     X,
 } from 'lucide-react';
 
+import { useAdminLanguages } from '@/hooks/useAdminLanguages';
+
 const authorSchema = z.object({
     name: z.string().min(1, 'Tên tác giả không được để trống'),
     slug: z.string().min(1, 'Slug không được để trống'),
     bio: z.string().optional(),
     avatarUrl: z.string().optional(),
+    language: z.string().min(1, 'Vui lòng chọn ngôn ngữ'),
 });
 
 type AuthorFormValues = z.infer<typeof authorSchema>;
 
 interface AuthorFormProps {
     initialData?: Partial<AuthorFormValues>;
+    defaultLanguage?: string;
     onSubmit: (data: AuthorFormValues) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
 }
 
-export const AuthorForm = ({ initialData, onSubmit, onCancel, isLoading }: AuthorFormProps) => {
+export const AuthorForm = ({ initialData, defaultLanguage = 'vi', onSubmit, onCancel, isLoading }: AuthorFormProps) => {
+    const { languages } = useAdminLanguages();
     const {
         register,
         handleSubmit,
@@ -40,6 +45,7 @@ export const AuthorForm = ({ initialData, onSubmit, onCancel, isLoading }: Autho
             slug: '',
             bio: '',
             avatarUrl: '',
+            language: initialData?.language || defaultLanguage,
             ...initialData,
         },
     });
@@ -82,6 +88,21 @@ export const AuthorForm = ({ initialData, onSubmit, onCancel, isLoading }: Autho
                     className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
                 />
                 {errors.slug && <p className="text-xs font-bold text-red-500 ml-2">{errors.slug.message}</p>}
+            </div>
+
+            <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ngôn ngữ</label>
+                <select
+                    {...register('language')}
+                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                >
+                    {languages.map((language) => (
+                        <option key={language.id} value={language.key}>
+                            {language.name} ({language.key})
+                        </option>
+                    ))}
+                </select>
+                {errors.language && <p className="text-xs font-bold text-red-500 ml-2">{errors.language.message}</p>}
             </div>
 
             <div className="space-y-2">

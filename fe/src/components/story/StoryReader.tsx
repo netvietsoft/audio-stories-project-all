@@ -293,8 +293,9 @@ export default function StoryReader({
   useEffect(() => {
     const fetchActiveAds = async () => {
       try {
+        const activeLang = locale === 'en' ? 'en' : 'vi';
         const response = await apiClient.get<{ data?: AdvertisementItem[] }>('/ads/active', {
-          params: { limit: 10 },
+          params: { limit: 10, lang: activeLang },
         });
         setActiveAds(Array.isArray(response.data?.data) ? response.data.data : []);
       } catch {
@@ -303,7 +304,7 @@ export default function StoryReader({
     };
 
     void fetchActiveAds();
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     const fetchInsertionFrequency = async () => {

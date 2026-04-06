@@ -61,6 +61,7 @@ export interface Chapter {
 export type StorySubmitPayload = {
     title: string;
     slug: string;
+    language?: string;
     description?: string;
     thumbnailUrl?: string;
     authorId: string;

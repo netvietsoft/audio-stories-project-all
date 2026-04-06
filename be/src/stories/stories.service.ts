@@ -43,13 +43,33 @@ export class StoriesService {
   }
 
   private normalizeNestedChapterPayload(chapter: any) {
-    // No normalization needed - just return the data as-is
-    return chapter;
+    const { language, ...rest } = chapter || {};
+    return {
+      ...rest,
+      language: {
+        connect: {
+          key: (language || 'vi').trim(),
+        },
+      },
+    };
   }
 
   private normalizeStoryFlatPayload(data: any) {
     // No normalization needed - just return the data as-is
     return data;
+  }
+
+  private extractLanguageKey(language: unknown) {
+    if (typeof language === 'string') {
+      return language;
+    }
+
+    if (language && typeof language === 'object' && 'key' in (language as Record<string, unknown>)) {
+      const key = (language as { key?: unknown }).key;
+      return typeof key === 'string' ? key : undefined;
+    }
+
+    return undefined;
   }
 
   async create(data: CreateStoryDto) {
@@ -58,7 +78,7 @@ export class StoriesService {
       throw new BadRequestException('Title must be provided');
     }
 
-    const { categoryIds, chapters, chapterIds, ...storyData } = data;
+    const { categoryIds, chapters, chapterIds, language, authorId, ...storyData } = data;
 
     const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
 
@@ -66,6 +86,14 @@ export class StoriesService {
       const story = await this.prisma.story.create({
         data: {
           ...normalizedStoryData,
+          author: {
+            connect: { id: authorId },
+          },
+          language: {
+            connect: {
+              key: (language || 'vi').trim(),
+            },
+          },
           categories: categoryIds
             ? {
               create: categoryIds.map((id) => ({
@@ -83,6 +111,9 @@ export class StoriesService {
         include: {
           author: {
             select: { id: true, name: true },
+          },
+          language: {
+            select: { key: true },
           },
           categories: {
             include: {
@@ -125,6 +156,7 @@ export class StoriesService {
   private serializeStory(story: any) {
     return {
       ...story,
+      language: this.extractLanguageKey(story.language) ?? story.language,
       totalViews: typeof story.totalViews === 'bigint' ? Number(story.totalViews) : story.totalViews,
     };
   }
@@ -144,8 +176,16 @@ export class StoriesService {
               id: true,
               name: true,
               slug: true,
+              language: {
+                select: { key: true },
+              },
             } as any,
           },
+        },
+      },
+      language: {
+        select: {
+          key: true,
         },
       },
     } satisfies Prisma.StoryInclude;
@@ -187,7 +227,9 @@ export class StoriesService {
     };
     
     if (lang) {
-      whereClause.language = lang;
+      whereClause.language = {
+        key: lang,
+      };
     }
     
     // Fetch more stories than needed to randomize
@@ -204,7 +246,11 @@ export class StoriesService {
         id: true,
         slug: true,
         title: true,
-        language: true,
+          language: {
+            select: {
+              key: true,
+            },
+          },
         thumbnailUrl: true,
         status: true,
         totalViews: true,
@@ -258,7 +304,7 @@ export class StoriesService {
 
     const where: Prisma.StoryWhereInput = {
       deletedAt: null,
-      ...(query.lang ? { language: query.lang } : {}),
+      ...(query.lang ? { language: { key: query.lang } } : {}),
       ...(query.status ? { status: query.status as StoryStatus } : {}),
       ...(query.search
         ? {
@@ -371,7 +417,9 @@ export class StoriesService {
       where: {
         story: {
           deletedAt: null,
-          language: lang,
+          language: {
+            key: lang,
+          },
         },
       },
       _count: {
@@ -390,13 +438,19 @@ export class StoriesService {
       ? await this.prisma.category.findMany({
         where: { 
           id: { in: ids },
-          language: lang,
+          language: {
+            key: lang,
+          },
         },
         select: {
           id: true,
           name: true,
           slug: true,
-          language: true,
+          language: {
+            select: {
+              key: true,
+            },
+          },
           imageUrl: true,
         } as any,
       })
@@ -412,6 +466,7 @@ export class StoriesService {
           if (!category) return null;
           return {
             ...category,
+            language: this.extractLanguageKey(category.language) ?? category.language,
             storiesCount: item._count.storyId,
           };
         })
@@ -491,7 +546,7 @@ export class StoriesService {
     const where: Prisma.StoryWhereInput = {
       deletedAt: null, // Don't show soft-deleted stories in the active list
       ...(hasStatusFilter ? { status: query.status as StoryStatus } : {}),
-      ...(hasLangFilter ? { language: query.lang } : {}),
+      ...(hasLangFilter ? { language: { key: query.lang } } : {}),
       ...(query.search
         ? {
           OR: [
@@ -526,6 +581,9 @@ export class StoriesService {
         include: {
           author: {
             select: { id: true, name: true },
+          },
+          language: {
+            select: { key: true },
           },
           categories: {
             include: {
@@ -569,6 +627,9 @@ export class StoriesService {
         author: {
           select: { id: true, name: true },
         },
+        language: {
+          select: { key: true },
+        },
         categories: {
           include: {
             category: { select: { id: true, name: true, slug: true } as any },
@@ -594,7 +655,7 @@ export class StoriesService {
       throw new NotFoundException('Story not found');
     }
 
-    const { categoryIds, ...storyData } = data;
+    const { categoryIds, language, ...storyData } = data;
     const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
 
     if (categoryIds) {
@@ -612,13 +673,25 @@ export class StoriesService {
 
     const updated = await this.prisma.story.update({
       where: { id },
-      data: normalizedStoryData,
+      data: {
+        ...normalizedStoryData,
+        ...(language ? {
+          language: {
+            connect: {
+              key: language.trim(),
+            },
+          },
+        } : {}),
+      },
       include: {
         author: {
           select: {
             id: true,
             name: true,
           },
+        },
+        language: {
+          select: { key: true },
         },
         categories: {
           include: {
@@ -701,30 +774,45 @@ export class StoriesService {
   async getAllCategories(language = 'vi') {
     return this.prisma.category.findMany({
       where: {
-        language,
+        language: {
+          key: language,
+        },
       },
       select: {
         id: true,
         name: true,
         slug: true,
-        language: true,
+        language: {
+          select: {
+            key: true,
+          },
+        },
       } as any,
       orderBy: {
         name: 'asc',
       },
-    });
+    }).then((rows) => rows.map((item) => ({
+      ...item,
+      language: this.extractLanguageKey(item.language) ?? item.language,
+    })));
   }
 
   async getAllCategoriesWithCount(language = 'vi') {
     const categories = await this.prisma.category.findMany({
       where: {
-        language,
+        language: {
+          key: language,
+        },
       },
       select: {
         id: true,
         name: true,
         slug: true,
-        language: true,
+        language: {
+          select: {
+            key: true,
+          },
+        },
         description: true,
         _count: {
           select: {
@@ -742,7 +830,7 @@ export class StoriesService {
         id: item.id,
         name: item.name,
         slug: item.slug,
-        language: item.language,
+        language: this.extractLanguageKey(item.language) ?? item.language,
         description: item.description,
         storiesCount: item._count ? item._count.stories : 0,
       })),

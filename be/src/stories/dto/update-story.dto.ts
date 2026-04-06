@@ -43,4 +43,8 @@ export class UpdateStoryDto {
   @IsArray()
   @IsInt({ each: true })
   categoryIds?: number[];
+
+  @IsOptional()
+  @IsString()
+  language?: string;
 }

@@ -16,4 +16,8 @@ export class UpdateCategoryDto {
     @IsOptional()
     @IsString()
     iconUrl?: string;
+
+    @IsOptional()
+    @IsString()
+    language?: string;
 }

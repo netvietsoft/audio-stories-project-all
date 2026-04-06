@@ -11,23 +11,28 @@ import {
     ChevronDown,
 } from 'lucide-react';
 
+import { useAdminLanguages } from '@/hooks/useAdminLanguages';
+
 const categorySchema = z.object({
     name: z.string().min(1, 'Tên danh mục không được để trống'),
     slug: z.string().min(1, 'Slug không được để trống'),
     description: z.string().optional(),
     iconUrl: z.string().optional(),
+    language: z.string().min(1, 'Vui lòng chọn ngôn ngữ'),
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
 
 interface CategoryFormProps {
     initialData?: Partial<CategoryFormValues>;
+    defaultLanguage?: string;
     onSubmit: (data: CategoryFormValues) => Promise<void>;
     onCancel: () => void;
     isLoading?: boolean;
 }
 
-export const CategoryForm = ({ initialData, onSubmit, onCancel, isLoading }: CategoryFormProps) => {
+export const CategoryForm = ({ initialData, defaultLanguage = 'vi', onSubmit, onCancel, isLoading }: CategoryFormProps) => {
+    const { languages } = useAdminLanguages();
     const {
         register,
         handleSubmit,
@@ -41,6 +46,7 @@ export const CategoryForm = ({ initialData, onSubmit, onCancel, isLoading }: Cat
             slug: '',
             description: '',
             iconUrl: '',
+            language: initialData?.language || defaultLanguage,
             ...initialData,
         },
     });
@@ -85,6 +91,21 @@ export const CategoryForm = ({ initialData, onSubmit, onCancel, isLoading }: Cat
                 {errors.slug && <p className="text-xs font-bold text-red-500 ml-2">{errors.slug.message}</p>}
             </div>
 
+
+            <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ngôn ngữ</label>
+                <select
+                    {...register('language')}
+                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                >
+                    {languages.map((language) => (
+                        <option key={language.id} value={language.key}>
+                            {language.name} ({language.key})
+                        </option>
+                    ))}
+                </select>
+                {errors.language && <p className="text-xs font-bold text-red-500 ml-2">{errors.language.message}</p>}
+            </div>
 
             <div className="space-y-2">
                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Mô tả</label>

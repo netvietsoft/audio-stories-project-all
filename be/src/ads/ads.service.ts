@@ -20,7 +20,13 @@ export class AdsService {
 
   async findActive(query: ActiveAdsQueryDto) {
     const rows = await this.prisma.advertisement.findMany({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        OR: [
+          { isGlobal: true },
+          ...(query.lang ? [{ language: { key: query.lang } }] : []),
+        ],
+      },
       orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
       select: {
         id: true,
@@ -29,10 +35,17 @@ export class AdsService {
         imageUrl: true,
         targetUrl: true,
         isActive: true,
+        isGlobal: true,
+        language: {
+          select: { key: true },
+        },
       },
     });
 
-    const randomized = this.shuffle(rows);
+    const randomized = this.shuffle(rows).map((row) => ({
+      ...row,
+      language: typeof row.language === 'object' ? row.language?.key ?? null : row.language ?? null,
+    }));
     const safeLimit = query.limit ? Math.max(1, Math.min(query.limit, 20)) : randomized.length;
 
     return {
@@ -40,12 +53,42 @@ export class AdsService {
     };
   }
 
-  async findAllAdmin() {
+  async findAllAdmin(lang?: string) {
     const rows = await this.prisma.advertisement.findMany({
+      where: lang && lang !== 'all'
+        ? {
+          OR: [
+            { isGlobal: true },
+            { language: { key: lang } },
+          ],
+        }
+        : undefined,
       orderBy: [{ isActive: 'desc' }, { updatedAt: 'desc' }],
+      select: {
+        id: true,
+        partnerName: true,
+        title: true,
+        imageUrl: true,
+        targetUrl: true,
+        isActive: true,
+        isGlobal: true,
+        languageId: true,
+        language: {
+          select: {
+            id: true,
+            key: true,
+            name: true,
+          },
+        },
+      },
     });
 
-    return { data: rows };
+    return {
+      data: rows.map((row) => ({
+        ...row,
+        language: row.language?.key ?? null,
+      })),
+    };
   }
 
   async findOneAdmin(id: string) {
@@ -63,6 +106,8 @@ export class AdsService {
         title: dto.title.trim(),
         imageUrl: dto.imageUrl.trim(),
         targetUrl: dto.targetUrl.trim(),
+        languageId: dto.isGlobal ? null : dto.languageId ?? null,
+        isGlobal: dto.isGlobal ?? !dto.languageId,
         isActive: dto.isActive ?? true,
       },
     });
@@ -81,6 +126,8 @@ export class AdsService {
         ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
         ...(dto.imageUrl !== undefined ? { imageUrl: dto.imageUrl.trim() } : {}),
         ...(dto.targetUrl !== undefined ? { targetUrl: dto.targetUrl.trim() } : {}),
+        ...(dto.languageId !== undefined ? { languageId: dto.isGlobal ? null : dto.languageId } : {}),
+        ...(dto.isGlobal !== undefined ? { isGlobal: dto.isGlobal } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
       },
     });

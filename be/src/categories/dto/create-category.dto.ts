@@ -20,4 +20,8 @@ export class CreateCategoryDto {
     @IsString()
     @IsOptional()
     language?: string;
+
+    @IsString()
+    @IsOptional()
+    imageUrl?: string;
 }

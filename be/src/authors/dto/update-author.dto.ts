@@ -16,4 +16,8 @@ export class UpdateAuthorDto {
     @IsOptional()
     @IsString()
     bio?: string;
+
+    @IsOptional()
+    @IsString()
+    language?: string;
 }

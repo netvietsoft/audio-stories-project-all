@@ -9,6 +9,13 @@ import { Prisma } from '@prisma/client';
 export class CategoriesService {
     constructor(private readonly prisma: PrismaService) { }
 
+    private mapCategoryLanguage<T extends { language?: { key: string } | string | null }>(category: T) {
+        return {
+            ...category,
+            language: typeof category.language === 'object' ? category.language?.key ?? null : category.language ?? null,
+        };
+    }
+
     async findAll(query: CategoryQueryDto) {
         const page = query.page || 1;
         const limit = query.limit || 12;
@@ -16,7 +23,9 @@ export class CategoriesService {
         const language = query.language || 'vi';
 
         const where: Prisma.CategoryWhereInput = {
-            language,
+            language: {
+                key: language,
+            },
             ...(search ? {
                 OR: [
                     { name: { contains: search } },
@@ -36,7 +45,11 @@ export class CategoriesService {
                     id: true,
                     name: true,
                     slug: true,
-                    language: true,
+                    language: {
+                        select: {
+                            key: true,
+                        },
+                    },
                     description: true,
                     iconUrl: true,
                     imageUrl: true,
@@ -49,7 +62,7 @@ export class CategoriesService {
         ]);
 
         return {
-            data,
+            data: data.map((category) => this.mapCategoryLanguage(category)),
             meta: {
                 total,
                 page,
@@ -65,7 +78,11 @@ export class CategoriesService {
                 id: true,
                 name: true,
                 slug: true,
-                language: true,
+                language: {
+                    select: {
+                        key: true,
+                    },
+                },
                 description: true,
                 iconUrl: true,
                 imageUrl: true,
@@ -80,21 +97,42 @@ export class CategoriesService {
             throw new NotFoundException(`Category with ID ${id} not found`);
         }
 
-        return category;
+        return this.mapCategoryLanguage(category);
     }
 
     async create(data: CreateCategoryDto) {
         return this.prisma.category.create({
-            data,
+            data: {
+                name: data.name,
+                slug: data.slug,
+                description: data.description,
+                iconUrl: data.iconUrl,
+                language: {
+                    connect: {
+                        key: (data.language || 'vi').trim(),
+                    },
+                },
+            },
         });
     }
 
     async update(id: number, data: UpdateCategoryDto) {
         await this.findOne(id);
 
+        const { language, ...categoryData } = data;
+
         return this.prisma.category.update({
             where: { id },
-            data,
+            data: {
+                ...categoryData,
+                ...(language ? {
+                    language: {
+                        connect: {
+                            key: language.trim(),
+                        },
+                    },
+                } : {}),
+            },
         });
     }
 

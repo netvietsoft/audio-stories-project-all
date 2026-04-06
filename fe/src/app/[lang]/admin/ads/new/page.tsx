@@ -15,8 +15,11 @@ export default function NewAdPage() {
   const handleSubmit = async (payload: AdFormValues) => {
     setIsSubmitting(true);
     try {
+      const isGlobal = payload.languageId === 'all';
       await apiClient.post('/ads', {
         ...payload,
+        languageId: isGlobal ? null : Number(payload.languageId),
+        isGlobal,
         isActive: payload.isActive ?? true,
       });
       router.push('/admin/ads');

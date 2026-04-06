@@ -31,10 +31,9 @@ export default function NewStoryPage() {
     const handleSubmit = async (data: StorySubmitPayload) => {
         setIsLoading(true);
         try {
-            // Add language field based on selected locale
             const submitData = {
                 ...data,
-                language: selectedLocale,
+                language: data.language || selectedLocale,
             };
             await apiClient.post('/stories', submitData);
             await revalidateStoriesCache();

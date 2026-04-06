@@ -20,8 +20,8 @@ export class AdsController {
   @Get()
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')
-  findAllAdmin() {
-    return this.adsService.findAllAdmin();
+  findAllAdmin(@Query('lang') lang?: string) {
+    return this.adsService.findAllAdmin(lang);
   }
 
   @Get(':id')

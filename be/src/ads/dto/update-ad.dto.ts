@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateAdDto {
   @IsString()
@@ -19,6 +19,14 @@ export class UpdateAdDto {
   @MaxLength(500)
   @IsOptional()
   targetUrl?: string;
+
+  @IsOptional()
+  @IsNumber()
+  languageId?: number | null;
+
+  @IsBoolean()
+  @IsOptional()
+  isGlobal?: boolean;
 
   @IsBoolean()
   @IsOptional()

@@ -15,7 +15,6 @@ export class ChaptersService {
     ) { }
 
     private normalizeChapterFlatPayload(data: Record<string, any>) {
-        // No normalization needed - just return the data as-is
         return data;
     }
 
@@ -35,16 +34,21 @@ export class ChaptersService {
         return this.prisma.chapter.findMany({
             where: { 
                 deletedAt: null,
-                ...(lang ? { story: { language: lang } } : {}),
+                ...(lang ? { story: { language: { key: lang } } } : {}),
             },
             take: limit,
             orderBy: { createdAt: 'desc' },
             include: {
+                language: {
+                    select: { key: true },
+                },
                 story: {
                     select: {
                         title: true,
                         slug: true,
-                        language: true,
+                        language: {
+                            select: { key: true },
+                        },
                         thumbnailUrl: true,
                         author: {
                             select: { name: true },
@@ -72,7 +76,7 @@ export class ChaptersService {
                     ? { storyId: null } 
                     : { storyId }
                 : {}),
-            ...(lang ? { language: lang } : {}),
+            ...(lang ? { language: { key: lang } } : {}),
         };
 
         const [chapters, total] = await Promise.all([
@@ -82,8 +86,11 @@ export class ChaptersService {
                 take: limit,
                 orderBy: { createdAt: 'desc' },
                 include: {
+                    language: {
+                        select: { key: true },
+                    },
                     story: {
-                        select: { title: true },
+                        select: { title: true, language: { select: { key: true } } },
                     },
                 },
             }),
@@ -91,7 +98,16 @@ export class ChaptersService {
         ]);
 
         return {
-            data: chapters,
+            data: chapters.map((chapter) => ({
+                ...chapter,
+                language: typeof chapter.language === 'object' ? chapter.language?.key ?? null : chapter.language,
+                story: chapter.story
+                    ? {
+                        ...chapter.story,
+                        language: typeof chapter.story.language === 'object' ? chapter.story.language?.key ?? null : chapter.story.language,
+                    }
+                    : chapter.story,
+            })),
             meta: {
                 total,
                 page,
@@ -120,9 +136,16 @@ export class ChaptersService {
 
         console.log('Creating chapter with data:', data);
         const normalizedData = this.normalizeChapterFlatPayload(data as any);
-        const createData: Prisma.ChapterUncheckedCreateInput = {
-            ...(normalizedData as Prisma.ChapterUncheckedCreateInput),
-            storyId,
+        const createData: Prisma.ChapterCreateInput = {
+            ...(normalizedData as Prisma.ChapterCreateInput),
+            story: {
+                connect: { id: storyId },
+            },
+            language: {
+                connect: {
+                    key: ((data as CreateChapterDto & { language?: string }).language || 'vi').trim(),
+                },
+            },
         };
         console.log('Normalized data:', normalizedData);
 
@@ -145,9 +168,14 @@ export class ChaptersService {
         const { storyId, ...chapterData } = data;
 
         const normalizedData = this.normalizeChapterFlatPayload(chapterData as any);
-        const createData: Prisma.ChapterUncheckedCreateInput = {
-            ...(normalizedData as Prisma.ChapterUncheckedCreateInput),
-            ...(storyId ? { storyId } : {}),
+        const createData: Prisma.ChapterCreateInput = {
+            ...(normalizedData as Prisma.ChapterCreateInput),
+            ...(storyId ? { story: { connect: { id: storyId } } } : {}),
+            language: {
+                connect: {
+                    key: ((chapterData as CreateStandaloneChapterDto & { language?: string }).language || 'vi').trim(),
+                },
+            },
         };
 
         const chapter = await this.prisma.chapter.create({
@@ -203,14 +231,17 @@ export class ChaptersService {
             }
 
             // Separate storyId and chapterNumber from other fields for normalization
-            const { storyId, chapterNumber, ...otherData } = data;
+            const { storyId, chapterNumber, language, ...otherData } = data;
             const normalizedData = Object.keys(otherData).length > 0 
                 ? this.normalizeChapterFlatPayload(otherData as any)
                 : {};
 
             const updateData: any = {
                 ...normalizedData,
-                storyId,
+                ...(storyId !== undefined ? {
+                    story: storyId ? { connect: { id: storyId } } : { disconnect: true },
+                } : {}),
+                ...(language ? { language: { connect: { key: language } } } : {}),
             };
 
             // Add chapterNumber if it was set

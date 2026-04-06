@@ -22,6 +22,7 @@ import {
 
 import { UploadButton } from '@/lib/uploadthing';
 import { adminApiClient } from '@/lib/api/admin-api-client';
+import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import dynamic from 'next/dynamic';
 import DOMPurify from 'dompurify';
 import 'react-quill-new/dist/quill.snow.css';
@@ -50,6 +51,7 @@ const chapterSchema = z.object({
         z.number().min(0, 'Thời lượng không hợp lệ').optional(),
     ),
     accessType: z.enum(['free', 'timed', 'vip']),
+    language: z.string().min(1, 'Vui lòng chọn ngôn ngữ'),
     storyId: z.preprocess(
         (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : value),
         z.string().uuid('ID truyện không hợp lệ').optional(),
@@ -71,6 +73,7 @@ export type ChapterFormValues = {
     youtubeVideoId?: string;
     audioDuration?: number;
     accessType: 'free' | 'timed' | 'vip';
+    language: string;
     unlocksAt?: string;
     storyId?: string;
 };
@@ -185,6 +188,7 @@ const getLocalizedText = (value: unknown, locale = 'vi'): string => {
 };
 
 export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCancel, isLoading }: ChapterFormProps) => {
+    const { languages } = useAdminLanguages();
     const [stories, setStories] = useState<StoryOption[]>([]);
     const [isStoryOpen, setIsStoryOpen] = useState(false);
     const [storySearch, setStorySearch] = useState('');
@@ -240,11 +244,13 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             youtubeVideoId: safeString(initialData?.youtubeVideoId),
             audioDuration: safeNumber(initialData?.audioDuration, 0),
             accessType: safeAccessType(initialData?.accessType),
+            language: safeString((initialData as { language?: unknown } | undefined)?.language, selectedLocale),
             storyId: safeString(initialData?.storyId),
             unlocksAt: safeString(initialData?.unlocksAt),
         },
     });
 
+    const selectedLanguage = watch('language') || selectedLocale;
     const isUploadingAudio = isUploadingAudioVi || isUploadingAudioEn;
 
     const handleI18nChange = (field: 'title' | 'description' | 'content' | 'audioUrl', lang: Locale, value: string) => {
@@ -398,7 +404,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
     }, [selectedStoryId, selectedStory, stories]);
     
     const filteredStories = stories.filter((s) =>
-        getLocalizedText(s.title, selectedLocale).toLowerCase().includes(storySearch.toLowerCase()),
+        getLocalizedText(s.title, selectedLanguage).toLowerCase().includes(storySearch.toLowerCase()),
     );
 
     useEffect(() => {
@@ -582,15 +588,15 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         const audioVi = cleanText(values.audioUrlVi);
         const audioEn = cleanText(values.audioUrlEn);
 
-        const title = selectedLocale === 'en' ? (titleEn || titleVi) : (titleVi || titleEn);
+        const title = selectedLanguage === 'en' ? (titleEn || titleVi) : (titleVi || titleEn);
         if (title && title.length > 300) {
             alert('Chapter title is too long (max 300 characters).');
             return;
         }
 
-        const description = selectedLocale === 'en' ? (descriptionEn || descriptionVi) : (descriptionVi || descriptionEn);
-        const content = selectedLocale === 'en' ? (contentEn || contentVi) : (contentVi || contentEn);
-        const r2AudioUrl = selectedLocale === 'en' ? (audioEn || audioVi) : (audioVi || audioEn);
+        const description = selectedLanguage === 'en' ? (descriptionEn || descriptionVi) : (descriptionVi || descriptionEn);
+        const content = selectedLanguage === 'en' ? (contentEn || contentVi) : (contentVi || contentEn);
+        const r2AudioUrl = selectedLanguage === 'en' ? (audioEn || audioVi) : (audioVi || audioEn);
         const thumbnailUrl = cleanText(values.thumbnailUrl);
         const youtubeInput = cleanText(values.youtubeVideoId);
         const youtubeVideoId = youtubeInput ? cleanText(extractYoutubeId(youtubeInput)) : undefined;
@@ -630,7 +636,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                     : undefined,
             accessType: values.accessType,
             storyId: cleanText(values.storyId),
-            language: selectedLocale,
+            language: selectedLanguage,
         };
 
         await onSubmit(payload);
@@ -649,7 +655,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         alert(message);
     };
 
-    const lang = selectedLocale as Locale;
+    const lang = selectedLanguage as Locale;
     const titleField = lang === 'vi' ? 'titleVi' : 'titleEn';
     const descriptionField = lang === 'vi' ? 'descriptionVi' : 'descriptionEn';
     const contentField = lang === 'vi' ? 'contentVi' : 'contentEn';
@@ -707,7 +713,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                 className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 flex items-center justify-between hover:ring-2 hover:ring-indigo-500/20 transition-all shadow-sm"
                             >
                                 {selectedStory ? (
-                                    <span className="text-indigo-600 truncate">{getLocalizedText(selectedStory.title, selectedLocale)}</span>
+                                    <span className="text-indigo-600 truncate">{getLocalizedText(selectedStory.title, selectedLanguage)}</span>
                                 ) : (
                                     <span className="text-slate-400 font-medium">-- Chọn truyện --</span>
                                 )}
@@ -751,7 +757,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                                 }}
                                                 className={`w-full text-left px-4 py-3 rounded-xl text-sm font-bold flex items-center justify-between group transition-all ${selectedStoryId === story.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50'}`}
                                             >
-                                                <span className="truncate">{getLocalizedText(story.title, selectedLocale)}</span>
+                                                <span className="truncate">{getLocalizedText(story.title, selectedLanguage)}</span>
                                                 {selectedStoryId === story.id && <Check className="w-4 h-4 shrink-0" />}
                                             </button>
                                         ))}
@@ -772,6 +778,24 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
                         />
                         {errors.chapterNumber && <p className="text-xs font-bold text-red-500 ml-2">{errors.chapterNumber.message}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ngôn ngữ</label>
+                        <div className="relative">
+                            <select
+                                {...register('language')}
+                                className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                            >
+                                {languages.map((language) => (
+                                    <option key={language.id} value={language.key}>
+                                        {language.name} ({language.key})
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        </div>
+                        {errors.language && <p className="text-xs font-bold text-red-500 ml-2">{errors.language.message}</p>}
                     </div>
 
                     {/* Title */}

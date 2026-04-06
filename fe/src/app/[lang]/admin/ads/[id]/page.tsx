@@ -9,7 +9,16 @@ import Link from '@/components/shared/LocalizedLink';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import AdForm, { type AdFormValues } from '../_components/AdForm';
 
-type AdDetail = AdFormValues & { id: string };
+type AdApiDetail = {
+  id: string;
+  partnerName: string;
+  title: string;
+  imageUrl: string;
+  targetUrl: string;
+  languageId?: number | null;
+  isGlobal?: boolean;
+  isActive: boolean;
+};
 
 export default function EditAdPage() {
   const params = useParams<{ id: string }>();
@@ -20,7 +29,7 @@ export default function EditAdPage() {
 
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [initialData, setInitialData] = useState<AdDetail | null>(null);
+  const [initialData, setInitialData] = useState<AdFormValues | null>(null);
 
   useEffect(() => {
     if (!normalizedId) return;
@@ -31,11 +40,11 @@ export default function EditAdPage() {
         const safeId = encodeURIComponent(normalizedId);
         const endpoints = [`/ads/${safeId}`, `/ads/admin/${safeId}`];
 
-        let data: AdDetail | null = null;
+        let data: AdApiDetail | null = null;
         for (const endpoint of endpoints) {
           try {
             const response = await apiClient.get(endpoint);
-            data = (response.data?.data ?? response.data) as AdDetail;
+            data = (response.data?.data ?? response.data) as AdApiDetail;
             break;
           } catch (error) {
             if (!axios.isAxiosError(error) || error.response?.status !== 404) {
@@ -48,7 +57,10 @@ export default function EditAdPage() {
           throw new Error('Advertisement not found.');
         }
 
-        setInitialData(data);
+        setInitialData({
+          ...data,
+          languageId: data.isGlobal || !data.languageId ? 'all' : String(data.languageId),
+        });
       } catch (error) {
         console.error('Failed to fetch ad detail:', error);
         alert('Không thể tải thông tin quảng cáo.');
@@ -65,9 +77,12 @@ export default function EditAdPage() {
 
     setIsSubmitting(true);
     try {
+      const isGlobal = payload.languageId === 'all';
       const safeId = encodeURIComponent(normalizedId);
       const requestBody = {
         ...payload,
+        languageId: isGlobal ? null : Number(payload.languageId),
+        isGlobal,
         isActive: payload.isActive ?? true,
       };
       const endpoints = [`/ads/${safeId}`, `/ads/admin/${safeId}`];

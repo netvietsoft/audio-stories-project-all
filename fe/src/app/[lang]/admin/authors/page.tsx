@@ -22,6 +22,7 @@ interface Author {
     id: string;
     name: string;
     slug: string;
+    language?: string | null;
     bio: string | null;
     avatarUrl: string | null;
     _count?: {
@@ -314,9 +315,11 @@ export default function AuthorsPage() {
                                 initialData={editingAuthor ? {
                                     name: editingAuthor.name,
                                     slug: editingAuthor.slug,
+                                    language: editingAuthor.language || selectedLocale,
                                     bio: editingAuthor.bio ?? undefined,
                                     avatarUrl: editingAuthor.avatarUrl ?? undefined,
                                 } : {}}
+                                defaultLanguage={selectedLocale}
                                 onSubmit={handleSubmit}
                                 onCancel={() => setIsModalOpen(false)}
                                 isLoading={isSubmitting}

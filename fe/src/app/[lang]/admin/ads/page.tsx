@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Loader2, Megaphone, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from '@/components/shared/LocalizedLink';
 
 import { adminApiClient as apiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
@@ -15,6 +15,9 @@ type AdItem = {
   title: string;
   imageUrl: string;
   targetUrl: string;
+  language?: 'vi' | 'en' | 'all' | string;
+  languageId?: number | null;
+  isGlobal?: boolean;
   isActive: boolean;
 };
 
@@ -25,7 +28,10 @@ type ToastState = {
 
 export default function AdsPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const params = useParams<{ lang?: string }>();
+  const selectedLanguage = searchParams.get('language') || 'all';
   const [items, setItems] = useState<AdItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -56,7 +62,12 @@ export default function AdsPage() {
   const fetchAds = async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.get('/ads');
+      const response = await apiClient.get('/ads', {
+        params:
+          selectedLanguage === 'all'
+            ? undefined
+            : { lang: selectedLanguage },
+      });
       setItems(Array.isArray(response.data?.data) ? response.data.data : []);
     } catch (error) {
       if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
@@ -72,7 +83,18 @@ export default function AdsPage() {
 
   useEffect(() => {
     void fetchAds();
-  }, []);
+  }, [selectedLanguage]);
+
+  const handleLanguageFilterChange = (value: string) => {
+    const next = new URLSearchParams(searchParams.toString());
+    if (!value || value === 'all') {
+      next.delete('language');
+    } else {
+      next.set('language', value);
+    }
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  };
 
   useEffect(() => {
     const fetchFrequencyConfig = async () => {
@@ -168,10 +190,28 @@ export default function AdsPage() {
           <p className="mt-2 font-medium text-slate-500">Danh sách campaign quảng cáo dùng để nhúng vào nội dung chương truyện.</p>
         </div>
 
-        <Link href="/admin/ads/new" className="inline-flex items-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-orange-100 transition hover:bg-orange-600">
-          <Plus className="h-4 w-4" />
-          Thêm quảng cáo
-        </Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2">
+            <label htmlFor="ads-language-filter" className="text-xs font-black uppercase tracking-wider text-slate-500">
+              Ngôn ngữ
+            </label>
+            <select
+              id="ads-language-filter"
+              value={selectedLanguage}
+              onChange={(event) => handleLanguageFilterChange(event.target.value)}
+              className="admin-input h-10 rounded-xl bg-white px-3 text-sm font-semibold text-slate-700"
+            >
+              <option value="all">Tất cả</option>
+              <option value="vi">Tiếng Việt</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+
+          <Link href="/admin/ads/new" className="inline-flex items-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-orange-100 transition hover:bg-orange-600">
+            <Plus className="h-4 w-4" />
+            Thêm quảng cáo
+          </Link>
+        </div>
       </div>
 
       <section className="rounded-2xl bg-pink-50 p-6 shadow-sm dark:bg-pink-950/30">
@@ -206,12 +246,13 @@ export default function AdsPage() {
 
       <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[860px] border-collapse text-left">
+          <table className="w-full min-w-[920px] border-collapse text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/80">
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Ảnh</th>
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Tiêu đề</th>
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Đối tác</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Ngôn ngữ</th>
                 <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-wider text-slate-400">Trạng thái</th>
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Link đích</th>
                 <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-wider text-slate-400">Thao tác</th>
@@ -220,13 +261,13 @@ export default function AdsPage() {
             <tbody className="divide-y divide-slate-50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center">
+                  <td colSpan={7} className="px-6 py-10 text-center">
                     <Loader2 className="mx-auto h-6 w-6 animate-spin text-orange-500" />
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-sm font-medium text-slate-500">Chưa có quảng cáo nào.</td>
+                  <td colSpan={7} className="px-6 py-10 text-center text-sm font-medium text-slate-500">Chưa có quảng cáo nào.</td>
                 </tr>
               ) : (
                 items.map((item) => (
@@ -238,6 +279,9 @@ export default function AdsPage() {
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold text-slate-900">{item.title}</td>
                     <td className="px-6 py-4 text-sm font-medium text-slate-700">{item.partnerName}</td>
+                    <td className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                      {item.isGlobal ? 'ALL' : (item.language === 'vi' ? 'VI' : item.language === 'en' ? 'EN' : 'ALL')}
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${item.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
                         {item.isActive ? 'Active' : 'Inactive'}

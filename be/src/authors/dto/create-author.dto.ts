@@ -16,4 +16,8 @@ export class CreateAuthorDto {
     @IsString()
     @IsOptional()
     bio?: string;
+
+    @IsString()
+    @IsOptional()
+    language?: string;
 }

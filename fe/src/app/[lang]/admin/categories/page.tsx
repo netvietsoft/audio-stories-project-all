@@ -37,6 +37,7 @@ type CategoryFormInput = {
     slug: string;
     description?: string;
     iconUrl?: string;
+    language: string;
 };
 
 export default function CategoriesPage() {
@@ -177,16 +178,14 @@ export default function CategoriesPage() {
                 slug: data.slug.trim(),
                 description: cleanText(data.description),
                 iconUrl: cleanText(data.iconUrl),
+                language: data.language,
             };
 
             if (editingCategory) {
                 await apiClient.patch(`/categories/${editingCategory.id}`, basePayload);
                 fetchCategories(); // Refetch to get updated list
             } else {
-                await apiClient.post('/categories', {
-                    ...basePayload,
-                    language: selectedLocale,
-                });
+                await apiClient.post('/categories', basePayload);
                 setPage(1); // Go to first page to see new category
                 fetchCategories();
             }
@@ -493,7 +492,9 @@ export default function CategoriesPage() {
                                     slug: editingCategory.slug,
                                     description: editingCategory.description ?? undefined,
                                     iconUrl: editingCategory.iconUrl ?? undefined,
+                                    language: selectedLocale,
                                 } : {}}
+                                defaultLanguage={selectedLocale}
                                 onSubmit={handleSubmit}
                                 onCancel={() => setIsModalOpen(false)}
                                 isLoading={isSubmitting}

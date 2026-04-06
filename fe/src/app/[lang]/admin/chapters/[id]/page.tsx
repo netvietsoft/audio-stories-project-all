@@ -8,6 +8,7 @@ import { ChevronLeft, Loader2, Music } from "lucide-react";
 
 type ChapterDetail = {
   chapterNumber: number;
+  language?: string | null;
   title?: string | null;
   titleVi?: string | null;
   titleEn?: string | null;
@@ -172,6 +173,7 @@ export default function ChapterEditorPage() {
                     youtubeVideoId: chapter?.youtubeVideoId ?? undefined,
                     audioDuration: chapter?.audioDuration ?? 0,
                     accessType: chapter?.accessType,
+                    language: chapter?.language ?? currentLang,
                     storyId: chapter?.storyId ?? undefined,
                   }
             }

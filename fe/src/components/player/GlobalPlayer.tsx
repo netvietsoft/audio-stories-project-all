@@ -10,7 +10,6 @@ import { apiClient } from "@/lib/api/api-client";
 import { getOrCreateDeviceId } from "@/lib/tracking/device-id";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
-import { cleanChapterTitle, formatChapterTitle } from "@/lib/formatChapterTitle";
 import { useTranslations as useChapterTranslations } from "next-intl";
 
 const formatDuration = (seconds?: number | null) => {
@@ -307,7 +306,7 @@ export default function GlobalPlayer() {
             </div>
 
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.chapterNumber ? formatChapterTitle(tChapter("chapterKeyword"), currentTrack.chapterNumber, cleanChapterTitle(currentTrack.title)) : currentTrack.title}</p>
+              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.title}</p>
               <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || t("defaultAuthor")}</p>
             </div>
           </Link>
@@ -326,7 +325,6 @@ export default function GlobalPlayer() {
 
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.title}</p>
-                <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.chapterNumber ? formatChapterTitle(tChapter("chapterKeyword"), currentTrack.chapterNumber, cleanChapterTitle(currentTrack.title)) : currentTrack.title}</p>
               <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || t("defaultAuthor")}</p>
             </div>
           </div>
@@ -370,7 +368,7 @@ export default function GlobalPlayer() {
         </div>
 
         <div className="hidden w-full max-w-sm items-center gap-2 md:flex">
-          <span className="text-xs text-gray-500 dark:text-gray-400">{formatDuration(currentTime)}</span>
+          <span className="w-12 shrink-0 text-center text-xs tabular-nums text-gray-500 dark:text-gray-400">{formatDuration(currentTime)}</span>
           <input
             type="range"
             min={0}
@@ -378,10 +376,15 @@ export default function GlobalPlayer() {
             step={1}
             value={Math.min(currentTime, duration || 0)}
             onChange={(event) => seekTo(Number(event.target.value))}
-            className="w-full accent-pink-600"
+            className="time-slider h-1 w-full appearance-none rounded-full accent-pink-600 [--time-slider-track:rgb(107_114_128)] dark:[--time-slider-track:rgb(209_213_219)] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-pink-500"
+            style={{
+              WebkitAppearance: 'none',
+              appearance: 'none',
+              background: `linear-gradient(to right, #ec4899 0%, #ec4899 ${Math.min((currentTime / (duration || 1)) * 100, 100)}%, var(--time-slider-track) ${Math.min((currentTime / (duration || 1)) * 100, 100)}%, var(--time-slider-track) 100%)`,
+            }}
             aria-label={t("audioProgress")}
           />
-          <span className="text-xs text-gray-500 dark:text-gray-400">{formatDuration(duration)}</span>
+          <span className="w-12 shrink-0 text-center text-xs tabular-nums text-gray-500 dark:text-gray-400">{formatDuration(duration)}</span>
         </div>
 
         <div className="hidden items-center gap-1 sm:flex">
@@ -424,7 +427,7 @@ export default function GlobalPlayer() {
       {isExpandedMobile ? (
         <div className="mt-2 rounded-xl bg-white/85 p-2 dark:bg-[#242526]/95 sm:hidden">
           <div className="mb-2 flex items-center gap-2">
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">{formatDuration(currentTime)}</span>
+            <span className="w-12 shrink-0 text-center tabular-nums text-[11px] text-gray-500 dark:text-gray-400">{formatDuration(currentTime)}</span>
             <input
               type="range"
               min={0}
@@ -432,10 +435,15 @@ export default function GlobalPlayer() {
               step={1}
               value={Math.min(currentTime, duration || 0)}
               onChange={(event) => seekTo(Number(event.target.value))}
-              className="w-full accent-pink-600"
+              className="time-slider h-1 w-full appearance-none rounded-full accent-pink-600 [--time-slider-track:rgb(107_114_128)] dark:[--time-slider-track:rgb(209_213_219)] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-pink-500"
+              style={{
+                WebkitAppearance: 'none',
+                appearance: 'none',
+                background: `linear-gradient(to right, #ec4899 0%, #ec4899 ${Math.min((currentTime / (duration || 1)) * 100, 100)}%, var(--time-slider-track) ${Math.min((currentTime / (duration || 1)) * 100, 100)}%, var(--time-slider-track) 100%)`,
+              }}
               aria-label={t("audioProgress")}
             />
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">{formatDuration(duration)}</span>
+            <span className="w-12 shrink-0 text-center tabular-nums text-[11px] text-gray-500 dark:text-gray-400">{formatDuration(duration)}</span>
           </div>
 
           <div className="flex items-center justify-between gap-2">
@@ -484,28 +492,6 @@ export default function GlobalPlayer() {
       </div>
 
       <style jsx>{`
-        /* Default (light mode) - pink fill, dark border */
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: rgb(236 72 153);
-          cursor: pointer;
-          border: 2px solid rgb(15 23 42);
-          box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-        }
-        input[type="range"]::-moz-range-thumb {
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: rgb(236 72 153);
-          cursor: pointer;
-          border: 2px solid rgb(15 23 42);
-          box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-        }
-
         /* Focus/active ring to match app accent */
         input[type="range"]:focus::-webkit-slider-thumb,
         input[type="range"]:active::-webkit-slider-thumb {
@@ -514,18 +500,6 @@ export default function GlobalPlayer() {
         input[type="range"]:focus::-moz-range-thumb,
         input[type="range"]:active::-moz-range-thumb {
           box-shadow: 0 0 0 4px rgba(236,72,153,0.12), 0 1px 2px rgba(0,0,0,0.12);
-        }
-
-        /* Dark mode: pink fill, white border */
-        :global(.dark) input[type="range"]::-webkit-slider-thumb {
-          background: rgb(236 72 153);
-          border: 2px solid white;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.35);
-        }
-        :global(.dark) input[type="range"]::-moz-range-thumb {
-          background: rgb(236 72 153);
-          border: 2px solid white;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.35);
         }
 
         /* Dark mode focus ring */

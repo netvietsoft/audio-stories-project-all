@@ -1595,7 +1595,7 @@ export default function StoryChapterClient() {
 
                 <div className="min-w-0 space-y-2 pr-1 sm:pr-2 md:pr-3">
                   <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {t("chapterTitle", { number: selectedChapter.chapterNumber, title: selectedChapterTitle })}
+                    {selectedChapterTitle}
                   </p>
 
                   <input
@@ -1608,38 +1608,16 @@ export default function StoryChapterClient() {
                       if (!canSeekSelectedChapter) return;
                       seekTo(Number(event.target.value));
                     }}
-                    className="w-full accent-pink-600 h-2.5 sm:h-2"
+                    className="time-slider h-1 w-full appearance-none rounded-full accent-pink-600 [--time-slider-track:rgb(107_114_128)] dark:[--time-slider-track:rgb(209_213_219)] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-pink-500"
                     style={{
                       WebkitAppearance: 'none',
                       appearance: 'none',
-                      background: `linear-gradient(to right, rgb(236 72 153) 0%, rgb(236 72 153) ${Math.min((playerCurrentTime / (playerDuration || 1)) * 100, 100)}%, rgb(209 213 219) ${Math.min((playerCurrentTime / (playerDuration || 1)) * 100, 100)}%, rgb(209 213 219) 100%)`,
+                      background: `linear-gradient(to right, #ec4899 0%, #ec4899 ${Math.min((playerCurrentTime / (playerDuration || 1)) * 100, 100)}%, var(--time-slider-track) ${Math.min((playerCurrentTime / (playerDuration || 1)) * 100, 100)}%, var(--time-slider-track) 100%)`,
                       borderRadius: '9999px',
                       outline: 'none',
                     }}
                   />
                   <style jsx>{`
-                    /* Default (light mode) - pink fill, dark border */
-                    input[type="range"]::-webkit-slider-thumb {
-                      -webkit-appearance: none;
-                      appearance: none;
-                      width: 18px;
-                      height: 18px;
-                      border-radius: 50%;
-                      background: rgb(236 72 153);
-                      cursor: pointer;
-                      border: 2px solid rgb(15 23 42);
-                      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-                    }
-                    input[type="range"]::-moz-range-thumb {
-                      width: 18px;
-                      height: 18px;
-                      border-radius: 50%;
-                      background: rgb(236 72 153);
-                      cursor: pointer;
-                      border: 2px solid rgb(15 23 42);
-                      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-                    }
-
                     /* Volume slider - smaller thumb, same light/dark behavior */
                     input[type="range"].volume-slider::-webkit-slider-thumb {
                       width: 10px;
@@ -1656,17 +1634,6 @@ export default function StoryChapterClient() {
                       background: rgb(236 72 153);
                       border: 1px solid rgb(15 23 42);
                       box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-                    }
-
-                    @media (min-width: 640px) {
-                      input[type="range"]::-webkit-slider-thumb {
-                        width: 14px;
-                        height: 14px;
-                      }
-                      input[type="range"]::-moz-range-thumb {
-                        width: 14px;
-                        height: 14px;
-                      }
                     }
 
                     /* Focus/active ring to match app accent */
@@ -1686,18 +1653,6 @@ export default function StoryChapterClient() {
                     input[type="range"].volume-slider:focus::-moz-range-thumb,
                     input[type="range"].volume-slider:active::-moz-range-thumb {
                       box-shadow: 0 0 0 4px rgba(236,72,153,0.12), 0 1px 2px rgba(0,0,0,0.12);
-                    }
-
-                    /* Dark mode: pink fill, white border */
-                    :global(.dark) input[type="range"]::-webkit-slider-thumb {
-                      background: rgb(236 72 153);
-                      border: 2px solid white;
-                      box-shadow: 0 1px 3px rgba(0,0,0,0.35);
-                    }
-                    :global(.dark) input[type="range"]::-moz-range-thumb {
-                      background: rgb(236 72 153);
-                      border: 2px solid white;
-                      box-shadow: 0 1px 3px rgba(0,0,0,0.35);
                     }
 
                     :global(.dark) input[type="range"].volume-slider::-webkit-slider-thumb {
@@ -1722,8 +1677,8 @@ export default function StoryChapterClient() {
                   `}</style>
 
                   <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span>{formatDuration(playerCurrentTime)}</span>
-                    <span>{formatDuration(playerDuration)}</span>
+                    <span className="w-14 shrink-0 text-center tabular-nums">{formatDuration(playerCurrentTime)}</span>
+                    <span className="w-14 shrink-0 text-center tabular-nums">{formatDuration(playerDuration)}</span>
                   </div>
 
                   <div className="flex w-full items-center justify-center gap-1.5 sm:gap-2">

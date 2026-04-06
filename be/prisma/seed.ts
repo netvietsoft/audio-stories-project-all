@@ -114,6 +114,14 @@ async function main() {
     },
   });
 
+  // Fetch language IDs for use in seeding
+  const viLanguage = await prisma.language.findUnique({ where: { key: 'vi' } });
+  const enLanguage = await prisma.language.findUnique({ where: { key: 'en' } });
+  
+  if (!viLanguage || !enLanguage) {
+    throw new Error('Languages not found. Please ensure languages are seeded first.');
+  }
+
   console.log('Seeding users...');
 
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@truyen-audio.app';
@@ -246,28 +254,28 @@ async function main() {
   console.log('Seeding categories...');
 
   const categoriesData = [
-    { name: 'Tiên Hiệp', slug: 'tien-hiep', language: 'vi', description: 'Thế giới tu luyện huyền bí' },
-    { name: 'Xianxia', slug: 'xianxia', language: 'en', description: 'Cultivation fantasy world' },
-    { name: 'Kiếm Hiệp', slug: 'kiem-hiep', language: 'vi', description: 'Giang hồ ân oán tình thù' },
-    { name: 'Wuxia', slug: 'wuxia', language: 'en', description: 'Martial arts world' },
-    { name: 'Đô Thị', slug: 'do-thi', language: 'vi', description: 'Truyện hiện đại' },
-    { name: 'Urban', slug: 'urban', language: 'en', description: 'Modern stories' },
-    { name: 'Ngôn Tình', slug: 'ngon-tinh', language: 'vi', description: 'Tình cảm lãng mạn' },
-    { name: 'Romance', slug: 'romance', language: 'en', description: 'Romantic stories' },
-    { name: 'Huyền Huyễn', slug: 'huyen-huyen', language: 'vi', description: 'Phiêu lưu kỳ ảo' },
-    { name: 'Fantasy', slug: 'fantasy', language: 'en', description: 'Fantasy adventure' },
-    { name: 'Action', slug: 'action', language: 'vi', description: 'Hành động kịch tính' },
-    { name: 'Action', slug: 'action', language: 'en', description: 'Action-packed stories' },
-    { name: 'Xuyên Không', slug: 'xuyen-khong', language: 'vi', description: 'Du hành thời gian và không gian' },
-    { name: 'Isekai', slug: 'isekai', language: 'en', description: 'Otherworld travel' },
-    { name: 'Shounen', slug: 'shounen', language: 'vi', description: 'Truyện dành cho thiếu niên' },
-    { name: 'Shounen', slug: 'shounen', language: 'en', description: 'Boys\' adventure and battle' },
+    { name: 'Tiên Hiệp', slug: 'tien-hiep', languageId: viLanguage.id, description: 'Thế giới tu luyện huyền bí' },
+    { name: 'Xianxia', slug: 'xianxia', languageId: enLanguage.id, description: 'Cultivation fantasy world' },
+    { name: 'Kiếm Hiệp', slug: 'kiem-hiep', languageId: viLanguage.id, description: 'Giang hồ ân oán tình thù' },
+    { name: 'Wuxia', slug: 'wuxia', languageId: enLanguage.id, description: 'Martial arts world' },
+    { name: 'Đô Thị', slug: 'do-thi', languageId: viLanguage.id, description: 'Truyện hiện đại' },
+    { name: 'Urban', slug: 'urban', languageId: enLanguage.id, description: 'Modern stories' },
+    { name: 'Ngôn Tình', slug: 'ngon-tinh', languageId: viLanguage.id, description: 'Tình cảm lãng mạn' },
+    { name: 'Romance', slug: 'romance', languageId: enLanguage.id, description: 'Romantic stories' },
+    { name: 'Huyền Huyễn', slug: 'huyen-huyen', languageId: viLanguage.id, description: 'Phiêu lưu kỳ ảo' },
+    { name: 'Fantasy', slug: 'fantasy', languageId: enLanguage.id, description: 'Fantasy adventure' },
+    { name: 'Action', slug: 'action', languageId: viLanguage.id, description: 'Hành động kịch tính' },
+    { name: 'Action', slug: 'action', languageId: enLanguage.id, description: 'Action-packed stories' },
+    { name: 'Xuyên Không', slug: 'xuyen-khong', languageId: viLanguage.id, description: 'Du hành thời gian và không gian' },
+    { name: 'Isekai', slug: 'isekai', languageId: enLanguage.id, description: 'Otherworld travel' },
+    { name: 'Shounen', slug: 'shounen', languageId: viLanguage.id, description: 'Truyện dành cho thiếu niên' },
+    { name: 'Shounen', slug: 'shounen', languageId: enLanguage.id, description: 'Boys\' adventure and battle' },
   ];
 
   const categories = [] as any[];
   for (const cat of categoriesData) {
     const existing = await prisma.category.findFirst({
-      where: { slug: cat.slug, language: cat.language },
+      where: { slug: cat.slug, language: { id: cat.languageId } },
     });
     
     if (existing) {
@@ -277,7 +285,14 @@ async function main() {
       });
       categories.push(updated);
     } else {
-      const created = await prisma.category.create({ data: cat });
+      const created = await prisma.category.create({ 
+        data: {
+          name: cat.name,
+          slug: cat.slug,
+          description: cat.description,
+          language: { connect: { id: cat.languageId } }
+        }
+      });
       categories.push(created);
     }
   }
@@ -292,12 +307,12 @@ async function main() {
       where: { slug: slugify(name) },
       update: {
         name,
-        language: 'vi',
+        language: { connect: { id: viLanguage.id } },
       },
       create: {
         name,
         slug: slugify(name),
-        language: 'vi',
+        language: { connect: { id: viLanguage.id } },
       },
     });
     authors.push(author);
@@ -417,7 +432,7 @@ async function main() {
       : `${titleVi} - truyện audio tiếng Việt dùng để kiểm tra giao diện và chức năng cập nhật chương.`;
     
     const existingVi = await prisma.story.findFirst({
-      where: { slug: slugVi, language: 'vi' },
+      where: { slug: slugVi, language: { id: viLanguage.id } },
     });
 
     const storyVi = existingVi
@@ -425,8 +440,8 @@ async function main() {
           where: { id: existingVi.id },
           data: {
             title: titleVi,
-            language: 'vi',
-            authorId: authors[i % authors.length].id,
+            language: { connect: { id: viLanguage.id } },
+            author: { connect: { id: authors[i % authors.length].id } },
             status: i % 3 === 0 ? 'completed' : 'ongoing',
             thumbnailUrl: `https://picsum.photos/seed/story-vi-${i + 1}/600/900`,
             totalViews: isInteractiveStory ? BigInt(830000 + i * 15000) : BigInt(200000 + i * 45000),
@@ -441,8 +456,8 @@ async function main() {
           data: {
             title: titleVi,
             slug: slugVi,
-            language: 'vi',
-            authorId: authors[i % authors.length].id,
+            language: { connect: { id: viLanguage.id } },
+            author: { connect: { id: authors[i % authors.length].id } },
             status: i % 3 === 0 ? 'completed' : 'ongoing',
             thumbnailUrl: `https://picsum.photos/seed/story-vi-${i + 1}/600/900`,
             totalViews: isInteractiveStory ? BigInt(830000 + i * 15000) : BigInt(200000 + i * 45000),
@@ -455,7 +470,7 @@ async function main() {
         });
 
     await prisma.storyCategory.deleteMany({ where: { storyId: storyVi.id } });
-    const viCats = categories.filter(c => c.language === 'vi');
+    const viCats = categories.filter(c => c.languageId === viLanguage.id);
     await prisma.storyCategory.createMany({
       data: [
         { storyId: storyVi.id, categoryId: viCats[i % viCats.length].id },
@@ -473,7 +488,7 @@ async function main() {
       : `${titleEn} - English audio story for interface and chapter update testing.`;
     
     const existingEn = await prisma.story.findFirst({
-      where: { slug: slugEn, language: 'en' },
+      where: { slug: slugEn, language: { id: enLanguage.id } },
     });
 
     const storyEn = existingEn
@@ -481,8 +496,8 @@ async function main() {
           where: { id: existingEn.id },
           data: {
             title: titleEn,
-            language: 'en',
-            authorId: authors[i % authors.length].id,
+            language: { connect: { id: enLanguage.id } },
+            author: { connect: { id: authors[i % authors.length].id } },
             status: i % 3 === 0 ? 'completed' : 'ongoing',
             thumbnailUrl: `https://picsum.photos/seed/story-en-${i + 1}/600/900`,
             totalViews: isInteractiveStory ? BigInt(760000 + i * 12000) : BigInt(180000 + i * 40000),
@@ -497,8 +512,8 @@ async function main() {
           data: {
             title: titleEn,
             slug: slugEn,
-            language: 'en',
-            authorId: authors[i % authors.length].id,
+            language: { connect: { id: enLanguage.id } },
+            author: { connect: { id: authors[i % authors.length].id } },
             status: i % 3 === 0 ? 'completed' : 'ongoing',
             thumbnailUrl: `https://picsum.photos/seed/story-en-${i + 1}/600/900`,
             totalViews: isInteractiveStory ? BigInt(760000 + i * 12000) : BigInt(180000 + i * 40000),
@@ -511,7 +526,7 @@ async function main() {
         });
 
     await prisma.storyCategory.deleteMany({ where: { storyId: storyEn.id } });
-    const enCats = categories.filter(c => c.language === 'en');
+    const enCats = categories.filter(c => c.languageId === enLanguage.id);
     await prisma.storyCategory.createMany({
       data: [
         { storyId: storyEn.id, categoryId: enCats[i % enCats.length].id },
@@ -546,7 +561,7 @@ async function main() {
         },
         update: {
           title: chapterTitle,
-          language: 'vi',
+          language: { connect: { id: viLanguage.id } },
           description: chapterDescription,
           thumbnailUrl: chapterThumb,
           content,
@@ -558,10 +573,10 @@ async function main() {
           isInteractive: isInteractiveStory && chapterNumber === 1 ? true : false,
         },
         create: {
-          storyId: storyVi.id,
+          story: { connect: { id: storyVi.id } },
           chapterNumber,
           title: chapterTitle,
-          language: 'vi',
+          language: { connect: { id: viLanguage.id } },
           description: chapterDescription,
           thumbnailUrl: chapterThumb,
           content,
@@ -616,7 +631,7 @@ async function main() {
         },
         update: {
           title: chapterTitle,
-          language: 'en',
+          language: { connect: { id: enLanguage.id } },
           description: chapterDescription,
           thumbnailUrl: chapterThumb,
           content,
@@ -628,10 +643,10 @@ async function main() {
           isInteractive: isInteractiveStory && chapterNumber === 1 ? true : false,
         },
         create: {
-          storyId: storyEn.id,
+          story: { connect: { id: storyEn.id } },
           chapterNumber,
           title: chapterTitle,
-          language: 'en',
+          language: { connect: { id: enLanguage.id } },
           description: chapterDescription,
           thumbnailUrl: chapterThumb,
           content,
@@ -903,8 +918,8 @@ async function main() {
 
   console.log('✅ Seed completed!');
   console.log(`📊 Summary:`);
-  console.log(`   - ${categories.length} categories (${categories.filter(c => c.language === 'vi').length} VI, ${categories.filter(c => c.language === 'en').length} EN)`);
-  console.log(`   - ${stories.length} stories (${stories.filter(s => s.language === 'vi').length} VI, ${stories.filter(s => s.language === 'en').length} EN)`);
+  console.log(`   - ${categories.length} categories (${categories.filter(c => c.languageId === viLanguage.id).length} VI, ${categories.filter(c => c.languageId === enLanguage.id).length} EN)`);
+  console.log(`   - ${stories.length} stories (${stories.filter(s => s.languageId === viLanguage.id).length} VI, ${stories.filter(s => s.languageId === enLanguage.id).length} EN)`);
   console.log(`   - ${stories.length * 15} chapters total`);
   console.log(`   - ${seededUsers.length} demo users`);
   console.log(`   - ${adSeeds.length} advertisements`);

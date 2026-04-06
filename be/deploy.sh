@@ -99,27 +99,24 @@ fi
 read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
 SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 
-# Ask if user wants to reset database (COMMENTED OUT - uncomment if needed)
-# read -p "Do you want to RESET database? (yes/no, default: no): " RESET_DB
-# RESET_DB=$(echo "${RESET_DB:-no}" | tr -d '\r' | tr '[:upper:]' '[:lower:]')
-# 
-# if [ "$RESET_DB" == "yes" ]; then
-#     echo "⚠️  WARNING: This will DELETE ALL DATA in the database!"
-#     read -p "Are you absolutely sure? Type 'CONFIRM' to proceed: " CONFIRM
-#     CONFIRM=$(echo "$CONFIRM" | tr -d '\r')
-#     if [ "$CONFIRM" != "CONFIRM" ]; then
-#         echo "❌ Database reset cancelled"
-#         RESET_DB="no"
-#     else
-#         echo "✅ Database reset confirmed"
-#     fi
-# else
-#     # Force RESET_DB to "no" if not explicitly set to yes
-#     RESET_DB="no"
-# fi
+# Ask if user wants to reset database
+read -p "Do you want to RESET database? (yes/no, default: no): " RESET_DB
+RESET_DB=$(echo "${RESET_DB:-no}" | tr -d '\r' | tr '[:upper:]' '[:lower:]')
 
-# Force RESET_DB to "no" (change to "yes" if you want to reset on every deploy)
-RESET_DB="no"
+if [ "$RESET_DB" == "yes" ]; then
+    echo "⚠️  WARNING: This will DELETE ALL DATA in the database!"
+    read -p "Are you absolutely sure? Type 'CONFIRM' to proceed: " CONFIRM
+    CONFIRM=$(echo "$CONFIRM" | tr -d '\r')
+    if [ "$CONFIRM" != "CONFIRM" ]; then
+        echo "❌ Database reset cancelled"
+        RESET_DB="no"
+    else
+        echo "✅ Database reset confirmed"
+    fi
+else
+    # Force RESET_DB to "no" if not explicitly set to yes
+    RESET_DB="no"
+fi
 
 # Server path
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"

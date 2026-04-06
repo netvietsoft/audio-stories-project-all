@@ -11,7 +11,7 @@ export default function ProfileLayout({ children }: { children: ReactNode }) {
             <ProfileSidebar />
           </div>
         </aside>
-        <main className="min-w-0 flex-1">{children}</main>
+        <main className="relative min-h-[70vh] min-w-0 flex-1 overflow-y-auto no-scrollbar">{children}</main>
       </div>
     </div>
   );

@@ -342,73 +342,77 @@ export class UserFeaturesService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
 
-    const where: Prisma.StoryWhereInput = {
-      deletedAt: null,
-      userFavorites: {
-        some: {
-          userId,
-        },
-      },
-      ...(query.status ? { status: query.status as StoryStatus } : {}),
-      ...(query.categoryId
-        ? {
-          categories: {
-            some: {
-              categoryId: query.categoryId,
+    const where: Prisma.UserFavoriteWhereInput = {
+      userId,
+      story: {
+        deletedAt: null,
+        ...(query.status ? { status: query.status as StoryStatus } : {}),
+        ...(query.categoryId
+          ? {
+            categories: {
+              some: {
+                categoryId: query.categoryId,
+              },
             },
-          },
-        }
-        : {}),
-      ...(query.authorId ? { authorId: query.authorId } : {}),
-      ...(query.search
-        ? {
-          OR: [
-            { title: { contains: query.search } },
-            { author: { name: { contains: query.search } } },
-          ],
-        }
-        : {}),
+          }
+          : {}),
+        ...(query.authorId ? { authorId: query.authorId } : {}),
+        ...(query.search
+          ? {
+            OR: [
+              { title: { contains: query.search } },
+              { author: { name: { contains: query.search } } },
+            ],
+          }
+          : {}),
+      },
     };
 
-    const orderBy: Prisma.StoryOrderByWithRelationInput =
+    const orderBy: Prisma.UserFavoriteOrderByWithRelationInput =
       query.sort === 'views'
-        ? { totalViews: 'desc' }
+        ? { story: { totalViews: 'desc' } }
         : query.sort === 'title_asc'
-          ? { title: 'asc' }
+          ? { story: { title: 'asc' } }
           : query.sort === 'chapters_desc'
-            ? { chapters: { _count: 'desc' } }
+            ? { story: { totalChapters: 'desc' } }
             : { createdAt: 'desc' };
 
-    const [total, stories] = await Promise.all([
-      this.prisma.story.count({ where }),
-      this.prisma.story.findMany({
+    const [total, favoriteRows] = await Promise.all([
+      this.prisma.userFavorite.count({ where }),
+      this.prisma.userFavorite.findMany({
         where,
         skip: (page - 1) * limit,
         take: limit,
         orderBy,
         select: {
-          id: true,
-          slug: true,
-          title: true,
-          thumbnailUrl: true,
-          totalViews: true,
-          status: true,
-          createdAt: true,
-          totalChapters: true,
-          author: {
+          story: {
             select: {
               id: true,
-              name: true,
-            },
-          },
-          _count: {
-            select: {
-              chapters: true,
+              slug: true,
+              title: true,
+              thumbnailUrl: true,
+              totalViews: true,
+              status: true,
+              createdAt: true,
+              totalChapters: true,
+              author: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+              _count: {
+                select: {
+                  chapters: true,
+                },
+              },
             },
           },
         },
       }),
     ]);
+
+    const stories = favoriteRows.map((row) => row.story).filter(Boolean);
 
     return {
       data: stories.map((story) => ({ ...this.serializeStory(story), isFavorite: true })),

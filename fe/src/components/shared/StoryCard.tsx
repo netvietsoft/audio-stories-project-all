@@ -212,7 +212,7 @@ export default function StoryCard({
   return (
     <Link
       href={`/story/${story.slug}`}
-      className={`group block rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
+      className={`group flex h-full flex-col rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
         isFeatured
           ? "bg-amber-50/70 shadow-sm hover:shadow-lg hover:shadow-amber-100/60 dark:bg-slate-900/90 dark:hover:shadow-none"
           : "bg-white/90 shadow-sm hover:shadow-md dark:bg-gray-900/80"
@@ -241,7 +241,7 @@ export default function StoryCard({
         ) : null}
       </div>
 
-      <div className="p-2 pt-2 space-y-1">
+      <div className="flex min-h-[96px] flex-1 flex-col p-2 pt-2">
         <h3
           className={`line-clamp-2 font-bold text-gray-900 transition-colors group-hover:text-pink-700 dark:text-white dark:group-hover:text-pink-300 ${
             compactMobile ? "text-[13px] sm:text-sm" : "text-sm"
@@ -254,7 +254,9 @@ export default function StoryCard({
           {story.author?.name || t("updating")}
         </p>
 
-        <div className="hidden items-center justify-between gap-2 text-xs text-gray-500 dark:text-gray-400 sm:flex">
+        <div
+          className={`${compactMobile ? "flex" : "hidden sm:flex"} mt-auto items-center justify-between gap-2 pt-1 text-xs text-gray-500 dark:text-gray-400`}
+        >
           <div className="flex items-center gap-1">
             <Eye className="h-3.5 w-3.5" />
             <span>{viewsLabel}</span>

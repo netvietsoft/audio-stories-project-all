@@ -33,27 +33,27 @@ model User {
 
   role Role @relation(fields: [roleId], references: [id])
 
-  oauthAccounts       OAuthAccount[]
-  refreshTokens       RefreshToken[]
-  authTokens          AuthToken[]
-  userFavorites       UserFavorite[]
+  oauthAccounts          OAuthAccount[]
+  refreshTokens          RefreshToken[]
+  authTokens             AuthToken[]
+  userFavorites          UserFavorite[]
   userStorySubscriptions UserStorySubscription[]
-  listeningHistory    ListeningHistory[]
-  userFollowAuthors   UserFollowAuthor[]
-  reviews             Review[]
-  reviewLikes         ReviewLike[]
-  reviewHelpfuls      ReviewHelpful[]
-  reviewReplies       ReviewReply[]
-  creditTransactions  CreditTransaction[]
-  payments            Payment[]
-  memberships         Membership[]
-  notifications       Notification[]
-  audioReports        AudioReport[]
-  playlists           Playlist[]
-  chapterComments     ChapterComment[]
-  commentReactions    CommentReaction[]
-  commentReports      CommentReport[]
-  userUnlockedVariants UserUnlockedVariant[]
+  listeningHistory       ListeningHistory[]
+  userFollowAuthors      UserFollowAuthor[]
+  reviews                Review[]
+  reviewLikes            ReviewLike[]
+  reviewHelpfuls         ReviewHelpful[]
+  reviewReplies          ReviewReply[]
+  creditTransactions     CreditTransaction[]
+  payments               Payment[]
+  memberships            Membership[]
+  notifications          Notification[]
+  audioReports           AudioReport[]
+  playlists              Playlist[]
+  chapterComments        ChapterComment[]
+  commentReactions       CommentReaction[]
+  commentReports         CommentReport[]
+  userUnlockedVariants   UserUnlockedVariant[]
 
   @@index([roleId])
   @@index([isActive])
@@ -140,7 +140,7 @@ model Role {
   name        String   @unique @db.VarChar(50)
   slug        String   @unique @db.VarChar(50)
   description String?  @db.VarChar(255)
-  permissions Json?    // Restored
+  permissions Json? // Restored
   createdAt   DateTime @default(now()) @map("created_at") // Restored
 
   users User[]
@@ -184,41 +184,41 @@ enum StoryStatus {
 }
 
 model Story {
-  id            String      @id @default(uuid()) @db.VarChar(36)
-  title         String      @db.VarChar(300)
-  slug          String      @db.VarChar(350)
-  language      String      @default("vi") @db.VarChar(8)
-  description   String?     @db.Text
-  thumbnailUrl  String?     @map("thumbnail_url") @db.Text
-  authorId      String      @map("author_id") @db.VarChar(36)
-  status        StoryStatus @default(ongoing)
-  totalChapters Int         @default(0) @map("total_chapters") @db.UnsignedInt
-  totalViews    BigInt      @default(0) @map("total_views") @db.UnsignedBigInt
-  averageRating Decimal     @default(0) @map("average_rating") @db.Decimal(3, 2)
-  ratingCount   Int         @default(0) @map("rating_count") @db.UnsignedInt
-  isFeatured    Boolean     @default(false) @map("is_featured")
-  isRecommended Boolean     @default(false) @map("is_recommended")
-  isInteractive Boolean     @default(false) @map("is_interactive")
-  featuredOrder Int?        @map("featured_order")
-  totalGifts    Int         @default(0) @map("total_gifts") @db.UnsignedInt
-  favoritesCount Int        @default(0) @map("favorites_count") @db.UnsignedInt
-  publishedAt   DateTime?   @map("published_at")
-  audioUrl          String?     @map("audio_url") @db.Text
-  createdAt         DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
-  deletedAt     DateTime?   @map("deleted_at")
+  id             String      @id @default(uuid()) @db.VarChar(36)
+  title          String      @db.VarChar(300)
+  slug           String      @db.VarChar(350)
+  language       String      @default("vi") @db.VarChar(8)
+  description    String?     @db.Text
+  thumbnailUrl   String?     @map("thumbnail_url") @db.Text
+  authorId       String      @map("author_id") @db.VarChar(36)
+  status         StoryStatus @default(ongoing)
+  totalChapters  Int         @default(0) @map("total_chapters") @db.UnsignedInt
+  totalViews     BigInt      @default(0) @map("total_views") @db.UnsignedBigInt
+  averageRating  Decimal     @default(0) @map("average_rating") @db.Decimal(3, 2)
+  ratingCount    Int         @default(0) @map("rating_count") @db.UnsignedInt
+  isFeatured     Boolean     @default(false) @map("is_featured")
+  isRecommended  Boolean     @default(false) @map("is_recommended")
+  isInteractive  Boolean     @default(false) @map("is_interactive")
+  featuredOrder  Int?        @map("featured_order")
+  totalGifts     Int         @default(0) @map("total_gifts") @db.UnsignedInt
+  favoritesCount Int         @default(0) @map("favorites_count") @db.UnsignedInt
+  publishedAt    DateTime?   @map("published_at")
+  audioUrl       String?     @map("audio_url") @db.Text
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  deletedAt      DateTime?   @map("deleted_at")
 
-  author           Author             @relation(fields: [authorId], references: [id])
-  categories       StoryCategory[]
-  chapters         Chapter[]
-  userFavorites    UserFavorite[]
+  author                 Author                  @relation(fields: [authorId], references: [id])
+  categories             StoryCategory[]
+  chapters               Chapter[]
+  userFavorites          UserFavorite[]
   userStorySubscriptions UserStorySubscription[]
-  listeningHistory ListeningHistory[]
-  reviews          Review[]
-  audioReports     AudioReport[]
-  playlistItems    PlaylistItem[]
-  chapterComments  ChapterComment[]
-  heroBanners      HeroBanner[]
+  listeningHistory       ListeningHistory[]
+  reviews                Review[]
+  audioReports           AudioReport[]
+  playlistItems          PlaylistItem[]
+  chapterComments        ChapterComment[]
+  heroBanners            HeroBanner[]
 
   @@unique([slug, language])
   @@index([title])
@@ -314,8 +314,8 @@ model Chapter {
   audioReports     AudioReport[]
   playlistItems    PlaylistItem[]
   chapterComments  ChapterComment[]
-  variants         ChapterVariant[] @relation("ChapterVariants")
-  incomingVariants ChapterVariant[] @relation("VariantNextChapter")
+  variants         ChapterVariant[]   @relation("ChapterVariants")
+  incomingVariants ChapterVariant[]   @relation("VariantNextChapter")
 
   @@unique([storyId, chapterNumber])
   @@index([accessType])
@@ -364,9 +364,9 @@ model ListeningHistory {
   lastListenedAt  DateTime @default(now()) @map("last_listened_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  story   Story   @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story   Story           @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  chapter Chapter         @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   variant ChapterVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
   variantId String? @map("variant_id") @db.VarChar(36)
@@ -395,21 +395,21 @@ model UserFollowAuthor {
 }
 
 model Review {
-  id         String   @id @default(uuid()) @db.VarChar(36)
-  userId     String   @map("user_id") @db.VarChar(36)
-  storyId    String   @map("story_id") @db.VarChar(36)
-  rating     Int      @db.TinyInt
-  content    String?  @db.Text
-  likesCount Int      @default(0) @map("likes_count") @db.UnsignedInt
-  helpfulCount Int    @default(0) @map("helpful_count") @db.UnsignedInt
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid()) @db.VarChar(36)
+  userId       String   @map("user_id") @db.VarChar(36)
+  storyId      String   @map("story_id") @db.VarChar(36)
+  rating       Int      @db.TinyInt
+  content      String?  @db.Text
+  likesCount   Int      @default(0) @map("likes_count") @db.UnsignedInt
+  helpfulCount Int      @default(0) @map("helpful_count") @db.UnsignedInt
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  story       Story        @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  reviewLikes ReviewLike[]
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story          Story           @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  reviewLikes    ReviewLike[]
   reviewHelpfuls ReviewHelpful[]
-  replies     ReviewReply[]
+  replies        ReviewReply[]
 
   @@unique([userId, storyId])
   @@index([userId])
@@ -516,29 +516,29 @@ enum PaymentStatus {
 }
 
 model Payment {
-  id                     String          @id @default(uuid()) @db.VarChar(36)
-  userId                 String          @map("user_id") @db.VarChar(36)
-  packageCode            String          @map("package_code") @db.VarChar(50)
-  amountVnd              Int             @map("amount_vnd") @db.UnsignedInt
-  amountUsd              Decimal?        @map("amount_usd") @db.Decimal(10, 2)
-  creditsAdded           Int             @map("credits_added") @db.UnsignedInt
-  provider               PaymentProvider @default(VIETQR)
-  providerPaymentId      String?         @map("provider_payment_id") @db.VarChar(255)
-  providerCustomerId     String?         @map("provider_customer_id") @db.VarChar(255)
-  status                 PaymentStatus   @default(PENDING)
-  currency               String          @default("VND") @db.VarChar(3)
-  qrData                 String?         @map("qr_data") @db.Text
-  qrImageBase64          String?         @map("qr_image_base64") @db.LongText
-  transactionCode        String?         @map("transaction_code") @db.VarChar(100)
-  bankTransactionId      String?         @map("bank_transaction_id") @db.VarChar(255)
-  receiptUrl             String?         @map("receipt_url") @db.VarChar(500)
-  failureMessage         String?         @map("failure_message") @db.Text
-  metadata               Json?
-  paidAt                 DateTime?       @map("paid_at")
-  failedAt               DateTime?       @map("failed_at")
-  expiresAt              DateTime        @map("expires_at")
-  createdAt              DateTime        @default(now()) @map("created_at")
-  updatedAt              DateTime        @updatedAt @map("updated_at")
+  id                 String          @id @default(uuid()) @db.VarChar(36)
+  userId             String          @map("user_id") @db.VarChar(36)
+  packageCode        String          @map("package_code") @db.VarChar(50)
+  amountVnd          Int             @map("amount_vnd") @db.UnsignedInt
+  amountUsd          Decimal?        @map("amount_usd") @db.Decimal(10, 2)
+  creditsAdded       Int             @map("credits_added") @db.UnsignedInt
+  provider           PaymentProvider @default(VIETQR)
+  providerPaymentId  String?         @map("provider_payment_id") @db.VarChar(255)
+  providerCustomerId String?         @map("provider_customer_id") @db.VarChar(255)
+  status             PaymentStatus   @default(PENDING)
+  currency           String          @default("VND") @db.VarChar(3)
+  qrData             String?         @map("qr_data") @db.Text
+  qrImageBase64      String?         @map("qr_image_base64") @db.LongText
+  transactionCode    String?         @map("transaction_code") @db.VarChar(100)
+  bankTransactionId  String?         @map("bank_transaction_id") @db.VarChar(255)
+  receiptUrl         String?         @map("receipt_url") @db.VarChar(500)
+  failureMessage     String?         @map("failure_message") @db.Text
+  metadata           Json?
+  paidAt             DateTime?       @map("paid_at")
+  failedAt           DateTime?       @map("failed_at")
+  expiresAt          DateTime        @map("expires_at")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id])
 
@@ -552,17 +552,17 @@ model Payment {
 }
 
 model WebhookEvent {
-  id            String    @id @default(uuid()) @db.VarChar(36)
-  provider      String    @db.VarChar(50)
-  eventType     String    @map("event_type") @db.VarChar(100)
-  eventId       String    @map("event_id") @db.VarChar(255)
-  payload       Json
-  processed     Boolean   @default(false)
-  processedAt   DateTime? @map("processed_at")
-  errorMessage  String?   @map("error_message") @db.Text
-  retryCount    Int       @default(0) @map("retry_count")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id           String    @id @default(uuid()) @db.VarChar(36)
+  provider     String    @db.VarChar(50)
+  eventType    String    @map("event_type") @db.VarChar(100)
+  eventId      String    @map("event_id") @db.VarChar(255)
+  payload      Json
+  processed    Boolean   @default(false)
+  processedAt  DateTime? @map("processed_at")
+  errorMessage String?   @map("error_message") @db.Text
+  retryCount   Int       @default(0) @map("retry_count")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@unique([provider, eventId])
   @@index([provider, eventType])
@@ -711,8 +711,8 @@ model Playlist {
   name       String   @db.VarChar(200)
   coverUrl   String?  @map("cover_url") @db.Text
   totalItems Int      @default(0) @map("total_items") @db.UnsignedInt
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   playlistItems PlaylistItem[]
@@ -753,14 +753,14 @@ model ChapterComment {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
-  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chapter   Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  story     Story            @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  parent    ChapterComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   ChapterComment[] @relation("CommentReplies")
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter   Chapter           @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  story     Story             @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  parent    ChapterComment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   ChapterComment[]  @relation("CommentReplies")
   reactions CommentReaction[]
   reports   CommentReport[]
-  variant   ChapterVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  variant   ChapterVariant?   @relation(fields: [variantId], references: [id], onDelete: SetNull)
 
   variantId String? @map("variant_id") @db.VarChar(36)
 
@@ -786,7 +786,7 @@ model CommentReaction {
   type      CommentReactionType
   createdAt DateTime            @default(now()) @map("created_at")
 
-  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   comment ChapterComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId, type])
@@ -813,8 +813,8 @@ model CommentReport {
   createdAt DateTime            @default(now()) @map("created_at")
   updatedAt DateTime            @updatedAt @map("updated_at")
 
-  user    User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
-  comment ChapterComment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  comment ChapterComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([commentId])
@@ -824,33 +824,33 @@ model CommentReport {
 }
 
 model ChapterVariant {
-  id             String    @id @default(uuid()) @db.VarChar(36)
-  chapterId      String    @map("chapter_id") @db.VarChar(36)
-  parentId       String?   @map("parent_id") @db.VarChar(36)
-  nextChapterId  String?   @map("next_chapter_id") @db.VarChar(36)
-  nextVariantId  String?   @map("next_variant_id") @db.VarChar(36)
-  title          String    @db.VarChar(300)
-  description    String?   @db.Text
-  content        String?   @db.LongText
-  audioUrl       String?   @map("audio_url") @db.VarChar(500)
-  r2AudioUrl     String?   @map("r2_audio_url") @db.VarChar(500)
-  audioDuration  Int?      @map("audio_duration") @db.UnsignedInt
-  unlockPrice    Int       @default(0) @map("unlock_price") @db.UnsignedInt
-  orderIndex     Int       @default(0) @map("order_index") @db.UnsignedInt
-  isDefault      Boolean   @default(false) @map("is_default")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  deletedAt      DateTime? @map("deleted_at")
+  id            String    @id @default(uuid()) @db.VarChar(36)
+  chapterId     String    @map("chapter_id") @db.VarChar(36)
+  parentId      String?   @map("parent_id") @db.VarChar(36)
+  nextChapterId String?   @map("next_chapter_id") @db.VarChar(36)
+  nextVariantId String?   @map("next_variant_id") @db.VarChar(36)
+  title         String    @db.VarChar(300)
+  description   String?   @db.Text
+  content       String?   @db.LongText
+  audioUrl      String?   @map("audio_url") @db.VarChar(500)
+  r2AudioUrl    String?   @map("r2_audio_url") @db.VarChar(500)
+  audioDuration Int?      @map("audio_duration") @db.UnsignedInt
+  unlockPrice   Int       @default(0) @map("unlock_price") @db.UnsignedInt
+  orderIndex    Int       @default(0) @map("order_index") @db.UnsignedInt
+  isDefault     Boolean   @default(false) @map("is_default")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
 
-  chapter      Chapter         @relation("ChapterVariants", fields: [chapterId], references: [id], onDelete: Cascade)
-  parent       ChapterVariant? @relation("VariantHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  children     ChapterVariant[] @relation("VariantHierarchy")
-  nextChapter  Chapter?        @relation("VariantNextChapter", fields: [nextChapterId], references: [id], onDelete: SetNull)
-  
+  chapter     Chapter          @relation("ChapterVariants", fields: [chapterId], references: [id], onDelete: Cascade)
+  parent      ChapterVariant?  @relation("VariantHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children    ChapterVariant[] @relation("VariantHierarchy")
+  nextChapter Chapter?         @relation("VariantNextChapter", fields: [nextChapterId], references: [id], onDelete: SetNull)
+
   userUnlockedVariants UserUnlockedVariant[]
-  listeningHistory ListeningHistory[]
-  chapterComments  ChapterComment[]
-  
+  listeningHistory     ListeningHistory[]
+  chapterComments      ChapterComment[]
+
   @@index([chapterId])
   @@index([parentId])
   @@index([nextChapterId])
@@ -858,8 +858,8 @@ model ChapterVariant {
 }
 
 model UserUnlockedVariant {
-  userId    String   @map("user_id") @db.VarChar(36)
-  variantId String   @map("variant_id") @db.VarChar(36)
+  userId     String   @map("user_id") @db.VarChar(36)
+  variantId  String   @map("variant_id") @db.VarChar(36)
   unlockedAt DateTime @default(now()) @map("unlocked_at")
 
   user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -869,4 +869,32 @@ model UserUnlockedVariant {
   @@index([userId])
   @@index([variantId])
   @@map("user_unlocked_variants")
+}
+
+enum SocialPlatform {
+  facebook
+  telegram
+  zalo
+  instagram
+  twitter
+  reddit
+  discord
+  youtube
+  tiktok
+  other
+}
+
+model SocialLink {
+  id         String         @id @default(uuid()) @db.VarChar(36)
+  platform   SocialPlatform
+  label      String         @db.VarChar(100)
+  url        String         @db.VarChar(500)
+  iconUrl    String?        @map("icon_url") @db.Text
+  orderIndex Int            @default(0) @map("order_index") @db.UnsignedInt
+  isActive   Boolean        @default(true) @map("is_active")
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+
+  @@index([isActive, orderIndex])
+  @@map("social_links")
 }

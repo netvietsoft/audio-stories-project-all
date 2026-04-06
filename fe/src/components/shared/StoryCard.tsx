@@ -45,6 +45,7 @@ type StoryCardProps = {
   showFavoriteButton?: boolean;
   compactMobile?: boolean;
   profileCompact?: boolean;
+  hideMobileStats?: boolean;
 };
 
 const content = {
@@ -66,6 +67,7 @@ export default function StoryCard({
   showFavoriteButton = true,
   compactMobile = false,
   profileCompact = false,
+  hideMobileStats = false,
 }: StoryCardProps) {
   const t = useTranslations("StoryCard");
   const locale = useLocale();
@@ -243,25 +245,27 @@ export default function StoryCard({
         ) : null}
       </div>
 
-      <div className={`flex flex-1 flex-col ${profileCompact ? "min-h-[62px] p-1.5 pt-1.5" : "min-h-[96px] p-2 pt-2"}`}>
+      <div className={`flex flex-1 flex-col ${profileCompact ? "min-h-[62px] p-1.5 pt-1.5" : compactMobile && hideMobileStats ? "min-h-[65px] p-1 pt-1" : "min-h-[96px] p-2 pt-2"}`}>
         <h3
           className={`${profileCompact ? "line-clamp-1" : "line-clamp-2"} font-bold text-gray-900 transition-colors group-hover:text-pink-700 dark:text-white dark:group-hover:text-pink-300 ${
             profileCompact
               ? "text-[12px]"
-              : compactMobile
-                ? "text-[13px] sm:text-sm"
-                : "text-sm"
+              : compactMobile && hideMobileStats
+                ? "text-[11px] sm:text-[13px]"
+                : compactMobile
+                  ? "text-[13px] sm:text-sm"
+                  : "text-sm"
           }`}
         >
           {localizedTitle}
         </h3>
 
-        <p className={`truncate text-gray-500 dark:text-gray-400 ${profileCompact ? "mt-0.5 text-[10px]" : compactMobile ? "text-[11px] sm:text-xs" : "text-xs"}`}>
+        <p className={`truncate text-gray-500 dark:text-gray-400 ${profileCompact ? "mt-0.5 text-[10px]" : compactMobile && hideMobileStats ? "mt-0.5 text-[9px] sm:text-[10px]" : compactMobile ? "text-[11px] sm:text-xs" : "text-xs"}`}>
           {story.author?.name || t("updating")}
         </p>
 
         <div
-          className={`${compactMobile || profileCompact ? "flex" : "hidden sm:flex"} mt-auto items-center justify-between gap-1.5 ${profileCompact ? "pt-0.5 text-[10px]" : "pt-1 text-xs"} text-gray-500 dark:text-gray-400`}
+          className={`${hideMobileStats ? "hidden md:flex" : compactMobile || profileCompact ? "flex" : "hidden sm:flex"} mt-auto items-center justify-between gap-1.5 ${profileCompact ? "pt-0.5 text-[10px]" : "pt-1 text-xs"} text-gray-500 dark:text-gray-400`}
         >
           <div className="flex min-w-0 items-center gap-1">
             <Eye className={`${profileCompact ? "h-3 w-3" : "h-3.5 w-3.5"}`} />

@@ -37,7 +37,7 @@ export default function RecommendedSlider({ stories, lang, tone = "default" }: R
   const localContent = content[resolvedLang];
   const sectionClassName =
     tone === "reader"
-      ? "rounded-2xl border border-gray-200 bg-gray-50/80 p-4 dark:border-[#303133] dark:bg-[#232325]"
+      ? "rounded-2xl border border-gray-200 bg-gray-50/80 p-3 md:p-4 dark:border-[#303133] dark:bg-[#232325]"
       : "rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900";
   const cardClassName =
     tone === "reader"
@@ -51,8 +51,8 @@ export default function RecommendedSlider({ stories, lang, tone = "default" }: R
 
   return (
     <section className={sectionClassName}>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{localContent.title || t("title")}</h3>
+      <div className="mb-3 flex items-center justify-between gap-3 md:mb-4">
+        <h3 className="text-base font-semibold text-gray-900 md:text-lg dark:text-gray-100">{localContent.title || t("title")}</h3>
       </div>
 
       <div className="grid grid-cols-3 gap-2 md:grid-cols-8 md:gap-3">
@@ -64,6 +64,7 @@ export default function RecommendedSlider({ stories, lang, tone = "default" }: R
               lang={resolvedLang}
               showFavoriteButton={false}
               compactMobile
+              hideMobileStats={tone === "reader"}
             />
           </div>
         ))}

@@ -48,6 +48,7 @@ import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 import { useAuthModalStore } from "@/stores/auth-modal-store";
 import { useAuth } from "@/auth/auth-provider";
+import SocialLinks from "@/components/shared/SocialLinks";
 import { useViewTracking } from "@/hooks/use-view-tracking";
 
 const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
@@ -1837,6 +1838,9 @@ export default function StoryChapterClient() {
                   </div>
                 ) : null}
               </div>
+
+              {/* Social Links */}
+              <SocialLinks />
                 </section>
               </div>
             </div>
@@ -1867,6 +1871,9 @@ export default function StoryChapterClient() {
                   />
                 </div>
               )}
+              
+              {/* Social Links */}
+              <SocialLinks />
             </section>
             ) : null}
 

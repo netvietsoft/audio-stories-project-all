@@ -885,3 +885,31 @@ model UserUnlockedVariant {
   @@index([variantId])
   @@map("user_unlocked_variants")
 }
+
+enum SocialPlatform {
+  facebook
+  telegram
+  zalo
+  instagram
+  twitter
+  reddit
+  discord
+  youtube
+  tiktok
+  other
+}
+
+model SocialLink {
+  id         String         @id @default(uuid()) @db.VarChar(36)
+  platform   SocialPlatform
+  label      String         @db.VarChar(100)
+  url        String         @db.VarChar(500)
+  iconUrl    String?        @map("icon_url") @db.Text
+  orderIndex Int            @default(0) @map("order_index") @db.UnsignedInt
+  isActive   Boolean        @default(true) @map("is_active")
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+
+  @@index([isActive, orderIndex])
+  @@map("social_links")
+}

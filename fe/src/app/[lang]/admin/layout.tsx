@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from '@/components/shared/LocalizedLink';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift, Zap, Image as ImageIcon, Megaphone } from 'lucide-react';
+import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift, Zap, Image as ImageIcon, Megaphone, Share2 } from 'lucide-react';
 
 import { useState, useEffect } from 'react';
 import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
@@ -120,6 +120,7 @@ export default function AdminLayout({
         { href: '/admin/stories', label: 'Quản lý Truyện', icon: Newspaper },
         { href: '/admin/banners', label: 'Quản lý Banner Hero', icon: ImageIcon },
         { href: '/admin/ads', label: 'Quản lý Quảng cáo', icon: Megaphone },
+        { href: '/admin/social-links', label: 'Quản lý Link Cộng đồng', icon: Share2 },
         { href: '/admin/interactive-stories', label: 'Truyện Tương Tác', icon: Zap },
 
         { href: '/admin/categories', label: 'Quản lý Danh mục', icon: LayoutGrid },
@@ -183,30 +184,26 @@ export default function AdminLayout({
 
                 <div className={`p-4 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-6'}`}>
                     <div>
-                        <div className={`px-4 flex gap-3 transition-all duration-300 ${isCollapsed ? 'px-2 pb-3' : ''}`}>
+                        <div className={`flex gap-3 transition-all duration-300 ${isCollapsed ? 'flex-col px-2 pb-3' : 'px-4'}`}>
                             <button
                                 onClick={handleLogout}
                                 disabled={isLoggingOut}
-                                title={isCollapsed ? 'Đăng xuất' : ''}
-                                className={`flex w-full items-center justify-center rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-gray-200 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2f3031] dark:text-slate-200 dark:hover:bg-[#3a3b3c] ${isCollapsed ? 'p-2' : 'gap-2 px-4 py-2.5'}`}
+                                title="Đăng xuất"
+                                className={`flex items-center justify-center rounded-xl bg-gray-100 text-sm font-bold text-slate-700 transition-all hover:bg-gray-200 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2f3031] dark:text-slate-200 dark:hover:bg-[#3a3b3c] ${isCollapsed ? 'h-10 w-10 p-2' : 'h-10 w-full gap-2 px-4'}`}
                             >
                                 {isLoggingOut ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                    <>
-                                        <LogOut className="h-4 w-4 shrink-0" />
-                                        {!isCollapsed ? 'Đăng xuất' : null}
-                                    </>
+                                    <LogOut className="h-4 w-4 shrink-0" />
                                 )}
                             </button>
 
                             <Link
                                 href="/"
-                                title={isCollapsed ? 'Về trang chủ' : ''}
-                                className={`flex w-full items-center justify-center rounded-xl bg-[#ffddef] px-4 py-2.5 text-sm font-bold text-pink-700 transition-all active:scale-[0.98] hover:bg-pink-100 dark:bg-pink-950/30 dark:text-pink-200 dark:hover:bg-pink-950/45 ${isCollapsed ? 'p-2' : 'gap-2 px-4 py-2.5'}`}
+                                title="Về trang chủ"
+                                className={`flex items-center justify-center rounded-xl bg-[#ffddef] text-sm font-bold text-pink-700 transition-all active:scale-[0.98] hover:bg-pink-100 dark:bg-pink-950/30 dark:text-pink-200 dark:hover:bg-pink-950/45 ${isCollapsed ? 'h-10 w-10 p-2' : 'h-10 w-full gap-2 px-4'}`}
                             >
                                 <Home className="h-4 w-4 shrink-0" />
-                                {!isCollapsed ? 'Về trang chủ' : null}
                             </Link>
                         </div>
                     </div>

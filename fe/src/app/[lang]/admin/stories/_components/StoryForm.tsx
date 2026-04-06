@@ -131,6 +131,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
     });
 
     const titleVi = watch('titleVi');
+    const titleEn = watch('titleEn');
     const selectedLanguage = watch('language') || selectedLocale;
     const isEnglishLocale = selectedLanguage === 'en';
     const selectedAuthorId = watch('authorId');
@@ -212,21 +213,24 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Simple slugify for FE
+    // Simple slugify for FE - support both Vietnamese and English
     useEffect(() => {
-        if (!initialData?.slug && titleVi) {
-            const generatedSlug = titleVi
-                .toLowerCase()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/[đĐ]/g, 'd')
-                .replace(/[^a-z0-9\s-]/g, '')
-                .trim()
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-');
-            setValue('slug', generatedSlug);
+        if (!initialData?.slug) {
+            const sourceTitle = isEnglishLocale ? (titleEn || titleVi) : (titleVi || titleEn);
+            if (sourceTitle) {
+                const generatedSlug = sourceTitle
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[đĐ]/g, 'd')
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .trim()
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-');
+                setValue('slug', generatedSlug);
+            }
         }
-    }, [titleVi, setValue, initialData]);
+    }, [titleVi, titleEn, isEnglishLocale, setValue, initialData]);
 
     const handleFormSubmit = async (values: StoryFormValues) => {
         try {

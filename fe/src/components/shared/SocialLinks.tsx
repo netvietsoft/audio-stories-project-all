@@ -107,7 +107,7 @@ export default function SocialLinks() {
   if (links.length === 0) return null;
 
   const getTooltip = (platform: string) => {
-    const platformName = platformNames[platform]?.[locale] || platformNames.other[locale];
+    const platformName = platformNames[platform]?.[locale] || platformNames.other?.[locale] || 'Other';
     return locale === 'vi' 
       ? `Tham gia cộng đồng trên ${platformName}`
       : `Join our community on ${platformName}`;

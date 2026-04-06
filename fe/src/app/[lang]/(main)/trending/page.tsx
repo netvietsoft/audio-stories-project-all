@@ -35,18 +35,30 @@ export default function TrendingPage() {
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [trendWindow, setTrendWindow] = useState<"today" | "week" | "month" | "all">("week");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const loadStories = async () => {
-      const res = await fetchExploreCached<ExploreResponse>({
-        page,
-        limit: LIMIT,
-        sort: "views",
-        trendWindow,
-        lang,
-      });
-      setStories(res.data || []);
-      setLastPage(res.meta?.lastPage || 1);
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `/api/public/stories/trending?page=${page}&limit=${LIMIT}&trendWindow=${trendWindow}&lang=${lang}`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+        
+        const res: ExploreResponse = await response.json();
+        
+        console.log('Trending response:', res); // Debug log
+        setStories(res.data || []);
+        setLastPage(res.meta?.lastPage || 1);
+      } catch (error) {
+        console.error('Failed to load trending stories:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     void loadStories();
@@ -84,9 +96,19 @@ export default function TrendingPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        {stories.map((story) => (
-          <StoryGridCard key={story.id} story={story} highlightMode="trending" />
-        ))}
+        {isLoading ? (
+          <div className="col-span-2 flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
+          </div>
+        ) : stories.length === 0 ? (
+          <div className="col-span-2 text-center py-20 text-gray-500">
+            {t("noStories") || "No stories found"}
+          </div>
+        ) : (
+          stories.map((story) => (
+            <StoryGridCard key={story.id} story={story} highlightMode="trending" />
+          ))
+        )}
       </div>
 
       <div className="flex items-center justify-center gap-3">

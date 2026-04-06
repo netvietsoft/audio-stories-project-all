@@ -298,7 +298,8 @@
     "week": "Tuần",
     "month": "Tháng",
     "all": "Tất cả",
-    "views": "Lượt xem"
+    "views": "Lượt xem",
+    "noStories": "Không tìm thấy truyện"
   },
   "InteractivePage": {
     "title": "Truyện tình huống",
@@ -342,9 +343,9 @@
     "allStoriesTitle": "Tất cả tiểu thuyết",
     "relatedKeywords": "Các từ khóa liên quan đến {name}",
     "defaultKeywordTopic": "tiểu thuyết lịch sử",
-    "keyword1": "sói hoàng hôn",
-    "keyword2": "người sói trực tuyến",
-    "keyword3": "biến hình người sói nữ",
+    "keyword1": "Nhất Niệm Vĩnh Hằng",
+    "keyword2": "Tinh Thần Biến",
+    "keyword3": "Ngã Dục Phong Thiên",
     "popularSearches": "Tìm kiếm phổ biến",
     "categoryFallbackDescription": "Tiểu thuyết về {name} là một thể loại văn học miêu tả {name} và những sinh vật biến hình thần...",
     "selectAuthor": "Chọn tác giả...",

@@ -98,7 +98,9 @@ function ExploreContent() {
 
   const fetchFilterOptions = async () => {
     const [categoryRes, authorRes] = await Promise.all([
-      apiClient.get<CategoryOption[]>("/stories/categories"),
+      apiClient.get<CategoryOption[]>("/stories/categories", {
+        params: { language: lang }
+      }),
       apiClient.get<AuthorOption[]>("/stories/authors"),
     ]);
 
@@ -108,7 +110,8 @@ function ExploreContent() {
 
   useEffect(() => {
     fetchFilterOptions();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   useEffect(() => {
     fetchStories(1, true);

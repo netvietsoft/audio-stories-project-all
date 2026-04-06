@@ -638,9 +638,18 @@ export default function Navbar() {
               </div>
 
               <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
-                <Link href="/profile/topup" className="hidden xl:flex items-center gap-1.5 whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 md:px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors">
+                <button 
+                  onClick={() => {
+                    if (!user) {
+                      openLogin();
+                    } else {
+                      router.push(`/${currentLang}/profile/topup`);
+                    }
+                  }}
+                  className="hidden xl:flex items-center gap-1.5 whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 md:px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors"
+                >
                   <Coins className="h-4 w-4" /> <span className="hidden xl:inline">{t("topUp")}</span>
-                </Link>
+                </button>
 
                 {/* Chuông thông báo */}
                 <div className="relative hidden 2xl:flex flex-shrink-0" ref={notifMenuRef}>
@@ -969,14 +978,21 @@ export default function Navbar() {
                       <span className="text-sm font-medium">{t("listeningHistory")}</span>
                     </Link>
 
-                    <Link 
-                      href="/profile/topup" 
-                      onClick={closeMobileMenu} 
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                    <button 
+                      onClick={() => {
+                        if (!user) {
+                          openLogin();
+                          closeMobileMenu();
+                        } else {
+                          router.push(`/${currentLang}/profile/topup`);
+                          closeMobileMenu();
+                        }
+                      }}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors w-full text-left"
                     >
                       <Coins className="w-5 h-5" />
                       <span className="text-sm font-semibold">{t("topUp")}</span>
-                    </Link>
+                    </button>
 
                     <Link 
                       href="/profile" 

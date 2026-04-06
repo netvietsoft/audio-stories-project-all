@@ -299,7 +299,8 @@
     "week": "Week",
     "month": "Month",
     "all": "All",
-    "views": "Views"
+    "views": "Views",
+    "noStories": "No stories found"
   },
   "InteractivePage": {
     "title": "Scenario Stories",
@@ -343,9 +344,9 @@
     "allStoriesTitle": "All novels",
     "relatedKeywords": "Related keywords for {name}",
     "defaultKeywordTopic": "historical novels",
-    "keyword1": "twilight wolf",
-    "keyword2": "online werewolf",
-    "keyword3": "female werewolf transformation",
+    "keyword1": "Supreme God Emperor",
+    "keyword2": "Ancient Dragon Clan",
+    "keyword3": "Versatile Mage",
     "popularSearches": "Popular searches",
     "categoryFallbackDescription": "Stories about {name} are a literary genre describing {name} and mystical shapeshifting creatures...",
     "selectAuthor": "Select author...",

@@ -219,15 +219,33 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
             })}
           </h3>
           <div className="flex flex-wrap gap-2">
-            <span className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md cursor-pointer hover:bg-gray-200">
+            <button
+              onClick={() => {
+                setSearch(t("keyword1"));
+                setPage(1);
+              }}
+              className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
               {t("keyword1")}
-            </span>
-            <span className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md cursor-pointer hover:bg-gray-200">
+            </button>
+            <button
+              onClick={() => {
+                setSearch(t("keyword2"));
+                setPage(1);
+              }}
+              className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
               {t("keyword2")}
-            </span>
-            <span className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md cursor-pointer hover:bg-gray-200">
+            </button>
+            <button
+              onClick={() => {
+                setSearch(t("keyword3"));
+                setPage(1);
+              }}
+              className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            >
               {t("keyword3")}
-            </span>
+            </button>
           </div>
         </div>
 

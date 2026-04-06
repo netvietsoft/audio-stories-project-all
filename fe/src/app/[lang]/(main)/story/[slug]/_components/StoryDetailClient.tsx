@@ -514,14 +514,14 @@ export default function StoryDetailClient() {
       {recommendedStories.length > 0 && (
         <section className="app-component-surface p-3 sm:p-4 md:p-6 pb-2 md:pb-4 rounded-[5px]">
           <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">{t("youMightLike")}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+          <div className="grid grid-cols-3 gap-2 md:grid-cols-4 md:gap-4 lg:grid-cols-6">
             {recommendedStories.map((recommendedStory) => {
               const title = getLocalizedValue(locale, recommendedStory.titleVi, recommendedStory.titleEn, recommendedStory.title);
               return (
                 <Link
                   key={recommendedStory.id}
                   href={`/story/${recommendedStory.slug}`}
-                  className="group flex flex-col gap-2"
+                  className={`group flex flex-col gap-2 ${recommendedStories.indexOf(recommendedStory) >= 6 ? 'hidden md:flex' : ''}`}
                 >
                   <div className="relative w-full overflow-hidden rounded-lg shadow-md group-hover:shadow-xl transition-shadow" style={{ aspectRatio: "2/3" }}>
                     <Image
@@ -536,14 +536,14 @@ export default function StoryDetailClient() {
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col space-y-1">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+                  <div className="flex flex-col space-y-0.5">
+                    <h3 className="text-[12px] font-semibold leading-tight text-gray-900 dark:text-white line-clamp-1 md:line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
                       {title}
                     </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1">
                       {recommendedStory.author?.name || t("authorUpdating")}
                     </p>
-                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="hidden items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 md:flex">
                       <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
                       <span>{Number(recommendedStory.averageRating).toFixed(1)}</span>
                       <span className="mx-1">•</span>
@@ -561,14 +561,14 @@ export default function StoryDetailClient() {
       {newStories.length > 0 && (
         <section className="app-component-surface p-3 sm:p-4 md:p-6 pb-2 md:pb-4 rounded-[5px]">
           <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">{t("newArrivals")}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+          <div className="grid grid-cols-3 gap-2 md:grid-cols-4 md:gap-4 lg:grid-cols-6">
             {newStories.map((newStory) => {
               const title = getLocalizedValue(locale, newStory.titleVi, newStory.titleEn, newStory.title);
               return (
                 <Link
                   key={newStory.id}
                   href={`/story/${newStory.slug}`}
-                  className="group flex flex-col gap-2"
+                  className={`group flex flex-col gap-2 ${newStories.indexOf(newStory) >= 6 ? 'hidden md:flex' : ''}`}
                 >
                   <div className="relative w-full overflow-hidden rounded-lg shadow-md group-hover:shadow-xl transition-shadow" style={{ aspectRatio: "2/3" }}>
                     <Image
@@ -583,14 +583,14 @@ export default function StoryDetailClient() {
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col space-y-1">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+                  <div className="flex flex-col space-y-0.5">
+                    <h3 className="text-[12px] font-semibold leading-tight text-gray-900 dark:text-white line-clamp-1 md:line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
                       {title}
                     </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-1">
                       {newStory.author?.name || t("authorUpdating")}
                     </p>
-                    <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="hidden items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 md:flex">
                       <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
                       <span>{Number(newStory.averageRating).toFixed(1)}</span>
                       <span className="mx-1">•</span>

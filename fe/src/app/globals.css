@@ -44,6 +44,14 @@ body {
   border-radius: var(--app-component-radius);
 }
 
+.app-button-surface {
+  background: var(--app-button-bg);
+}
+
+.app-dropdown-surface {
+  background: var(--app-component-bg);
+}
+
 /* Global corner standardization: all non-pill rounded corners use 10px */
 :where(
   .rounded,

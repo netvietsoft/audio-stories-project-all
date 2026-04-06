@@ -85,7 +85,8 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
       const res = await apiClient.get<{ data: CategoryItem[] }>("/stories/categories-with-count", {
         params: { language: locale, _t: Date.now() }
       });
-      setCategories([{ id: 0, name: t("allCategories"), slug: "all", storiesCount: 0 }, ...(res.data.data || [])]);
+      const totalCount = (res.data.data || []).reduce((sum, cat) => sum + cat.storiesCount, 0);
+      setCategories([{ id: 0, name: t("allCategories"), slug: "all", storiesCount: totalCount }, ...(res.data.data || [])]);
     };
     
     const loadAuthors = async () => {
@@ -189,9 +190,32 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
     <div className="space-y-2">
       <Breadcrumbs items={breadcrumbItems} lang={locale === "en" ? "en" : "vi"} />
 
-      <div className="mx-auto px-4 py-8 flex flex-col md:flex-row gap-8">
-      {/* LEFT SIDEBAR */}
-      <div className="w-full md:w-80 flex-shrink-0 space-y-8">
+      <div className="mx-auto px-2 pt-3 pb-6 sm:px-3 sm:pt-4 md:px-4 md:pt-6 md:pb-8">
+      {/* MOBILE CATEGORIES GRID */}
+      <div className="grid grid-cols-4 gap-1.5 mb-4 md:hidden">
+        {categories.map((cat) => {
+          const isActive = cat.slug === activeSlug;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => handleCategoryClick(cat.slug)}
+              className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 px-1.5 py-1 rounded-lg transition-all ${isActive
+                ? "bg-gray-300 text-slate-900 dark:bg-gray-600 dark:text-white"
+                : "app-button-surface text-gray-700 dark:text-gray-200"
+                }`}
+            >
+              <span className="text-[11px] font-semibold leading-tight text-center line-clamp-2">
+                {getLocalizedValue(locale, cat.nameVi, cat.nameEn, cat.name)}
+              </span>
+              <span className="text-[10px] opacity-75">{cat.storiesCount}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-8">
+      {/* SIDEBAR - Hidden on mobile */}
+      <div className="hidden md:block w-full md:w-80 flex-shrink-0 space-y-8">
         {/* Category List */}
         <div className="grid grid-cols-2 gap-2">
           {categories.map((cat) => {
@@ -275,25 +299,78 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
         )}
 
         {/* Filters and Sorting */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-8">
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full flex-1">
-            <input
-              type="text"
-              placeholder={t("searchStoriesPlaceholder")}
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 w-full lg:max-w-[20rem] min-w-0"
-            />
-            
+        <div className="flex flex-col gap-3 mb-8">
+          {/* Author Dropdown - First */}
+          <div className="relative z-30 w-full">
+            <button
+              onClick={() => {
+                setAuthorDropdownOpen(!authorDropdownOpen);
+                setStatusDropdownOpen(false);
+                setSortDropdownOpen(false);
+              }}
+              className="app-dropdown-surface flex items-center justify-between w-full text-slate-900 dark:text-white rounded-lg px-4 py-2 text-sm"
+            >
+              <span className="truncate">
+                {selectedAuthor ? selectedAuthor.name : t("selectAuthor")}
+              </span>
+              <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
+            </button>
+
+            {authorDropdownOpen && (
+                <div className="app-dropdown-surface absolute left-0 mt-2 w-full rounded-lg shadow-lg py-1 p-2 z-40">
+                <input
+                  type="text"
+                  placeholder={t("searchAuthorPlaceholder")}
+                  value={authorSearch}
+                  onChange={(e) => setAuthorSearch(e.target.value)}
+                  className="app-button-surface w-full rounded-md px-3 py-1.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-400/30 mb-1"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <div className="max-h-60 overflow-y-auto">
+                  <button 
+                    onClick={() => { setAuthor(""); setPage(1); setAuthorDropdownOpen(false); setAuthorSearch(""); }}
+                    className="flex justify-between items-center w-full px-3 py-2 text-sm text-left hover:bg-gray-200 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-300 rounded-md"
+                  >
+                    <span className={!author ? "font-semibold text-slate-900 dark:text-white" : ""}>
+                      {t("allAuthors")}
+                    </span>
+                    {!author && <span className="text-slate-800 dark:text-gray-200">✓</span>}
+                  </button>
+                  
+                  {filteredAuthors.map(a => (
+                    <button 
+                      key={a.id}
+                      onClick={() => { setAuthor(a.id); setPage(1); setAuthorDropdownOpen(false); }}
+                      className="flex justify-between items-center w-full px-3 py-2 text-sm text-left hover:bg-gray-200 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-300 rounded-md"
+                    >
+                      <span className={author === a.id ? "font-semibold text-slate-900 dark:text-white truncate" : "truncate"}>
+                        {a.name}
+                      </span>
+                      {author === a.id && <span className="text-slate-800 dark:text-gray-200 flex-shrink-0 ml-2">✓</span>}
+                    </button>
+                  ))}
+                  
+                  {filteredAuthors.length === 0 && (
+                    <div className="px-3 py-4 text-sm text-center text-slate-500">
+                      {t("authorNotFound")}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Status and Sort row on mobile */}
+          <div className="flex gap-3">
             {/* Status Dropdown */}
-            <div className="relative z-20 w-full sm:w-auto flex-shrink-0">
+            <div className="relative z-20 flex-1">
               <button
                 onClick={() => {
                   setStatusDropdownOpen(!statusDropdownOpen);
                   setAuthorDropdownOpen(false);
                   setSortDropdownOpen(false);
                 }}
-                className="flex items-center justify-between w-full sm:w-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 text-slate-900 dark:text-white rounded-lg px-4 py-2 text-sm"
+                className="app-dropdown-surface flex items-center justify-between w-full text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
               >
                 <span>
                   {status === "" && t("allStatuses")}
@@ -304,7 +381,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
               </button>
 
               {statusDropdownOpen && (
-                <div className="absolute left-0 mt-2 w-full sm:w-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1">
+                <div className="app-dropdown-surface absolute left-0 mt-2 w-full rounded-lg shadow-lg py-1 z-40">
                   {[
                     { id: "", label: t("allStatuses") },
                     { id: "ongoing", label: t("ongoing") },
@@ -317,13 +394,13 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
                         setPage(1);
                         setStatusDropdownOpen(false);
                       }}
-                      className="flex justify-between items-center w-full px-4 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      className="flex justify-between items-center w-full px-3 py-2 text-sm text-left hover:bg-gray-200 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-300"
                     >
-                      <span className={status === s.id ? "font-semibold text-pink-600 dark:text-pink-400" : ""}>
+                      <span className={status === s.id ? "font-semibold text-slate-900 dark:text-white" : ""}>
                         {s.label}
                       </span>
                       {status === s.id && (
-                        <span className="text-pink-600 dark:text-pink-400">✓</span>
+                        <span className="text-slate-800 dark:text-gray-200">✓</span>
                       )}
                     </button>
                   ))}
@@ -331,109 +408,49 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
               )}
             </div>
 
-            {/* Author Dropdown */}
-            <div className="relative z-20 w-full sm:w-auto flex-shrink-0">
+            {/* Sort Dropdown */}
+            <div className="relative z-10 flex-1">
               <button
                 onClick={() => {
-                  setAuthorDropdownOpen(!authorDropdownOpen);
+                  setSortDropdownOpen(!sortDropdownOpen);
                   setStatusDropdownOpen(false);
-                  setSortDropdownOpen(false);
+                  setAuthorDropdownOpen(false);
                 }}
-                className="flex items-center justify-between w-full sm:w-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 text-slate-900 dark:text-white rounded-lg px-4 py-2 text-sm"
+                className="app-dropdown-surface flex items-center justify-between w-full text-slate-900 dark:text-white rounded-lg px-3 py-2 font-medium text-sm transition-colors"
               >
-                <span className="truncate">
-                  {selectedAuthor ? selectedAuthor.name : t("selectAuthor")}
-                </span>
-                <ChevronDown className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                <span className="truncate">{selectedSortLabel}</span>
+                <ChevronDown className="h-4 w-4 text-gray-500" />
               </button>
 
-              {authorDropdownOpen && (
-                <div className="absolute left-0 mt-2 w-full sm:w-64 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 p-2">
-                   <input
-                      type="text"
-                     placeholder={t("searchAuthorPlaceholder")}
-                      value={authorSearch}
-                      onChange={(e) => setAuthorSearch(e.target.value)}
-                      className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/20 mb-1"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <div className="max-h-60 overflow-y-auto mt-1">
-                      <button 
-                        onClick={() => { setAuthor(""); setPage(1); setAuthorDropdownOpen(false); setAuthorSearch(""); }}
-                        className="flex justify-between items-center w-full px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md"
-                      >
-                        <span className={!author ? "font-semibold text-pink-600 dark:text-pink-400" : ""}>
-                          {t("allAuthors")}
-                        </span>
-                        {!author && <span className="text-pink-600 dark:text-pink-400">✓</span>}
-                      </button>
-                      
-                      {filteredAuthors.map(a => (
-                        <button 
-                          key={a.id}
-                          onClick={() => { setAuthor(a.id); setPage(1); setAuthorDropdownOpen(false); }}
-                          className="flex justify-between items-center w-full px-3 py-2 text-sm text-left hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md"
-                        >
-                          <span className={author === a.id ? "font-semibold text-pink-600 dark:text-pink-400 truncate" : "truncate"}>
-                            {a.name}
-                          </span>
-                          {author === a.id && <span className="text-pink-600 dark:text-pink-400 flex-shrink-0 ml-2">✓</span>}
-                        </button>
-                      ))}
-                      
-                      {filteredAuthors.length === 0 && (
-                        <div className="px-3 py-4 text-sm text-center text-slate-500">
-                          {t("authorNotFound")}
-                        </div>
+              {sortDropdownOpen && (
+                <div className="app-dropdown-surface absolute right-0 mt-2 w-full rounded-lg shadow-lg py-1 z-40">
+                  {[
+                    { id: "latest", label: t("sortLatest") },
+                    { id: "views", label: t("sortViews") },
+                    { id: "rating", label: t("sortRating") },
+                    { id: "title_asc", label: t("sortTitle") },
+                    { id: "chapters_desc", label: t("sortChapters") },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => {
+                        setSort(s.id as any);
+                        setPage(1);
+                        setSortDropdownOpen(false);
+                      }}
+                      className="flex justify-between items-center w-full px-4 py-2.5 text-sm text-left hover:bg-gray-200 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-300"
+                    >
+                      <span className={sort === s.id ? "font-semibold text-slate-900 dark:text-white" : ""}>
+                        {s.label}
+                      </span>
+                      {sort === s.id && (
+                        <span className="text-slate-800 dark:text-gray-200">✓</span>
                       )}
-                    </div>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Sort Dropdown */}
-          <div className="relative z-10 w-full lg:w-auto flex-shrink-0">
-            <button
-              onClick={() => {
-                setSortDropdownOpen(!sortDropdownOpen);
-                setStatusDropdownOpen(false);
-                setAuthorDropdownOpen(false);
-              }}
-              className="flex items-center justify-between w-full lg:w-44 bg-pink-50 dark:bg-pink-900/20 border border-pink-100 dark:border-pink-800 text-slate-900 dark:text-white rounded-lg px-4 py-2 font-medium text-sm"
-            >
-              <span>{selectedSortLabel}</span>
-              <ChevronDown className="h-4 w-4 text-gray-500" />
-            </button>
-
-            {sortDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-full sm:w-44 bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1">
-                {[
-                  { id: "latest", label: t("sortLatest") },
-                  { id: "views", label: t("sortViews") },
-                  { id: "rating", label: t("sortRating") },
-                  { id: "title_asc", label: t("sortTitle") },
-                  { id: "chapters_desc", label: t("sortChapters") },
-                ].map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => {
-                      setSort(s.id as any);
-                      setPage(1);
-                      setSortDropdownOpen(false);
-                    }}
-                    className="flex justify-between items-center w-full px-4 py-2.5 text-sm text-left hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-                  >
-                    <span className={sort === s.id ? "font-semibold text-pink-600 dark:text-pink-400" : ""}>
-                      {s.label}
-                    </span>
-                    {sort === s.id && (
-                      <span className="text-pink-600 dark:text-pink-400">✓</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
@@ -465,6 +482,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
           </div>
         )}
       </div>
+      </div>
     </div>
     </div>
   );
@@ -475,6 +493,7 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
   const rating = Number(story.averageRating || 0).toFixed(1);
   const views = story.totalViews > 1000 ? (story.totalViews / 1000).toFixed(1) + 'K' : story.totalViews;
   const localizedTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
+  const storyIntro = (story.description || t("storyFallbackDescription")).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
   return (
     <div className="flex gap-3 sm:gap-4 group cursor-pointer overflow-hidden p-2">
@@ -491,7 +510,7 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
       <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
         <div>
           <Link href={`/story/${story.slug}`} className="block">
-            <h3 className="font-bold text-base sm:text-lg md:text-xl text-slate-900 dark:text-white line-clamp-2 group-hover:text-pink-600 transition-colors">
+            <h3 className="font-semibold text-sm sm:text-base md:text-lg text-slate-900 dark:text-white line-clamp-2 group-hover:text-pink-600 transition-colors">
               {localizedTitle}
             </h3>
           </Link>
@@ -511,8 +530,8 @@ function HorizontalStoryCard({ story, locale }: { story: StoryItem; locale: stri
           <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mt-1 sm:mt-1.5 truncate">
             {story.author?.name || t("updating")}
           </p>
-          <p className="hidden sm:block text-sm text-gray-500 dark:text-gray-400 mt-1.5 line-clamp-3 leading-relaxed">
-            {story.description || t("storyFallbackDescription")}
+          <p className="text-[11px] sm:text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 sm:line-clamp-3 leading-relaxed">
+            {storyIntro}
           </p>
         </div>
 

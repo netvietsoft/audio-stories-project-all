@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import NextImage from 'next/image';
 import {
     Loader2,
     Save,
@@ -947,7 +948,14 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             <div className="relative group flex flex-col items-center">
                                 {watch('thumbnailUrl') ? (
                                     <div className="relative inline-block">
-                                        <img src={watch('thumbnailUrl')} alt="Thumbnail" className="w-32 h-32 object-cover rounded-[24px] shadow-sm border border-slate-200" />
+                                        <NextImage
+                                            src={watch('thumbnailUrl') || ''}
+                                            alt="Thumbnail"
+                                            width={128}
+                                            height={128}
+                                            className="w-32 h-32 object-cover rounded-[24px] shadow-sm border border-slate-200"
+                                            unoptimized
+                                        />
                                         <button
                                             type="button"
                                             onClick={async () => {

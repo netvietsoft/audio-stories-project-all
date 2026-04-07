@@ -596,6 +596,43 @@ export class UserFeaturesService {
       ]);
 
       const pendingAll = new Map<string, PendingHistoryPayload>([...pendingMain, ...pendingProcessing]);
+      const pendingChapterIds = [
+        ...new Set(Array.from(pendingAll.values()).map((pending) => pending.chapterId)),
+      ];
+
+      const pendingChapters = pendingChapterIds.length
+        ? await this.prisma.chapter.findMany({
+            where: {
+              id: { in: pendingChapterIds },
+            },
+            select: {
+              id: true,
+              storyId: true,
+              chapterNumber: true,
+              title: true,
+              audioDuration: true,
+              r2AudioUrl: true,
+              story: {
+                select: {
+                  id: true,
+                  slug: true,
+                  title: true,
+                  thumbnailUrl: true,
+                  totalViews: true,
+                  status: true,
+                  author: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          })
+        : [];
+
+      const pendingChapterMap = new Map(pendingChapters.map((chapter) => [chapter.id, chapter]));
 
       for (const [chapterId, pending] of pendingAll.entries()) {
         const existing = merged.get(chapterId);
@@ -609,33 +646,7 @@ export class UserFeaturesService {
           continue;
         }
 
-        const chapter = await this.prisma.chapter.findUnique({
-          where: { id: pending.chapterId },
-          select: {
-            id: true,
-            storyId: true,
-            chapterNumber: true,
-            title: true,
-            audioDuration: true,
-            r2AudioUrl: true,
-            story: {
-              select: {
-                id: true,
-                slug: true,
-                title: true,
-                thumbnailUrl: true,
-                totalViews: true,
-                status: true,
-                author: {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                },
-              },
-            },
-          },
-        });
+        const chapter = pendingChapterMap.get(pending.chapterId);
 
         if (!chapter || !chapter.storyId) continue;
 

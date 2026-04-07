@@ -313,6 +313,7 @@ export default function StoryChapterClient() {
   const [openNestedDropdowns, setOpenNestedDropdowns] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
   const lastRestoredHistoryKeyRef = useRef<string | null>(null);
+  const hydratedChapterIdsRef = useRef<Set<string>>(new Set());
 
   const setUser = useUserStore((state) => state.setUser);
 
@@ -361,6 +362,40 @@ export default function StoryChapterClient() {
     [loadReviews, reviewSort],
   );
 
+  const normalizeVariant = useCallback(
+    (variant: any): ChapterVariant => ({
+      ...variant,
+      title: getLocalizedValue(locale, variant.titleVi, variant.titleEn, variant.title),
+      content: getLocalizedValue(locale, variant.contentVi, variant.contentEn, variant.content || ""),
+      audioUrl: getLocalizedValue(
+        locale,
+        variant.audioUrlVi,
+        variant.audioUrlEn,
+        !variant.audioUrlVi && !variant.audioUrlEn ? (variant.audioUrl || variant.r2AudioUrl || "") : "",
+      ).trim(),
+    }),
+    [locale],
+  );
+
+  const normalizeChapter = useCallback(
+    (chapter: any): ChapterItem => ({
+      ...chapter,
+      isInteractive: chapter.isInteractive,
+      variants: (chapter.variants || []).map((variant: any) => normalizeVariant(variant)),
+      title: getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title),
+      description: getLocalizedValue(locale, chapter.descriptionVi, chapter.descriptionEn, chapter.description || ""),
+      content: getLocalizedValue(locale, chapter.contentVi, chapter.contentEn, chapter.content || ""),
+      r2AudioUrl:
+        getLocalizedValue(
+          locale,
+          chapter.audioUrlVi,
+          chapter.audioUrlEn,
+          !chapter.audioUrlVi && !chapter.audioUrlEn ? (chapter.r2AudioUrl || chapter.audioUrl || "") : "",
+        ) || null,
+    }),
+    [locale, normalizeVariant],
+  );
+
   // Initialize mounted flag for portal rendering
   useEffect(() => {
     setMounted(true);
@@ -405,15 +440,7 @@ export default function StoryChapterClient() {
           isInteractive: detail.isInteractive,
           title: getLocalizedValue(locale, detail.titleVi, detail.titleEn, detail.title),
           description: getLocalizedValue(locale, detail.descriptionVi, detail.descriptionEn, detail.description),
-          chapters: (detail.chapters || []).map((chapter) => ({
-            ...chapter,
-            isInteractive: chapter.isInteractive,
-            variants: chapter.variants || [],
-            title: getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title),
-            description: getLocalizedValue(locale, chapter.descriptionVi, chapter.descriptionEn, chapter.description || ""),
-            content: getLocalizedValue(locale, chapter.contentVi, chapter.contentEn, chapter.content || ""),
-            r2AudioUrl: getLocalizedValue(locale, chapter.audioUrlVi, chapter.audioUrlEn, chapter.r2AudioUrl || "") || null,
-          })),
+          chapters: (detail.chapters || []).map((chapter) => normalizeChapter(chapter)),
         };
 
         const normalizedRecommended = recommendedData.map((item) => ({
@@ -462,7 +489,65 @@ export default function StoryChapterClient() {
     };
 
     fetchDetail();
-  }, [chapterSlug, locale, router, slug]);
+  }, [chapterSlug, locale, normalizeChapter, router, slug]);
+
+  useEffect(() => {
+    if (!story || !selectedChapterId) return;
+
+    const chapter = story.chapters.find((item) => item.id === selectedChapterId);
+    if (!chapter) return;
+
+    const hasChapterContent = Boolean(chapter.content && chapter.content.trim().length > 0);
+    const hasVariantContent = (chapter.variants || []).every((variant) => typeof variant.content === 'string');
+    const needsHydration = !hasChapterContent || !hasVariantContent;
+
+    if (!needsHydration || hydratedChapterIdsRef.current.has(selectedChapterId)) return;
+
+    let cancelled = false;
+
+    const fetchChapterDetail = async () => {
+      try {
+        const response = await apiClient.get(`/chapters/${selectedChapterId}/public`);
+        if (cancelled) return;
+
+        const normalizedChapter = normalizeChapter(response.data);
+        hydratedChapterIdsRef.current.add(selectedChapterId);
+
+        setStory((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            chapters: prev.chapters.map((item) =>
+              item.id === selectedChapterId
+                ? {
+                    ...item,
+                    ...normalizedChapter,
+                  }
+                : item,
+            ),
+          };
+        });
+
+        const nextVariants = normalizedChapter.variants || [];
+        setVariants(nextVariants);
+        setSelectedVariantId((prev) => {
+          if (!nextVariants.length) return null;
+          if (prev && nextVariants.some((variant) => variant.id === prev)) return prev;
+          const defaultVariant = nextVariants.find((variant) => variant.isDefault);
+          return defaultVariant?.id || nextVariants[0]?.id || null;
+        });
+      } catch (error) {
+        hydratedChapterIdsRef.current.add(selectedChapterId);
+        console.error('Failed to hydrate chapter detail:', error);
+      }
+    };
+
+    void fetchChapterDetail();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [normalizeChapter, selectedChapterId, story]);
 
   useEffect(() => {
     if (!story) return;

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Facebook, Send, MessageCircle, Instagram, Twitter, Youtube, Music } from 'lucide-react';
 import { apiClient } from '@/lib/api/api-client';
 import { useLocale, useTranslations } from 'next-intl';
+import Image from 'next/image';
 
 type SocialLink = {
   id: string;
@@ -138,7 +139,7 @@ export default function SocialLinks() {
               className={`inline-flex h-10 w-10 items-center justify-center rounded-full border-2 bg-white dark:bg-[#242526] shadow-sm transition-all ${colors.border} ${colors.hover}`}
             >
               {link.iconUrl ? (
-                <img src={link.iconUrl} alt={link.label} className="h-5 w-5 object-contain" />
+                <Image src={link.iconUrl} alt={link.label} width={20} height={20} className="h-5 w-5 object-contain" unoptimized />
               ) : (
                 <Icon className={`h-5 w-5 ${colors.icon}`} />
               )}

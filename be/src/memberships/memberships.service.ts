@@ -130,6 +130,7 @@ export class MembershipsService {
     async sendMembershipExpiryReminders() {
         const now = new Date();
         const threshold = new Date(now.getTime() + 72 * 60 * 60 * 1000);
+        const reminderWindowStart = new Date(now.getTime() - 23 * 60 * 60 * 1000);
 
         const rows = await this.prisma.membership.findMany({
             where: {
@@ -151,43 +152,73 @@ export class MembershipsService {
             take: 500,
         });
 
-        for (const membership of rows) {
-            const diffHours = Math.ceil((membership.endDate.getTime() - now.getTime()) / (60 * 60 * 1000));
-            const reminderHour = this.resolveReminderHour(diffHours);
-            if (!reminderHour) continue;
+        const candidates = rows
+            .map((membership) => {
+                const diffHours = Math.ceil((membership.endDate.getTime() - now.getTime()) / (60 * 60 * 1000));
+                const reminderHour = this.resolveReminderHour(diffHours);
+                if (!reminderHour) return null;
 
-            const title = `Hoi vien sap het han trong ${reminderHour} gio`;
-            const existed = await this.prisma.notification.findFirst({
-                where: {
+                return {
+                    membership,
+                    reminderHour,
+                    title: `Hoi vien sap het han trong ${reminderHour} gio`,
+                };
+            })
+            .filter(
+                (
+                    item,
+                ): item is {
+                    membership: (typeof rows)[number];
+                    reminderHour: number;
+                    title: string;
+                } => Boolean(item),
+            );
+
+        if (candidates.length === 0) return;
+
+        const userIds = [...new Set(candidates.map((item) => item.membership.userId))];
+        const titles = [...new Set(candidates.map((item) => item.title))];
+
+        const existedRows = await this.prisma.notification.findMany({
+            where: {
+                userId: { in: userIds },
+                type: 'membership_expiry',
+                title: { in: titles },
+                createdAt: { gte: reminderWindowStart },
+            },
+            select: {
+                userId: true,
+                title: true,
+            },
+        });
+
+        const existedSet = new Set(existedRows.map((item) => `${item.userId}:${item.title}`));
+        const createRows: Prisma.NotificationCreateManyInput[] = [];
+
+        for (const { membership, reminderHour, title } of candidates) {
+            const shouldSendBell = Boolean(membership.user.allowBellNoti);
+            const shouldSendEmail = Boolean(membership.user.allowEmailNoti);
+            if (!shouldSendBell && !shouldSendEmail) continue;
+
+            const dedupeKey = `${membership.userId}:${title}`;
+            if (existedSet.has(dedupeKey)) continue;
+            existedSet.add(dedupeKey);
+
+            if (shouldSendBell) {
+                createRows.push({
                     userId: membership.userId,
                     type: 'membership_expiry',
                     title,
-                    createdAt: {
-                        gte: new Date(now.getTime() - 23 * 60 * 60 * 1000),
-                    },
-                },
-                select: { id: true },
-            });
-
-            if (existed) continue;
-
-            if (membership.user.allowBellNoti) {
-                await this.prisma.notification.create({
-                    data: {
-                        userId: membership.userId,
-                        type: 'membership_expiry',
-                        title,
-                        body: `Goi hoi vien cua ban se het han luc ${membership.endDate.toLocaleString('vi-VN')}.`,
-                        metadata: {
-                            membershipId: membership.id,
-                            endDate: membership.endDate.toISOString(),
-                            reminderHour,
-                        },
+                    body: `Goi hoi vien cua ban se het han luc ${membership.endDate.toLocaleString('vi-VN')}.`,
+                    metadata: {
+                        membershipId: membership.id,
+                        endDate: membership.endDate.toISOString(),
+                        reminderHour,
                     },
                 });
             }
 
-            if (membership.user.allowEmailNoti) {
+            if (shouldSendEmail) {
                 try {
                     await this.mailService.sendMembershipExpiryReminder(
                         membership.user.email,
@@ -198,6 +229,13 @@ export class MembershipsService {
                     this.logger.error(`Send membership reminder failed for ${membership.user.email}: ${error}`);
                 }
             }
+        }
+
+        if (createRows.length > 0) {
+            await this.prisma.notification.createMany({
+                data: createRows,
+                skipDuplicates: true,
+            });
         }
     }
 }

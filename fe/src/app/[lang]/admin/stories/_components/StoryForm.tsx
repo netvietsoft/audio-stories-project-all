@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import NextImage from 'next/image';
 import {
     Loader2,
     Save,
@@ -794,7 +795,13 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                         {/* Preview if either a selected local file or existing URL is present */}
                         {selectedFilePreview || watch('thumbnailUrl') ? (
                             <div className="relative group w-full aspect-[2/3] md:w-48 overflow-hidden rounded-[32px] border-4 border-white shadow-2xl transition-transform hover:scale-[1.02] mx-auto md:mx-0">
-                                <img src={selectedFilePreview ?? watch('thumbnailUrl') ?? ''} alt="Thumbnail" className="w-full h-full object-cover" />
+                                <NextImage
+                                    src={selectedFilePreview ?? watch('thumbnailUrl') ?? ''}
+                                    alt="Thumbnail"
+                                    fill
+                                    className="w-full h-full object-cover"
+                                    unoptimized
+                                />
                                 <div className="absolute top-4 right-4 flex items-center gap-2">
                                     {selectedFile && (
                                         <button

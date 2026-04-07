@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "@/components/shared/LocalizedLink";
+import Image from "next/image";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
@@ -769,7 +770,14 @@ export default function Navbar() {
                     }
                     className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   >
-                    <img src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} alt="Avatar" className="h-8 w-8 rounded-full bg-gray-200" />
+                    <Image
+                      src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`}
+                      alt="Avatar"
+                      width={32}
+                      height={32}
+                      className="h-8 w-8 rounded-full bg-gray-200 object-cover"
+                      unoptimized
+                    />
                   </button>
 
                   {/* Dropdown User */}
@@ -830,10 +838,13 @@ export default function Navbar() {
             {user ? (
               <div className="p-4 border-b border-gray-200 dark:border-gray-800">
                 <div className="flex items-center gap-3">
-                  <img 
-                    src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`} 
-                    alt="Avatar" 
-                    className="h-12 w-12 rounded-full border-2 border-pink-500 object-cover" 
+                  <Image
+                    src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || user.email}`}
+                    alt="Avatar"
+                    width={48}
+                    height={48}
+                    className="h-12 w-12 rounded-full border-2 border-pink-500 object-cover"
+                    unoptimized
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 dark:text-white truncate text-sm">{user.name || user.email}</p>

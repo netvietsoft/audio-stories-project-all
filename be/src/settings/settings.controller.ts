@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards, NotFoundException } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { CreateSettingDto } from './dto/create-setting.dto';
@@ -8,6 +8,8 @@ import { RolesGuard } from '@/auth/guards/roles.guard';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { Public } from '@/auth/decorators/public.decorator';
 import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
+
+const PUBLIC_KEYS = new Set<string>(['ad_insertion_frequency']);
 
 @Controller('settings')
 export class SettingsController {
@@ -36,6 +38,9 @@ export class SettingsController {
     @Get(':key')
     @Public()
     findSystemConfigByKey(@Param('key') key: string) {
+        if (!PUBLIC_KEYS.has(key)) {
+            throw new NotFoundException(`Setting with key "${key}" not found`);
+        }
         return this.settingsService.getSystemConfigByKey(key);
     }
 

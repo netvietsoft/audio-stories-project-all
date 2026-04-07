@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { Music2 } from "lucide-react";
+import { Music2, Play } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import MusicStickyPlayer, { type MusicTrack } from "@/components/player/MusicStickyPlayer";
@@ -183,6 +183,10 @@ export default function MusicPage() {
     setPlaySignal((prev) => prev + 1);
   };
 
+  const selectTrack = (trackId: string) => {
+    setCurrentTrackId(trackId);
+  };
+
   return (
     <div className="space-y-6 pb-40">
       <section className="rounded-2xl border border-[#2a2a2a] bg-gradient-to-r from-[#1f1f1f] via-[#171717] to-[#121212] p-5 text-zinc-100 sm:p-7">
@@ -237,16 +241,24 @@ export default function MusicPage() {
               const isActive = currentTrack?.id === track.id;
 
               return (
-                <button
+                <article
                   key={track.id}
-                  onClick={() => playTrack(track)}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => selectTrack(track.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      selectTrack(track.id);
+                    }
+                  }}
                   className={`group rounded-xl border p-2 text-left transition ${
                     isActive
                       ? "border-[#1db954] bg-[#1a2b21]"
                       : "border-[#252525] bg-[#181818] hover:border-[#353535] hover:bg-[#202020]"
                   }`}
                 >
-                  <div className="aspect-square overflow-hidden rounded-lg">
+                  <div className="relative aspect-square overflow-hidden rounded-lg">
                     <Image
                       src={track.thumbnailUrl}
                       alt={track.title}
@@ -255,13 +267,25 @@ export default function MusicPage() {
                       unoptimized
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     />
+
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        playTrack(track);
+                      }}
+                      aria-label={`${t("playAria")}: ${track.title}`}
+                      className="absolute bottom-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#1db954] text-black opacity-100 shadow-lg shadow-black/30 transition hover:scale-105 hover:bg-[#33c865] sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                    >
+                      <Play className="ml-0.5 h-4 w-4" />
+                    </button>
                   </div>
 
                   <div className="mt-2 min-w-0">
                     <p className="truncate text-sm font-semibold text-white">{track.title}</p>
                     <p className="truncate text-xs text-zinc-400">{track.artist}</p>
                   </div>
-                </button>
+                </article>
               );
             })}
           </div>

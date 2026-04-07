@@ -47,6 +47,7 @@ const formatDuration = (seconds?: number | null) => {
 export default function MusicStickyPlayer({ track, playSignal, labels }: MusicStickyPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const loadedTrackIdRef = useRef<string | null>(null);
+  const lastPlaySignalRef = useRef(playSignal);
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timerMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -138,16 +139,36 @@ export default function MusicStickyPlayer({ track, playSignal, labels }: MusicSt
 
   useEffect(() => {
     const audio = audioRef.current;
+    if (!audio) return;
+
+    if (!track) {
+      audio.pause();
+      loadedTrackIdRef.current = null;
+      return;
+    }
+
+    if (loadedTrackIdRef.current !== track.id) {
+      loadedTrackIdRef.current = track.id;
+      audio.pause();
+      audio.src = track.audioUrl;
+      audio.load();
+    }
+  }, [track]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
     if (!audio || !track) return;
+
+    if (playSignal === lastPlaySignalRef.current) return;
+    lastPlaySignalRef.current = playSignal;
 
     if (loadedTrackIdRef.current !== track.id) {
       loadedTrackIdRef.current = track.id;
       audio.src = track.audioUrl;
       audio.load();
-    } else {
-      audio.currentTime = 0;
     }
 
+    audio.currentTime = 0;
     void audio.play().catch(() => undefined);
   }, [playSignal, track]);
 

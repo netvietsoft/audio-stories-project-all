@@ -142,16 +142,30 @@ body:not(.admin-shell) *::after {
 
 /* Override for admin form inputs to show borders */
 .admin-input {
+  width: 100% !important;
   border-width: 1px !important;
   border-style: solid !important;
   border-color: #cbd5e1 !important;
-  transition: border-color 0.2s ease !important;
+  border-radius: 10px !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  outline: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 .admin-input:focus {
   border-width: 1px !important;
   border-style: solid !important;
   border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12) !important;
+}
+
+.admin-input::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
 }
 
 /* Error state helper for admin inputs (used by form components) */
@@ -160,6 +174,15 @@ body:not(.admin-shell) *::after {
 }
 .admin-input-error:focus {
   border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+/* Readonly state for auto-calculated fields */
+.admin-input[readonly],
+.admin-input:read-only {
+  background-color: #f8fafc !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
 }
 
 /* Apply to all inputs, textareas, and selects in admin pages */

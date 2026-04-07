@@ -28,9 +28,9 @@ import dynamic from 'next/dynamic';
 import DOMPurify from 'dompurify';
 import 'react-quill-new/dist/quill.snow.css';
 
-const ReactQuill: any = dynamic(() => import('react-quill-new'), { 
-    ssr: false, 
-    loading: () => <div className="h-[400px] bg-slate-50 animate-pulse rounded-2xl w-full border border-slate-200"></div> 
+const ReactQuill: any = dynamic(() => import('react-quill-new'), {
+    ssr: false,
+    loading: () => <div className="h-[400px] bg-slate-50 animate-pulse rounded-2xl w-full border border-slate-200"></div>
 });
 type Locale = 'vi' | 'en';
 type LocalizedText = { vi: string; en: string };
@@ -367,13 +367,13 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                     },
                 });
                 const fetchedStories = Array.isArray(res.data) ? res.data : res.data.data || [];
-                
+
                 // Don't filter by language - show all stories
                 // Users can choose any story regardless of language
                 setStories(fetchedStories);
-                
+
                 console.log('Fetched stories:', fetchedStories.length);
-                
+
                 // After stories are loaded, ensure storyId is set if it exists in initialData
                 if (initialData?.storyId && fetchedStories.some((s: StoryOption) => s.id === initialData.storyId)) {
                     setValue('storyId', initialData.storyId);
@@ -397,14 +397,14 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
 
     const selectedStoryId = watch('storyId');
     const selectedStory = stories.find((s) => s.id === selectedStoryId);
-    
+
     // Debug: Log selected story
     useEffect(() => {
         console.log('Selected storyId:', selectedStoryId);
         console.log('Selected story:', selectedStory);
         console.log('Available stories:', stories.length);
     }, [selectedStoryId, selectedStory, stories]);
-    
+
     const filteredStories = stories.filter((s) =>
         getLocalizedText(s.title, selectedLanguage).toLowerCase().includes(storySearch.toLowerCase()),
     );
@@ -566,7 +566,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                     <p className="text-xs text-slate-500 ml-2 flex items-start gap-2">
                         <Scissors className="w-3 h-3 mt-0.5 shrink-0" />
                         <span>
-                            {lang === 'vi' 
+                            {lang === 'vi'
                                 ? 'Để chia đoạn văn, sử dụng [doan1], [doan2], [doan3]... Ví dụ: "Nội dung đoạn 1 [doan2] Nội dung đoạn 2 [doan3] Nội dung đoạn 3"'
                                 : 'To split paragraphs, use [doan1], [doan2], [doan3]... Example: "Paragraph 1 content [doan2] Paragraph 2 content [doan3] Paragraph 3 content"'
                             }
@@ -726,16 +726,16 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             className="flex flex-col gap-8 w-full"
         >
             {/* Top 30% Area: 2 Columns */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            <div className="flex flex-row gap-6 p-6 overflow-y-auto max-h-[80vh]">
                 {/* Column 1: Core Information */}
-                <div className="flex flex-col gap-6 bg-slate-50/50 p-6 rounded-[32px] border border-slate-100">
+                <div className="w-1/2 flex flex-col space-y-4">
                     <h3 className="text-lg font-black text-slate-900 mb-2 flex items-center gap-2">
                         <BookOpen className="w-5 h-5 text-indigo-500" />
                         Thông tin cơ bản
                     </h3>
 
                     {/* Story Select */}
-                    <div className="space-y-2">
+                    <div className="flex flex-col space-y-1.5">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Chọn Truyện (Tùy chọn)</label>
                         <div className="relative" ref={storyRef}>
                             <button
@@ -800,7 +800,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                     </div>
 
                     {/* Chapter Number */}
-                    <div className="space-y-2">
+                    <div className="flex flex-col space-y-1.5">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Số chương</label>
                         <input
                             type="number"
@@ -811,7 +811,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         {errors.chapterNumber && <p className="text-red-500 text-xs mt-1">{errors.chapterNumber.message}</p>}
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="flex flex-col space-y-1.5">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ngôn ngữ</label>
                         <div className="relative">
                             <select
@@ -830,9 +830,9 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                     </div>
 
                     {/* Title */}
-                    <div className="space-y-2">
-                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tiêu đề chương 
-                           <span className="ml-2 text-indigo-500 lowercase text-xs">({lang})</span>
+                    <div className="flex flex-col space-y-1.5">
+                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tiêu đề chương
+                            <span className="ml-2 text-indigo-500 lowercase text-xs">({lang})</span>
                         </label>
                         <input
                             name={titleField}
@@ -847,7 +847,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                     </div>
 
                     {/* Description */}
-                    <div className="space-y-2">
+                    <div className="flex flex-col space-y-1.5">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Giới thiệu ngắn</label>
                         <textarea
                             name={descriptionField}
@@ -864,7 +864,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                 </div>
 
                 {/* Column 2: Media & Configuration */}
-                <div className="flex flex-col gap-6 bg-slate-50/50 p-6 rounded-[32px] border border-slate-100">
+                <div className="w-1/2 flex flex-col space-y-4">
                     <h3 className="text-lg font-black text-slate-900 mb-2 flex items-center gap-2">
                         <Music className="w-5 h-5 text-amber-500" />
                         Media & Cài đặt
@@ -872,13 +872,35 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Audio Upload */}
-                        <div className="space-y-3 md:col-span-2">
+                        <div className="flex flex-col space-y-1.5 md:col-span-2">
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center justify-between">
                                 <span>File Audio <span className="text-indigo-500 lowercase text-xs">({lang})</span></span>
                             </label>
                             <div className="relative group">
                                 <UploadButton
                                     endpoint="audioUploader"
+                                    onBeforeUploadBegin={(files) => {
+                                        // Read duration from local file BEFORE upload (most reliable)
+                                        const file = files[0];
+                                        if (file && file.type.startsWith('audio/')) {
+                                            const localUrl = URL.createObjectURL(file);
+                                            const audioObj = new Audio();
+                                            audioObj.preload = 'metadata';
+                                            audioObj.onloadedmetadata = () => {
+                                                const durationInSeconds = Math.round(audioObj.duration);
+                                                if (isFinite(durationInSeconds) && durationInSeconds > 0) {
+                                                    setValue('audioDuration', durationInSeconds, {
+                                                        shouldValidate: true,
+                                                        shouldDirty: true,
+                                                    });
+                                                }
+                                                URL.revokeObjectURL(localUrl);
+                                            };
+                                            audioObj.src = localUrl;
+                                            audioObj.load();
+                                        }
+                                        return files;
+                                    }}
                                     onUploadBegin={() => {
                                         if (lang === 'vi') setIsUploadingAudioVi(true);
                                         if (lang === 'en') setIsUploadingAudioEn(true);
@@ -889,7 +911,25 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                         if (lang === 'en') setIsUploadingAudioEn(false);
                                         if (res && res[0]) {
                                             const uploadedUrl = (res[0] as any).ufsUrl || (res[0] as any).url;
-                                            if (uploadedUrl) handleI18nChange('audioUrl', lang, uploadedUrl);
+                                            if (uploadedUrl) {
+                                                handleI18nChange('audioUrl', lang, uploadedUrl);
+                                                // Fallback: try to extract duration from remote URL if local read failed
+                                                if (!watch('audioDuration')) {
+                                                    try {
+                                                        const audio = new Audio();
+                                                        audio.preload = 'metadata';
+                                                        audio.addEventListener('loadedmetadata', () => {
+                                                            if (isFinite(audio.duration) && audio.duration > 0) {
+                                                                setValue('audioDuration', Math.round(audio.duration), { shouldDirty: true, shouldValidate: true });
+                                                            }
+                                                        });
+                                                        audio.src = uploadedUrl;
+                                                        audio.load();
+                                                    } catch (e) {
+                                                        console.warn('Could not extract audio duration from remote URL:', e);
+                                                    }
+                                                }
+                                            }
                                         }
                                     }}
                                     onUploadError={(error: Error) => {
@@ -943,7 +983,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         </div>
 
                         {/* Thumbnail Upload */}
-                        <div className="space-y-3 text-center">
+                        <div className="flex flex-col space-y-1.5 text-center">
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider text-left block">Ảnh Thumbnail</label>
                             <div className="relative group flex flex-col items-center">
                                 {watch('thumbnailUrl') ? (
@@ -1011,21 +1051,24 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         </div>
 
                         {/* Audio Duration */}
-                        <div className="space-y-2">
+                        <div className="flex flex-col space-y-1.5">
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-slate-400" /> Thời lượng (s)
+
                             </label>
                             <input
                                 type="number"
                                 {...register('audioDuration')}
+                                readOnly
+                                tabIndex={-1}
                                 className={`admin-input ${errors.audioDuration ? 'admin-input-error' : ''}`}
                             />
                             {errors.audioDuration && <p className="text-red-500 text-xs mt-1">{errors.audioDuration.message}</p>}
                         </div>
 
                         {/* Access Type & Unlock Time */}
-                        <div className="space-y-6 md:col-span-2 mt-2">
-                            <div className="space-y-2">
+                        <div className="flex flex-col space-y-4 md:col-span-2 mt-2">
+                            <div className="flex flex-col space-y-1.5">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
                                     <Lock className="w-4 h-4 text-amber-500" /> Phân quyền
                                 </label>
@@ -1043,7 +1086,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             </div>
 
                             {watch('accessType') === 'timed' && (
-                                <div className="space-y-2">
+                                <div className="flex flex-col space-y-1.5">
                                     <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Thời gian mở khóa</label>
                                     <input
                                         type="datetime-local"
@@ -1053,7 +1096,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                 </div>
                             )}
 
-                            <div className="space-y-2">
+                            <div className="flex flex-col space-y-1.5">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
                                     <Youtube className="w-4 h-4 text-red-500" /> YouTube ID
                                 </label>
@@ -1074,10 +1117,10 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             <div className="flex flex-col gap-4 bg-white p-2 rounded-[32px] border border-slate-100 shadow-sm">
                 <div className="px-6 pt-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                    <div className="flex flex-col gap-0.5">
-                        <h3 className="text-lg font-black text-slate-900 leading-none">Nội dung chữ</h3>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">xuống dòng để cách đoạn</span>
-                    </div>
+                        <div className="flex flex-col gap-0.5">
+                            <h3 className="text-lg font-black text-slate-900 leading-none">Nội dung chữ</h3>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">xuống dòng để cách đoạn</span>
+                        </div>
                         <button
                             type="button"
                             onClick={formatBrackets}
@@ -1088,15 +1131,15 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         </button>
                     </div>
                     <div className="flex items-center gap-2">
-                       <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest ${lang === 'vi' ? 'bg-pink-100 text-pink-700' : 'bg-red-100 text-red-700'}`}>
-                           {lang === 'vi' ? 'Tiếng Việt' : 'English'}
-                       </span>
+                        <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest ${lang === 'vi' ? 'bg-pink-100 text-pink-700' : 'bg-red-100 text-red-700'}`}>
+                            {lang === 'vi' ? 'Tiếng Việt' : 'English'}
+                        </span>
                     </div>
                 </div>
-                
+
                 <div className="rounded-b-[24px] overflow-hidden">
                     {/* @ts-ignore */}
-                    <ReactQuill 
+                    <ReactQuill
                         theme="snow"
                         value={watch(contentField) || ''}
                         onChange={(content: string) => handleI18nChange('content', lang, content)}

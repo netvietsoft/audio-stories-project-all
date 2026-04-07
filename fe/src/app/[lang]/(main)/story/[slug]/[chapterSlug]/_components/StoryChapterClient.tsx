@@ -39,6 +39,7 @@ import {
   Headphones,
 } from "lucide-react";
 
+import Image from "next/image";
 import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
 import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscriptionButton";
@@ -81,6 +82,7 @@ type ChapterItem = {
   titleEn?: string | null;
   chapterNumber: number;
   thumbnailUrl?: string | null;
+  updatedAt?: string | null;
   description?: string | null;
   descriptionVi?: string | null;
   descriptionEn?: string | null;
@@ -661,6 +663,8 @@ export default function StoryChapterClient() {
     if (!story) return null;
     return story.chapters.find((chapter) => chapter.id === selectedChapterId) || story.chapters[0] || null;
   }, [selectedChapterId, story]);
+
+  const selectedChapterUpdatedAt = selectedChapter?.updatedAt || null;
 
   const previousChapter = useMemo(() => {
     if (!story || activeChapterIndex <= 0) return null;
@@ -1445,35 +1449,86 @@ export default function StoryChapterClient() {
           <div className="-mx-5 md:mx-0 bg-transparent">
             <div className="px-5 md:px-0 lg:px-0">
               <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-3 dark:bg-[#242526] lg:col-start-1 lg:col-end-2 lg:row-start-1">
-            <h1 className="text-base md:text-lg font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
+                <div className="flex flex-col gap-3">
+                  <div className="flex w-full flex-row items-stretch gap-3 md:hidden">
+                    <div className="w-[88px] shrink-0 self-start">
+                      <div className="relative w-full overflow-hidden rounded-md shadow-md" style={{ aspectRatio: "2/3" }}>
+                        <Image src={playerCoverUrl} alt={story.title} fill className="object-cover" />
+                      </div>
+                    </div>
 
-            <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("author")}</p>
-                <p className="font-semibold text-gray-900 dark:text-white">{story.author?.name || t("updating")}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("status")}</p>
-                <p className="font-medium text-gray-900 dark:text-white">{formatStatus(story.status, {
-                  completed: t("completed"),
-                  ongoing: t("ongoing"),
-                  updating: t("updating"),
-                })}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("updatedAt")}</p>
-                <p className="font-medium text-gray-900 dark:text-white">{formatDate(story.updatedAt, locale, t("updating"))}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t("listensLabel")}</p>
-                <p className="font-medium text-gray-900 dark:text-white inline-flex items-center gap-1">
-                  <Headphones className="h-4 w-4" />
-                  {Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
-                </p>
-              </div>
-            </div>
+                    <div className="flex min-w-0 flex-1 flex-col justify-between">
+                      <h1 className="mb-1 line-clamp-2 text-base font-bold leading-tight text-gray-900 dark:text-white">{story.title}</h1>
 
-            <div className="mt-1 flex justify-center items-center gap-2 md:gap-3">
+                      <div className="flex flex-col space-y-1.5">
+                        <p className="flex min-w-0 items-center gap-1 text-xs leading-tight text-gray-700 dark:text-gray-300">
+                          <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("author")}:</span>
+                          <span className="truncate text-xs font-medium text-gray-900 dark:text-white">{story.author?.name || t("updating")}</span>
+                        </p>
+                        <p className="flex min-w-0 items-center gap-1 text-xs leading-tight text-gray-700 dark:text-gray-300">
+                          <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("status")}:</span>
+                          <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none ${story.status === "completed" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400" : "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400"}`}>
+                            {story.status === "completed" ? t("completed") : t("ongoing")}
+                          </span>
+                        </p>
+                        <p className="flex min-w-0 items-center gap-1 text-xs leading-tight text-gray-700 dark:text-gray-300">
+                          <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("listensLabel")}:</span>
+                          <span className="truncate text-xs font-medium text-gray-900 dark:text-white">{Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}</span>
+                        </p>
+                        <p className="flex min-w-0 items-center gap-1 text-xs leading-tight text-gray-700 dark:text-gray-300">
+                          <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("chapterUpdated")}:</span>
+                          <span className="truncate text-xs font-medium text-gray-900 dark:text-white">{formatDate(selectedChapterUpdatedAt, locale, t("updating"))}</span>
+                        </p>
+                        <p className="flex min-w-0 items-center gap-1 text-xs leading-tight text-gray-700 dark:text-gray-300">
+                          <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("language")}:</span>
+                          <span className="truncate text-xs font-medium text-gray-900 dark:text-white">{locale === "en" ? t("languageOptionEn") : t("languageOptionVi")}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="hidden w-full md:grid md:grid-cols-[150px_minmax(0,1fr)] md:gap-x-3 md:items-stretch">
+                    <div className="w-[150px] shrink-0 self-start">
+                      <div className="relative w-full overflow-hidden rounded-md shadow-md" style={{ aspectRatio: "2/3" }}>
+                        <Image src={playerCoverUrl} alt={story.title} fill className="object-cover" />
+                      </div>
+                    </div>
+
+                    <div className="flex min-w-0 h-full flex-col md:justify-between md:col-start-2 md:row-start-1 md:pt-0.5">
+                      <h1 className="mb-2 text-lg md:text-2xl font-bold leading-tight text-gray-900 dark:text-gray-100">{story.title}</h1>
+
+                      <div className="mt-auto grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
+                        <p className="flex min-w-0 flex-col gap-0.5">
+                          <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("author")}:</span>
+                          <span className="truncate font-semibold text-gray-900 dark:text-white">{story.author?.name || t("updating")}</span>
+                        </p>
+                        <p className="flex min-w-0 flex-col gap-0.5">
+                          <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("status")}:</span>
+                          <span className={`inline-flex w-fit rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none ${story.status === "completed" ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400" : "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400"}`}>
+                            {story.status === "completed" ? t("completed") : t("ongoing")}
+                          </span>
+                        </p>
+                        <p className="flex min-w-0 flex-col gap-0.5">
+                          <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("listensLabel")}:</span>
+                          <span className="inline-flex items-center gap-1 font-medium text-gray-900 dark:text-white">
+                            <Headphones className="h-4 w-4" />
+                            {Number(story.totalViews || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
+                          </span>
+                        </p>
+                        <p className="flex min-w-0 flex-col gap-0.5">
+                          <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("chapterUpdated")}:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{formatDate(selectedChapterUpdatedAt, locale, t("updating"))}</span>
+                        </p>
+                        <p className="flex min-w-0 flex-col gap-0.5 md:col-span-2">
+                          <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("language")}:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{locale === "en" ? t("languageOptionEn") : t("languageOptionVi")}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+            <div className="mt-3 flex justify-center items-center gap-3 md:gap-4">
               <FavoriteButton
                 storyId={story.id}
                 size="sm"

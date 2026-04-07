@@ -201,7 +201,7 @@ export default function StoryDetailClient() {
         {/* --- MOBILE LAYOUT --- */}
         <div className="flex md:hidden w-full flex-col gap-3">
           {/* Row 1: Thumbnail + Meta info */}
-          <div className="flex w-full gap-3">
+          <div className="flex w-full flex-row items-stretch gap-3">
             {/* Column 1: Thumbnail */}
             <div className="w-[110px] shrink-0 self-start">
               <div className="relative w-full overflow-hidden rounded-md shadow-md" style={{ aspectRatio: "2/3" }}>
@@ -216,39 +216,42 @@ export default function StoryDetailClient() {
             </div>
 
             {/* Column 2: Meta Info */}
-            <div className="flex-1 flex flex-col min-w-0">
+            <div className="flex min-w-0 flex-1 flex-col justify-between">
               {/* Row 1 of Col 2: Title */}
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white leading-tight mb-2 line-clamp-3">{storyTitle}</h1>
+              <h1 className="mb-1 line-clamp-3 text-lg font-bold leading-tight text-gray-900 dark:text-white">{storyTitle}</h1>
 
-              {/* Row 2 of Col 2: 2x2 Grid */}
-              <div className="grid grid-cols-2 gap-x-1 gap-y-2 mt-auto">
-                <div className="text-left min-w-0">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5 truncate">{t("author")}</p>
-                  <p className="text-md font-semibold text-gray-900 dark:text-white truncate">{story.author?.name || t("authorUpdating")}</p>
-                </div>
-                <div className="text-left min-w-0">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5 truncate">{t("status")}</p>
-                  <span className={`inline-block text-sm font-semibold px-1.5 py-0.5 rounded-full truncate max-w-[90%] ${story.status === "completed"
+              {/* Row 2 of Col 2: Compact single-column meta list */}
+              <div className="mt-auto flex flex-col space-y-1 md:grid md:grid-cols-2 md:gap-x-2 md:gap-y-1 md:space-y-0">
+                <p className="flex min-w-0 mb-3 items-center gap-1 text-xs leading-tight text-gray-700 dark:text-gray-300">
+                  <span className="shrink-0 text-md text-gray-500 dark:text-gray-400">{t("author")}:</span>
+                  <span className="truncate text-[14px] font-medium text-gray-900 dark:text-white">{story.author?.name || t("authorUpdating")}</span>
+                </p>
+
+                <p className="flex min-w-0 mb-3 items-center gap-1 text-xs leading-tight text-gray-700 dark:text-gray-300">
+                  <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("status")}:</span>
+                  <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none ${story.status === "completed"
                     ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400"
                     : "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-400"
                     }`}>
                     {story.status === "completed" ? t("statusCompleted") : t("statusOngoing")}
                   </span>
-                </div>
-                <div className="text-left min-w-0">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5 truncate">{t("lastUpdated")}</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{formatDate(story.updatedAt)}</p>
-                </div>
-                <div className="text-left min-w-0">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5 truncate">{t("language")}</p>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{t("languageCurrent")}</p>
-                </div>
+                </p>
+
+                <p className="flex min-w-0 mb-3 items-center gap-1 text-xs leading-tight text-gray-700 dark:text-gray-300">
+                  <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("lastUpdated")}:</span>
+                  <span className="truncate font-medium text-gray-900 dark:text-white">{formatDate(story.updatedAt)}</span>
+                </p>
+
+                <p className="flex min-w-0items-center gap-1 text-xs leading-tight text-gray-700 dark:text-gray-300">
+                  <span className="shrink-0 text-gray-500 dark:text-gray-400">{t("language")}:</span>
+                  <span className="truncate font-medium text-gray-900 dark:text-white">{t("languageCurrent")}</span>
+                </p>
               </div>
             </div>
           </div>
 
           {/* Stats Bar */}
-          <div className="flex items-center justify-around text-xs text-gray-700 dark:text-gray-300 py-2 border-y border-gray-100 dark:border-gray-800/60">
+          <div className="flex items-center justify-around text-xs text-gray-700 dark:text-gray-300 py-1 border-y border-gray-100 dark:border-gray-800/60">
             <span className="flex flex-col items-center gap-0.5">
               <span className="font-semibold text-gray-900 dark:text-white">{story.chapters.length}</span>
               <span className="text-[10px] text-gray-500">Chương</span>
@@ -347,12 +350,12 @@ export default function StoryDetailClient() {
           </div>
 
           {/* Action buttons */}
-          <div className="flex w-full items-center justify-center md:justify-start gap-1.5 sm:gap-3 mt-1.5 mb-1 md:mt-1 md:mb-0">
+          <div className="flex w-full items-center justify-center md:justify-start gap-1.5 sm:gap-3 mt-1 mb-0 md:mt-1 md:mb-0">
             <div className="flex-shrink-0">
               {firstChapter ? (
                 <Link
                   href={chapterHref(story.slug, firstChapter.chapterNumber)}
-                  className="flex w-[110px] md:w-auto items-center justify-center gap-1.5 bg-pink-600 hover:bg-pink-700 text-white px-3 py-2 md:px-4 md:py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap"
+                  className="flex w-[110px] md:w-auto items-center justify-center gap-1.5 bg-pink-600 hover:bg-pink-700 text-white px-3 py-2.5 md:px-4 md:py-2.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap"
                 >
                   <Play className="h-3.5 w-3.5" />
                   {t("readNow")}
@@ -361,7 +364,7 @@ export default function StoryDetailClient() {
                 <button
                   type="button"
                   disabled
-                  className="flex w-[110px] md:w-auto items-center justify-center gap-1.5 rounded-full bg-gray-200 px-3 py-2 md:px-4 md:py-2 text-sm font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400 whitespace-nowrap"
+                  className="flex w-[110px] md:w-auto items-center justify-center gap-1.5 rounded-full bg-gray-200 px-3 py-2.5 md:px-4 md:py-2.5 text-sm font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400 whitespace-nowrap"
                 >
                   <Clock3 className="h-3.5 w-3.5" />
                   {t("chaptersPendingCta")}
@@ -373,7 +376,7 @@ export default function StoryDetailClient() {
 
               <StoryUpdateSubscriptionButton
                 storyId={story.id}
-                className="h-[42px] w-[42px] p-0 flex items-center justify-center sm:h-auto sm:w-auto sm:px-5 sm:py-2.5 text-sm font-medium shadow-sm transition-colors rounded-full"
+                className="h-10 w-10 p-0 flex items-center justify-center sm:h-auto sm:w-auto sm:px-5 sm:py-2.5 text-sm font-medium shadow-sm transition-colors rounded-full"
                 labelClassName="hidden sm:inline"
                 activeClassName="border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 dark:border-emerald-400 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                 inactiveClassName="border border-gray-100 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
@@ -385,7 +388,7 @@ export default function StoryDetailClient() {
                 icon="heart"
                 label={t("favorite")}
                 labelClassName="hidden sm:inline"
-                className="h-[42px] w-[42px] p-0 flex items-center justify-center sm:h-auto sm:w-auto sm:px-5 sm:py-2.5 text-sm font-medium border shadow-sm transition-colors rounded-full"
+                className="h-10 w-10 p-0 flex items-center justify-center sm:h-auto sm:w-auto sm:px-5 sm:py-2.5 text-sm font-medium border shadow-sm transition-colors rounded-full"
                 activeClassName="bg-pink-500 text-white border-pink-500 hover:bg-pink-600"
                 inactiveClassName="border-gray-100 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
               />
@@ -393,7 +396,7 @@ export default function StoryDetailClient() {
               <button
                 type="button"
                 onClick={() => { void onShare(); }}
-                className="h-[42px] w-[42px] p-0 flex items-center justify-center sm:h-auto sm:w-auto sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 border border-gray-100 bg-white shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749] whitespace-nowrap rounded-full"
+                className="h-10 w-10 p-0 flex items-center justify-center sm:h-auto sm:w-auto sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 border border-gray-100 bg-white shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749] whitespace-nowrap rounded-full"
                 aria-label={t("share")}
               >
                 <Share2 className="h-[18px] w-[18px] sm:h-3.5 sm:w-3.5" />
@@ -433,7 +436,7 @@ export default function StoryDetailClient() {
         </div>
       </section>
 
-      <section className="app-component-surface p-3 sm:p-4 md:p-6 rounded-[5px]">
+      <section className="app-component-surface p-2 sm:p-4 md:p-6 rounded-[5px]">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("introTitle")}</h2>
         <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700 dark:text-gray-300">
           {storyDescription || t("introUpdating")}
@@ -442,7 +445,7 @@ export default function StoryDetailClient() {
 
       {/* Tags Section */}
       {story.categories.length > 0 && (
-        <section className="app-component-surface p-3 sm:p-4 md:p-6 rounded-[5px]">
+        <section className="app-component-surface p-2 sm:p-4 md:p-6 rounded-[5px]">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Tags</h2>
           <div className="flex flex-wrap gap-2">
             {story.categories.map(({ category }) => (
@@ -459,7 +462,7 @@ export default function StoryDetailClient() {
       )}
 
       {/* Categories section moved into metadata grid above */}
-      <section className="app-component-surface p-3 sm:p-4 md:p-6 rounded-[5px]">
+      <section className="app-component-surface p-2 sm:p-4 md:p-6 rounded-[5px]">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="inline-flex items-center gap-2 text-xl font-semibold text-gray-900 dark:text-gray-100">
             <ListMusic className="h-5 w-5" /> {t("chapterList")}
@@ -507,7 +510,7 @@ export default function StoryDetailClient() {
       </section>
       {/* Recommended Stories Section */}
       {recommendedStories.length > 0 && (
-        <section className="app-component-surface p-3 sm:p-4 md:p-6 pb-2 md:pb-4 rounded-[5px]">
+        <section className="app-component-surface p-2 sm:p-4 md:p-6 pb-2 md:pb-4 rounded-[5px]">
           <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">{t("youMightLike")}</h2>
           <div className="grid grid-cols-3 gap-2 md:grid-cols-4 md:gap-4 lg:grid-cols-6">
             {recommendedStories.map((recommendedStory) => {

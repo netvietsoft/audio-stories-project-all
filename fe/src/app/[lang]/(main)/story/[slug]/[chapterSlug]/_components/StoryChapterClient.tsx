@@ -1442,9 +1442,9 @@ export default function StoryChapterClient() {
     <div className="w-full space-y-3 md:space-y-4">
         <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px] lg:items-start">
           {/* Story Info */}
-          <div className="-mx-4 md:mx-0 bg-transparent">
-            <div className="px-4 md:px-0 lg:px-0">
-              <section className="rounded-2xl bg-white p-1 sm:p-2 md:p-3 dark:bg-[#242526] lg:col-start-1 lg:col-end-2 lg:row-start-1">
+          <div className="-mx-5 md:mx-0 bg-transparent">
+            <div className="px-5 md:px-0 lg:px-0">
+              <section className="rounded-2xl bg-white p-2 sm:p-3 md:p-3 dark:bg-[#242526] lg:col-start-1 lg:col-end-2 lg:row-start-1">
             <h1 className="text-base md:text-lg font-bold text-gray-900 dark:text-gray-100">{story.title}</h1>
 
             <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1 text-sm text-gray-600 dark:text-gray-300">
@@ -1473,12 +1473,13 @@ export default function StoryChapterClient() {
               </div>
             </div>
 
-            <div className="mt-1 flex items-center gap-2 md:gap-3">
+            <div className="mt-1 flex justify-center items-center gap-2 md:gap-3">
               <FavoriteButton
                 storyId={story.id}
                 size="sm"
                 label={t("favorite")}
-                className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium border shadow-sm transition-colors"
+                labelClassName="hidden md:inline"
+                className="px-3 py-2 sm:px-4 sm:py-2.5 text-sm font-medium border shadow-sm transition-colors"
                 activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
                 inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
               />

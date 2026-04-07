@@ -5,7 +5,7 @@ import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import axios from "axios";
 import { useLocale, useTranslations } from "next-intl";
-import { Headphones, Heart, PlayCircle } from "lucide-react";
+import { ArrowRight, Headphones, Heart, PlayCircle } from "lucide-react";
 
 import InfiniteMarqueeSlider from "@/components/shared/InfiniteMarqueeSlider";
 import StoryListView from "@/components/shared/StoryListView";
@@ -152,6 +152,7 @@ type HeroSlide = {
 const NEW_LIMIT = 5;
 const POPULAR_LIMIT = 9;
 const HOME_AXIS_CLASS = "mx-auto w-full px-0 sm:px-6 xl:max-w-[1400px] 2xl:w-[70vw] 2xl:max-w-[70vw]";
+const HOME_SECTION_HEADER_CLASS = "px-4 sm:px-0"; // Aligns with internal grid padding
 
 export default function HomePage() {
   const t = useTranslations("Home");
@@ -505,12 +506,15 @@ export default function HomePage() {
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-[#242526]">
             <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{t("continueTitle")}</h2>
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate whitespace-nowrap text-lg font-black text-slate-900 sm:text-2xl dark:text-white">{t("continueTitle")}</h2>
               </div>
-              <Link href="/profile/history" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-pink-600 hover:bg-slate-50 dark:border-[#303133] dark:text-pink-400 dark:hover:bg-[#3a3b3c]">
-                <Headphones className="h-4 w-4" />
-                {tNavbar("listeningHistory")}
+              <Link href="/profile/history" className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm transition-colors hover:bg-rose-300 dark:bg-rose-450 dark:hover:bg-pink-400 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-full sm:border sm:border-slate-200 sm:bg-transparent sm:px-4 sm:py-2 sm:text-sm sm:font-semibold sm:text-pink-600 sm:shadow-none sm:hover:bg-slate-50 dark:sm:border-[#303133] dark:sm:text-pink-400 dark:sm:hover:bg-[#3a3b3c]">
+                <ArrowRight className="h-4 w-4 sm:hidden" />
+                <span className="hidden items-center gap-2 sm:inline-flex">
+                  <Headphones className="h-4 w-4" />
+                  {tNavbar("listeningHistory")}
+                </span>
               </Link>
             </div>
 
@@ -567,12 +571,15 @@ export default function HomePage() {
 
           <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-[#242526]">
             <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{t("favoritesListTitle")}</h2>
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate whitespace-nowrap text-lg font-black text-slate-900 sm:text-2xl dark:text-white">{t("favoritesListTitle")}</h2>
               </div>
-              <Link href="/profile?panel=favorites" className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-pink-600 hover:bg-slate-50 dark:border-[#303133] dark:text-pink-400 dark:hover:bg-[#3a3b3c]">
-                <Heart className="h-4 w-4" />
-                {tNavbar("favorites")}
+              <Link href="/profile?panel=favorites" className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm transition-colors hover:bg-rose-300 dark:bg-rose-450 dark:hover:bg-pink-400 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-full sm:border sm:border-slate-200 sm:bg-transparent sm:px-4 sm:py-2 sm:text-sm sm:font-semibold sm:text-pink-600 sm:shadow-none sm:hover:bg-slate-50 dark:sm:border-[#303133] dark:sm:text-pink-400 dark:sm:hover:bg-[#3a3b3c]">
+                <ArrowRight className="h-4 w-4 sm:hidden" />
+                <span className="hidden items-center gap-2 sm:inline-flex">
+                  <Heart className="h-4 w-4" />
+                  {tNavbar("favorites")}
+                </span>
               </Link>
             </div>
 
@@ -700,7 +707,7 @@ export default function HomePage() {
         <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-[#242526]">
           <div className={HOME_AXIS_CLASS}>
             <div className="space-y-3">
-              <div className="flex items-end justify-between gap-4">
+              <div className={`flex items-end justify-between gap-4 ${HOME_SECTION_HEADER_CLASS}`}>
                 <div>
                   <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{locale === "en" ? "High-Rating Stories" : "Truyện Rating Cao"}</h2>
                 </div>
@@ -731,7 +738,7 @@ export default function HomePage() {
       <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-[#242526]">
           <div className={HOME_AXIS_CLASS}>
           <div className="space-y-4">
-            <div className="flex items-end justify-between gap-4">
+            <div className={`flex items-end justify-between gap-4 ${HOME_SECTION_HEADER_CLASS}`}>
               <div>
                 <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{t("newestTitle")}</h2>
               </div>
@@ -754,7 +761,7 @@ export default function HomePage() {
           <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-[#242526]">
             <div className={HOME_AXIS_CLASS}>
             <div className="space-y-3">
-            <div className="flex items-end justify-between gap-4">
+            <div className={`flex items-end justify-between gap-4 ${HOME_SECTION_HEADER_CLASS}`}>
               <div>
                 <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{locale === "en" ? "Completed Stories" : "Truyện Hoàn Thành"}</h2>
               </div>
@@ -783,7 +790,7 @@ export default function HomePage() {
             <section key={category.id} className={categorySectionClassName}>
               <div className={HOME_AXIS_CLASS}>
             <div className="space-y-3">
-              <div className="flex items-end justify-between gap-4">
+              <div className={`flex items-end justify-between gap-4 ${HOME_SECTION_HEADER_CLASS}`}>
                 <div>
                   <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">
                     {locale === "en" ? `${categoryName} Stories` : `Truyện ${categoryName}`}

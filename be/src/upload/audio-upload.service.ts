@@ -13,11 +13,15 @@ type UploadedAudioFile = {
   buffer: Buffer;
 };
 
-export type AudioUploadFolder = 'chapters' | 'bgm';
+export type AudioUploadFolder = 'chapters' | 'bgm' | 'music';
 
-const AUDIO_UPLOAD_FOLDERS: Record<AudioUploadFolder, string> = {
+export type R2UploadFolder = AudioUploadFolder | 'music-thumbnails';
+
+const R2_UPLOAD_FOLDERS: Record<R2UploadFolder, string> = {
   chapters: 'audio/chapters',
   bgm: 'audio/bgm',
+  music: 'audio/music',
+  'music-thumbnails': 'images/music',
 };
 
 @Injectable()
@@ -51,9 +55,17 @@ export class AudioUploadService {
   }
 
   async uploadAudio(file: UploadedAudioFile, folder: AudioUploadFolder = 'chapters'): Promise<string> {
+    return this.uploadToR2(file, folder);
+  }
+
+  async uploadMusicThumbnail(file: UploadedAudioFile): Promise<string> {
+    return this.uploadToR2(file, 'music-thumbnails');
+  }
+
+  private async uploadToR2(file: UploadedAudioFile, folder: R2UploadFolder): Promise<string> {
     const extension = this.getExtension(file.originalname, file.mimetype);
     const fileName = `${Date.now()}-${randomUUID()}.${extension}`;
-    const folderPath = AUDIO_UPLOAD_FOLDERS[folder];
+    const folderPath = R2_UPLOAD_FOLDERS[folder];
     const key = `${folderPath}/${fileName}`;
 
     try {
@@ -67,8 +79,8 @@ export class AudioUploadService {
       );
 
       return `${this.publicBaseUrl}/${key}`;
-    } catch (error) {
-      throw new InternalServerErrorException('Failed to upload audio to Cloudflare R2');
+    } catch {
+      throw new InternalServerErrorException('Failed to upload file to Cloudflare R2');
     }
   }
 
@@ -87,6 +99,11 @@ export class AudioUploadService {
       'audio/aac': 'aac',
       'audio/mp4': 'm4a',
       'audio/webm': 'webm',
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
     };
 
     return mimeToExt[mimetype] ?? 'mp3';

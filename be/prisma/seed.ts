@@ -905,6 +905,62 @@ async function main() {
   await prisma.advertisement.deleteMany({});
   await prisma.advertisement.createMany({ data: adSeeds });
 
+  console.log('Seeding music tracks...');
+
+  const musicSeeds = [
+    {
+      title: 'Night Rain Lofi',
+      artist: 'Netviet Studio',
+      thumbnailUrl: 'https://picsum.photos/seed/music-seed-1/640/640',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+      audioDuration: 348,
+      isPublic: true,
+    },
+    {
+      title: 'Piano Sunrise',
+      artist: 'Netviet Studio',
+      thumbnailUrl: 'https://picsum.photos/seed/music-seed-2/640/640',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+      audioDuration: 361,
+      isPublic: true,
+    },
+    {
+      title: 'Coastline Drift',
+      artist: 'Netviet Studio',
+      thumbnailUrl: 'https://picsum.photos/seed/music-seed-3/640/640',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+      audioDuration: 332,
+      isPublic: true,
+    },
+    {
+      title: 'Deep Breath',
+      artist: 'Netviet Studio',
+      thumbnailUrl: 'https://picsum.photos/seed/music-seed-4/640/640',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
+      audioDuration: 289,
+      isPublic: true,
+    },
+    {
+      title: 'Late Night Focus',
+      artist: 'Ambient Guild',
+      thumbnailUrl: 'https://picsum.photos/seed/music-seed-5/640/640',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+      audioDuration: 305,
+      isPublic: true,
+    },
+    {
+      title: 'Calm Meadow',
+      artist: 'Ambient Guild',
+      thumbnailUrl: 'https://picsum.photos/seed/music-seed-6/640/640',
+      audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+      audioDuration: 317,
+      isPublic: false,
+    },
+  ];
+
+  await prisma.music.deleteMany({});
+  await prisma.music.createMany({ data: musicSeeds });
+
   console.log('Seeding system configs...');
 
   await prisma.systemConfig.upsert({
@@ -923,6 +979,7 @@ async function main() {
   console.log(`   - ${stories.length * 15} chapters total`);
   console.log(`   - ${seededUsers.length} demo users`);
   console.log(`   - ${adSeeds.length} advertisements`);
+  console.log(`   - ${musicSeeds.length} music tracks`);
   console.log('   - 1 system config (ad_insertion_frequency)');
 }
 

@@ -81,6 +81,10 @@ export class UploadController {
       return 'bgm';
     }
 
-    throw new BadRequestException('Invalid audio folder. Supported folders: chapters, bgm');
+    if (folder === 'music') {
+      return 'music';
+    }
+
+    throw new BadRequestException('Invalid audio folder. Supported folders: chapters, bgm, music');
   }
 }

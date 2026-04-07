@@ -10,7 +10,7 @@ import {
   Search, Moon, Sun, Bell,
   ChevronDown, LogOut, Coins, X,
   UserCircle, History, Heart,
-  Home, LayoutGrid, Zap, Flame, Trophy, Sparkles
+  Home, LayoutGrid, Zap, Flame, Trophy, Sparkles, Music2
 } from "lucide-react";
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/auth";
 import { clearAuthCookies } from "@/lib/auth/cookies";
@@ -357,6 +357,10 @@ export default function Navbar() {
                 <Link href="/" className={navItemClassName("/")} aria-label={t("home")} title={t("home")}>
                   <Home className="w-5 h-5 2xl:hidden" />
                   <span className={`hidden 2xl:inline ${navLabelClassName("/")}`}>{t("home")}</span>
+                </Link>
+                <Link href="/music" className={navItemClassName("/music")} aria-label={t("music")} title={t("music")}>
+                  <Music2 className="w-5 h-5 2xl:hidden" />
+                  <span className={`hidden 2xl:inline ${navLabelClassName("/music")}`}>{t("music")}</span>
                 </Link>
                 <div
                   ref={categoryMenuRef}
@@ -877,6 +881,15 @@ export default function Navbar() {
                 >
                   <Home className={`w-5 h-5 ${isRouteActive("/") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
                   <span className="text-sm font-medium">{t("home")}</span>
+                </Link>
+
+                <Link
+                  href="/music"
+                  onClick={closeMobileMenu}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/music") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                >
+                  <Music2 className={`w-5 h-5 ${isRouteActive("/music") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                  <span className="text-sm font-medium">{t("music")}</span>
                 </Link>
 
                 <Link 

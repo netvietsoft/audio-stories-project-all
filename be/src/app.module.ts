@@ -32,6 +32,7 @@ import { BannersModule } from './banners/banners.module';
 import { AdsModule } from './ads/ads.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { SocialLinksModule } from './social-links/social-links.module';
+import { MusicModule } from './music/music.module';
 
 @Module({
   imports: [
@@ -90,6 +91,7 @@ import { SocialLinksModule } from './social-links/social-links.module';
     AdsModule,
     TrackingModule,
     SocialLinksModule,
+    MusicModule,
   ],
   controllers: [AppController],
     providers: [

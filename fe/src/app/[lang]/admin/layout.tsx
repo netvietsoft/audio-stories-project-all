@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from '@/components/shared/LocalizedLink';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift, Zap, Image as ImageIcon, Megaphone, Share2 } from 'lucide-react';
+import { Bell, Shield, LogOut, Loader2, Newspaper, Home, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift, Zap, Image as ImageIcon, Megaphone, Share2 } from 'lucide-react';
 import { ThemeProvider } from 'next-themes';
 
 import { useState, useEffect } from 'react';
@@ -121,6 +121,7 @@ export default function AdminLayout({
         { href: '/admin', label: 'Dashboard', icon: Home },
         { href: '/admin/users', label: 'Quản lý Người dùng', icon: Users },
         { href: '/admin/stories', label: 'Quản lý Truyện', icon: Newspaper },
+        { href: '/admin/music', label: 'Quản lý Nhạc', icon: Music },
         { href: '/admin/banners', label: 'Quản lý Banner Hero', icon: ImageIcon },
         { href: '/admin/ads', label: 'Quản lý Quảng cáo', icon: Megaphone },
         { href: '/admin/social-links', label: 'Quản lý Link Cộng đồng', icon: Share2 },

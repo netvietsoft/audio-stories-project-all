@@ -282,6 +282,22 @@ model Advertisement {
   @@map("advertisements")
 }
 
+model Music {
+  id            String   @id @default(uuid()) @db.VarChar(36)
+  title         String   @db.VarChar(300)
+  artist        String   @db.VarChar(150)
+  thumbnailUrl  String?  @map("thumbnail_url") @db.Text
+  audioUrl      String   @map("audio_url") @db.VarChar(500)
+  audioDuration Int?     @map("audio_duration") @db.UnsignedInt
+  isPublic      Boolean  @default(true) @map("is_public")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([isPublic])
+  @@index([createdAt])
+  @@map("music_tracks")
+}
+
 model StoryCategory {
   storyId    String   @map("story_id") @db.VarChar(36)
   categoryId Int      @map("category_id") @db.UnsignedInt

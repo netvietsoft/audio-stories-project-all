@@ -48,7 +48,7 @@ export default function ProfileSidebar() {
       icon: Settings,
     },
     {
-      href: "/profile/topup",
+      href: "/topup",
       label: t("topUpCredits"),
       icon: Wallet,
     },

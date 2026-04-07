@@ -643,7 +643,7 @@ export default function Navbar() {
                     if (!user) {
                       openLogin();
                     } else {
-                      router.push(`/${currentLang}/profile/topup`);
+                      router.push(`/${currentLang}/topup`);
                     }
                   }}
                   className="hidden xl:flex items-center gap-1.5 whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 md:px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors"
@@ -984,7 +984,7 @@ export default function Navbar() {
                           openLogin();
                           closeMobileMenu();
                         } else {
-                          router.push(`/${currentLang}/profile/topup`);
+                          router.push(`/${currentLang}/topup`);
                           closeMobileMenu();
                         }
                       }}

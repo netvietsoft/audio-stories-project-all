@@ -79,18 +79,10 @@ export default async function Footer() {
               </li>
               <li>
                 <Link
-                  href={withLang("/categories")}
+                  href={withLang("/stories")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("categories")}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href={withLang("/authors")}
-                  className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
-                >
-                  {t("authors")}
                 </Link>
               </li>
               <li>

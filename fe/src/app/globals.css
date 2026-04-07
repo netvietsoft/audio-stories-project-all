@@ -154,6 +154,14 @@ body:not(.admin-shell) *::after {
   border-color: #6366f1 !important;
 }
 
+/* Error state helper for admin inputs (used by form components) */
+.admin-input-error {
+  border-color: #ef4444 !important;
+}
+.admin-input-error:focus {
+  border-color: #ef4444 !important;
+}
+
 /* Apply to all inputs, textareas, and selects in admin pages */
 [class*="admin"] input[type="text"],
 [class*="admin"] input[type="email"],

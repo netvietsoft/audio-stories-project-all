@@ -4,6 +4,7 @@ import React from 'react';
 import Link from '@/components/shared/LocalizedLink';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Shield, LogOut, Loader2, Newspaper, Database, Home, Plus, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift, Zap, Image as ImageIcon, Megaphone, Share2 } from 'lucide-react';
+import { ThemeProvider } from 'next-themes';
 
 import { useState, useEffect } from 'react';
 import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
@@ -98,16 +99,18 @@ export default function AdminLayout({
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-[#F8FAFC]">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-            </div>
+            <ThemeProvider forcedTheme="light" attribute="class">
+                <div className="flex items-center justify-center min-h-screen bg-[#F8FAFC]">
+                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                </div>
+            </ThemeProvider>
         );
     }
 
     // Skip layout for login page
     const isLoginPage = pathname?.includes('/admin/login');
     if (isLoginPage) {
-        return <>{children}</>;
+        return <ThemeProvider forcedTheme="light" attribute="class">{children}</ThemeProvider>;
     }
 
     if (!hasAccess) {
@@ -138,17 +141,18 @@ export default function AdminLayout({
 
 
     return (
-        <div className="flex h-screen bg-gray-50 text-slate-900 dark:bg-[#161616] dark:text-white">
+        <ThemeProvider forcedTheme="light" attribute="class">
+            <div className="flex h-screen bg-gray-50 text-slate-900">
             {/* Sidebar */}
             <aside
-                className={`relative hidden flex-col border-r border-gray-200 bg-white/95 backdrop-blur transition-all duration-300 md:flex dark:border-[#2f3031] dark:bg-[#242526] ${isCollapsed ? 'w-20' : 'w-72'}`}
+                className={`relative hidden flex-col border-r border-gray-200 bg-white/95 backdrop-blur transition-all duration-300 md:flex ${isCollapsed ? 'w-20' : 'w-72'}`}
             >
                 {/* Toggle Button */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-24 z-10 rounded-full border border-gray-200 bg-white p-1.5 shadow-sm transition-colors hover:bg-gray-50 dark:border-[#2f3031] dark:bg-[#242526] dark:hover:bg-[#2f3031]"
+                        className="absolute -right-3 top-24 z-10 rounded-full border border-gray-200 bg-white p-1.5 shadow-sm transition-colors hover:bg-gray-50"
                 >
-                    {isCollapsed ? <ChevronRight className="h-4 w-4 text-slate-600 dark:text-slate-300" /> : <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" />}
+                    {isCollapsed ? <ChevronRight className="h-4 w-4 text-slate-600" /> : <ChevronLeft className="h-4 w-4 text-slate-600" />}
                 </button>
 
                 <div className={`h-20 flex items-center transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'px-8'}`}>
@@ -171,25 +175,25 @@ export default function AdminLayout({
                                 href={item.href}
                                 title={isCollapsed ? item.label : ''}
                                 className={`relative flex items-center overflow-hidden rounded-2xl font-medium transition-all group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} ${isActive
-                                    ? 'bg-[#ffddef] text-pink-700 shadow-sm dark:bg-pink-950/30 dark:text-pink-200'
-                                    : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-[#2f3031] dark:hover:text-slate-100'
+                                    ? 'bg-[#ffddef] text-pink-700 shadow-sm'
+                                    : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900'
                                     }`}
                             >
-                                <Icon className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-pink-600 dark:text-pink-300' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
+                                <Icon className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-pink-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
                                 {!isCollapsed && <span className="whitespace-nowrap opacity-100 transition-opacity duration-300">{item.label}</span>}
                             </Link>
                         );
                     })}
                 </nav>
 
-                <div className={`p-4 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-6'}`}>
+                            <div className={`p-4 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-6'}`}>
                     <div>
                         <div className={`flex gap-3 transition-all duration-300 ${isCollapsed ? 'flex-col px-2 pb-3' : 'px-4'}`}>
                             <button
                                 onClick={handleLogout}
                                 disabled={isLoggingOut}
                                 title="Đăng xuất"
-                                className={`flex items-center justify-center rounded-xl bg-gray-100 text-sm font-bold text-slate-700 transition-all hover:bg-gray-200 active:scale-[0.98] disabled:opacity-50 dark:bg-[#2f3031] dark:text-slate-200 dark:hover:bg-[#3a3b3c] ${isCollapsed ? 'h-10 w-10 p-2' : 'h-10 w-full gap-2 px-4'}`}
+                                            className={`flex items-center justify-center rounded-xl bg-gray-100 text-sm font-bold text-slate-700 transition-all hover:bg-gray-200 active:scale-[0.98] disabled:opacity-50 ${isCollapsed ? 'h-10 w-10 p-2' : 'h-10 w-full gap-2 px-4'}`}
                             >
                                 {isLoggingOut ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -198,13 +202,13 @@ export default function AdminLayout({
                                 )}
                             </button>
 
-                            <Link
-                                href="/"
-                                title="Về trang chủ"
-                                className={`flex items-center justify-center rounded-xl bg-[#ffddef] text-sm font-bold text-pink-700 transition-all active:scale-[0.98] hover:bg-pink-100 dark:bg-pink-950/30 dark:text-pink-200 dark:hover:bg-pink-950/45 ${isCollapsed ? 'h-10 w-10 p-2' : 'h-10 w-full gap-2 px-4'}`}
-                            >
-                                <Home className="h-4 w-4 shrink-0" />
-                            </Link>
+                                    <Link
+                                        href="/"
+                                        title="Về trang chủ"
+                                        className={`flex items-center justify-center rounded-xl bg-[#ffddef] text-sm font-bold text-pink-700 transition-all active:scale-[0.98] hover:bg-pink-100 ${isCollapsed ? 'h-10 w-10 p-2' : 'h-10 w-full gap-2 px-4'}`}
+                                    >
+                                        <Home className="h-4 w-4 shrink-0" />
+                                    </Link>
                         </div>
                     </div>
                 </div>
@@ -213,11 +217,11 @@ export default function AdminLayout({
             {/* Main Content */}
             <main className="h-screen w-full flex-1 overflow-y-auto transition-all duration-300">
                 {/* Mobile Header */}
-                <div className="flex h-20 items-center justify-between border-b border-gray-200 bg-white px-6 md:hidden dark:border-[#2f3031] dark:bg-[#242526]">
+                <div className="flex h-20 items-center justify-between border-b border-gray-200 bg-white px-6 md:hidden">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setIsMobileMenuOpen(true)}
-                            className="rounded-xl p-2 text-slate-600 hover:bg-gray-50 dark:text-slate-300 dark:hover:bg-[#2f3031]"
+                            className="rounded-xl p-2 text-slate-600 hover:bg-gray-50"
                         >
                             <Menu className="h-6 w-6" />
                         </button>
@@ -228,7 +232,7 @@ export default function AdminLayout({
                     </div>
                     <button
                         onClick={handleLogout}
-                        className="rounded-xl bg-gray-100 p-2 text-slate-700 dark:bg-[#2f3031] dark:text-slate-200"
+                        className="rounded-xl bg-gray-100 p-2 text-slate-700"
                     >
                         <LogOut className="h-5 w-5" />
                     </button>
@@ -244,7 +248,7 @@ export default function AdminLayout({
                         ></div>
 
                         {/* Sheet */}
-                        <aside className="absolute inset-y-0 left-0 flex w-[80%] max-w-sm flex-col bg-white shadow-2xl animate-in slide-in-from-left duration-300 dark:bg-[#242526]">
+                        <aside className="absolute inset-y-0 left-0 flex w-[80%] max-w-sm flex-col bg-white shadow-2xl animate-in slide-in-from-left duration-300">
                             <div className="flex h-20 items-center justify-between px-6">
                                 <span className="flex items-center gap-2 text-xl font-bold text-pink-600">
                                     <Shield className="h-6 w-6" />
@@ -252,7 +256,7 @@ export default function AdminLayout({
                                 </span>
                                 <button
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-gray-50 hover:text-slate-600 dark:hover:bg-[#2f3031] dark:hover:text-slate-200"
+                                    className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-gray-50 hover:text-slate-600"
                                 >
                                     <X className="h-5 w-5" />
                                 </button>
@@ -271,11 +275,11 @@ export default function AdminLayout({
                                             href={item.href}
                                             onClick={() => setIsMobileMenuOpen(false)}
                                             className={`relative flex items-center overflow-hidden rounded-2xl px-4 py-3 font-medium transition-all group gap-3 ${isActive
-                                                ? 'bg-[#ffddef] text-pink-700 shadow-sm dark:bg-pink-950/30 dark:text-pink-200'
-                                                : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-[#2f3031] dark:hover:text-slate-100'
-                                                }`}
+                                                    ? 'bg-[#ffddef] text-pink-700 shadow-sm'
+                                                    : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900'
+                                                    }`}
                                         >
-                                            <Icon className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-pink-600 dark:text-pink-300' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
+                                                <Icon className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-pink-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
                                             <span className="whitespace-nowrap">{item.label}</span>
                                         </Link>
                                     );
@@ -283,12 +287,12 @@ export default function AdminLayout({
                             </nav>
 
                             <div className="p-6 space-y-4">
-                                <div className="rounded-2xl bg-gray-50 p-4 dark:bg-[#2f3031]">
+                                <div className="rounded-2xl bg-gray-50 p-4">
                                     <div className="flex gap-3">
                                         <button
                                             onClick={handleLogout}
                                             disabled={isLoggingOut}
-                                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-gray-200 active:scale-[0.98] disabled:opacity-50 dark:bg-[#3a3b3c] dark:text-slate-200 dark:hover:bg-[#464749]"
+                                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-2.5 text-sm font-bold text-slate-700 transition-all hover:bg-gray-200 active:scale-[0.98] disabled:opacity-50"
                                         >
                                             {isLoggingOut ? (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -301,7 +305,7 @@ export default function AdminLayout({
                                         <Link
                                             href="/"
                                             onClick={() => setIsMobileMenuOpen(false)}
-                                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#ffddef] px-4 py-2.5 text-sm font-bold text-pink-700 transition-all active:scale-[0.98] hover:bg-pink-100 dark:bg-pink-950/30 dark:text-pink-200 dark:hover:bg-pink-950/45"
+                                            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#ffddef] px-4 py-2.5 text-sm font-bold text-pink-700 transition-all active:scale-[0.98] hover:bg-pink-100"
                                         >
                                             <Home className="h-4 w-4" />
                                         </Link>
@@ -316,6 +320,7 @@ export default function AdminLayout({
                     <div className="mx-auto w-full max-w-[1920px]">{children}</div>
                 </div>
             </main>
-        </div>
+            </div>
+        </ThemeProvider>
     );
 }

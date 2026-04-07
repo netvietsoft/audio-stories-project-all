@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Heart, Lightbulb, Reply, Send, ThumbsUp, X } from "lucide-react";
 import DOMPurify from "dompurify";
 import { useLocale } from "next-intl";
+import Image from "next/image";
 
 import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
@@ -910,7 +911,7 @@ export default function StoryReader({
                 </span>
                 <div className="flex items-center gap-3">
                   <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-[#3a3b3c]">
-                    <img src={item.ad.imageUrl} alt={item.ad.title} className="h-full w-full object-cover" />
+                    <Image src={item.ad.imageUrl} alt={item.ad.title} width={80} height={80} className="h-full w-full object-cover" unoptimized />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-semibold uppercase tracking-wide text-pink-600 dark:text-pink-300">{item.ad.partnerName}</p>

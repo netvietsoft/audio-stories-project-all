@@ -13,10 +13,13 @@ import {
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
 const authorSchema = z.object({
-    name: z.string().min(1, 'Tên tác giả không được để trống'),
-    slug: z.string().min(1, 'Slug không được để trống'),
-    bio: z.string().optional(),
-    avatarUrl: z.string().optional(),
+    name: z.string().min(3, 'Tên tác giả bắt buộc và phải dài hơn 3 ký tự'),
+    slug: z.string().min(3, 'Slug bắt buộc và phải dài hơn 3 ký tự'),
+    bio: z.string().max(2000, 'Tiểu sử quá dài').optional(),
+    avatarUrl: z
+        .string()
+        .optional()
+        .refine((v) => !v || /^https?:\/\//.test(v), { message: 'Avatar URL không hợp lệ' }),
     language: z.string().min(1, 'Vui lòng chọn ngôn ngữ'),
 });
 
@@ -36,6 +39,7 @@ export const AuthorForm = ({ initialData, defaultLanguage = 'vi', onSubmit, onCa
         register,
         handleSubmit,
         setValue,
+        setError,
         watch,
         formState: { errors },
     } = useForm<AuthorFormValues>({
@@ -68,16 +72,41 @@ export const AuthorForm = ({ initialData, defaultLanguage = 'vi', onSubmit, onCa
         }
     }, [name, setValue, initialData]);
 
+    const internalOnSubmit = async (data: AuthorFormValues) => {
+        try {
+            await onSubmit(data);
+        } catch (err: any) {
+            const res = err?.response?.data;
+            const status = err?.response?.status;
+            if (status === 400 || status === 422) {
+                if (res?.errors && typeof res.errors === 'object') {
+                    for (const key in res.errors) {
+                        const message = Array.isArray(res.errors[key]) ? res.errors[key][0] : res.errors[key];
+                        setError(key as any, { type: 'server', message: String(message) });
+                    }
+                    return;
+                }
+                if (Array.isArray(res?.fieldErrors)) {
+                    res.fieldErrors.forEach((fe: any) => {
+                        setError(fe.field as any, { type: 'server', message: fe.message });
+                    });
+                    return;
+                }
+            }
+            throw err;
+        }
+    };
+
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(internalOnSubmit)} className="space-y-6">
             <div className="space-y-2">
                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tên tác giả</label>
                 <input
                     {...register('name')}
                     placeholder="Nhập tên tác giả..."
-                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className={`admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.name ? 'admin-input-error' : 'focus:ring-2 focus:ring-indigo-500/20'}`}
                 />
-                {errors.name && <p className="text-xs font-bold text-red-500 ml-2">{errors.name.message}</p>}
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -85,16 +114,16 @@ export const AuthorForm = ({ initialData, defaultLanguage = 'vi', onSubmit, onCa
                 <input
                     {...register('slug')}
                     placeholder="ten-tac-gia-slug..."
-                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className={`admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.slug ? 'admin-input-error' : 'focus:ring-2 focus:ring-indigo-500/20'}`}
                 />
-                {errors.slug && <p className="text-xs font-bold text-red-500 ml-2">{errors.slug.message}</p>}
+                {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
             </div>
 
             <div className="space-y-2">
                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ngôn ngữ</label>
                 <select
                     {...register('language')}
-                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className={`admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.language ? 'admin-input-error' : 'focus:ring-2 focus:ring-indigo-500/20'}`}
                 >
                     {languages.map((language) => (
                         <option key={language.id} value={language.key}>
@@ -102,7 +131,7 @@ export const AuthorForm = ({ initialData, defaultLanguage = 'vi', onSubmit, onCa
                         </option>
                     ))}
                 </select>
-                {errors.language && <p className="text-xs font-bold text-red-500 ml-2">{errors.language.message}</p>}
+                {errors.language && <p className="text-red-500 text-xs mt-1">{errors.language.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -111,8 +140,9 @@ export const AuthorForm = ({ initialData, defaultLanguage = 'vi', onSubmit, onCa
                     {...register('bio')}
                     rows={4}
                     placeholder="Nhập tiểu sử tác giả..."
-                    className="admin-input w-full bg-white rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                    className={`admin-input w-full bg-white rounded-[24px] py-4 px-6 text-sm font-medium transition-all resize-none ${errors.bio ? 'admin-input-error' : 'focus:ring-2 focus:ring-indigo-500/20'}`}
                 />
+                {errors.bio && <p className="text-red-500 text-xs mt-1">{errors.bio.message as string}</p>}
             </div>
 
             <div className="space-y-2">
@@ -120,8 +150,9 @@ export const AuthorForm = ({ initialData, defaultLanguage = 'vi', onSubmit, onCa
                 <input
                     {...register('avatarUrl')}
                     placeholder="https://example.com/avatar.png"
-                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className={`admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.avatarUrl ? 'admin-input-error' : 'focus:ring-2 focus:ring-indigo-500/20'}`}
                 />
+                {errors.avatarUrl && <p className="text-red-500 text-xs mt-1">{errors.avatarUrl.message as string}</p>}
             </div>
 
             <div className="flex items-center justify-end gap-4 pt-4">

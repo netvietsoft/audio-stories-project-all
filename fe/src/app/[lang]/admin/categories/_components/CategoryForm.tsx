@@ -14,10 +14,13 @@ import {
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
 const categorySchema = z.object({
-    name: z.string().min(1, 'Tên danh mục không được để trống'),
-    slug: z.string().min(1, 'Slug không được để trống'),
-    description: z.string().optional(),
-    iconUrl: z.string().optional(),
+    name: z.string().min(3, 'Tên danh mục bắt buộc và phải dài hơn 3 ký tự'),
+    slug: z.string().min(3, 'Slug bắt buộc và phải dài hơn 3 ký tự'),
+    description: z.string().max(1000, 'Mô tả quá dài').optional(),
+    iconUrl: z
+        .string()
+        .optional()
+        .refine((v) => !v || /^https?:\/\//.test(v), { message: 'Icon URL không hợp lệ' }),
     language: z.string().min(1, 'Vui lòng chọn ngôn ngữ'),
 });
 
@@ -37,6 +40,7 @@ export const CategoryForm = ({ initialData, defaultLanguage = 'vi', onSubmit, on
         register,
         handleSubmit,
         setValue,
+        setError,
         watch,
         formState: { errors },
     } = useForm<CategoryFormValues>({
@@ -69,16 +73,43 @@ export const CategoryForm = ({ initialData, defaultLanguage = 'vi', onSubmit, on
         }
     }, [name, setValue, initialData]);
 
+    const internalOnSubmit = async (data: CategoryFormValues) => {
+        try {
+            await onSubmit(data);
+        } catch (err: any) {
+            const res = err?.response?.data;
+            const status = err?.response?.status;
+            // Map common backend validation shapes to field errors
+            if (status === 400 || status === 422) {
+                if (res?.errors && typeof res.errors === 'object') {
+                    for (const key in res.errors) {
+                        const message = Array.isArray(res.errors[key]) ? res.errors[key][0] : res.errors[key];
+                        setError(key as any, { type: 'server', message: String(message) });
+                    }
+                    return;
+                }
+                if (Array.isArray(res?.fieldErrors)) {
+                    res.fieldErrors.forEach((fe: any) => {
+                        setError(fe.field as any, { type: 'server', message: fe.message });
+                    });
+                    return;
+                }
+            }
+            // Unknown or critical error: rethrow so parent can handle (toast for 500s, etc.)
+            throw err;
+        }
+    };
+
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(internalOnSubmit)} className="space-y-6">
             <div className="space-y-2">
                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tên danh mục</label>
                 <input
                     {...register('name')}
                     placeholder="Nhập tên danh mục..."
-                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className={`admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.name ? 'admin-input-error' : 'focus:ring-2 focus:ring-indigo-500/20'}`}
                 />
-                {errors.name && <p className="text-xs font-bold text-red-500 ml-2">{errors.name.message}</p>}
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -86,9 +117,9 @@ export const CategoryForm = ({ initialData, defaultLanguage = 'vi', onSubmit, on
                 <input
                     {...register('slug')}
                     placeholder="ten-danh-muc-slug..."
-                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className={`admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.slug ? 'admin-input-error' : 'focus:ring-2 focus:ring-indigo-500/20'}`}
                 />
-                {errors.slug && <p className="text-xs font-bold text-red-500 ml-2">{errors.slug.message}</p>}
+                {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
             </div>
 
 
@@ -96,7 +127,7 @@ export const CategoryForm = ({ initialData, defaultLanguage = 'vi', onSubmit, on
                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ngôn ngữ</label>
                 <select
                     {...register('language')}
-                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className={`admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.language ? 'admin-input-error' : 'focus:ring-2 focus:ring-indigo-500/20'}`}
                 >
                     {languages.map((language) => (
                         <option key={language.id} value={language.key}>
@@ -104,7 +135,7 @@ export const CategoryForm = ({ initialData, defaultLanguage = 'vi', onSubmit, on
                         </option>
                     ))}
                 </select>
-                {errors.language && <p className="text-xs font-bold text-red-500 ml-2">{errors.language.message}</p>}
+                {errors.language && <p className="text-red-500 text-xs mt-1">{errors.language.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -113,8 +144,9 @@ export const CategoryForm = ({ initialData, defaultLanguage = 'vi', onSubmit, on
                     {...register('description')}
                     rows={3}
                     placeholder="Nhập mô tả danh mục..."
-                    className="admin-input w-full bg-white rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none"
+                    className={`admin-input w-full bg-white rounded-[24px] py-4 px-6 text-sm font-medium transition-all resize-none ${errors.description ? 'admin-input-error' : 'focus:ring-2 focus:ring-indigo-500/20'}`}
                 />
+                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -122,8 +154,9 @@ export const CategoryForm = ({ initialData, defaultLanguage = 'vi', onSubmit, on
                 <input
                     {...register('iconUrl')}
                     placeholder="https://example.com/icon.png"
-                    className="admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    className={`admin-input w-full bg-white rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.iconUrl ? 'admin-input-error' : 'focus:ring-2 focus:ring-indigo-500/20'}`}
                 />
+                {errors.iconUrl && <p className="text-red-500 text-xs mt-1">{errors.iconUrl.message}</p>}
             </div>
 
             <div className="flex items-center justify-end gap-4 pt-4">

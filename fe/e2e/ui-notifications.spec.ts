@@ -38,9 +38,9 @@ const readNotifications = unreadNotifications.map((item) => ({ ...item, isRead: 
 const notificationsApiPattern = /\/api\/notifications(\?.*)?$|\/notifications(\?.*)?$/;
 const readAllApiPattern = /\/api\/notifications\/read-all$|\/notifications\/read-all$/;
 
-async function seedLoggedInState(context: Parameters<typeof test>[0]["context"]) {
+async function seedLoggedInState(context: any) {
   await context.addInitScript(
-    ({ accessToken, refreshToken, user }) => {
+    ({ accessToken, refreshToken, user }: { accessToken: string; refreshToken: string; user: any }) => {
       localStorage.setItem("access_token", accessToken);
       localStorage.setItem("refresh_token", refreshToken);
       localStorage.setItem(

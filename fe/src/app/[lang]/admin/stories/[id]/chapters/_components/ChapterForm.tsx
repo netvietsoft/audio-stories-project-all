@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import NextImage from 'next/image';
 import {
     Loader2,
     Save,
@@ -227,6 +228,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         handleSubmit,
         watch,
         setValue,
+        setError,
         formState: { errors },
     } = useForm<ChapterFormValues>({
         resolver: zodResolver(chapterSchema) as any,
@@ -428,24 +430,30 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                 <div className="space-y-2">
                     <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tiêu đề chương</label>
                     <input
+                        name={titleField}
                         value={watch(titleField) || ''}
                         onChange={(e) => handleI18nChange('title', lang, e.target.value)}
                         placeholder={lang === 'vi' ? 'Chương 1: Khởi đầu...' : 'Chapter 1: Beginning...'}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20"
+                        className={`admin-input ${errors[titleField as keyof ChapterFormValues] ? 'admin-input-error' : ''}`}
                     />
-                    {lang === 'vi' && errors.titleVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleVi.message as string}</p>}
-                    {lang === 'en' && errors.titleEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleEn.message as string}</p>}
+                    {errors[titleField as keyof ChapterFormValues] && (
+                        <p className="text-red-500 text-xs mt-1">{(errors[titleField as keyof ChapterFormValues]?.message as string) || ''}</p>
+                    )}
                 </div>
 
                 <div className="space-y-2">
                     <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Giới thiệu chương</label>
                     <textarea
+                        name={descriptionField}
                         value={watch(descriptionField) || ''}
                         onChange={(e) => handleI18nChange('description', lang, e.target.value)}
                         rows={3}
                         placeholder={lang === 'vi' ? 'Nhập giới thiệu chương...' : 'Enter chapter description...'}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 resize-none"
+                        className={`admin-input ${errors[descriptionField as keyof ChapterFormValues] ? 'admin-input-error' : ''} resize-none`}
                     />
+                    {errors[descriptionField as keyof ChapterFormValues] && (
+                        <p className="text-red-500 text-xs mt-1">{(errors[descriptionField as keyof ChapterFormValues]?.message as string) || ''}</p>
+                    )}
                 </div>
 
                 <div className="space-y-3">
@@ -476,7 +484,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             onUploadError={(error: Error) => {
                                 if (lang === 'vi') setIsUploadingAudioVi(false);
                                 if (lang === 'en') setIsUploadingAudioEn(false);
-                                alert(`Lỗi tải audio: ${error.message}`);
+                                setError(audioField as any, { type: 'upload', message: `Lỗi tải audio: ${error.message}` });
                             }}
                             appearance={{
                                 container: { width: '100%' },
@@ -544,13 +552,17 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                 <div className="space-y-2">
                     <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Nội dung chữ</label>
                     <textarea
+                        name={contentField}
                         value={watch(contentField) || ''}
                         onChange={(e) => handleI18nChange('content', lang, e.target.value)}
                         rows={8}
                         placeholder={lang === 'vi' ? 'Dán nội dung chương tiếng Việt...' : 'Paste chapter content in English...'}
                         onPaste={handleContentPaste(lang)}
-                        className="w-full bg-slate-50 border border-slate-300 rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 resize-none"
+                        className={`admin-input ${errors[contentField as keyof ChapterFormValues] ? 'admin-input-error' : ''} resize-none`}
                     />
+                    {errors[contentField as keyof ChapterFormValues] && (
+                        <p className="text-red-500 text-xs mt-1">{(errors[contentField as keyof ChapterFormValues]?.message as string) || ''}</p>
+                    )}
                     <p className="text-xs text-slate-500 ml-2 flex items-start gap-2">
                         <Scissors className="w-3 h-3 mt-0.5 shrink-0" />
                         <span>
@@ -573,7 +585,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
 
         const chapterNumber = Number(values.chapterNumber);
         if (!Number.isFinite(chapterNumber)) {
-            alert('Chapter number is invalid.');
+            setError('chapterNumber', { type: 'manual', message: 'Số chương không hợp lệ.' });
             return;
         }
 
@@ -589,8 +601,9 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         const audioEn = cleanText(values.audioUrlEn);
 
         const title = selectedLanguage === 'en' ? (titleEn || titleVi) : (titleVi || titleEn);
+        const titleField = selectedLanguage === 'en' ? 'titleEn' : 'titleVi';
         if (title && title.length > 300) {
-            alert('Chapter title is too long (max 300 characters).');
+            setError(titleField as any, { type: 'manual', message: 'Chapter title is too long (max 300 characters).' });
             return;
         }
 
@@ -602,23 +615,23 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         const youtubeVideoId = youtubeInput ? cleanText(extractYoutubeId(youtubeInput)) : undefined;
 
         if (description && description.length > 2000) {
-            alert('Chapter description is too long (max 2000 characters).');
+            setError((selectedLanguage === 'en' ? 'descriptionEn' : 'descriptionVi') as any, { type: 'manual', message: 'Chapter description is too long (max 2000 characters).' });
             return;
         }
         if (content && content.length > 5000000) {
-            alert('Chapter content is too long.');
+            setError((selectedLanguage === 'en' ? 'contentEn' : 'contentVi') as any, { type: 'manual', message: 'Chapter content is too long.' });
             return;
         }
         if (r2AudioUrl && r2AudioUrl.length > 500) {
-            alert('Audio URL is too long (max 500 characters).');
+            setError((selectedLanguage === 'en' ? 'audioUrlEn' : 'audioUrlVi') as any, { type: 'manual', message: 'Audio URL is too long (max 500 characters).' });
             return;
         }
         if (thumbnailUrl && thumbnailUrl.length > 500) {
-            alert('Thumbnail URL is too long (max 500 characters).');
+            setError('thumbnailUrl' as any, { type: 'manual', message: 'Thumbnail URL is too long (max 500 characters).' });
             return;
         }
         if (youtubeVideoId && youtubeVideoId.length > 20) {
-            alert('YouTube value is invalid. Please use a valid YouTube URL or video ID.');
+            setError('youtubeVideoId' as any, { type: 'manual', message: 'YouTube value is invalid. Please use a valid YouTube URL or video ID.' });
             return;
         }
 
@@ -639,20 +652,38 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             language: selectedLanguage,
         };
 
-        await onSubmit(payload);
+        try {
+            await onSubmit(payload);
+        } catch (err: any) {
+            const res = err?.response?.data;
+            const status = err?.response?.status;
+            if (status === 400 || status === 422) {
+                if (res?.errors && typeof res.errors === 'object') {
+                    for (const key in res.errors) {
+                        const message = Array.isArray(res.errors[key]) ? res.errors[key][0] : res.errors[key];
+                        setError(key as any, { type: 'server', message: String(message) });
+                    }
+                    return;
+                }
+                if (Array.isArray(res?.fieldErrors)) {
+                    res.fieldErrors.forEach((fe: any) => {
+                        setError(fe.field as any, { type: 'server', message: fe.message });
+                    });
+                    return;
+                }
+            }
+            console.error('Failed to submit chapter:', err);
+            throw err;
+        }
     };
 
     const handleFormError = (formErrors: FieldErrors<ChapterFormValues>) => {
-        const firstError = Object.values(formErrors).find((error) => {
-            if (!error || typeof error !== 'object') return false;
-            return 'message' in error;
-        }) as { message?: unknown } | undefined;
-
-        const message =
-            typeof firstError?.message === 'string'
-                ? firstError.message
-                : 'Invalid form data. Please check your inputs.';
-        alert(message);
+        // Focus first invalid field if possible (no alert/toast for validation)
+        const firstKey = Object.keys(formErrors)[0] as keyof ChapterFormValues | undefined;
+        if (firstKey) {
+            const el = document.querySelector(`[name="${String(firstKey)}"]`) as HTMLElement | null;
+            if (el && typeof el.focus === 'function') el.focus();
+        }
     };
 
     const lang = selectedLanguage as Locale;
@@ -775,9 +806,9 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             type="number"
                             step="0.1"
                             {...register('chapterNumber', { valueAsNumber: true })}
-                            className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                            className={`admin-input ${errors.chapterNumber ? 'admin-input-error' : ''}`}
                         />
-                        {errors.chapterNumber && <p className="text-xs font-bold text-red-500 ml-2">{errors.chapterNumber.message}</p>}
+                        {errors.chapterNumber && <p className="text-red-500 text-xs mt-1">{errors.chapterNumber.message}</p>}
                     </div>
 
                     <div className="space-y-2">
@@ -785,7 +816,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         <div className="relative">
                             <select
                                 {...register('language')}
-                                className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                                className={`admin-input ${errors.language ? 'admin-input-error' : ''} appearance-none`}
                             >
                                 {languages.map((language) => (
                                     <option key={language.id} value={language.key}>
@@ -795,7 +826,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             </select>
                             <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         </div>
-                        {errors.language && <p className="text-xs font-bold text-red-500 ml-2">{errors.language.message}</p>}
+                        {errors.language && <p className="text-red-500 text-xs mt-1">{errors.language.message}</p>}
                     </div>
 
                     {/* Title */}
@@ -804,23 +835,31 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                            <span className="ml-2 text-indigo-500 lowercase text-xs">({lang})</span>
                         </label>
                         <input
+                            name={titleField}
                             value={watch(titleField) || ''}
                             onChange={(e) => handleI18nChange('title', lang, e.target.value)}
                             placeholder="Nhập tiêu đề chương..."
-                            className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                            className={`admin-input ${errors[titleField as keyof ChapterFormValues] ? 'admin-input-error' : ''}`}
                         />
+                        {errors[titleField as keyof ChapterFormValues] && (
+                            <p className="text-red-500 text-xs mt-1">{(errors[titleField as keyof ChapterFormValues]?.message as string) || ''}</p>
+                        )}
                     </div>
 
                     {/* Description */}
                     <div className="space-y-2">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Giới thiệu ngắn</label>
                         <textarea
+                            name={descriptionField}
                             value={watch(descriptionField) || ''}
                             onChange={(e) => handleI18nChange('description', lang, e.target.value)}
                             rows={4}
                             placeholder="Mô tả tóm tắt..."
-                            className="w-full bg-white border border-slate-200 rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 resize-none shadow-sm"
+                            className={`admin-input ${errors[descriptionField as keyof ChapterFormValues] ? 'admin-input-error' : ''} resize-none`}
                         />
+                        {errors[descriptionField as keyof ChapterFormValues] && (
+                            <p className="text-red-500 text-xs mt-1">{(errors[descriptionField as keyof ChapterFormValues]?.message as string) || ''}</p>
+                        )}
                     </div>
                 </div>
 
@@ -856,7 +895,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                     onUploadError={(error: Error) => {
                                         if (lang === 'vi') setIsUploadingAudioVi(false);
                                         if (lang === 'en') setIsUploadingAudioEn(false);
-                                        alert(`Lỗi tải audio: ${error.message}`);
+                                        setError(audioField as any, { type: 'upload', message: `Lỗi tải audio: ${error.message}` });
                                     }}
                                     appearance={{
                                         container: { width: '100%' },
@@ -909,7 +948,14 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             <div className="relative group flex flex-col items-center">
                                 {watch('thumbnailUrl') ? (
                                     <div className="relative inline-block">
-                                        <img src={watch('thumbnailUrl')} alt="Thumbnail" className="w-32 h-32 object-cover rounded-[24px] shadow-sm border border-slate-200" />
+                                        <NextImage
+                                            src={watch('thumbnailUrl') || ''}
+                                            alt="Thumbnail"
+                                            width={128}
+                                            height={128}
+                                            className="w-32 h-32 object-cover rounded-[24px] shadow-sm border border-slate-200"
+                                            unoptimized
+                                        />
                                         <button
                                             type="button"
                                             onClick={async () => {
@@ -935,7 +981,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                         }}
                                         onUploadError={(error: Error) => {
                                             setIsUploadingThumbnail(false);
-                                            alert(`Lỗi tải ảnh: ${error.message}`);
+                                            setError('thumbnailUrl' as any, { type: 'upload', message: `Lỗi tải ảnh: ${error.message}` });
                                         }}
                                         appearance={{
                                             container: { width: '100px', margin: '0 auto' },
@@ -972,9 +1018,9 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             <input
                                 type="number"
                                 {...register('audioDuration')}
-                                className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                                className={`admin-input ${errors.audioDuration ? 'admin-input-error' : ''}`}
                             />
-                            {errors.audioDuration && <p className="text-xs font-bold text-red-500 ml-2">{errors.audioDuration.message}</p>}
+                            {errors.audioDuration && <p className="text-red-500 text-xs mt-1">{errors.audioDuration.message}</p>}
                         </div>
 
                         {/* Access Type & Unlock Time */}
@@ -986,7 +1032,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                 <div className="relative">
                                     <select
                                         {...register('accessType')}
-                                        className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                                        className={`admin-input appearance-none`}
                                     >
                                         <option value="free">Miễn phí (Free)</option>
                                         <option value="timed">Mở khóa theo bản quyền</option>
@@ -1002,7 +1048,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                     <input
                                         type="datetime-local"
                                         {...register('unlocksAt')}
-                                        className="w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                                        className={`admin-input ${errors.unlocksAt ? 'admin-input-error' : ''}`}
                                     />
                                 </div>
                             )}
@@ -1014,9 +1060,10 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                 <input
                                     {...register('youtubeVideoId')}
                                     placeholder="Ví dụ: dQw4w9WgXcQ"
-                                    className="w-full bg-white border border-slate-200 rounded-2xl py-3 px-6 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                                    className={`admin-input ${errors.youtubeVideoId ? 'admin-input-error' : ''}`}
                                     onChange={(e) => setValue('youtubeVideoId', extractYoutubeId(e.target.value))}
                                 />
+                                {errors.youtubeVideoId && <p className="text-red-500 text-xs mt-1">{errors.youtubeVideoId.message}</p>}
                             </div>
                         </div>
                     </div>

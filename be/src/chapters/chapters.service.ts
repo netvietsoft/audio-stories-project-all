@@ -25,7 +25,26 @@ export class ChaptersService {
         return this.prisma.chapter.findMany({
             where: { storyId, deletedAt: null },
             orderBy: { chapterNumber: 'asc' },
-            include: {
+            select: {
+                id: true,
+                storyId: true,
+                chapterNumber: true,
+                title: true,
+                description: true,
+                thumbnailUrl: true,
+                audioUrl: true,
+                r2AudioUrl: true,
+                youtubeVideoId: true,
+                audioDuration: true,
+                accessType: true,
+                isInteractive: true,
+                unlocksAt: true,
+                viewCount: true,
+                createdAt: true,
+                updatedAt: true,
+                language: {
+                    select: { key: true },
+                },
                 _count: {
                     select: { variants: true },
                 },
@@ -41,7 +60,15 @@ export class ChaptersService {
             },
             take: limit,
             orderBy: { createdAt: 'desc' },
-            include: {
+            select: {
+                id: true,
+                storyId: true,
+                chapterNumber: true,
+                title: true,
+                thumbnailUrl: true,
+                audioDuration: true,
+                r2AudioUrl: true,
+                createdAt: true,
                 language: {
                     select: { key: true },
                 },
@@ -88,7 +115,21 @@ export class ChaptersService {
                 skip,
                 take: limit,
                 orderBy: { createdAt: 'desc' },
-                include: {
+                select: {
+                    id: true,
+                    storyId: true,
+                    chapterNumber: true,
+                    title: true,
+                    description: true,
+                    thumbnailUrl: true,
+                    youtubeVideoId: true,
+                    audioDuration: true,
+                    accessType: true,
+                    isInteractive: true,
+                    unlocksAt: true,
+                    viewCount: true,
+                    createdAt: true,
+                    updatedAt: true,
                     language: {
                         select: { key: true },
                     },
@@ -126,6 +167,58 @@ export class ChaptersService {
         });
 
         if (!chapter || chapter.deletedAt) {
+            throw new NotFoundException(`Chapter with ID ${id} not found`);
+        }
+
+        return chapter;
+    }
+
+    async findPublicDetail(id: string) {
+        const chapter = await this.prisma.chapter.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                storyId: true,
+                chapterNumber: true,
+                title: true,
+                description: true,
+                content: true,
+                thumbnailUrl: true,
+                audioUrl: true,
+                r2AudioUrl: true,
+                youtubeVideoId: true,
+                audioDuration: true,
+                accessType: true,
+                isInteractive: true,
+                unlocksAt: true,
+                createdAt: true,
+                updatedAt: true,
+                variants: {
+                    where: { deletedAt: null },
+                    orderBy: { orderIndex: 'asc' },
+                    select: {
+                        id: true,
+                        chapterId: true,
+                        parentId: true,
+                        nextChapterId: true,
+                        nextVariantId: true,
+                        title: true,
+                        description: true,
+                        content: true,
+                        audioUrl: true,
+                        r2AudioUrl: true,
+                        audioDuration: true,
+                        unlockPrice: true,
+                        orderIndex: true,
+                        isDefault: true,
+                        createdAt: true,
+                        updatedAt: true,
+                    },
+                },
+            },
+        });
+
+        if (!chapter) {
             throw new NotFoundException(`Chapter with ID ${id} not found`);
         }
 

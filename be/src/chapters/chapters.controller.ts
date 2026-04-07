@@ -63,6 +63,12 @@ export class ChaptersController {
         return this.chaptersService.findAllGlobal(query);
     }
 
+    @Public()
+    @Get('chapters/:id/public')
+    findPublicDetail(@Param('id') id: string) {
+        return this.chaptersService.findPublicDetail(id);
+    }
+
     @Get('chapters/:id')
     @UseGuards(JwtAccessGuard, RolesGuard)
     @Roles('ADMIN')

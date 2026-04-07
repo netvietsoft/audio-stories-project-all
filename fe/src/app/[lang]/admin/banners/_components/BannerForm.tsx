@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Image as ImageIcon, Loader2, Save, Trash2, X } from 'lucide-react';
+import NextImage from 'next/image';
 
 import { UploadButton } from '@/lib/uploadthing';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
@@ -146,7 +147,7 @@ export default function BannerForm({ initialData, selectedLocale, isLoading, onS
               <label className="text-sm font-black uppercase tracking-wider text-slate-700">Ảnh banner</label>
               {previewUrl ? (
                 <div className="group relative aspect-[16/6] w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-                  <img src={previewUrl} alt="Banner preview" className="h-full w-full object-cover" />
+                  <NextImage src={previewUrl} alt="Banner preview" fill className="h-full w-full object-cover" unoptimized />
                   <button
                     type="button"
                     onClick={() => setValue('imageUrl', '')}

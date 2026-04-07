@@ -307,11 +307,6 @@ export default function StoryDetailClient() {
                   }`}>
                   {story.status === "completed" ? t("statusCompleted") : t("statusOngoing")}
                 </span>
-                {story.isInteractive && (
-                  <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 ml-1">
-                    {t("interactiveStoryBadge")}
-                  </span>
-                )}
               </div>
             </div>
 

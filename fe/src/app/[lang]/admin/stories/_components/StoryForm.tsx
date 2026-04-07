@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
@@ -94,6 +94,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
         register,
         handleSubmit,
         setValue,
+        setError,
         watch,
         formState: { errors },
     } = useForm<StoryFormValues>({
@@ -233,66 +234,97 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
     }, [titleVi, titleEn, isEnglishLocale, setValue, initialData]);
 
     const handleFormSubmit = async (values: StoryFormValues) => {
-        try {
-            const cleanText = (value?: string) => {
-                const trimmed = value?.trim();
-                return trimmed ? trimmed : undefined;
-            };
+        const cleanText = (value?: string) => {
+            const trimmed = value?.trim();
+            return trimmed ? trimmed : undefined;
+        };
 
-            const titleVi = cleanText(values.titleVi);
-            const titleEn = cleanText(values.titleEn);
-            const descriptionVi = cleanText(values.descriptionVi);
-            const descriptionEn = cleanText(values.descriptionEn);
+        const titleVi = cleanText(values.titleVi);
+        const titleEn = cleanText(values.titleEn);
+        const descriptionVi = cleanText(values.descriptionVi);
+        const descriptionEn = cleanText(values.descriptionEn);
 
-            const title = isEnglishLocale ? (titleEn || titleVi) : (titleVi || titleEn);
-            if (!title) {
-                alert('Vui lòng nhập ít nhất một tiêu đề truyện.');
+        const title = isEnglishLocale ? (titleEn || titleVi) : (titleVi || titleEn);
+        if (!title) {
+            // Set field-level error instead of alert
+            if (isEnglishLocale) {
+                setError('titleEn', { type: 'manual', message: 'Vui lòng nhập ít nhất một tiêu đề truyện.' });
+            } else {
+                setError('titleVi', { type: 'manual', message: 'Vui lòng nhập ít nhất một tiêu đề truyện.' });
+            }
+            return;
+        }
+
+        const description = isEnglishLocale ? (descriptionEn || descriptionVi) : (descriptionVi || descriptionEn);
+
+        // If a local file is selected, upload it first to backend and get local URL
+        setIsUploadingThumbnail(true);
+        let finalThumbnailUrl = values.thumbnailUrl;
+        if (selectedFile) {
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            try {
+                const uploadRes = await apiClient.post('/upload/image', formData);
+                finalThumbnailUrl = uploadRes.data?.url;
+            } catch (err: any) {
+                console.error('Failed to upload image:', err);
+                setError('thumbnailUrl', { type: 'server', message: 'Lỗi khi tải ảnh lên server. Vui lòng thử lại.' });
+                setIsUploadingThumbnail(false);
                 return;
             }
+        }
 
-            const description = isEnglishLocale ? (descriptionEn || descriptionVi) : (descriptionVi || descriptionEn);
+        const finalData: StorySubmitPayload = {
+            title,
+            slug: values.slug?.trim(),
+            description,
+            thumbnailUrl: finalThumbnailUrl || undefined,
+            authorId: values.authorId,
+            status: values.status,
+            categoryIds: values.categoryIds,
+            audioUrl: values.audioUrl || undefined,
+            isRecommended: values.isRecommended,
+            isInteractive: values.isInteractive,
+            language: selectedLanguage,
+        };
 
-            // If a local file is selected, upload it first to backend and get local URL
-            setIsUploadingThumbnail(true);
-            let finalThumbnailUrl = values.thumbnailUrl;
-            if (selectedFile) {
-                const formData = new FormData();
-                formData.append('file', selectedFile);
-                try {
-                    const uploadRes = await apiClient.post('/upload/image', formData);
-                    finalThumbnailUrl = uploadRes.data?.url;
-                } catch (err) {
-                    console.error('Failed to upload image:', err);
-                    alert('Lỗi khi tải ảnh lên server. Vui lòng thử lại.');
+        // Include selected chapter IDs for new stories
+        if (!initialData?.id && selectedChapterIds.length > 0) {
+            finalData.chapterIds = selectedChapterIds;
+        }
+
+        try {
+            await onSubmit(finalData);
+        } catch (err: any) {
+            const res = err?.response?.data;
+            const status = err?.response?.status;
+            if (status === 400 || status === 422) {
+                if (res?.errors && typeof res.errors === 'object') {
+                    for (const key in res.errors) {
+                        const message = Array.isArray(res.errors[key]) ? res.errors[key][0] : res.errors[key];
+                        setError(key as any, { type: 'server', message: String(message) });
+                    }
+                    return;
+                }
+                if (Array.isArray(res?.fieldErrors)) {
+                    res.fieldErrors.forEach((fe: any) => {
+                        setError(fe.field as any, { type: 'server', message: fe.message });
+                    });
                     return;
                 }
             }
-
-            const finalData: StorySubmitPayload = {
-                title,
-                slug: values.slug.trim(),
-                description,
-                thumbnailUrl: finalThumbnailUrl || undefined,
-                authorId: values.authorId,
-                status: values.status,
-                categoryIds: values.categoryIds,
-                audioUrl: values.audioUrl || undefined,
-                isRecommended: values.isRecommended,
-                isInteractive: values.isInteractive,
-                language: selectedLanguage,
-            };
-
-            // Include selected chapter IDs for new stories
-            if (!initialData?.id && selectedChapterIds.length > 0) {
-                finalData.chapterIds = selectedChapterIds;
-            }
-
-            await onSubmit(finalData);
-        } catch (error) {
-            console.error('Failed to submit story:', error);
-            alert('Có lỗi xảy ra khi lưu truyện. Vui lòng thử lại.');
+            console.error('Failed to submit story:', err);
+            throw err;
         } finally {
             setIsUploadingThumbnail(false);
+        }
+    };
+
+    const handleFormError = (formErrors: FieldErrors<StoryFormValues>) => {
+        const firstKey = Object.keys(formErrors)[0] as keyof StoryFormValues | undefined;
+        if (firstKey) {
+            const el = document.querySelector(`[name="${String(firstKey)}"]`) as HTMLElement | null;
+            if (el && typeof el.focus === 'function') el.focus();
         }
     };
 
@@ -395,10 +427,10 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                         <input
                             {...register(isEnglishLocale ? 'titleEn' : 'titleVi')}
                             placeholder={isEnglishLocale ? 'Enter story title in English' : 'Nhập tên truyện tiếng Việt'}
-                            className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-2xl py-4 px-6 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-sm"
+                            className={`admin-input w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-medium transition-all ${isEnglishLocale ? (errors.titleEn ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm') : (errors.titleVi ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm')}`}
                         />
-                        {!isEnglishLocale && errors.titleVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleVi.message}</p>}
-                        {isEnglishLocale && errors.titleEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.titleEn.message}</p>}
+                        {!isEnglishLocale && errors.titleVi && <p className="text-red-500 text-xs mt-1">{errors.titleVi.message}</p>}
+                        {isEnglishLocale && errors.titleEn && <p className="text-red-500 text-xs mt-1">{errors.titleEn.message}</p>}
                     </div>
 
                     {/* Hàng 2: Input slug, trạng thái và ngôn ngữ */}
@@ -408,9 +440,9 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             <input
                                 {...register('slug')}
                                 placeholder="ten-truyen-slug..."
-                                className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-2xl py-4 px-6 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-sm"
+                                className={`admin-input w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.slug ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm'}`}
                             />
-                            {errors.slug && <p className="text-xs font-bold text-red-500 ml-2">{errors.slug.message}</p>}
+                            {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
                         </div>
 
                         <div className="space-y-2">
@@ -418,13 +450,14 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             <div className="relative">
                                 <select
                                     {...register('status')}
-                                    className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer shadow-sm transition-all"
+                                    className={`admin-input w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none cursor-pointer transition-all ${errors.status ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm'}`}
                                 >
                                     <option value="ongoing">Đang ra (Ongoing)</option>
                                     <option value="completed">Hoàn thành (Completed)</option>
                                 </select>
                                 <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                             </div>
+                            {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status.message}</p>}
                         </div>
 
                         <div className="space-y-2">
@@ -432,7 +465,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             <div className="relative">
                                 <select
                                     {...register('language')}
-                                    className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none focus:ring-4 focus:ring-indigo-500/10 cursor-pointer shadow-sm transition-all"
+                                    className={`admin-input w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 appearance-none cursor-pointer transition-all ${errors.language ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm'}`}
                                 >
                                     {languages.map((language) => (
                                         <option key={language.id} value={language.key}>
@@ -442,12 +475,13 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 </select>
                                 <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                             </div>
+                            {errors.language && <p className="text-red-500 text-xs mt-1">{errors.language.message}</p>}
                         </div>
 
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                        <div className={`admin-input rounded-2xl border border-slate-200 bg-white px-5 py-4 ${errors.isRecommended ? 'admin-input-error' : ''}`}>
                             <label className="flex cursor-pointer items-center justify-between gap-4">
                                 <div>
                                     <p className="text-sm font-black uppercase tracking-wider text-slate-700">Đề xuất ở trang đọc</p>
@@ -455,9 +489,10 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 </div>
                                 <input type="checkbox" {...register('isRecommended')} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
                             </label>
+                            {errors.isRecommended && <p className="text-red-500 text-xs mt-1">{errors.isRecommended.message}</p>}
                         </div>
 
-                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+                        <div className={`admin-input rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 ${errors.isInteractive ? 'admin-input-error' : ''}`}>
                             <label className="flex cursor-pointer items-center justify-between gap-4">
                                 <div>
                                     <p className="text-sm font-black uppercase tracking-wider text-amber-900">Là Truyện Tương Tác</p>
@@ -465,6 +500,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 </div>
                                 <input type="checkbox" {...register('isInteractive')} className="h-5 w-5 rounded border-amber-300 text-amber-600 focus:ring-amber-500" />
                             </label>
+                            {errors.isInteractive && <p className="text-red-500 text-xs mt-1">{errors.isInteractive.message}</p>}
                         </div>
                     </div>
 
@@ -484,15 +520,17 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                         <div className="relative">
 
                             <button
+                                name="authorId"
                                 type="button"
                                 onClick={() => setIsAuthorOpen(!isAuthorOpen)}
-                                className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-indigo-500/10 transition-all flex items-center justify-between shadow-sm"
+                                className={`admin-input w-full bg-white border border-slate-200 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 transition-all flex items-center justify-between ${errors.authorId ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm'}`}
                             >
                                 <span className={selectedAuthor ? 'text-slate-900' : 'text-slate-400'}>
                                     {selectedAuthor ? selectedAuthor.name : 'Chọn tác giả'}
                                 </span>
                                 <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isAuthorOpen ? 'rotate-180' : ''}`} />
                             </button>
+                            <input type="hidden" {...register('authorId')} />
 
                             {isAuthorOpen && (
                                 <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
@@ -535,7 +573,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 </div>
                             )}
                         </div>
-                        {errors.authorId && <p className="text-xs font-bold text-red-500 ml-2">{errors.authorId.message}</p>}
+                        {errors.authorId && <p className="text-red-500 text-xs mt-1">{errors.authorId.message}</p>}
                     </div>
 
                     {/* Hàng 4: Chọn thể loại (Searchable Dropdown) */}
@@ -554,9 +592,10 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                         <div className="relative">
 
                             <button
+                                name="categoryIds"
                                 type="button"
                                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                                className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 focus:ring-4 focus:ring-indigo-500/10 transition-all flex items-center justify-between min-h-[56px] shadow-sm"
+                                className={`admin-input w-full bg-white border border-slate-200 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 transition-all flex items-center justify-between min-h-[56px] ${errors.categoryIds ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm'}`}
                             >
                                 <div className="flex flex-wrap gap-2">
                                     {selectedCategoryIds.length > 0 ? (
@@ -597,6 +636,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 </div>
                                 <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform shrink-0 ${isCategoryOpen ? 'rotate-180' : ''}`} />
                             </button>
+                            <input type="hidden" {...register('categoryIds')} />
 
                             {isCategoryOpen && (
                                 <div className="absolute z-20 top-full left-0 w-full mt-2 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
@@ -635,7 +675,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 </div>
                             )}
                         </div>
-                        {errors.categoryIds && <p className="text-xs font-bold text-red-500 ml-2">{errors.categoryIds.message}</p>}
+                        {errors.categoryIds && <p className="text-red-500 text-xs mt-1">{errors.categoryIds.message}</p>}
                     </div>
 
                     {/* Hàng 5: Quản lý chương */}
@@ -741,10 +781,10 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             {...register(isEnglishLocale ? 'descriptionEn' : 'descriptionVi')}
                             rows={5}
                             placeholder={isEnglishLocale ? 'Enter English description...' : 'Nhập giới thiệu tiếng Việt...'}
-                            className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-[24px] py-4 px-6 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none shadow-sm"
+                            className={`admin-input w-full bg-white border border-slate-200 rounded-[24px] py-4 px-6 text-sm font-medium transition-all resize-none shadow-sm ${isEnglishLocale ? (errors.descriptionEn ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10') : (errors.descriptionVi ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10')}`}
                         />
-                        {!isEnglishLocale && errors.descriptionVi && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionVi.message}</p>}
-                        {isEnglishLocale && errors.descriptionEn && <p className="text-xs font-bold text-red-500 ml-2">{errors.descriptionEn.message}</p>}
+                        {!isEnglishLocale && errors.descriptionVi && <p className="text-red-500 text-xs mt-1">{errors.descriptionVi.message}</p>}
+                        {isEnglishLocale && errors.descriptionEn && <p className="text-red-500 text-xs mt-1">{errors.descriptionEn.message}</p>}
                     </div>
 
                     {/* Thumbnail: allow URL input OR file select (mutually exclusive) */}
@@ -794,7 +834,8 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                             if (v) setSelectedFile(null);
                                         }}
                                         placeholder="https://..."
-                                        className="w-full bg-white border border-slate-200 hover:border-slate-300 focus:border-indigo-500 rounded-2xl py-4 px-6 text-sm font-medium focus:ring-4 focus:ring-indigo-500/10 transition-all shadow-sm"
+                                        name="thumbnailUrl"
+                                        className={`admin-input w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.thumbnailUrl ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm'}`}
                                         disabled={!!selectedFile}
                                     />
                                 </div>
@@ -826,6 +867,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 </div>
                             </div>
                         )}
+                        {errors.thumbnailUrl && <p className="text-red-500 text-xs mt-1">{errors.thumbnailUrl.message}</p>}
                     </div>
                 </div>
 

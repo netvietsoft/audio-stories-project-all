@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Loader2, Save, X } from 'lucide-react';
@@ -35,7 +35,8 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
     register,
     handleSubmit,
     watch,
-      setValue,
+    setValue,
+    setError,
     formState: { errors },
   } = useForm<AdFormValues>({
     resolver: zodResolver(adSchema),
@@ -51,8 +52,41 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
 
   const previewImage = watch('imageUrl');
 
+  const internalOnSubmit = async (data: AdFormValues) => {
+    try {
+      await onSubmit(data);
+    } catch (err: any) {
+      const res = err?.response?.data;
+      const status = err?.response?.status;
+      if (status === 400 || status === 422) {
+        if (res?.errors && typeof res.errors === 'object') {
+          for (const key in res.errors) {
+            const message = Array.isArray(res.errors[key]) ? res.errors[key][0] : res.errors[key];
+            setError(key as any, { type: 'server', message: String(message) });
+          }
+          return;
+        }
+        if (Array.isArray(res?.fieldErrors)) {
+          res.fieldErrors.forEach((fe: any) => {
+            setError(fe.field as any, { type: 'server', message: fe.message });
+          });
+          return;
+        }
+      }
+      throw err;
+    }
+  };
+
+  const handleFormError = (formErrors: FieldErrors<AdFormValues>) => {
+    const firstKey = Object.keys(formErrors)[0] as keyof AdFormValues | undefined;
+    if (firstKey) {
+      const el = document.querySelector(`[name="${String(firstKey)}"]`) as HTMLElement | null;
+      if (el && typeof el.focus === 'function') el.focus();
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="mx-auto max-w-4xl space-y-8">
+    <form onSubmit={handleSubmit(internalOnSubmit, handleFormError)} className="mx-auto max-w-4xl space-y-8">
       <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
         <div className="space-y-6 p-8">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -61,15 +95,15 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
               <input
                 {...register('partnerName')}
                 placeholder="Shopee, Lazada..."
-                className="admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
+                className={`admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none transition ${errors.partnerName ? 'admin-input-error' : 'ring-indigo-500/20 focus:ring-2'}`}
               />
-              {errors.partnerName ? <p className="text-xs font-bold text-red-500">{errors.partnerName.message}</p> : null}
+              {errors.partnerName ? <p className="text-red-500 text-xs mt-1">{errors.partnerName.message}</p> : null}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-black uppercase tracking-wider text-slate-700">Ngôn ngữ hiển thị</label>
               <select
                 {...register('languageId')}
-                className="admin-input h-[50px] w-full rounded-2xl bg-white px-4 text-sm font-semibold text-slate-700 outline-none ring-indigo-500/20 transition focus:ring-2"
+                className={`admin-input h-[50px] w-full rounded-2xl bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition ${errors.languageId ? 'admin-input-error' : 'ring-indigo-500/20 focus:ring-2'}`}
               >
                 <option value="all">Global (mọi ngôn ngữ)</option>
                 {languages.map((language) => (
@@ -78,7 +112,7 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
                   </option>
                 ))}
               </select>
-              {errors.languageId ? <p className="text-xs font-bold text-red-500">{errors.languageId.message}</p> : null}
+              {errors.languageId ? <p className="text-red-500 text-xs mt-1">{errors.languageId.message}</p> : null}
             </div>
 
             <div className="space-y-2">
@@ -95,9 +129,9 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
             <input
               {...register('title')}
               placeholder="Tai nghe Bluetooth chống ồn..."
-              className="admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
+              className={`admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none transition ${errors.title ? 'admin-input-error' : 'ring-indigo-500/20 focus:ring-2'}`}
             />
-            {errors.title ? <p className="text-xs font-bold text-red-500">{errors.title.message}</p> : null}
+            {errors.title ? <p className="text-red-500 text-xs mt-1">{errors.title.message}</p> : null}
           </div>
 
           <div className="space-y-2">
@@ -109,7 +143,7 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
               onUploadingChange={setIsUploadingImage}
               previewAspectRatio="aspect-[4/3]"
             />
-            {errors.imageUrl ? <p className="text-xs font-bold text-red-500">{errors.imageUrl.message}</p> : null}
+            {errors.imageUrl ? <p className="text-red-500 text-xs mt-1">{errors.imageUrl.message}</p> : null}
           </div>
 
           <div className="space-y-2">
@@ -117,9 +151,9 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
             <input
               {...register('targetUrl')}
               placeholder="https://..."
-              className="admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none ring-indigo-500/20 transition focus:ring-2"
+              className={`admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none transition ${errors.targetUrl ? 'admin-input-error' : 'ring-indigo-500/20 focus:ring-2'}`}
             />
-            {errors.targetUrl ? <p className="text-xs font-bold text-red-500">{errors.targetUrl.message}</p> : null}
+            {errors.targetUrl ? <p className="text-red-500 text-xs mt-1">{errors.targetUrl.message}</p> : null}
           </div>
         </div>
 

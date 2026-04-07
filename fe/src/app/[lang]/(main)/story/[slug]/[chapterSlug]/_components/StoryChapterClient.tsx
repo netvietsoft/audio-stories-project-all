@@ -1488,7 +1488,7 @@ export default function StoryChapterClient() {
                   </div>
 
                   <div className="hidden w-full md:grid md:grid-cols-[150px_minmax(0,1fr)] md:gap-x-3 md:items-stretch">
-                    <div className="w-[150px] shrink-0 self-start">
+                    <div className="w-[15 0px] shrink-0 self-start">
                       <div className="relative w-full overflow-hidden rounded-md shadow-md" style={{ aspectRatio: "2/3" }}>
                         <Image src={playerCoverUrl} alt={story.title} fill className="object-cover" />
                       </div>

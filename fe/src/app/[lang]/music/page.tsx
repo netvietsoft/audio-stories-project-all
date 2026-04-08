@@ -111,7 +111,7 @@ export default function MusicPage() {
               artist: item.artist?.trim() || unknownArtist,
               thumbnailUrl: item.thumbnailUrl || "/thumbnaildefault.jpg",
               audioUrl: item.audioUrl,
-              category: categoryCycle[index % categoryCycle.length],
+              category: categoryCycle[index % categoryCycle.length] as MusicTrack["category"],
             } satisfies MusicTrack;
           })
           .filter((item) => item.audioUrl);

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play, Settings2, SkipBack, SkipForward, Timer, Volume2, VolumeX } from "lucide-react";
-import YouTube, { YouTubeProps } from "react-youtube";
+import YouTube from "react-youtube";
+import type { YouTubeProps } from "react-youtube";
 
 type YouTubePoCProps = {
   videoId: string;

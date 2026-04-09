@@ -385,7 +385,7 @@ export default function MusicPage() {
                         />
 
                         {playing && (
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="absolute left-0 right-0 bottom-0 flex items-end justify-center pb-1 pointer-events-none">
                             <div className="wave-bars large text-pink-500 dark:text-pink-300" style={{ width: 64, height: 40 }}>
                               <span className="wave-bar" />
                               <span className="wave-bar" />

@@ -58,9 +58,9 @@ export default function MusicCard({
           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
 
-        {/* Wave bars overlay when playing */}
+        {/* Wave bars overlay when playing - anchored to bottom of thumbnail */}
         {isPlaying && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="absolute left-0 right-0 bottom-0 flex items-end justify-center pb-2 pointer-events-none">
             <div className="wave-bars large text-pink-500 dark:text-pink-300" style={{ width: 56, height: 36 }}>
               <span className="wave-bar" />
               <span className="wave-bar" />

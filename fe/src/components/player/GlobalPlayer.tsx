@@ -20,6 +20,14 @@ const formatDuration = (seconds?: number | null) => {
 
 export default function GlobalPlayer() {
   const t = useTranslations("Player");
+  const safeT = (key: string, fallback: string) => {
+    try {
+      // next-intl may throw if key missing at runtime; guard and fallback
+      return (t as unknown as (k: string) => string)(key);
+    } catch {
+      return fallback;
+    }
+  };
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sleepMenuRef = useRef<HTMLDivElement | null>(null);
@@ -465,11 +473,11 @@ export default function GlobalPlayer() {
             <button
               onClick={() => setShowSleepMenu((prev) => !prev)}
               className="inline-flex items-center gap-1 rounded-md border border-pink-200 bg-pink-50 px-2 py-1 text-xs font-semibold text-pink-700 hover:bg-pink-100 dark:border-pink-900/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/35"
-              title={t("timer")}
-              aria-label={t("timer")}
+              title={safeT("timer", "Timer")}
+              aria-label={safeT("timer", "Timer")}
             >
               <Timer className="h-3.5 w-3.5" />
-              <span>{sleepMinutesLeft ? `${sleepMinutesLeft}m` : t("timer")}</span>
+              <span>{sleepMinutesLeft ? `${sleepMinutesLeft}m` : safeT("timer", "Timer")}</span>
             </button>
 
             {showSleepMenu ? (

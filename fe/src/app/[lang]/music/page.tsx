@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { Music2, Play } from "lucide-react";
+import { Music2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import MusicStickyPlayer, { type MusicTrack } from "@/components/player/MusicStickyPlayer";
+import GlobalPlayer from "@/components/player/GlobalPlayer";
+import MusicCard, { type MusicCardTrack } from "@/components/player/MusicCard";
 import { apiClient } from "@/lib/api/api-client";
 import { useAudioStore } from "@/stores/audio-store";
 
@@ -24,6 +24,11 @@ type MusicApiItem = {
 
 type MusicApiResponse = {
   data: MusicApiItem[];
+};
+
+type MusicTrack = MusicCardTrack & {
+  audioUrl: string;
+  category: (typeof categoryCycle)[number];
 };
 
 const fallbackTracks = (unknownArtist: string): MusicTrack[] => [
@@ -67,8 +72,13 @@ export default function MusicPage() {
   const [tracks, setTracks] = useState<MusicTrack[]>([]);
   const [isLoadingTracks, setIsLoadingTracks] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<CategoryValue>("All");
-  const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
-  const [playSignal, setPlaySignal] = useState(0);
+
+  const currentTrack = useAudioStore((state) => state.currentTrack);
+  const isPlaying = useAudioStore((state) => state.isPlaying);
+  const setQueue = useAudioStore((state) => state.setQueue);
+  const setTrack = useAudioStore((state) => state.setTrack);
+  const playTrack = useAudioStore((state) => state.playTrack);
+  const togglePlay = useAudioStore((state) => state.togglePlay);
 
   const unknownArtist = t("unknownArtist");
   const selectTrackLabel = t("selectTrack");
@@ -114,17 +124,15 @@ export default function MusicPage() {
               category: categoryCycle[index % categoryCycle.length] as MusicTrack["category"],
             } satisfies MusicTrack;
           })
-          .filter((item) => item.audioUrl);
+          .filter((item) => item.audioUrl) as MusicTrack[];
 
         const nextTracks = mapped.length > 0 ? mapped : fallbackTracks(unknownArtist);
         setTracks(nextTracks);
-        setCurrentTrackId((prev) => prev ?? nextTracks[0]?.id ?? null);
       } catch {
         if (cancelled) return;
 
         const fallback = fallbackTracks(unknownArtist);
         setTracks(fallback);
-        setCurrentTrackId((prev) => prev ?? fallback[0]?.id ?? null);
       } finally {
         if (!cancelled) {
           setIsLoadingTracks(false);
@@ -139,25 +147,32 @@ export default function MusicPage() {
     };
   }, [selectTrackLabel, unknownArtist]);
 
+  const queueForStore = useMemo(
+    () =>
+      tracks.map((track) => ({
+        id: track.id,
+        title: track.title,
+        author: track.artist,
+        audioUrl: track.audioUrl,
+        coverUrl: track.thumbnailUrl,
+      })),
+    [tracks],
+  );
+
+  useEffect(() => {
+    if (!queueForStore.length) return;
+    setQueue(queueForStore);
+
+    if (!currentTrack || !queueForStore.some((item) => item.id === currentTrack.id)) {
+      setTrack(queueForStore[0] ?? null);
+      togglePlay(false);
+    }
+  }, [currentTrack, queueForStore, setQueue, setTrack, togglePlay]);
+
   const visibleTracks = useMemo(() => {
     if (selectedCategory === "All") return tracks;
     return tracks.filter((track) => track.category === selectedCategory);
   }, [selectedCategory, tracks]);
-
-  useEffect(() => {
-    if (!tracks.length) return;
-
-    setCurrentTrackId((prev) => {
-      if (!prev) return tracks[0]?.id ?? null;
-      if (tracks.some((track) => track.id === prev)) return prev;
-      return tracks[0]?.id ?? null;
-    });
-  }, [tracks]);
-
-  const currentTrack = useMemo(() => {
-    if (!currentTrackId) return tracks[0] || null;
-    return tracks.find((track) => track.id === currentTrackId) || tracks[0] || null;
-  }, [currentTrackId, tracks]);
 
   const categoryLabelMap: Record<CategoryValue, string> = {
     All: t("categoryAll"),
@@ -169,35 +184,47 @@ export default function MusicPage() {
 
   const pickCategory = (category: CategoryValue) => {
     setSelectedCategory(category);
+  };
 
-    const candidateTracks = category === "All" ? tracks : tracks.filter((track) => track.category === category);
-    if (!candidateTracks.length) return;
+  const playOrToggleTrack = (track: MusicTrack) => {
+    const mappedTrack = {
+      id: track.id,
+      title: track.title,
+      author: track.artist,
+      audioUrl: track.audioUrl,
+      coverUrl: track.thumbnailUrl,
+    };
 
-    if (!candidateTracks.some((track) => track.id === currentTrackId)) {
-      setCurrentTrackId(candidateTracks[0]?.id ?? null);
+    if (currentTrack?.id === track.id) {
+      togglePlay(!isPlaying);
+      return;
     }
+
+    playTrack(mappedTrack, queueForStore);
   };
 
-  const playTrack = (track: MusicTrack) => {
-    setCurrentTrackId(track.id);
-    setPlaySignal((prev) => prev + 1);
-  };
-
-  const selectTrack = (trackId: string) => {
-    setCurrentTrackId(trackId);
+  const selectTrack = (track: MusicTrack) => {
+    setTrack({
+      id: track.id,
+      title: track.title,
+      author: track.artist,
+      audioUrl: track.audioUrl,
+      coverUrl: track.thumbnailUrl,
+    });
+    togglePlay(false);
   };
 
   return (
     <div className="space-y-6 pb-40">
-      <section className="rounded-2xl border border-[#2a2a2a] bg-gradient-to-r from-[#1f1f1f] via-[#171717] to-[#121212] p-5 text-zinc-100 sm:p-7">
+      <section className="rounded-2xl border border-pink-200 bg-gradient-to-r from-pink-100 via-pink-50 to-white p-5 text-gray-900 sm:p-7 dark:border-pink-900/40 dark:from-[#2a1720] dark:via-[#20171b] dark:to-[#161616] dark:text-zinc-100">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">{t("heroEyebrow")}</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-pink-500 dark:text-pink-300">{t("heroEyebrow")}</p>
             <h1 className="mt-2 text-2xl font-bold sm:text-3xl">{t("heroTitle")}</h1>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-300">{t("heroDescription")}</p>
+            <p className="mt-2 max-w-2xl text-sm text-gray-700 dark:text-zinc-300">{t("heroDescription")}</p>
           </div>
 
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#2d2d2d] bg-[#191919] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-300">
+          <div className="inline-flex items-center gap-2 rounded-full border border-pink-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-pink-700 dark:border-pink-900/50 dark:bg-[#1f1f1f] dark:text-pink-300">
             <Music2 className="h-4 w-4" /> Spotify UI
           </div>
         </div>
@@ -211,8 +238,8 @@ export default function MusicPage() {
               onClick={() => pickCategory(category)}
               className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
                 selectedCategory === category
-                  ? "bg-[#1db954] text-black"
-                  : "bg-[#1f1f1f] text-zinc-200 hover:bg-[#292929]"
+                  ? "bg-pink-600 text-white"
+                  : "bg-white text-gray-700 hover:bg-pink-50 dark:bg-[#1f1f1f] dark:text-zinc-200 dark:hover:bg-[#292929]"
               }`}
             >
               {categoryLabelMap[category]}
@@ -221,17 +248,17 @@ export default function MusicPage() {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-zinc-100 sm:text-xl">{t("trackListTitle")}</h2>
-          <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">{categoryLabelMap[selectedCategory]}</p>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-zinc-100 sm:text-xl">{t("trackListTitle")}</h2>
+          <p className="text-xs uppercase tracking-[0.2em] text-pink-500 dark:text-pink-300">{categoryLabelMap[selectedCategory]}</p>
         </div>
 
         {isLoadingTracks ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {Array.from({ length: 12 }).map((_, index) => (
-              <div key={index} className="animate-pulse rounded-xl border border-[#252525] bg-[#181818] p-2">
-                <div className="aspect-square rounded-lg bg-[#2a2a2a]" />
-                <div className="mt-2 h-4 w-4/5 rounded bg-[#2a2a2a]" />
-                <div className="mt-1 h-3 w-3/5 rounded bg-[#252525]" />
+              <div key={index} className="animate-pulse rounded-xl border border-pink-100 bg-white p-2 dark:border-[#252525] dark:bg-[#181818]">
+                <div className="aspect-square rounded-lg bg-pink-100 dark:bg-[#2a2a2a]" />
+                <div className="mt-2 h-4 w-4/5 rounded bg-pink-100 dark:bg-[#2a2a2a]" />
+                <div className="mt-1 h-3 w-3/5 rounded bg-pink-50 dark:bg-[#252525]" />
               </div>
             ))}
           </div>
@@ -239,82 +266,28 @@ export default function MusicPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {visibleTracks.map((track) => {
               const isActive = currentTrack?.id === track.id;
+              const cardPlaying = isActive && isPlaying;
 
               return (
-                <article
+                <MusicCard
                   key={track.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => selectTrack(track.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      selectTrack(track.id);
-                    }
-                  }}
-                  className={`group rounded-xl border p-2 text-left transition ${
-                    isActive
-                      ? "border-[#1db954] bg-[#1a2b21]"
-                      : "border-[#252525] bg-[#181818] hover:border-[#353535] hover:bg-[#202020]"
-                  }`}
-                >
-                  <div className="relative aspect-square overflow-hidden rounded-lg">
-                    <Image
-                      src={track.thumbnailUrl}
-                      alt={track.title}
-                      width={320}
-                      height={320}
-                      unoptimized
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        playTrack(track);
-                      }}
-                      aria-label={`${t("playAria")}: ${track.title}`}
-                      className="absolute bottom-2 right-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#1db954] text-black opacity-100 shadow-lg shadow-black/30 transition hover:scale-105 hover:bg-[#33c865] sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-                    >
-                      <Play className="ml-0.5 h-4 w-4" />
-                    </button>
-                  </div>
-
-                  <div className="mt-2 min-w-0">
-                    <p className="truncate text-sm font-semibold text-white">{track.title}</p>
-                    <p className="truncate text-xs text-zinc-400">{track.artist}</p>
-                  </div>
-                </article>
+                  track={track}
+                  isActive={isActive}
+                  isPlaying={cardPlaying}
+                  playAriaLabel={`${t("playAria")}: ${track.title}`}
+                  pauseAriaLabel={`${t("pauseAria")}: ${track.title}`}
+                  onSelect={() => selectTrack(track)}
+                  onPlayPause={() => playOrToggleTrack(track)}
+                />
               );
             })}
           </div>
         ) : (
-          <div className="rounded-2xl border border-[#2b2b2b] bg-[#171717] p-6 text-sm text-zinc-400">{t("emptyTracks")}</div>
+          <div className="rounded-2xl border border-pink-200 bg-pink-50 p-6 text-sm text-pink-700 dark:border-[#2b2b2b] dark:bg-[#171717] dark:text-zinc-400">{t("emptyTracks")}</div>
         )}
       </section>
 
-      <MusicStickyPlayer
-        track={currentTrack}
-        playSignal={playSignal}
-        labels={{
-          nowPlaying: t("nowPlaying"),
-          selectTrack: t("selectTrack"),
-          fallbackArtist: t("fallbackArtist"),
-          sleep: t("sleep"),
-          minutes: t("minutesShort"),
-          cancelTimer: t("cancelTimer"),
-          seekBackwardAria: t("seekBackwardAria"),
-          seekForwardAria: t("seekForwardAria"),
-          playAria: t("playAria"),
-          pauseAria: t("pauseAria"),
-          muteAria: t("muteAria"),
-          unmuteAria: t("unmuteAria"),
-          progressAria: t("progressAria"),
-          volumeAria: t("volumeAria"),
-          speedTitle: t("speedTitle"),
-        }}
-      />
+      <GlobalPlayer />
     </div>
   );
 }

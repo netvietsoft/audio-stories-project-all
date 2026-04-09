@@ -13,21 +13,10 @@ import {
   CreditCard,
   ListMusic,
   Lock,
-  Pause,
-  Play,
-  Repeat,
-  Repeat1,
-  Settings2,
   Share2,
-  Shuffle,
-  SkipBack,
-  SkipForward,
   Heart,
   Star,
   ThumbsUp,
-  Timer,
-  Volume2,
-  VolumeX,
   Smile,
   Gift,
   Zap,
@@ -51,6 +40,7 @@ import { useAuthModalStore } from "@/stores/auth-modal-store";
 import { useAuth } from "@/auth/auth-provider";
 import SocialLinks from "@/components/shared/SocialLinks";
 import { useViewTracking } from "@/hooks/use-view-tracking";
+import StoryAudioPlayerPanel from "@/components/player/StoryAudioPlayerPanel";
 
 const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
 
@@ -1134,7 +1124,7 @@ export default function StoryChapterClient() {
   }, [pendingVariantId, variants, selectedVariant, selectedChapterId, story, selectedChapter, playChapter, refreshProfile]);
 
   const playByIndex = useCallback(
-    (index: number, autoPlay = true) => {
+    (index: number, autoPlay = false) => {
       if (!story || index < 0 || index >= story.chapters.length) return;
       const chapter = story.chapters[index];
       if (!chapter) return;
@@ -1147,7 +1137,7 @@ export default function StoryChapterClient() {
     if (!story || !story.chapters.length) return;
 
     if (repeatMode === "one" && selectedChapter) {
-      goToChapter(selectedChapter, true);
+      goToChapter(selectedChapter, false);
       return;
     }
 
@@ -1155,16 +1145,16 @@ export default function StoryChapterClient() {
 
     if (isShuffle) {
       const randomIndex = Math.floor(Math.random() * story.chapters.length);
-      playByIndex(randomIndex);
+      playByIndex(randomIndex, false);
       return;
     }
 
     if (repeatMode === "all" && activeChapterIndex >= story.chapters.length - 1) {
-      playByIndex(0);
+      playByIndex(0, false);
       return;
     }
 
-    playByIndex(activeChapterIndex + 1);
+    playByIndex(activeChapterIndex + 1, false);
   }, [activeChapterIndex, goToChapter, isShuffle, playByIndex, repeatMode, selectedChapter, selectedVariant, story]);
 
   const playPrev = useCallback(() => {
@@ -1172,21 +1162,29 @@ export default function StoryChapterClient() {
 
     if (isShuffle) {
       const randomIndex = Math.floor(Math.random() * story.chapters.length);
-      playByIndex(randomIndex);
+      playByIndex(randomIndex, false);
       return;
     }
 
     if (activeChapterIndex <= 0) {
-      playByIndex(0);
+      playByIndex(0, false);
       return;
     }
 
-    playByIndex(activeChapterIndex - 1);
+    playByIndex(activeChapterIndex - 1, false);
   }, [activeChapterIndex, isShuffle, playByIndex, story]);
 
   const seekBy = (seconds: number) => {
     if (!canSeekSelectedChapter) return;
     seekTo(currentTime + seconds);
+  };
+
+  const cyclePlaybackRate = () => {
+    const speedOptions = [0.75, 1, 1.25, 1.5, 2] as const;
+    const currentIndex = speedOptions.findIndex((rate) => rate === playbackRate);
+    const nextIndex = currentIndex < 0 ? 1 : (currentIndex + 1) % speedOptions.length;
+    const nextRate = speedOptions[nextIndex] ?? 1;
+    setPlaybackRate(nextRate);
   };
 
   const onShare = async () => {
@@ -1717,271 +1715,77 @@ export default function StoryChapterClient() {
           {/* Side Panel 2: Audio Player */}
           <div className="-mx-4 md:mx-0 md:bg-transparent lg:bg-transparent">
             <div className="px-4 md:px-0">
-              <section className="rounded-[5px] border border-gray-300 bg-white p-2 sm:p-3 md:p-4 dark:border-[#303133] dark:bg-[#242526]">
-                <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("audioPlayer")}</h2>
-
-                <div className="mt-4 grid grid-cols-[88px_minmax(0,1fr)] gap-2 sm:grid-cols-[104px_minmax(0,1fr)] lg:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
-                  <div className="flex min-w-0 flex-col shrink-0 items-center justify-center gap-2">
-                    <div className={`relative h-16 w-16 sm:h-20 sm:w-20 overflow-hidden rounded-full border-4 border-pink-200 dark:border-pink-900 lg:h-28 lg:w-28 ${isSelectedChapterPlaying ? "animate-spin [animation-duration:10s]" : ""}`}>
-                      <img
-                        src={playerCoverUrl}
-                        alt={story.title}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <p className="line-clamp-2 text-center text-xs text-gray-500 dark:text-gray-400">
-                      {formatChapterTitle(t("chapterKeyword"), selectedChapter.chapterNumber, cleanChapterTitle(getLocalizedValue(locale, selectedChapter.titleVi, selectedChapter.titleEn, selectedChapter.title)))}
-                    </p>
-                  </div>
-
-                  <div className="min-w-0 space-y-2 pr-1 sm:pr-2 md:pr-3">
-                    <p className="line-clamp-1 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      {selectedChapterTitle}
-                    </p>
-
-                    <input
-                      type="range"
-                      min={0}
-                      max={playerDuration || 0}
-                      step={1}
-                      value={Math.min(playerCurrentTime, playerDuration || 0)}
-                      onChange={(event) => {
-                        if (!canSeekSelectedChapter) return;
-                        seekTo(Number(event.target.value));
-                      }}
-                      className="time-slider h-1 w-full appearance-none rounded-full accent-pink-600 [--time-slider-track:rgb(107_114_128)] dark:[--time-slider-track:rgb(209_213_219)] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-pink-500"
-                      style={{
-                        WebkitAppearance: 'none',
-                        appearance: 'none',
-                        background: `linear-gradient(to right, #ec4899 0%, #ec4899 ${Math.min((playerCurrentTime / (playerDuration || 1)) * 100, 100)}%, var(--time-slider-track) ${Math.min((playerCurrentTime / (playerDuration || 1)) * 100, 100)}%, var(--time-slider-track) 100%)`,
-                        borderRadius: '9999px',
-                        outline: 'none',
-                      }}
-                    />
-                    <style jsx>{`
-                    /* Volume slider - smaller thumb, same light/dark behavior */
-                    input[type="range"].volume-slider::-webkit-slider-thumb {
-                      width: 10px;
-                      height: 10px;
-                      border-radius: 50%;
-                      background: rgb(236 72 153);
-                      border: 1px solid rgb(15 23 42);
-                      box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-                    }
-                    input[type="range"].volume-slider::-moz-range-thumb {
-                      width: 10px;
-                      height: 10px;
-                      border-radius: 50%;
-                      background: rgb(236 72 153);
-                      border: 1px solid rgb(15 23 42);
-                      box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-                    }
-
-                    /* Focus/active ring to match app accent */
-                    input[type="range"]:focus::-webkit-slider-thumb,
-                    input[type="range"]:active::-webkit-slider-thumb {
-                      box-shadow: 0 0 0 6px rgba(236,72,153,0.12), 0 1px 3px rgba(0,0,0,0.12);
-                    }
-                    input[type="range"]:focus::-moz-range-thumb,
-                    input[type="range"]:active::-moz-range-thumb {
-                      box-shadow: 0 0 0 6px rgba(236,72,153,0.12), 0 1px 3px rgba(0,0,0,0.12);
-                    }
-
-                    input[type="range"].volume-slider:focus::-webkit-slider-thumb,
-                    input[type="range"].volume-slider:active::-webkit-slider-thumb {
-                      box-shadow: 0 0 0 4px rgba(236,72,153,0.12), 0 1px 2px rgba(0,0,0,0.12);
-                    }
-                    input[type="range"].volume-slider:focus::-moz-range-thumb,
-                    input[type="range"].volume-slider:active::-moz-range-thumb {
-                      box-shadow: 0 0 0 4px rgba(236,72,153,0.12), 0 1px 2px rgba(0,0,0,0.12);
-                    }
-
-                    :global(.dark) input[type="range"].volume-slider::-webkit-slider-thumb {
-                      background: rgb(236 72 153);
-                      border: 1px solid white;
-                      box-shadow: 0 1px 2px rgba(0,0,0,0.35);
-                    }
-                    :global(.dark) input[type="range"].volume-slider::-moz-range-thumb {
-                      background: rgb(236 72 153);
-                      border: 1px solid white;
-                      box-shadow: 0 1px 2px rgba(0,0,0,0.35);
-                    }
-                    /* Dark mode focus ring */
-                    :global(.dark) input[type="range"]:focus::-webkit-slider-thumb,
-                    :global(.dark) input[type="range"]:active::-webkit-slider-thumb {
-                      box-shadow: 0 0 0 6px rgba(236,72,153,0.14), 0 1px 3px rgba(0,0,0,0.35);
-                    }
-                    :global(.dark) input[type="range"]:focus::-moz-range-thumb,
-                    :global(.dark) input[type="range"]:active::-moz-range-thumb {
-                      box-shadow: 0 0 0 6px rgba(236,72,153,0.14), 0 1px 3px rgba(0,0,0,0.35);
-                    }
-                  `}</style>
-
-                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                      <span className="w-14 shrink-0 text-center tabular-nums">{formatDuration(playerCurrentTime)}</span>
-                      <span className="w-14 shrink-0 text-center tabular-nums">{formatDuration(playerDuration)}</span>
-                    </div>
-
-                    <div className="flex w-full items-center justify-center gap-1.5 sm:gap-2">
-                      <button onClick={playPrev} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">
-                        <SkipBack className="h-4 w-4" />
-                      </button>
-
-                      <button
-                        onClick={() => seekBy(-10)}
-                        disabled={!canSeekSelectedChapter}
-                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-[10px] font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
-                      >
-                        -10
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          if (chapterIsLocked) {
-                            openUnlockModal();
-                            return;
-                          }
-                          if (!hasPlayableAudio) return;
-                          if (!isSelectedChapterTrack && story) {
-                            void playChapter(selectedChapter, story, true);
-                            return;
-                          }
-                          togglePlay(!isSelectedChapterPlaying);
-                        }}
-                        disabled={!hasPlayableAudio}
-                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-[0_6px_18px_rgba(236,72,153,0.45)] transition hover:scale-105 hover:bg-pink-700 hover:shadow-[0_8px_24px_rgba(236,72,153,0.55)] disabled:cursor-not-allowed disabled:bg-gray-400"
-                      >
-                        {isSelectedChapterPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      </button>
-
-                      <button
-                        onClick={() => seekBy(10)}
-                        disabled={!canSeekSelectedChapter}
-                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-[10px] font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
-                      >
-                        +10
-                      </button>
-
-                      <button onClick={playNext} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">
-                        <SkipForward className="h-4 w-4" />
-                      </button>
-                    </div>
-
-                    <div className="mt-1 flex w-full min-w-0 items-center justify-center gap-1.5 sm:gap-2">
-                      <button onClick={() => toggleMute()} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">{isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}</button>
-                      <input
-                        type="range"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={volume}
-                        onChange={(event) => setVolume(Number(event.target.value))}
-                        className="volume-slider h-1.5 min-w-0 max-w-24 flex-1 sm:max-w-28 md:max-w-32 accent-pink-600"
-                        style={{
-                          WebkitAppearance: 'none',
-                          appearance: 'none',
-                          background: 'linear-gradient(to right, rgb(236 72 153) 0%, rgb(236 72 153) ' +
-                            (volume * 100) + '%, rgb(209 213 219) ' +
-                            (volume * 100) + '%, rgb(209 213 219) 100%)',
-                          borderRadius: '9999px',
-                          outline: 'none',
-                        }}
-                      />
-
-                      <button
-                        onClick={() => setIsShuffle((prev) => !prev)}
-                        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-sm transition hover:bg-gray-100 dark:hover:bg-[#464749] ${isShuffle ? "border-pink-500 bg-pink-50 text-pink-600 dark:bg-pink-900/30" : "border-gray-300 bg-white text-gray-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300"}`}
-                      >
-                        <Shuffle className="h-4 w-4" />
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          setRepeatMode((prev) => {
-                            if (prev === "off") return "all";
-                            if (prev === "all") return "one";
-                            return "off";
-                          })
-                        }
-                        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-sm transition hover:bg-gray-100 dark:hover:bg-[#464749] ${repeatMode !== "off" ? "border-pink-500 bg-pink-50 text-pink-600 dark:bg-pink-900/30" : "border-gray-300 bg-white text-gray-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300"}`}
-                      >
-                        {repeatMode === "one" ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}
-                      </button>
-
-                      <button
-                        onClick={() => setShowSettings((prev) => !prev)}
-                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-gray-100 text-gray-600 shadow-sm transition hover:bg-gray-200 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300 dark:hover:bg-[#464749]"
-                      >
-                        <Settings2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-3 space-y-3">
-                  {showSettings ? (
-                    <div className="rounded-xl bg-white p-3 shadow-sm dark:bg-[#242526]">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t("playbackSpeed")}</p>
-                      <div className="mt-2 grid grid-cols-5 gap-2">
-                        {[0.75, 1, 1.25, 1.5, 2].map((rate) => (
-                          <button
-                            key={rate}
-                            onClick={() => setPlaybackRate(rate)}
-                            className={`rounded-md px-2 py-1 text-xs ${playbackRate === rate ? "bg-pink-600 text-white" : "bg-gray-100 text-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200"}`}
-                          >
-                            {rate}x
-                          </button>
-                        ))}
-                      </div>
-
-                      <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-gray-500">{t("sleepTimer")}</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {[15, 30, 60].map((minute) => (
-                          <button
-                            key={minute}
-                            onClick={() => setSleepTimer(minute)}
-                            className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200"
-                          >
-                            {minute}p
-                          </button>
-                        ))}
-                        <button onClick={() => setSleepTimer(null)} className="rounded-md bg-red-50 px-2 py-1 text-xs text-red-600 dark:bg-red-900/30 dark:text-red-300">
-                          {t("cancelSleepTimer")}
-                        </button>
-                      </div>
-
-                      <div className="mt-3 flex gap-2">
-                        <input
-                          type="number"
-                          min={1}
-                          value={customMinutes}
-                          onChange={(event) => setCustomMinutes(event.target.value)}
-                          className="w-full rounded-md bg-white px-2 py-1 text-xs dark:bg-[#3a3b3c]"
-                          placeholder={t("customMinutesPlaceholder")}
-                        />
-                        <button
-                          onClick={() => {
-                            const value = Number(customMinutes);
-                            if (value > 0) setSleepTimer(value);
-                          }}
-                          className="rounded-md bg-pink-600 px-3 py-1 text-xs font-medium text-white"
-                        >
-                          {t("setTimer")}
-                        </button>
-                      </div>
-
-                      {sleepMinutesLeft ? (
-                        <p className="mt-2 inline-flex items-center gap-1 text-xs text-pink-600 dark:text-pink-300">
-                          <Timer className="h-3.5 w-3.5" /> {t("sleepTimerActive", { minutes: sleepMinutesLeft })}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                </div>
-
-                {/* Social Links - Only show here if NO YouTube player */}
-                {!selectedChapter.youtubeVideoId && <SocialLinks />}
-              </section>
+              <StoryAudioPlayerPanel
+                heading={t("audioPlayer")}
+                coverUrl={playerCoverUrl}
+                coverAlt={story.title}
+                rotating={isSelectedChapterPlaying}
+                chapterMeta={formatChapterTitle(
+                  t("chapterKeyword"),
+                  selectedChapter.chapterNumber,
+                  cleanChapterTitle(getLocalizedValue(locale, selectedChapter.titleVi, selectedChapter.titleEn, selectedChapter.title)),
+                )}
+                title={selectedChapterTitle}
+                currentTime={playerCurrentTime}
+                duration={playerDuration}
+                canSeek={canSeekSelectedChapter}
+                canPlay={hasPlayableAudio}
+                isPlaying={isSelectedChapterPlaying}
+                isMuted={isMuted}
+                volume={volume}
+                isShuffle={isShuffle}
+                repeatMode={repeatMode}
+                playbackRate={playbackRate}
+                showSettings={showSettings}
+                customMinutes={customMinutes}
+                sleepMinutesLeft={sleepMinutesLeft}
+                sleepTimerActiveLabel={
+                  sleepMinutesLeft ? t("sleepTimerActive", { minutes: sleepMinutesLeft }) : null
+                }
+                labels={{
+                  playbackSpeed: t("playbackSpeed"),
+                  sleepTimer: t("sleepTimer"),
+                  cancelSleepTimer: t("cancelSleepTimer"),
+                  customMinutesPlaceholder: t("customMinutesPlaceholder"),
+                  setTimer: t("setTimer"),
+                }}
+                onSeek={seekTo}
+                onPrev={playPrev}
+                onBack10={() => seekBy(-10)}
+                onTogglePlay={() => {
+                  if (chapterIsLocked) {
+                    openUnlockModal();
+                    return;
+                  }
+                  if (!hasPlayableAudio) return;
+                  if (!isSelectedChapterTrack && story) {
+                    void playChapter(selectedChapter, story, true);
+                    return;
+                  }
+                  togglePlay(!isSelectedChapterPlaying);
+                }}
+                onForward10={() => seekBy(10)}
+                onNext={playNext}
+                onCyclePlaybackRate={cyclePlaybackRate}
+                onToggleMute={() => toggleMute()}
+                onVolumeChange={(nextVolume) => setVolume(nextVolume)}
+                onToggleShuffle={() => setIsShuffle((prev) => !prev)}
+                onCycleRepeatMode={() =>
+                  setRepeatMode((prev) => {
+                    if (prev === "off") return "all";
+                    if (prev === "all") return "one";
+                    return "off";
+                  })
+                }
+                onToggleSettings={() => setShowSettings((prev) => !prev)}
+                onSetSleepTimer={setSleepTimer}
+                onCustomMinutesChange={(value) => setCustomMinutes(value)}
+                onApplyCustomMinutes={() => {
+                  const value = Number(customMinutes);
+                  if (value > 0) setSleepTimer(value);
+                }}
+                footer={!selectedChapter.youtubeVideoId ? <SocialLinks /> : null}
+              />
             </div>
           </div>
 

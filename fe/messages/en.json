@@ -280,7 +280,9 @@
     "defaultAuthor": "AudioTruyen",
     "speedTitle": "Adjust playback speed",
     "audioProgress": "Audio progress",
-    "volume": "Volume"
+    "volume": "Volume",
+    "timer": "Timer",
+    "cancel": "Cancel"
   },
   "MusicPage": {
     "heroEyebrow": "Dedicated Zone",
@@ -310,7 +312,9 @@
     "unmuteAria": "Unmute",
     "progressAria": "Music progress",
     "volumeAria": "Volume",
-    "speedTitle": "Playback speed"
+    "speedTitle": "Playback speed",
+    "viewGrid": "Grid view",
+    "viewList": "List view"
   },
   "Common": {
     "loading": "Loading...",

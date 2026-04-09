@@ -279,7 +279,9 @@
     "defaultAuthor": "AudioTruyen",
     "speedTitle": "Chỉnh tốc độ phát",
     "audioProgress": "Tiến trình audio",
-    "volume": "Âm lượng"
+    "volume": "Âm lượng",
+    "timer": "Hẹn giờ",
+    "cancel": "Hủy"
   },
   "MusicPage": {
     "heroEyebrow": "Khu nhạc riêng",
@@ -309,7 +311,9 @@
     "unmuteAria": "Bật tiếng",
     "progressAria": "Tiến trình phát nhạc",
     "volumeAria": "Âm lượng",
-    "speedTitle": "Tốc độ phát"
+    "speedTitle": "Tốc độ phát",
+    "viewGrid": "Chế độ lưới",
+    "viewList": "Chế độ danh sách"
   },
   "Common": {
     "loading": "Đang tải...",

@@ -454,7 +454,7 @@ export default function GlobalPlayer() {
             step={0.01}
             value={volume}
             onChange={(event) => setVolume(Number(event.target.value))}
-            className="h-1.5 w-24 cursor-pointer appearance-none rounded-full md:w-28"
+            className="h-1.5 w-24 cursor-pointer appearance-none rounded-full md:w-28 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-pink-500"
             style={{
               background: `linear-gradient(to right, rgb(236 72 153) 0%, rgb(236 72 153) ${Math.round(volume * 100)}%, rgb(209 213 219) ${Math.round(volume * 100)}%, rgb(209 213 219) 100%)`,
             }}
@@ -465,10 +465,11 @@ export default function GlobalPlayer() {
             <button
               onClick={() => setShowSleepMenu((prev) => !prev)}
               className="inline-flex items-center gap-1 rounded-md border border-pink-200 bg-pink-50 px-2 py-1 text-xs font-semibold text-pink-700 hover:bg-pink-100 dark:border-pink-900/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/35"
-              title="Sleep timer"
+              title={t("timer")}
+              aria-label={t("timer")}
             >
               <Timer className="h-3.5 w-3.5" />
-              <span>{sleepMinutesLeft ? `${sleepMinutesLeft}m` : "Timer"}</span>
+              <span>{sleepMinutesLeft ? `${sleepMinutesLeft}m` : t("timer")}</span>
             </button>
 
             {showSleepMenu ? (
@@ -487,7 +488,7 @@ export default function GlobalPlayer() {
                     onClick={() => setSleepTimer(null)}
                     className="rounded-md px-2 py-1 text-left text-xs text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20"
                   >
-                    Cancel
+                    <span>{t("cancel")}</span>
                   </button>
                 </div>
               </div>

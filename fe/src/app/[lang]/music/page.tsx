@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Music2 } from "lucide-react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { Music2, Grid, List, Play, Pause } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import GlobalPlayer from "@/components/player/GlobalPlayer";
@@ -72,6 +72,9 @@ export default function MusicPage() {
   const [tracks, setTracks] = useState<MusicTrack[]>([]);
   const [isLoadingTracks, setIsLoadingTracks] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<CategoryValue>("All");
+  const [viewType, setViewType] = useState<"grid" | "list">("grid");
+  const [durations, setDurations] = useState<Record<string, number>>({});
+  const _loadedDur = useRef(new Set<string>());
 
   const currentTrack = useAudioStore((state) => state.currentTrack);
   const isPlaying = useAudioStore((state) => state.isPlaying);
@@ -214,6 +217,55 @@ export default function MusicPage() {
     togglePlay(false);
   };
 
+  const formatDuration = (seconds?: number) => {
+    if (!seconds || !isFinite(seconds) || seconds <= 0) return "--:--";
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
+
+  // Load metadata durations (preload metadata only) for visible tracks
+  useEffect(() => {
+    const loaders: HTMLAudioElement[] = [];
+
+    visibleTracks.forEach((track) => {
+      if (!track.audioUrl) return;
+      if (_loadedDur.current.has(track.id)) return;
+      _loadedDur.current.add(track.id);
+
+      try {
+        const a = new Audio();
+        a.preload = "metadata";
+        a.src = track.audioUrl;
+
+        const onLoaded = () => {
+          setDurations((prev) => ({ ...prev, [track.id]: isFinite(a.duration) ? a.duration : 0 }));
+          a.removeEventListener("loadedmetadata", onLoaded);
+          a.removeEventListener("error", onError);
+        };
+
+        const onError = () => {
+          a.removeEventListener("loadedmetadata", onLoaded);
+          a.removeEventListener("error", onError);
+        };
+
+        a.addEventListener("loadedmetadata", onLoaded);
+        a.addEventListener("error", onError);
+        loaders.push(a);
+      } catch {
+        // ignore per-track errors
+      }
+    });
+
+    return () => {
+      loaders.forEach((a) => {
+        try {
+          a.src = "";
+        } catch {}
+      });
+    };
+  }, [visibleTracks]);
+
   return (
     <div className="space-y-6 pb-40">
       <section className="rounded-2xl border border-pink-200 bg-gradient-to-r from-pink-100 via-pink-50 to-white p-5 text-gray-900 sm:p-7 dark:border-pink-900/40 dark:from-[#2a1720] dark:via-[#20171b] dark:to-[#161616] dark:text-zinc-100">
@@ -231,20 +283,46 @@ export default function MusicPage() {
       </section>
 
       <section className="space-y-4">
-        <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-          {categoryTabs.map((category) => (
+        <div className="flex items-start justify-between gap-3">
+          <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
+            {categoryTabs.map((category) => (
+              <button
+                key={category}
+                onClick={() => pickCategory(category)}
+                className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
+                  selectedCategory === category
+                    ? "bg-pink-600 text-white"
+                    : "bg-white text-gray-700 hover:bg-pink-50 dark:bg-[#1f1f1f] dark:text-zinc-200 dark:hover:bg-[#292929]"
+                }`}
+              >
+                {categoryLabelMap[category]}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
-              key={category}
-              onClick={() => pickCategory(category)}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${
-                selectedCategory === category
-                  ? "bg-pink-600 text-white"
-                  : "bg-white text-gray-700 hover:bg-pink-50 dark:bg-[#1f1f1f] dark:text-zinc-200 dark:hover:bg-[#292929]"
+              aria-label="Grid view"
+              title={t("viewGrid")}
+              onClick={() => setViewType("grid")}
+              className={`rounded-full p-2 transition ${
+                viewType === "grid" ? "bg-pink-600 text-white" : "bg-white text-pink-600 hover:bg-pink-50 dark:bg-[#1f1f1f] dark:text-pink-300"
               }`}
             >
-              {categoryLabelMap[category]}
+              <Grid className="h-4 w-4" />
             </button>
-          ))}
+
+            <button
+              aria-label="List view"
+              title={t("viewList")}
+              onClick={() => setViewType("list")}
+              className={`rounded-full p-2 transition ${
+                viewType === "list" ? "bg-pink-600 text-white" : "bg-white text-pink-600 hover:bg-pink-50 dark:bg-[#1f1f1f] dark:text-pink-300"
+              }`}
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center justify-between gap-3">
@@ -263,25 +341,86 @@ export default function MusicPage() {
             ))}
           </div>
         ) : visibleTracks.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {visibleTracks.map((track) => {
-              const isActive = currentTrack?.id === track.id;
-              const cardPlaying = isActive && isPlaying;
+          viewType === "grid" ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              {visibleTracks.map((track) => {
+                const isActive = currentTrack?.id === track.id;
+                const cardPlaying = isActive && isPlaying;
 
-              return (
-                <MusicCard
-                  key={track.id}
-                  track={track}
-                  isActive={isActive}
-                  isPlaying={cardPlaying}
-                  playAriaLabel={`${t("playAria")}: ${track.title}`}
-                  pauseAriaLabel={`${t("pauseAria")}: ${track.title}`}
-                  onSelect={() => selectTrack(track)}
-                  onPlayPause={() => playOrToggleTrack(track)}
-                />
-              );
-            })}
-          </div>
+                return (
+                  <MusicCard
+                    key={track.id}
+                    track={track}
+                    isActive={isActive}
+                    isPlaying={cardPlaying}
+                    mobilePlayBottomRight={true}
+                    playAriaLabel={`${t("playAria")}: ${track.title}`}
+                    pauseAriaLabel={`${t("pauseAria")}: ${track.title}`}
+                    onSelect={() => selectTrack(track)}
+                    onPlayPause={() => playOrToggleTrack(track)}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {visibleTracks.map((track, idx) => {
+                const isActive = currentTrack?.id === track.id;
+                const playing = isActive && isPlaying;
+                return (
+                  <div
+                    key={track.id}
+                    className={`group flex items-center gap-4 rounded-lg px-4 py-3 transition hover:bg-pink-500/10 ${
+                      playing ? "bg-pink-50" : "bg-transparent"
+                    }`}
+                  >
+                    <div className="w-8 text-sm font-mono text-gray-500 dark:text-zinc-400">{String(idx + 1).padStart(2, "0")}</div>
+
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="relative">
+                        <img
+                          src={track.thumbnailUrl || "/thumbnaildefault.jpg"}
+                          alt={track.title}
+                          className={`h-14 w-14 rounded-md object-cover`}
+                        />
+
+                        {playing && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="wave-bars large text-pink-500 dark:text-pink-300" style={{ width: 64, height: 40 }}>
+                              <span className="wave-bar" />
+                              <span className="wave-bar" />
+                              <span className="wave-bar" />
+                              <span className="wave-bar" />
+                              <span className="wave-bar" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <div className={`truncate font-medium ${isActive ? "text-pink-500 dark:text-pink-300" : "text-gray-900 dark:text-zinc-100"}`}>{track.title}</div>
+                        <div className="truncate text-xs text-gray-500 dark:text-zinc-400">{track.artist}</div>
+                      </div>
+                    </div>
+
+                    <div className="ml-auto mr-4 hidden text-sm text-gray-500 dark:text-zinc-400 sm:block">{formatDuration(durations[track.id])}</div>
+
+                    <div>
+                      <button
+                        aria-label={playing ? t("pauseAria") : t("playAria")}
+                        onClick={() => playOrToggleTrack(track)}
+                        className={`inline-flex h-8 w-8 items-center justify-center rounded-full transition ${
+                          playing ? "bg-pink-600 text-white" : "bg-pink-50 text-pink-600 hover:bg-pink-100 dark:bg-[#1f1f1f] dark:text-pink-300"
+                        }`}
+                      >
+                        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
         ) : (
           <div className="rounded-2xl border border-pink-200 bg-pink-50 p-6 text-sm text-pink-700 dark:border-[#2b2b2b] dark:bg-[#171717] dark:text-zinc-400">{t("emptyTracks")}</div>
         )}

@@ -18,6 +18,7 @@ type MusicCardProps = {
   pauseAriaLabel: string;
   onSelect: () => void;
   onPlayPause: () => void;
+  mobilePlayBottomRight?: boolean;
 };
 
 export default function MusicCard({
@@ -28,6 +29,7 @@ export default function MusicCard({
   pauseAriaLabel,
   onSelect,
   onPlayPause,
+  mobilePlayBottomRight = false,
 }: MusicCardProps) {
   return (
     <article
@@ -56,6 +58,19 @@ export default function MusicCard({
           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
 
+        {/* Wave bars overlay when playing */}
+        {isPlaying && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="wave-bars large text-pink-500 dark:text-pink-300" style={{ width: 56, height: 36 }}>
+              <span className="wave-bar" />
+              <span className="wave-bar" />
+              <span className="wave-bar" />
+              <span className="wave-bar" />
+              <span className="wave-bar" />
+            </div>
+          </div>
+        )}
+
         <button
           type="button"
           onClick={(event) => {
@@ -63,7 +78,11 @@ export default function MusicCard({
             onPlayPause();
           }}
           aria-label={isPlaying ? pauseAriaLabel : playAriaLabel}
-          className="absolute inset-0 flex items-center justify-center"
+          className={
+            mobilePlayBottomRight
+              ? "absolute bottom-2 right-2 sm:inset-0 sm:flex sm:items-center sm:justify-center"
+              : "absolute inset-0 flex items-center justify-center"
+          }
         >
           <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-pink-600 text-white shadow-lg transition hover:scale-105 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
             {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}

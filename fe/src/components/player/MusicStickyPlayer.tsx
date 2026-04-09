@@ -90,9 +90,10 @@ export default function MusicStickyPlayer({ track, playSignal, labels }: MusicSt
   );
 
   useEffect(() => {
-    const audio = new Audio();
+    const audio = audioRef.current;
+    if (!audio) return;
+
     audio.preload = "metadata";
-    audioRef.current = audio;
 
     const handleLoadedMetadata = () => {
       setDuration(audio.duration || 0);
@@ -123,13 +124,14 @@ export default function MusicStickyPlayer({ track, playSignal, labels }: MusicSt
     audio.addEventListener("ended", handleEnded);
 
     return () => {
-      audio.pause();
+      try {
+        audio.pause();
+      } catch {}
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("play", handlePlay);
       audio.removeEventListener("pause", handlePause);
       audio.removeEventListener("ended", handleEnded);
-      audioRef.current = null;
       if (sleepTimerRef.current) {
         clearTimeout(sleepTimerRef.current);
         sleepTimerRef.current = null;
@@ -273,6 +275,7 @@ export default function MusicStickyPlayer({ track, playSignal, labels }: MusicSt
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#2a2a2a] bg-[#181818]/95 backdrop-blur-lg">
+      <audio ref={audioRef} preload="metadata" className="h-0 w-0 opacity-0 pointer-events-none" aria-hidden="true" />
       <div className="mx-auto grid w-full max-w-[1800px] grid-cols-1 gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)] md:items-center">
         <div className="flex min-w-0 items-center gap-3">
           <div className="h-12 w-12 overflow-hidden rounded-md bg-[#242424]">

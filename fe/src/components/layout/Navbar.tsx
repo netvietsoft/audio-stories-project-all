@@ -358,7 +358,7 @@ export default function Navbar() {
                   <Home className="w-5 h-5 2xl:hidden" />
                   <span className={`hidden 2xl:inline ${navLabelClassName("/")}`}>{t("home")}</span>
                 </Link>
-                <Link href="/music" className={navItemClassName("/music")} aria-label={t("music")} title={t("music")}>
+                <Link href={`/${currentLang}/music`} className={navItemClassName("/music")} aria-label={t("music")} title={t("music")}>
                   <Music2 className="w-5 h-5 2xl:hidden" />
                   <span className={`hidden 2xl:inline ${navLabelClassName("/music")}`}>{t("music")}</span>
                 </Link>
@@ -884,7 +884,7 @@ export default function Navbar() {
                 </Link>
 
                 <Link
-                  href="/music"
+                  href={`/${currentLang}/music`}
                   onClick={closeMobileMenu}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/music") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
                 >

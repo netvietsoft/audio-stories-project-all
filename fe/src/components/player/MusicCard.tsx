@@ -60,7 +60,7 @@ export default function MusicCard({
 
         {/* Wave bars overlay when playing - anchored to bottom of thumbnail */}
         {isPlaying && (
-          <div className="absolute left-0 right-0 bottom-0 flex items-end justify-center pb-2 pointer-events-none">
+          <div className="absolute left-0 right-0 bottom-0 flex items-end justify-center pb-2 pointer-events-none z-20">
             <div className="wave-bars large text-pink-500 dark:text-pink-300" style={{ width: 56, height: 36 }}>
               <span className="wave-bar" />
               <span className="wave-bar" />
@@ -80,8 +80,8 @@ export default function MusicCard({
           aria-label={isPlaying ? pauseAriaLabel : playAriaLabel}
           className={
             mobilePlayBottomRight
-              ? "absolute bottom-2 right-2 sm:inset-0 sm:flex sm:items-center sm:justify-center"
-              : "absolute inset-0 flex items-center justify-center"
+              ? "absolute bottom-2 right-2 sm:inset-0 sm:flex sm:items-center sm:justify-center z-0"
+              : "absolute inset-0 flex items-center justify-center z-0"
           }
         >
           <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-pink-600 text-white shadow-lg transition hover:scale-105 opacity-90 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">

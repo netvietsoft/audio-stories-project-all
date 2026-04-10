@@ -38,6 +38,12 @@ async function bootstrap() {
 
   if (frontendUrl) allowedOrigins.add(frontendUrl.trim());
 
+  // Also accept any origins provided via CORS env variable (comma-separated)
+  const corsFromEnv = process.env.CORS;
+  if (corsFromEnv) {
+    corsFromEnv.split(',').map((s) => s.trim()).filter(Boolean).forEach((u) => allowedOrigins.add(u));
+  }
+
   // Allow localhost/127.0.0.1 during development
   if (process.env.NODE_ENV !== 'production') {
     ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3058', 'http://127.0.0.1:3058'].forEach((u) => allowedOrigins.add(u));
@@ -69,7 +75,8 @@ async function bootstrap() {
     },
   }));
 
-  const port = Number(process.env.PORT ?? 8035);
-  await app.listen(port);
+  const port = Number(process.env.PORT ?? 3000);
+  const host = process.env.HOST ?? '0.0.0.0';
+  await app.listen(port, host);
 }
 bootstrap();

@@ -40,6 +40,8 @@ import { useAuthModalStore } from "@/stores/auth-modal-store";
 import { useAuth } from "@/auth/auth-provider";
 import SocialLinks from "@/components/shared/SocialLinks";
 import { useViewTracking } from "@/hooks/use-view-tracking";
+import { useShareAction } from "@/hooks/use-share-action";
+import { cycleRepeatMode } from "@/lib/player/playback-modes";
 import StoryAudioPlayerPanel from "@/components/player/StoryAudioPlayerPanel";
 
 const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
@@ -259,6 +261,7 @@ export default function StoryChapterClient() {
   const slug = params?.slug;
   const chapterSlug = params?.chapterSlug;
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shareAction = useShareAction();
 
   const [story, setStory] = useState<StoryDetail | null>(null);
   const [recommendedStories, setRecommendedStories] = useState<StoryListItem[]>([]);
@@ -1188,24 +1191,13 @@ export default function StoryChapterClient() {
   };
 
   const onShare = async () => {
-    if (typeof window === "undefined") return;
-    const url = window.location.href;
+    const result = await shareAction({
+      title: story?.title || "AudioTruyen",
+      text: t("sharePrompt"),
+      fallbackPrompt: t("copiedLink"),
+    });
 
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: story?.title || "AudioTruyen",
-          text: t("sharePrompt"),
-          url,
-        });
-        return;
-      } catch {
-        // ignore canceled share
-      }
-    }
-
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(url);
+    if (result === "copied") {
       alert(t("copiedLink"));
     }
   };
@@ -1770,13 +1762,7 @@ export default function StoryChapterClient() {
                 onToggleMute={() => toggleMute()}
                 onVolumeChange={(nextVolume) => setVolume(nextVolume)}
                 onToggleShuffle={() => setIsShuffle((prev) => !prev)}
-                onCycleRepeatMode={() =>
-                  setRepeatMode((prev) => {
-                    if (prev === "off") return "all";
-                    if (prev === "all") return "one";
-                    return "off";
-                  })
-                }
+                onCycleRepeatMode={() => setRepeatMode((prev) => cycleRepeatMode(prev))}
                 onToggleSettings={() => setShowSettings((prev) => !prev)}
                 onSetSleepTimer={setSleepTimer}
                 onCustomMinutesChange={(value) => setCustomMinutes(value)}

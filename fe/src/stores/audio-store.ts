@@ -2,6 +2,12 @@ import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 
 import { AUDIO_STORAGE_KEY } from "@/constants/auth";
+import {
+  cycleRepeatMode,
+  resolveNextTrackIndex,
+  resolvePrevTrackIndex,
+  type RepeatMode,
+} from "@/lib/player/playback-modes";
 
 type AudioStorage = {
   getItem: (name: string) => string | null;
@@ -40,12 +46,19 @@ type AudioState = {
   duration: number;
   playbackRate: number;
   isMuted: boolean;
+  isShuffle: boolean;
+  repeatMode: RepeatMode;
   seekTarget: number | null;
   setQueue: (queue: AudioTrack[]) => void;
   setTrack: (track: AudioTrack | null) => void;
   playTrack: (track: AudioTrack, queue?: AudioTrack[]) => void;
   playNext: () => void;
   playPrev: () => void;
+  enqueueNext: (track: AudioTrack) => void;
+  enqueueManyNext: (tracks: AudioTrack[]) => void;
+  toggleShuffle: () => void;
+  setRepeatMode: (mode: RepeatMode) => void;
+  cycleRepeatMode: () => void;
   togglePlay: (isPlaying?: boolean) => void;
   seekTo: (seconds: number) => void;
   clearSeekTarget: () => void;
@@ -66,7 +79,32 @@ const initialState = {
   duration: 0,
   playbackRate: 1,
   isMuted: false,
+  isShuffle: false,
+  repeatMode: "off" as RepeatMode,
   seekTarget: null,
+};
+
+const insertTracksNext = (queue: AudioTrack[], currentTrack: AudioTrack | null, tracks: AudioTrack[]) => {
+  if (!tracks.length) return queue;
+
+  const dedupedTracks = Array.from(new Map(tracks.map((track) => [track.id, track])).values());
+  const dedupedIds = new Set(dedupedTracks.map((track) => track.id));
+  const queueWithoutDuplicates = queue.filter((track) => !dedupedIds.has(track.id));
+
+  if (!currentTrack) {
+    return [...queueWithoutDuplicates, ...dedupedTracks];
+  }
+
+  const currentIndex = queueWithoutDuplicates.findIndex((track) => track.id === currentTrack.id);
+  if (currentIndex < 0) {
+    return [...queueWithoutDuplicates, ...dedupedTracks];
+  }
+
+  return [
+    ...queueWithoutDuplicates.slice(0, currentIndex + 1),
+    ...dedupedTracks,
+    ...queueWithoutDuplicates.slice(currentIndex + 1),
+  ];
 };
 
 export const useAudioStore = create<AudioState>()(
@@ -98,12 +136,14 @@ export const useAudioStore = create<AudioState>()(
         }
 
         const currentIndex = queue.findIndex((track) => track.id === currentTrack.id);
-        if (currentIndex < 0 || currentIndex >= queue.length - 1) {
+        const nextIndex = resolveNextTrackIndex(queue.length, currentIndex, get().repeatMode, get().isShuffle);
+
+        if (nextIndex < 0 || nextIndex >= queue.length) {
           set({ isPlaying: false });
           return;
         }
 
-        const nextTrack = queue[currentIndex + 1];
+        const nextTrack = queue[nextIndex];
         if (!nextTrack) {
           set({ isPlaying: false });
           return;
@@ -124,11 +164,9 @@ export const useAudioStore = create<AudioState>()(
         }
 
         const currentIndex = queue.findIndex((track) => track.id === currentTrack.id);
-        if (currentIndex <= 0) {
-          return;
-        }
+        const prevIndex = resolvePrevTrackIndex(queue.length, currentIndex, get().repeatMode, get().isShuffle);
 
-        const prevTrack = queue[currentIndex - 1];
+        const prevTrack = queue[prevIndex];
         if (!prevTrack) {
           return;
         }
@@ -141,6 +179,17 @@ export const useAudioStore = create<AudioState>()(
           seekTarget: null,
         });
       },
+      enqueueNext: (track) =>
+        set((state) => ({
+          queue: insertTracksNext(state.queue, state.currentTrack, [track]),
+        })),
+      enqueueManyNext: (tracks) =>
+        set((state) => ({
+          queue: insertTracksNext(state.queue, state.currentTrack, tracks),
+        })),
+      toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
+      setRepeatMode: (mode) => set({ repeatMode: mode }),
+      cycleRepeatMode: () => set((state) => ({ repeatMode: cycleRepeatMode(state.repeatMode) })),
       togglePlay: (isPlaying) =>
         set((state) => ({ isPlaying: isPlaying ?? !state.isPlaying })),
       seekTo: (seconds) =>
@@ -169,6 +218,8 @@ export const useAudioStore = create<AudioState>()(
         volume: state.volume,
         playbackRate: state.playbackRate,
         isMuted: state.isMuted,
+        isShuffle: state.isShuffle,
+        repeatMode: state.repeatMode,
       }),
     },
   ),

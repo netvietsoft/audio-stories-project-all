@@ -51,9 +51,11 @@ type SearchResultItem = {
   title: string;
   titleVi: string | null;
   titleEn: string | null;
-  slug: string;
+  slug?: string;
   thumbnailUrl: string | null;
   author?: { name: string };
+  artist?: string | null;
+  contentType?: "single" | "playlist";
 };
 
 type ExploreResponse = {
@@ -114,6 +116,8 @@ export default function Navbar() {
   
   const searchPlaceholder = t("searchPlaceholder");
   const normalizedPathname = (pathname || "").replace(/^\/(vi|en)(?=\/|$)/, "") || "/";
+  const isMusicRoute = normalizedPathname === "/music" || normalizedPathname.startsWith("/music/");
+  const resolvedSearchPlaceholder = isMusicRoute ? t("musicSearchPlaceholder") : searchPlaceholder;
 
   const isRouteActive = (href: string) => {
     if (href === "/") {
@@ -260,19 +264,42 @@ export default function Navbar() {
       return;
     }
 
-    const searchStories = async () => {
+    const searchByRoute = async () => {
       setIsSearching(true);
       try {
-        const response = await apiClient.get<ExploreResponse>("/stories/explore", {
-          params: {
-            search: debouncedSearchQuery,
-            page: 1,
-            limit: 5,
-            lang: currentLang,
-          },
-        });
-        console.log("Search response:", response.data);
-        setSearchResults(response.data.data || []);
+        if (isMusicRoute) {
+          const response = await apiClient.get<{ data: Array<Record<string, unknown>> }>("/music", {
+            params: {
+              search: debouncedSearchQuery,
+              page: 1,
+              limit: 5,
+            },
+          });
+
+          const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+          setSearchResults(
+            rows.map((item, index) => ({
+              id: String(item.id || `music-${index}`),
+              title: String(item.title || ""),
+              titleVi: null,
+              titleEn: null,
+              thumbnailUrl: typeof item.thumbnailUrl === "string" ? item.thumbnailUrl : null,
+              artist: typeof item.artist === "string" ? item.artist : null,
+              contentType: item.contentType === "playlist" ? "playlist" : "single",
+            })),
+          );
+        } else {
+          const response = await apiClient.get<ExploreResponse>("/stories/explore", {
+            params: {
+              search: debouncedSearchQuery,
+              page: 1,
+              limit: 5,
+              lang: currentLang,
+            },
+          });
+          setSearchResults(response.data.data || []);
+        }
+
         setShowSearchDropdown(true);
       } catch (error) {
         console.error("Search error:", error);
@@ -282,8 +309,8 @@ export default function Navbar() {
       }
     };
 
-    void searchStories();
-  }, [debouncedSearchQuery]);
+    void searchByRoute();
+  }, [currentLang, debouncedSearchQuery, isMusicRoute]);
 
   const markRead = async (id: string) => {
     try {
@@ -297,18 +324,46 @@ export default function Navbar() {
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && searchQuery.trim()) {
-      router.push(`/${currentLang}/search?keyword=${encodeURIComponent(searchQuery)}`);
+      const nextPath = isMusicRoute
+        ? `/${currentLang}/music?keyword=${encodeURIComponent(searchQuery)}`
+        : `/${currentLang}/search?keyword=${encodeURIComponent(searchQuery)}`;
+      router.push(nextPath);
       setSearchQuery("");
       setShowSearchDropdown(false);
       closeMobileMenu();
     }
   };
 
-  const handleSearchResultClick = (slug: string) => {
+  const handleSearchResultClick = (item: SearchResultItem) => {
     setSearchQuery("");
     setShowSearchDropdown(false);
-    router.push(`/${currentLang}/story/${slug}`);
+
+    if (isMusicRoute) {
+      router.push(`/${currentLang}/music/${item.id}`);
+      return;
+    }
+
+    if (item.slug) {
+      router.push(`/${currentLang}/story/${item.slug}`);
+    }
   };
+
+  const getSearchResultTitle = (item: SearchResultItem) => {
+    if (isMusicRoute) return item.title;
+    return currentLang === "en" ? item.titleEn || item.title : item.titleVi || item.title;
+  };
+
+  const getSearchResultSubtitle = (item: SearchResultItem) => {
+    if (isMusicRoute) {
+      if (item.artist?.trim()) return item.artist;
+      return item.contentType === "playlist" ? "Playlist" : t("music");
+    }
+
+    return item.author?.name || "Đang cập nhật";
+  };
+
+  const getViewAllSearchHref = () =>
+    isMusicRoute ? `/music?keyword=${encodeURIComponent(searchQuery)}` : `/search?keyword=${encodeURIComponent(searchQuery)}`;
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
@@ -458,7 +513,7 @@ export default function Navbar() {
                   onFocus={() => {
                     if (searchResults.length > 0) setShowSearchDropdown(true);
                   }}
-                  placeholder={t("searchPlaceholder")}
+                  placeholder={resolvedSearchPlaceholder}
                   className="w-full rounded-full border-transparent bg-gray-100 py-1.5 pl-8 pr-2 text-xs outline-none transition-all focus:border-pink-500 focus:bg-white dark:bg-[#3a3b3c] dark:focus:bg-[#242526]"
                 />
                 <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400" />
@@ -472,32 +527,32 @@ export default function Navbar() {
                       </div>
                     ) : searchResults.length > 0 ? (
                       <>
-                        {searchResults.map((story) => (
+                        {searchResults.map((item) => (
                           <button
-                            key={story.id}
+                            key={item.id}
                             onClick={() => {
-                              handleSearchResultClick(story.slug);
+                              handleSearchResultClick(item);
                               closeMobileMenu();
                             }}
                             className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors text-left"
                           >
                             <img
-                              src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
-                              alt={story.title}
+                              src={item.thumbnailUrl || "/thumbnaildefault.jpg"}
+                              alt={item.title}
                               className="w-12 h-12 rounded-lg object-cover shrink-0"
                             />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
-                                {currentLang === 'en' ? story.titleEn || story.title : story.titleVi || story.title}
+                                {getSearchResultTitle(item)}
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
-                                {story.author?.name || "Đang cập nhật"}
+                                {getSearchResultSubtitle(item)}
                               </p>
                             </div>
                           </button>
                         ))}
                         <Link
-                          href={`/search?keyword=${encodeURIComponent(searchQuery)}`}
+                          href={getViewAllSearchHref()}
                           onClick={() => {
                             setShowSearchDropdown(false);
                             setSearchQuery("");
@@ -528,7 +583,7 @@ export default function Navbar() {
                   onFocus={() => {
                     if (searchResults.length > 0) setShowSearchDropdown(true);
                   }}
-                  placeholder={t("searchPlaceholder")}
+                  placeholder={resolvedSearchPlaceholder}
                   className="w-full pl-9 pr-4 py-2 rounded-full bg-gray-100 dark:bg-[#3a3b3c] border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-pink-500 text-sm outline-none transition-all"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
@@ -543,29 +598,29 @@ export default function Navbar() {
                       </div>
                     ) : searchResults.length > 0 ? (
                       <>
-                        {searchResults.map((story) => (
+                        {searchResults.map((item) => (
                           <button
-                            key={story.id}
-                            onClick={() => handleSearchResultClick(story.slug)}
+                            key={item.id}
+                            onClick={() => handleSearchResultClick(item)}
                             className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
                           >
                             <img
-                              src={story.thumbnailUrl || "/thumbnaildefault.jpg"}
-                              alt={story.title}
+                              src={item.thumbnailUrl || "/thumbnaildefault.jpg"}
+                              alt={item.title}
                               className="w-12 h-12 rounded-lg object-cover shrink-0"
                             />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
-                                {currentLang === 'en' ? story.titleEn || story.title : story.titleVi || story.title}
+                                {getSearchResultTitle(item)}
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
-                                {story.author?.name || "Đang cập nhật"}
+                                {getSearchResultSubtitle(item)}
                               </p>
                             </div>
                           </button>
                         ))}
                         <Link
-                          href={`/search?keyword=${encodeURIComponent(searchQuery)}`}
+                          href={getViewAllSearchHref()}
                           onClick={() => {
                             setShowSearchDropdown(false);
                             setSearchQuery("");

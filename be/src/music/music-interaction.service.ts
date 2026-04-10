@@ -26,6 +26,8 @@ export class MusicInteractionService {
     thumbnailUrl: string | null;
     audioUrl: string;
     audioDuration: number | null;
+    contentType: string;
+    playlistTrackIds: Prisma.JsonValue | null;
     playCount: number;
     likeCount: number;
     commentCount: number;
@@ -36,6 +38,11 @@ export class MusicInteractionService {
     return {
       ...row,
       tags: this.parseTags(row.tags),
+      playlistTrackIds: Array.isArray(row.playlistTrackIds)
+        ? row.playlistTrackIds
+            .map((item) => (typeof item === 'string' ? item.trim() : ''))
+            .filter(Boolean)
+        : [],
     };
   }
 

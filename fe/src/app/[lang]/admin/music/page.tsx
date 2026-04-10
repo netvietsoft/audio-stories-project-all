@@ -19,8 +19,25 @@ type MusicItem = {
   thumbnailUrl: string | null;
   audioUrl: string;
   audioDuration: number | null;
+  contentType: "single" | "playlist";
+  playlistTrackIds: string[];
+  playlistTracks?: Array<{
+    id: string;
+    title: string;
+    artist: string;
+    thumbnailUrl: string | null;
+    audioDuration: number | null;
+  }>;
   isPublic: boolean;
   createdAt: string;
+};
+
+type MusicTrackOption = {
+  id: string;
+  title: string;
+  artist: string;
+  thumbnailUrl: string | null;
+  audioDuration: number | null;
 };
 
 type MusicResponse = {
@@ -48,6 +65,7 @@ export default function AdminMusicPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [lastPage, setLastPage] = useState(1);
+  const [trackOptions, setTrackOptions] = useState<MusicTrackOption[]>([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMusic, setEditingMusic] = useState<MusicItem | null>(null);
@@ -66,8 +84,10 @@ export default function AdminMusicPage() {
       });
 
       const rows = Array.isArray(response.data?.data) ? response.data.data : [];
-      const normalizedRows = rows.map((row) => ({
+      const normalizedRows: MusicItem[] = rows.map((row) => ({
         ...row,
+        contentType: (row.contentType === "playlist" ? "playlist" : "single") as MusicItem["contentType"],
+        playlistTrackIds: Array.isArray(row.playlistTrackIds) ? row.playlistTrackIds : [],
         tags: Array.isArray(row.tags) ? row.tags : [],
       }));
 
@@ -87,6 +107,44 @@ export default function AdminMusicPage() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTrackOptions = async () => {
+      try {
+        const response = await apiClient.get<MusicResponse>("/music/admin", {
+          params: {
+            page: 1,
+            limit: 200,
+            contentType: "single",
+          },
+        });
+
+        if (cancelled) return;
+
+        const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+        setTrackOptions(
+          rows.map((item) => ({
+            id: item.id,
+            title: item.title,
+            artist: item.artist,
+            thumbnailUrl: item.thumbnailUrl,
+            audioDuration: item.audioDuration,
+          })),
+        );
+      } catch {
+        if (cancelled) return;
+        setTrackOptions([]);
+      }
+    };
+
+    void loadTrackOptions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const openCreateModal = () => {
     setEditingMusic(null);
@@ -113,6 +171,11 @@ export default function AdminMusicPage() {
     formData.append("description", payload.description);
     formData.append("tags", payload.tags.join(","));
     formData.append("isPublic", String(payload.isPublic));
+    formData.append("contentType", payload.contentType);
+
+    if (payload.playlistTrackIds.length) {
+      formData.append("playlistTrackIds", payload.playlistTrackIds.join(","));
+    }
 
     if (typeof payload.audioDuration === "number") {
       formData.append("audioDuration", String(payload.audioDuration));
@@ -143,6 +206,26 @@ export default function AdminMusicPage() {
 
       closeModal();
       await loadData();
+      if (!editingMusic) {
+        const nextResponse = await apiClient.get<MusicResponse>("/music/admin", {
+          params: {
+            page: 1,
+            limit: 200,
+            contentType: "single",
+          },
+        });
+
+        const rows = Array.isArray(nextResponse.data?.data) ? nextResponse.data.data : [];
+        setTrackOptions(
+          rows.map((item) => ({
+            id: item.id,
+            title: item.title,
+            artist: item.artist,
+            thumbnailUrl: item.thumbnailUrl,
+            audioDuration: item.audioDuration,
+          })),
+        );
+      }
     } catch (error) {
       console.error("Failed to save music:", error);
       alert("Lưu nhạc thất bại. Vui lòng thử lại.");
@@ -159,6 +242,7 @@ export default function AdminMusicPage() {
     try {
       await apiClient.delete(`/music/${row.id}`);
       await loadData();
+      setTrackOptions((prev) => prev.filter((item) => item.id !== row.id));
     } catch (error) {
       console.error("Failed to delete music:", error);
       alert("Xóa nhạc thất bại. Vui lòng thử lại.");
@@ -180,6 +264,8 @@ export default function AdminMusicPage() {
         audioUrl: editingMusic.audioUrl,
         audioDuration: editingMusic.audioDuration,
         isPublic: editingMusic.isPublic,
+        contentType: editingMusic.contentType,
+        playlistTrackIds: editingMusic.playlistTrackIds,
       }
     : undefined;
 
@@ -228,6 +314,7 @@ export default function AdminMusicPage() {
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Ảnh cover</th>
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Tiêu đề</th>
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Tác giả</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Loại</th>
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Thời lượng</th>
                 <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-wider text-slate-400">Trạng thái</th>
                 <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-wider text-slate-400">Thao tác</th>
@@ -236,13 +323,13 @@ export default function AdminMusicPage() {
             <tbody className="divide-y divide-slate-50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
+                  <td colSpan={7} className="px-6 py-12 text-center">
                     <Loader2 className="mx-auto h-6 w-6 animate-spin text-fuchsia-600" />
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-sm font-medium text-slate-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-sm font-medium text-slate-500">
                     Chưa có bản nhạc nào.
                   </td>
                 </tr>
@@ -269,6 +356,15 @@ export default function AdminMusicPage() {
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold text-slate-900">{row.title}</td>
                     <td className="px-6 py-4 text-sm font-medium text-slate-700">{row.artist}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-700">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
+                          row.contentType === "playlist" ? "bg-pink-100 text-pink-700" : "bg-indigo-100 text-indigo-700"
+                        }`}
+                      >
+                        {row.contentType === "playlist" ? `Playlist (${row.playlistTrackIds.length})` : "Single"}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-sm font-bold text-slate-700">{formatDuration(row.audioDuration)}</td>
                     <td className="px-6 py-4 text-center">
                       <span
@@ -355,6 +451,7 @@ export default function AdminMusicPage() {
             <div className="p-7">
               <MusicForm
                 initialData={initialFormData}
+                availableTracks={trackOptions}
                 onSubmit={submitMusic}
                 onCancel={closeModal}
                 isLoading={isSubmitting}

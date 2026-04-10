@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { BookOpen, ChevronUp, Music2, Pause, Play, SkipBack, SkipForward, Timer, Volume2, VolumeX } from "lucide-react";
+import ShuffleRepeatControls from "@/components/player/ShuffleRepeatControls";
 
 import { apiClient } from "@/lib/api/api-client";
 import { getOrCreateDeviceId } from "@/lib/tracking/device-id";
@@ -45,6 +46,8 @@ export default function GlobalPlayer() {
   const playbackRate = useAudioStore((state) => state.playbackRate);
   const currentTime = useAudioStore((state) => state.currentTime);
   const duration = useAudioStore((state) => state.duration);
+  const isShuffle = useAudioStore((state) => state.isShuffle);
+  const repeatMode = useAudioStore((state) => state.repeatMode);
   const seekTarget = useAudioStore((state) => state.seekTarget);
 
   const togglePlay = useAudioStore((state) => state.togglePlay);
@@ -57,6 +60,8 @@ export default function GlobalPlayer() {
   const setVolume = useAudioStore((state) => state.setVolume);
   const setPlaybackRate = useAudioStore((state) => state.setPlaybackRate);
   const toggleMute = useAudioStore((state) => state.toggleMute);
+  const toggleShuffle = useAudioStore((state) => state.toggleShuffle);
+  const cycleRepeatMode = useAudioStore((state) => state.cycleRepeatMode);
 
   const speedOptions = [0.75, 1, 1.25, 1.5, 2] as const;
 
@@ -376,6 +381,12 @@ export default function GlobalPlayer() {
   const pillClass = isMusicTrack
     ? "border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100 dark:border-pink-900/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/35"
     : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100 dark:border-[#3a3b3c] dark:bg-[#2f3133] dark:text-gray-200 dark:hover:bg-[#3a3b3c]";
+  const modeButtonInactiveClass = isMusicTrack
+    ? "border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100 dark:border-pink-900/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/35"
+    : "border-gray-300 bg-white text-gray-600 hover:bg-gray-100 dark:border-[#3a3b3c] dark:bg-[#2f3133] dark:text-gray-200 dark:hover:bg-[#3a3b3c]";
+  const modeButtonActiveClass = isMusicTrack
+    ? "border-pink-500 bg-pink-500 text-white hover:bg-pink-600 dark:border-pink-400 dark:bg-pink-500"
+    : "border-gray-700 bg-gray-700 text-white hover:bg-gray-800 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900";
   const playButtonClass = isMusicTrack
     ? "bg-pink-600 text-white hover:bg-pink-700"
     : "bg-gray-700 text-white hover:bg-gray-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white";
@@ -549,6 +560,17 @@ export default function GlobalPlayer() {
           >
             {playbackRate}x
           </button>
+
+          <ShuffleRepeatControls
+            isShuffle={isShuffle}
+            repeatMode={repeatMode}
+            onToggleShuffle={toggleShuffle}
+            onCycleRepeatMode={cycleRepeatMode}
+            disabled={!hasTrack}
+            buttonClassName={`rounded-md border p-1.5 transition ${disabledClass}`}
+            inactiveClassName={modeButtonInactiveClass}
+            activeClassName={modeButtonActiveClass}
+          />
         </div>
       </div>
 

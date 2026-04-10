@@ -1,9 +1,10 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Pause, Play, Repeat, Repeat1, Settings2, Shuffle, SkipBack, SkipForward, Timer, Volume2, VolumeX } from "lucide-react";
+import { Pause, Play, Settings2, SkipBack, SkipForward, Timer, Volume2, VolumeX } from "lucide-react";
 
-type RepeatMode = "off" | "all" | "one";
+import type { RepeatMode } from "@/lib/player/playback-modes";
+import ShuffleRepeatControls from "@/components/player/ShuffleRepeatControls";
 
 type StoryAudioPlayerPanelProps = {
   heading: string;
@@ -210,27 +211,12 @@ export default function StoryAudioPlayerPanel({
               }}
             />
 
-            <button
-              onClick={onToggleShuffle}
-              className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-sm transition hover:bg-gray-100 dark:hover:bg-[#464749] ${
-                isShuffle
-                  ? "border-pink-500 bg-pink-50 text-pink-600 dark:bg-pink-900/30"
-                  : "border-gray-300 bg-white text-gray-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300"
-              }`}
-            >
-              <Shuffle className="h-4 w-4" />
-            </button>
-
-            <button
-              onClick={onCycleRepeatMode}
-              className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-sm transition hover:bg-gray-100 dark:hover:bg-[#464749] ${
-                repeatMode !== "off"
-                  ? "border-pink-500 bg-pink-50 text-pink-600 dark:bg-pink-900/30"
-                  : "border-gray-300 bg-white text-gray-500 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300"
-              }`}
-            >
-              {repeatMode === "one" ? <Repeat1 className="h-4 w-4" /> : <Repeat className="h-4 w-4" />}
-            </button>
+            <ShuffleRepeatControls
+              isShuffle={isShuffle}
+              repeatMode={repeatMode}
+              onToggleShuffle={onToggleShuffle}
+              onCycleRepeatMode={onCycleRepeatMode}
+            />
 
             <button
               onClick={onToggleSettings}

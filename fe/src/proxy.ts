@@ -35,7 +35,7 @@ const detectLocaleFromHeaders = (request: NextRequest): "vi" | "en" => {
     return "vi";
 };
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Skip locale/auth middleware for static files in /public and framework assets.

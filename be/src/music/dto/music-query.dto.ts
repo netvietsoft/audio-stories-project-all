@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsPositive, IsString } from 'class-validator';
 
 export class MusicQueryDto {
   @IsOptional()
@@ -21,4 +21,9 @@ export class MusicQueryDto {
   @IsOptional()
   @IsString()
   tag?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['single', 'playlist'])
+  contentType?: 'single' | 'playlist';
 }

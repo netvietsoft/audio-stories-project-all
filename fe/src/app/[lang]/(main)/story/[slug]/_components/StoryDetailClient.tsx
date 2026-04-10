@@ -5,11 +5,12 @@ import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { BookOpen, ChevronDown, Clock3, Facebook, Globe, Headphones, ListMusic, Lock, Play, PlayCircle, Share2, Star, Zap } from "lucide-react";
+import { BookOpen, ChevronDown, Clock3, Facebook, Globe, Headphones, ListMusic, Lock, Play, PlayCircle, Star, Zap } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
 import FavoriteButton from "@/components/shared/FavoriteButton";
 import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscriptionButton";
+import ShareActionButton from "@/components/shared/ShareActionButton";
 import { getLocalizedValue } from "@/lib/story-localization";
 import { cleanChapterTitle } from "@/lib/formatChapterTitle";
 import { useViewTracking } from "@/hooks/use-view-tracking";
@@ -159,31 +160,6 @@ export default function StoryDetailClient() {
     document.cookie = `NEXT_LOCALE=${nextLocale}; path=/; max-age=31536000`;
     router.push(`/${nextLocale}${normalizedPath === "/" ? "" : normalizedPath}`);
     router.refresh();
-  };
-
-  const onShare = async () => {
-    if (typeof window === "undefined") return;
-    const url = window.location.href;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: storyTitle,
-          text: t("sharePrompt"),
-          url,
-        });
-        return;
-      } catch {
-        // ignore canceled share
-      }
-    }
-
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(url);
-      return;
-    }
-
-    window.prompt(t("copiedLink"), url);
   };
 
   if (isLoading) {
@@ -393,15 +369,15 @@ export default function StoryDetailClient() {
                 inactiveClassName="border-gray-100 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
               />
 
-              <button
-                type="button"
-                onClick={() => { void onShare(); }}
+              <ShareActionButton
+                title={storyTitle}
+                text={t("sharePrompt")}
+                fallbackPrompt={t("copiedLink")}
+                label={t("share")}
                 className="h-10 w-10 p-0 flex items-center justify-center sm:h-auto sm:w-auto sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 border border-gray-100 bg-white shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749] whitespace-nowrap rounded-full"
-                aria-label={t("share")}
-              >
-                <Share2 className="h-[18px] w-[18px] sm:h-3.5 sm:w-3.5" />
-                <span className="hidden sm:inline">{t("share")}</span>
-              </button>
+                iconClassName="h-[18px] w-[18px] sm:h-3.5 sm:w-3.5"
+                ariaLabel={t("share")}
+              />
 
               {(hasVi || hasEn) ? (
                 <div className="relative">

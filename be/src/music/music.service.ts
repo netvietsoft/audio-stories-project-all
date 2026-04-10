@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { MusicContentType, Prisma } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
 import { AudioUploadService } from '@/upload/audio-upload.service';
@@ -10,6 +10,37 @@ import { UpdateMusicDto } from './dto/update-music.dto';
 type UploadFiles = {
   audioFile?: Express.Multer.File[];
   thumbnailFile?: Express.Multer.File[];
+};
+
+type PlaylistTrackSummary = {
+  id: string;
+  title: string;
+  artist: string;
+  thumbnailUrl: string | null;
+  audioUrl: string;
+  audioDuration: number | null;
+  playCount: number;
+  likeCount: number;
+  commentCount: number;
+};
+
+type SerializableMusicRow = {
+  id: string;
+  title: string;
+  artist: string;
+  description: string | null;
+  tags: Prisma.JsonValue | null;
+  thumbnailUrl: string | null;
+  audioUrl: string;
+  audioDuration: number | null;
+  contentType: MusicContentType;
+  playlistTrackIds: Prisma.JsonValue | null;
+  playCount: number;
+  likeCount: number;
+  commentCount: number;
+  isPublic: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 @Injectable()
@@ -39,8 +70,10 @@ export class MusicService {
       throw new NotFoundException('Music not found.');
     }
 
+    const [serialized] = await this.enrichPlaylistTracks([row]);
+
     return {
-      data: this.serializeMusic(row),
+      data: serialized,
     };
   }
 
@@ -73,9 +106,11 @@ export class MusicService {
     const limit = query.limit || 12;
     const normalizedSearch = query.search?.trim();
     const normalizedTag = query.tag?.trim().toLowerCase();
+    const normalizedContentType = query.contentType?.trim() as MusicContentType | undefined;
 
     const where: Prisma.MusicWhereInput = {
       ...(onlyPublic ? { isPublic: true } : {}),
+      ...(normalizedContentType ? { contentType: normalizedContentType } : {}),
       ...(normalizedSearch
         ? {
             OR: [
@@ -98,8 +133,10 @@ export class MusicService {
         }),
       ]);
 
+      const enrichedRows = await this.enrichPlaylistTracks(rows);
+
       return {
-        data: rows.map((item) => this.serializeMusic(item)),
+        data: enrichedRows,
         meta: {
           total,
           page,
@@ -118,9 +155,10 @@ export class MusicService {
     );
 
     const paged = filtered.slice((page - 1) * limit, (page - 1) * limit + limit);
+    const enrichedRows = await this.enrichPlaylistTracks(paged);
 
     return {
-      data: paged.map((item) => this.serializeMusic(item)),
+      data: enrichedRows,
       meta: {
         total: filtered.length,
         page,
@@ -132,6 +170,8 @@ export class MusicService {
   async create(dto: CreateMusicDto, files: UploadFiles) {
     const title = this.normalizeRequiredText(dto.title, 'title');
     const artist = this.normalizeRequiredText(dto.artist, 'artist');
+    const contentType = this.normalizeContentType(dto.contentType);
+    const playlistTrackIds = this.normalizeMusicIdArray(dto.playlistTrackIds);
 
     const audioFile = files.audioFile?.[0];
     const thumbnailFile = files.thumbnailFile?.[0];
@@ -139,17 +179,38 @@ export class MusicService {
     const audioUrlFromBody = this.normalizeOptionalText(dto.audioUrl);
     const thumbnailUrlFromBody = this.normalizeOptionalText(dto.thumbnailUrl);
 
-    const audioUrl = audioFile
-      ? await this.audioUploadService.uploadAudio(audioFile, 'music')
-      : audioUrlFromBody;
+    let resolvedPlaylistTracks: PlaylistTrackSummary[] = [];
+    let audioUrl: string | undefined;
+    let audioDuration: number | null = this.normalizeDuration(dto.audioDuration);
 
-    if (!audioUrl) {
-      throw new BadRequestException('audioFile or audioUrl is required.');
+    if (contentType === MusicContentType.playlist) {
+      if (!playlistTrackIds.length) {
+        throw new BadRequestException('playlistTrackIds is required for playlist content.');
+      }
+
+      resolvedPlaylistTracks = await this.resolvePlaylistTracks(playlistTrackIds);
+      audioUrl = resolvedPlaylistTracks[0]?.audioUrl;
+      audioDuration = resolvedPlaylistTracks.reduce((sum, item) => sum + (item.audioDuration || 0), 0);
+    } else {
+      audioUrl = audioFile
+        ? await this.audioUploadService.uploadAudio(audioFile, 'music')
+        : audioUrlFromBody;
     }
 
-    const thumbnailUrl = thumbnailFile
+    if (!audioUrl) {
+      throw new BadRequestException(
+        contentType === MusicContentType.playlist
+          ? 'playlistTrackIds must contain at least one playable track.'
+          : 'audioFile or audioUrl is required.',
+      );
+    }
+
+    const uploadedThumbnailUrl = thumbnailFile
       ? await this.audioUploadService.uploadMusicThumbnail(thumbnailFile)
       : thumbnailUrlFromBody;
+
+    const thumbnailUrl = uploadedThumbnailUrl
+      ?? (contentType === MusicContentType.playlist ? resolvedPlaylistTracks[0]?.thumbnailUrl || null : null);
 
     const created = await this.prisma.music.create({
       data: {
@@ -159,12 +220,16 @@ export class MusicService {
         tags: this.normalizeTagsInput(dto.tags),
         audioUrl,
         thumbnailUrl,
-        audioDuration: this.normalizeDuration(dto.audioDuration),
+        audioDuration,
+        contentType,
+        playlistTrackIds: contentType === MusicContentType.playlist ? playlistTrackIds : [],
         isPublic: dto.isPublic ?? true,
       },
     });
 
-    return this.serializeMusic(created);
+    const [serialized] = await this.enrichPlaylistTracks([created]);
+
+    return serialized;
   }
 
   async update(id: string, dto: UpdateMusicDto, files: UploadFiles) {
@@ -177,6 +242,14 @@ export class MusicService {
     const audioFile = files.audioFile?.[0];
     const thumbnailFile = files.thumbnailFile?.[0];
 
+    const nextContentType = dto.contentType
+      ? this.normalizeContentType(dto.contentType)
+      : existing.contentType;
+
+    const nextPlaylistTrackIds = dto.playlistTrackIds === undefined
+      ? this.parsePlaylistTrackIds(existing.playlistTrackIds)
+      : this.normalizeMusicIdArray(dto.playlistTrackIds);
+
     const nextTitle = dto.title === undefined ? undefined : this.normalizeRequiredText(dto.title, 'title');
     const nextArtist = dto.artist === undefined ? undefined : this.normalizeRequiredText(dto.artist, 'artist');
 
@@ -186,13 +259,51 @@ export class MusicService {
     const thumbnailUrlFromBody = this.normalizeNullableText(dto.thumbnailUrl);
     const nextDescription = dto.description === undefined ? undefined : this.normalizeNullableText(dto.description);
 
-    const nextAudioUrl = audioFile
+    const uploadedAudioUrl = audioFile
       ? await this.audioUploadService.uploadAudio(audioFile, 'music')
-      : audioUrlFromBody;
+      : undefined;
 
-    const nextThumbnailUrl = thumbnailFile
+    const uploadedThumbnailUrl = thumbnailFile
       ? await this.audioUploadService.uploadMusicThumbnail(thumbnailFile)
-      : thumbnailUrlFromBody;
+      : undefined;
+
+    let resolvedPlaylistTracks: PlaylistTrackSummary[] = [];
+    let derivedAudioUrl: string | undefined;
+    let derivedDuration: number | null | undefined;
+    let derivedThumbnail: string | null | undefined;
+
+    if (nextContentType === MusicContentType.playlist) {
+      if (!nextPlaylistTrackIds.length) {
+        throw new BadRequestException('playlistTrackIds is required for playlist content.');
+      }
+
+      resolvedPlaylistTracks = await this.resolvePlaylistTracks(nextPlaylistTrackIds, id);
+      derivedAudioUrl = resolvedPlaylistTracks[0]?.audioUrl;
+      derivedDuration = resolvedPlaylistTracks.reduce((sum, item) => sum + (item.audioDuration || 0), 0);
+      derivedThumbnail = resolvedPlaylistTracks[0]?.thumbnailUrl || null;
+
+      if (!derivedAudioUrl) {
+        throw new BadRequestException('playlistTrackIds must contain at least one playable track.');
+      }
+    }
+
+    let nextAudioUrl = uploadedAudioUrl ?? audioUrlFromBody;
+    let nextDuration = dto.audioDuration !== undefined ? this.normalizeDuration(dto.audioDuration) : undefined;
+
+    if (nextContentType === MusicContentType.playlist) {
+      nextAudioUrl = derivedAudioUrl;
+      nextDuration = derivedDuration;
+    }
+
+    if (nextContentType === MusicContentType.single && !nextAudioUrl && !existing.audioUrl) {
+      throw new BadRequestException('audioFile or audioUrl is required.');
+    }
+
+    let nextThumbnailUrl: string | null | undefined = uploadedThumbnailUrl ?? thumbnailUrlFromBody;
+
+    if (nextContentType === MusicContentType.playlist && nextThumbnailUrl === undefined) {
+      nextThumbnailUrl = existing.thumbnailUrl || derivedThumbnail || null;
+    }
 
     const data: Prisma.MusicUpdateInput = {
       ...(nextTitle !== undefined ? { title: nextTitle } : {}),
@@ -201,7 +312,11 @@ export class MusicService {
       ...(nextThumbnailUrl !== undefined ? { thumbnailUrl: nextThumbnailUrl } : {}),
       ...(nextDescription !== undefined ? { description: nextDescription } : {}),
       ...(dto.tags !== undefined ? { tags: this.normalizeTagsInput(dto.tags) } : {}),
-      ...(dto.audioDuration !== undefined ? { audioDuration: this.normalizeDuration(dto.audioDuration) } : {}),
+      ...(nextDuration !== undefined ? { audioDuration: nextDuration } : {}),
+      ...(dto.contentType !== undefined ? { contentType: nextContentType } : {}),
+      ...(dto.playlistTrackIds !== undefined || nextContentType === MusicContentType.playlist || existing.contentType === MusicContentType.playlist
+        ? { playlistTrackIds: nextContentType === MusicContentType.playlist ? nextPlaylistTrackIds : [] }
+        : {}),
       ...(dto.isPublic !== undefined ? { isPublic: dto.isPublic } : {}),
     };
 
@@ -210,7 +325,9 @@ export class MusicService {
       data,
     });
 
-    return this.serializeMusic(updated);
+    const [serialized] = await this.enrichPlaylistTracks([updated]);
+
+    return serialized;
   }
 
   async remove(id: string) {
@@ -225,29 +342,84 @@ export class MusicService {
     return { success: true };
   }
 
-  private serializeMusic(row: {
-    id: string;
-    title: string;
-    artist: string;
-    description: string | null;
-    tags: Prisma.JsonValue | null;
-    thumbnailUrl: string | null;
-    audioUrl: string;
-    audioDuration: number | null;
-    playCount: number;
-    likeCount: number;
-    commentCount: number;
-    isPublic: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  }) {
+  private serializeMusic(row: SerializableMusicRow, playlistTracks: PlaylistTrackSummary[] = []) {
     return {
       ...row,
       tags: this.parseTags(row.tags),
+      playlistTrackIds: this.parsePlaylistTrackIds(row.playlistTrackIds),
+      playlistTracks,
     };
   }
 
+  private async enrichPlaylistTracks(rows: SerializableMusicRow[]) {
+    if (!rows.length) return [];
+
+    const playlistRows = rows.filter((row) => row.contentType === MusicContentType.playlist);
+    if (!playlistRows.length) {
+      return rows.map((row) => this.serializeMusic(row));
+    }
+
+    const allTrackIds = new Set<string>();
+    playlistRows.forEach((row) => {
+      this.parsePlaylistTrackIds(row.playlistTrackIds).forEach((id) => allTrackIds.add(id));
+    });
+
+    const ids = Array.from(allTrackIds);
+    const trackRows = ids.length
+      ? await this.prisma.music.findMany({
+          where: {
+            id: { in: ids },
+            contentType: MusicContentType.single,
+          },
+          select: {
+            id: true,
+            title: true,
+            artist: true,
+            thumbnailUrl: true,
+            audioUrl: true,
+            audioDuration: true,
+            playCount: true,
+            likeCount: true,
+            commentCount: true,
+          },
+        })
+      : [];
+
+    const trackMap = new Map(trackRows.map((item) => [item.id, item]));
+
+    return rows.map((row) => {
+      if (row.contentType !== MusicContentType.playlist) {
+        return this.serializeMusic(row);
+      }
+
+      const playlistTracks = this.parsePlaylistTrackIds(row.playlistTrackIds)
+        .map((id) => trackMap.get(id))
+        .filter((item): item is (typeof trackRows)[number] => Boolean(item))
+        .map((item) => ({
+          id: item.id,
+          title: item.title,
+          artist: item.artist,
+          thumbnailUrl: item.thumbnailUrl,
+          audioUrl: item.audioUrl,
+          audioDuration: item.audioDuration,
+          playCount: item.playCount,
+          likeCount: item.likeCount,
+          commentCount: item.commentCount,
+        }));
+
+      return this.serializeMusic(row, playlistTracks);
+    });
+  }
+
   private parseTags(value: Prisma.JsonValue | null): string[] {
+    if (!Array.isArray(value)) return [];
+
+    return value
+      .map((item) => (typeof item === 'string' ? item.trim() : ''))
+      .filter(Boolean);
+  }
+
+  private parsePlaylistTrackIds(value: Prisma.JsonValue | null): string[] {
     if (!Array.isArray(value)) return [];
 
     return value
@@ -267,6 +439,73 @@ export class MusicService {
     );
 
     return deduped;
+  }
+
+  private normalizeMusicIdArray(value: string[] | undefined): string[] {
+    if (!value?.length) return [];
+
+    return Array.from(
+      new Set(
+        value
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ),
+    );
+  }
+
+  private normalizeContentType(value: string | undefined): MusicContentType {
+    return value === 'playlist' ? MusicContentType.playlist : MusicContentType.single;
+  }
+
+  private async resolvePlaylistTracks(trackIds: string[], excludeMusicId?: string): Promise<PlaylistTrackSummary[]> {
+    const normalizedIds = this.normalizeMusicIdArray(trackIds).filter((id) => id !== excludeMusicId);
+
+    if (!normalizedIds.length) {
+      throw new BadRequestException('playlistTrackIds is required for playlist content.');
+    }
+
+    const rows = await this.prisma.music.findMany({
+      where: {
+        id: { in: normalizedIds },
+        contentType: MusicContentType.single,
+      },
+      select: {
+        id: true,
+        title: true,
+        artist: true,
+        thumbnailUrl: true,
+        audioUrl: true,
+        audioDuration: true,
+        playCount: true,
+        likeCount: true,
+        commentCount: true,
+      },
+    });
+
+    if (rows.length !== normalizedIds.length) {
+      throw new BadRequestException('playlistTrackIds contains invalid or non-single-track IDs.');
+    }
+
+    const map = new Map(rows.map((item) => [item.id, item]));
+
+    return normalizedIds.map((id) => {
+      const item = map.get(id);
+      if (!item) {
+        throw new BadRequestException('playlistTrackIds contains invalid IDs.');
+      }
+
+      return {
+        id: item.id,
+        title: item.title,
+        artist: item.artist,
+        thumbnailUrl: item.thumbnailUrl,
+        audioUrl: item.audioUrl,
+        audioDuration: item.audioDuration,
+        playCount: item.playCount,
+        likeCount: item.likeCount,
+        commentCount: item.commentCount,
+      };
+    });
   }
 
   private normalizeRequiredText(value: string | undefined, field: string): string {

@@ -4,12 +4,15 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Heart, Lightbulb, Reply, Send, ThumbsUp, X } from "lucide-react";
 import DOMPurify from "dompurify";
 import { useLocale } from "next-intl";
-import Image from "next/image";
 
 import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
 import { useAuthModalStore } from "@/stores/auth-modal-store";
 import SegmentCommentButton from "@/components/story/SegmentCommentButton";
+import InlineAdvertisementCard from "@/components/ads/InlineAdvertisementCard";
+import { useActiveAdvertisements } from "@/hooks/use-active-advertisements";
+import { useAdInsertionFrequency } from "@/hooks/use-ad-insertion-frequency";
+import type { AdvertisementItem } from "@/types/advertisement";
 
 type InlineComment = {
   id: string;
@@ -32,15 +35,6 @@ type ParagraphItem = {
   id: string;
   index: number;
   content: string;
-};
-
-type AdvertisementItem = {
-  id: string;
-  partnerName: string;
-  title: string;
-  imageUrl: string;
-  targetUrl: string;
-  isActive: boolean;
 };
 
 type ParagraphCommentsResponse = {
@@ -245,7 +239,7 @@ export default function StoryReader({
   onUnlockRequest,
 }: StoryReaderProps) {
   const locale = useLocale();
-  const [insertionFrequency, setInsertionFrequency] = useState<number>(adInterval || 1000);
+  const insertionFrequency = useAdInsertionFrequency(adInterval || 1000);
   const [openParagraphId, setOpenParagraphId] = useState<string | null>(null);
   const [paragraphDrafts, setParagraphDrafts] = useState<Record<string, string>>({});
   const [replyTargetByParagraph, setReplyTargetByParagraph] = useState<Record<string, string | null>>({});
@@ -256,7 +250,7 @@ export default function StoryReader({
   const [commentSort, setCommentSort] = useState<CommentSort>("newest");
   const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState("");
-  const [activeAds, setActiveAds] = useState<AdvertisementItem[]>([]);
+  const activeAds = useActiveAdvertisements({ limit: 10 });
   
   const user = useUserStore((state) => state.user);
   const openLogin = useAuthModalStore((state) => state.openLogin);
@@ -290,41 +284,6 @@ export default function StoryReader({
     if (!preview) return [];
     return splitParagraphs(chapterId, preview);
   }, [chapterId, content, previewChars]);
-
-  useEffect(() => {
-    const fetchActiveAds = async () => {
-      try {
-        const activeLang = locale === 'en' ? 'en' : 'vi';
-        const response = await apiClient.get<{ data?: AdvertisementItem[] }>('/ads/active', {
-          params: { limit: 10, lang: activeLang },
-        });
-        setActiveAds(Array.isArray(response.data?.data) ? response.data.data : []);
-      } catch {
-        setActiveAds([]);
-      }
-    };
-
-    void fetchActiveAds();
-  }, [locale]);
-
-  useEffect(() => {
-    const fetchInsertionFrequency = async () => {
-      try {
-        const response = await apiClient.get('/settings/ad_insertion_frequency');
-        const rawValue = response?.data?.value;
-        const parsed = Number(rawValue);
-        if (Number.isFinite(parsed) && parsed > 0) {
-          setInsertionFrequency(Math.floor(parsed));
-          return;
-        }
-        setInsertionFrequency(1000);
-      } catch {
-        setInsertionFrequency(1000);
-      }
-    };
-
-    void fetchInsertionFrequency();
-  }, []);
 
   const flowItems = useMemo(() => {
     const items: Array<
@@ -891,39 +850,9 @@ export default function StoryReader({
         }
 
         if (item.type === "ad") {
-          const isExternal = /^https?:\/\//i.test(item.ad.targetUrl);
-          const adHref = isExternal
-            ? item.ad.targetUrl
-            : item.ad.targetUrl.startsWith('/')
-              ? item.ad.targetUrl
-              : `/${item.ad.targetUrl}`;
-
           return (
             <div key={item.id} className="mb-8 flex justify-center">
-              <a
-                href={adHref}
-                target={isExternal ? '_blank' : undefined}
-                rel={isExternal ? 'noreferrer' : undefined}
-                className="group relative block w-full max-w-2xl overflow-hidden rounded-2xl bg-white p-3 shadow-sm transition hover:shadow-md dark:bg-[#242526]"
-              >
-                <span className="absolute right-3 top-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {locale === 'en' ? 'Sponsored' : 'Tài trợ'}
-                </span>
-                <div className="flex items-center gap-3">
-                  <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-[#3a3b3c]">
-                    <Image src={item.ad.imageUrl} alt={item.ad.title} width={80} height={80} className="h-full w-full object-cover" unoptimized />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-pink-600 dark:text-pink-300">{item.ad.partnerName}</p>
-                    <h3 className="mt-1 line-clamp-2 text-sm font-bold text-gray-900 dark:text-gray-100">{item.ad.title}</h3>
-                    <div className="mt-2">
-                      <span className="inline-flex items-center rounded-full bg-pink-600 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-white transition group-hover:bg-pink-700">
-                        {locale === 'en' ? 'Shop now' : 'Mua ngay'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </a>
+              <InlineAdvertisementCard ad={item.ad} className="max-w-2xl" />
             </div>
           );
         }

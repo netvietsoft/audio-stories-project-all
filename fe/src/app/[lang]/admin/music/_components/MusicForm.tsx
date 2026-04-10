@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Image as ImageIcon, Loader2, Music2, Save, UploadCloud, X } from "lucide-react";
@@ -13,10 +13,19 @@ const schema = z.object({
   description: z.string().max(5000, "Mô tả tối đa 5000 ký tự").optional(),
   tagsInput: z.string().optional(),
   isPublic: z.enum(["true", "false"]),
+  contentType: z.enum(["single", "playlist"]),
   audioDuration: z.number().min(0, "Thời lượng không hợp lệ").optional(),
 });
 
 type MusicFormValues = z.infer<typeof schema>;
+
+type MusicTrackOption = {
+  id: string;
+  title: string;
+  artist: string;
+  thumbnailUrl?: string | null;
+  audioDuration?: number | null;
+};
 
 export type MusicFormInitialData = {
   id?: string;
@@ -28,6 +37,8 @@ export type MusicFormInitialData = {
   audioUrl?: string;
   audioDuration?: number | null;
   isPublic?: boolean;
+  contentType?: "single" | "playlist";
+  playlistTrackIds?: string[];
 };
 
 export type MusicFormSubmitPayload = {
@@ -36,6 +47,8 @@ export type MusicFormSubmitPayload = {
   description: string;
   tags: string[];
   isPublic: boolean;
+  contentType: "single" | "playlist";
+  playlistTrackIds: string[];
   audioDuration: number | null;
   audioFile?: File;
   thumbnailFile?: File;
@@ -44,6 +57,7 @@ export type MusicFormSubmitPayload = {
 
 type MusicFormProps = {
   initialData?: MusicFormInitialData;
+  availableTracks?: MusicTrackOption[];
   onSubmit: (payload: MusicFormSubmitPayload) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
@@ -62,7 +76,13 @@ const revokeObjectUrl = (url?: string | null) => {
   }
 };
 
-export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }: MusicFormProps) {
+export default function MusicForm({
+  initialData,
+  availableTracks = [],
+  onSubmit,
+  onCancel,
+  isLoading,
+}: MusicFormProps) {
   const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(undefined);
   const [audioFile, setAudioFile] = useState<File | undefined>(undefined);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>(initialData?.thumbnailUrl || "");
@@ -70,8 +90,14 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
   const [clearThumbnail, setClearThumbnail] = useState(false);
   const [isReadingDuration, setIsReadingDuration] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [playlistError, setPlaylistError] = useState<string | null>(null);
+  const [playlistQuery, setPlaylistQuery] = useState("");
+  const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>(
+    Array.isArray(initialData?.playlistTrackIds) ? initialData.playlistTrackIds : [],
+  );
 
   const {
+    control,
     register,
     handleSubmit,
     setValue,
@@ -84,9 +110,13 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
       description: initialData?.description || "",
       tagsInput: Array.isArray(initialData?.tags) ? initialData.tags.join(", ") : "",
       isPublic: initialData?.isPublic === false ? "false" : "true",
+      contentType: initialData?.contentType || "single",
       audioDuration: typeof initialData?.audioDuration === "number" ? initialData.audioDuration : 0,
     },
   });
+
+  const contentType = useWatch({ control, name: "contentType" });
+  const watchedDuration = useWatch({ control, name: "audioDuration" });
 
   useEffect(() => {
     return () => {
@@ -94,6 +124,35 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
       revokeObjectUrl(audioPreview);
     };
   }, [audioPreview, thumbnailPreview]);
+
+  const selectableTracks = useMemo(
+    () => availableTracks.filter((item) => item.id !== initialData?.id),
+    [availableTracks, initialData?.id],
+  );
+
+  const selectedTracks = useMemo(
+    () =>
+      selectedTrackIds
+        .map((trackId) => selectableTracks.find((item) => item.id === trackId))
+        .filter((item): item is MusicTrackOption => Boolean(item)),
+    [selectableTracks, selectedTrackIds],
+  );
+
+  const filteredTracks = useMemo(() => {
+    const keyword = playlistQuery.trim().toLowerCase();
+
+    return selectableTracks.filter((item) => {
+      if (!keyword) return true;
+      return item.title.toLowerCase().includes(keyword) || item.artist.toLowerCase().includes(keyword);
+    });
+  }, [playlistQuery, selectableTracks]);
+
+  useEffect(() => {
+    if (contentType !== "playlist") return;
+
+    const totalDuration = selectedTracks.reduce((sum, item) => sum + (item.audioDuration || 0), 0);
+    setValue("audioDuration", totalDuration, { shouldDirty: true, shouldValidate: true });
+  }, [contentType, selectedTracks, setValue]);
 
   const handleThumbnailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -148,14 +207,26 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
     }
   };
 
-  const durationLabel = useMemo(() => {
-    const value = typeof initialData?.audioDuration === "number" ? initialData.audioDuration : undefined;
-    return value;
-  }, [initialData?.audioDuration]);
+  const toggleTrackSelection = (trackId: string) => {
+    setPlaylistError(null);
+    setSelectedTrackIds((prev) => {
+      if (prev.includes(trackId)) {
+        return prev.filter((id) => id !== trackId);
+      }
+      return [...prev, trackId];
+    });
+  };
 
   const submitForm = async (values: MusicFormValues) => {
-    if (!audioFile && !initialData?.audioUrl) {
+    const isPlaylist = values.contentType === "playlist";
+
+    if (!isPlaylist && !audioFile && !initialData?.audioUrl) {
       setAudioError("Vui lòng chọn file audio.");
+      return;
+    }
+
+    if (isPlaylist && selectedTrackIds.length === 0) {
+      setPlaylistError("Vui lòng chọn ít nhất 1 track để tạo playlist.");
       return;
     }
 
@@ -174,8 +245,10 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
       description: (values.description || "").trim(),
       tags,
       isPublic: values.isPublic === "true",
+      contentType: values.contentType,
+      playlistTrackIds: values.contentType === "playlist" ? selectedTrackIds : [],
       audioDuration: typeof values.audioDuration === "number" ? values.audioDuration : null,
-      audioFile,
+      audioFile: values.contentType === "single" ? audioFile : undefined,
       thumbnailFile,
       clearThumbnail,
     });
@@ -189,6 +262,14 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
             <Music2 className="h-5 w-5 text-indigo-600" />
             Thông tin cơ bản
           </h3>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-black uppercase tracking-wider text-slate-700">Loại nội dung</label>
+            <select {...register("contentType")} className="admin-input w-full appearance-none bg-white">
+              <option value="single">Bài lẻ</option>
+              <option value="playlist">Playlist hệ thống</option>
+            </select>
+          </div>
 
           <div className="space-y-1.5">
             <label className="text-sm font-black uppercase tracking-wider text-slate-700">Tiêu đề</label>
@@ -249,7 +330,7 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
             <p className="text-xs font-medium text-slate-500">
               {isReadingDuration
                 ? "Đang đọc thời lượng từ file audio..."
-                : `Định dạng mm:ss: ${formatSeconds(durationLabel)}`}
+                : `Định dạng mm:ss: ${formatSeconds(typeof watchedDuration === "number" ? watchedDuration : 0)}`}
             </p>
             {errors.audioDuration ? <p className="text-xs text-red-500">{errors.audioDuration.message}</p> : null}
           </div>
@@ -294,21 +375,77 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-black uppercase tracking-wider text-slate-700">Audio</label>
-            <input
-              type="file"
-              accept="audio/*"
-              onChange={handleAudioChange}
-              className="admin-input w-full bg-white file:mr-3 file:rounded-xl file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-emerald-700"
-            />
-            {audioPreview ? (
-              <div className="rounded-2xl border border-slate-200 bg-white p-3">
-                <audio controls src={audioPreview} className="w-full" />
+          {contentType === "single" ? (
+            <div className="space-y-2">
+              <label className="text-sm font-black uppercase tracking-wider text-slate-700">Audio</label>
+              <input
+                type="file"
+                accept="audio/*"
+                onChange={handleAudioChange}
+                className="admin-input w-full bg-white file:mr-3 file:rounded-xl file:border-0 file:bg-emerald-50 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-emerald-700"
+              />
+              {audioPreview ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                  <audio controls src={audioPreview} className="w-full" />
+                </div>
+              ) : null}
+              {audioError ? <p className="text-xs text-red-500">{audioError}</p> : null}
+            </div>
+          ) : (
+            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <label className="text-sm font-black uppercase tracking-wider text-slate-700">Track trong playlist</label>
+              <input
+                value={playlistQuery}
+                onChange={(event) => setPlaylistQuery(event.target.value)}
+                placeholder="Tìm track theo tiêu đề hoặc nghệ sĩ..."
+                className="admin-input w-full bg-white"
+              />
+
+              <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                {filteredTracks.length ? (
+                  filteredTracks.map((track) => {
+                    const isSelected = selectedTrackIds.includes(track.id);
+                    return (
+                      <button
+                        key={track.id}
+                        type="button"
+                        onClick={() => toggleTrackSelection(track.id)}
+                        className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-sm transition ${
+                          isSelected
+                            ? "border-pink-400 bg-pink-50 text-pink-700"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-pink-300"
+                        }`}
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold">{track.title}</span>
+                          <span className="block truncate text-xs opacity-75">{track.artist}</span>
+                        </span>
+                        <span className="ml-3 shrink-0 text-[11px] font-black">{formatSeconds(track.audioDuration)}</span>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <p className="text-xs text-slate-500">Không có track phù hợp.</p>
+                )}
               </div>
-            ) : null}
-            {audioError ? <p className="text-xs text-red-500">{audioError}</p> : null}
-          </div>
+
+              <div className="rounded-xl border border-dashed border-slate-300 bg-white p-3 text-xs text-slate-600">
+                Đã chọn <span className="font-black text-slate-800">{selectedTracks.length}</span> track
+                {selectedTracks.length > 0 ? (
+                  <ul className="mt-2 space-y-1">
+                    {selectedTracks.slice(0, 10).map((item, index) => (
+                      <li key={item.id} className="truncate">
+                        {index + 1}. {item.title}
+                      </li>
+                    ))}
+                    {selectedTracks.length > 10 ? <li>... và {selectedTracks.length - 10} track khác</li> : null}
+                  </ul>
+                ) : null}
+              </div>
+
+              {playlistError ? <p className="text-xs text-red-500">{playlistError}</p> : null}
+            </div>
+          )}
         </div>
       </div>
 

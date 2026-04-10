@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 const toBoolean = ({ value }: { value: unknown }) => {
   if (typeof value === 'boolean') return value;
@@ -64,6 +64,17 @@ export class CreateMusicDto {
   @IsInt()
   @Min(0)
   audioDuration?: number;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['single', 'playlist'])
+  contentType?: 'single' | 'playlist';
+
+  @IsOptional()
+  @Transform(toStringArray)
+  @IsArray()
+  @IsString({ each: true })
+  playlistTrackIds?: string[];
 
   @IsOptional()
   @Transform(toBoolean)

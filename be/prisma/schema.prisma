@@ -194,6 +194,11 @@ enum StoryStatus {
   completed
 }
 
+enum MusicContentType {
+  single
+  playlist
+}
+
 model Story {
   id             String      @id @default(uuid()) @db.VarChar(36)
   title          String      @db.VarChar(300)
@@ -295,6 +300,8 @@ model Music {
   thumbnailUrl  String?  @map("thumbnail_url") @db.Text
   audioUrl      String   @map("audio_url") @db.VarChar(500)
   audioDuration Int?     @map("audio_duration") @db.UnsignedInt
+  contentType   MusicContentType @default(single) @map("content_type")
+  playlistTrackIds Json? @map("playlist_track_ids")
   playCount     Int      @default(0) @map("play_count") @db.UnsignedInt
   likeCount     Int      @default(0) @map("like_count") @db.UnsignedInt
   commentCount  Int      @default(0) @map("comment_count") @db.UnsignedInt
@@ -309,6 +316,7 @@ model Music {
 
   @@index([isPublic])
   @@index([createdAt])
+  @@index([contentType])
   @@index([playCount])
   @@index([likeCount])
   @@index([commentCount])
@@ -589,7 +597,7 @@ model ReviewReply {
   parent   ReviewReply?  @relation("ReviewReplyChildren", fields: [parentId], references: [id], onDelete: Cascade)
   children ReviewReply[] @relation("ReviewReplyChildren")
 
-  @@index([reviewId, createdAt])
+  @@index([reviewId, createdAt(sort: Desc)])
   @@index([userId])
   @@index([parentId])
   @@map("review_replies")

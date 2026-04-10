@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { isValidLocale } from "@/i18n";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AppProviders } from "@/providers/app-providers";
+import { AudioProvider } from "@/providers/audio-provider";
 import AuthModal from "@/components/auth/AuthModal";
 
 
@@ -36,8 +37,10 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     <NextIntlClientProvider locale={lang} messages={messages}>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
         <AppProviders>
-          {children}
-          <AuthModal />
+          <AudioProvider>
+            {children}
+            <AuthModal />
+          </AudioProvider>
         </AppProviders>
       </ThemeProvider>
     </NextIntlClientProvider>

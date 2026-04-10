@@ -3,8 +3,8 @@
 import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronUp, Pause, Play, SkipBack, SkipForward, Timer, Volume2, VolumeX } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { BookOpen, ChevronUp, Music2, Pause, Play, SkipBack, SkipForward, Timer, Volume2, VolumeX } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
 import { getOrCreateDeviceId } from "@/lib/tracking/device-id";
@@ -28,6 +28,7 @@ export default function GlobalPlayer() {
       return fallback;
     }
   };
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sleepMenuRef = useRef<HTMLDivElement | null>(null);
@@ -243,8 +244,6 @@ export default function GlobalPlayer() {
     const key = `${storyId}:${chapterId}`;
     if (listenTrackedRef.current.get(key)) return;
 
-    console.log("[Tracking FE] Bat dau dem 10s cho luot NGHE...", { storyId, chapterId });
-
     const timer = window.setTimeout(() => {
       const deviceId = getOrCreateDeviceId();
       if (!deviceId) return;
@@ -255,8 +254,7 @@ export default function GlobalPlayer() {
           chapterId,
           deviceId,
         })
-        .then((response) => {
-          console.log("[Tracking FE] 🎧 Da gui luot NGHE thanh cong len server!", response.data);
+        .then(() => {
           listenTrackedRef.current.set(key, true);
         })
         .catch(() => {
@@ -273,8 +271,6 @@ export default function GlobalPlayer() {
     if (!duration || duration <= 0) return 0;
     return Math.min(100, Math.max(0, (currentTime / duration) * 100));
   }, [currentTime, duration]);
-
-  const resolvedCoverUrl = currentTrack?.coverUrl || currentTrack?.storyCoverUrl || "/thumbnaildefault.jpg";
 
   const [isVisible, setIsVisible] = useState(true);
   const [isExpandedMobile, setIsExpandedMobile] = useState(false);
@@ -339,19 +335,57 @@ export default function GlobalPlayer() {
     return () => document.removeEventListener("mousedown", onOutside);
   }, [showSleepMenu]);
 
-  if (!mounted || !currentTrack) {
+  useEffect(() => {
+    if (!currentTrack) {
+      setShowSleepMenu(false);
+    }
+  }, [currentTrack]);
+
+  if (!mounted) {
     return null;
   }
 
+  const hasTrack = Boolean(currentTrack);
+  const isStoryTrack = Boolean(currentTrack?.storyId);
+  const isMusicTrack = hasTrack && !isStoryTrack;
+
   const chapterHref =
-    currentTrack.storySlug && currentTrack.chapterNumber
+    hasTrack && currentTrack?.storySlug && currentTrack.chapterNumber
       ? `/story/${currentTrack.storySlug}/chuong-${currentTrack.chapterNumber}`
-      : currentTrack.storySlug
+      : hasTrack && currentTrack?.storySlug
         ? `/story/${currentTrack.storySlug}`
         : undefined;
 
-  const isStoryTrack = Boolean(currentTrack.storyId);
+  const resolvedCoverUrl = currentTrack?.coverUrl || currentTrack?.storyCoverUrl || "/thumbnaildefault.jpg";
+  const displayTitle = hasTrack ? currentTrack!.title : safeT("emptyTitle", "Choose something to start listening");
+  const displaySubtitle = hasTrack
+    ? currentTrack!.author || t("defaultAuthor")
+    : safeT("emptySubtitle", "Would you like music or an audio story?");
+
+  const accentRgb = isMusicTrack ? "236 72 153" : "75 85 99";
+  const progressPercent = hasTrack ? progress : 0;
+  const volumePercent = Math.round(Math.max(0, Math.min(1, volume)) * 100);
+
+  const shellClass = isMusicTrack
+    ? "bg-pink-50/95 border-t border-pink-200/80 dark:bg-[#2a1720]/95 dark:border-pink-900/40"
+    : "bg-gray-50/90 border-t border-gray-200/70 dark:bg-[#242526]/95 dark:border-[#353738]";
+  const hoverToneClass = isMusicTrack ? "hover:bg-pink-100/70 dark:hover:bg-pink-900/20" : "hover:bg-gray-100/80 dark:hover:bg-[#3a3b3c]";
+  const ghostControlClass = isMusicTrack
+    ? "text-pink-700 hover:bg-pink-100 dark:text-pink-300 dark:hover:bg-pink-900/20"
+    : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]";
+  const pillClass = isMusicTrack
+    ? "border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100 dark:border-pink-900/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/35"
+    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100 dark:border-[#3a3b3c] dark:bg-[#2f3133] dark:text-gray-200 dark:hover:bg-[#3a3b3c]";
+  const playButtonClass = isMusicTrack
+    ? "bg-pink-600 text-white hover:bg-pink-700"
+    : "bg-gray-700 text-white hover:bg-gray-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white";
+  const thumbClass = isMusicTrack
+    ? "[&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:bg-pink-500"
+    : "[&::-webkit-slider-thumb]:bg-gray-600 [&::-moz-range-thumb]:bg-gray-600 dark:[&::-webkit-slider-thumb]:bg-zinc-100 dark:[&::-moz-range-thumb]:bg-zinc-100";
+  const disabledClass = "disabled:cursor-not-allowed disabled:opacity-40";
+
   const handlePrev = () => {
+    if (!hasTrack) return;
     playPrev();
     if (isStoryTrack) {
       togglePlay(false);
@@ -359,71 +393,72 @@ export default function GlobalPlayer() {
   };
 
   const handleNext = () => {
+    if (!hasTrack) return;
     playNext();
     if (isStoryTrack) {
       togglePlay(false);
     }
   };
 
+  const handleTogglePlay = () => {
+    if (!hasTrack) return;
+    togglePlay(!isPlaying);
+  };
+
+  const playerIdentity = (
+    <>
+      <div
+        className={`relative h-10 w-10 shrink-0 overflow-hidden rounded-md ${
+          isMusicTrack ? "bg-pink-100 dark:bg-pink-950/30" : "bg-gray-200 dark:bg-[#3a3b3c]"
+        }`}
+      >
+        {hasTrack ? (
+          <Image src={resolvedCoverUrl} alt={displayTitle} width={40} height={40} loading="lazy" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-gray-500 dark:text-zinc-300">
+            <BookOpen className="h-3.5 w-3.5" />
+            <Music2 className="h-3.5 w-3.5" />
+          </div>
+        )}
+      </div>
+
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{displayTitle}</p>
+        <p className="truncate text-xs text-gray-500 dark:text-gray-400">{displaySubtitle}</p>
+      </div>
+    </>
+  );
+
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-50 bg-gray-50/90 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-md dark:bg-[#242526]/95 sm:px-4 transition-all duration-300 ${
+      className={`fixed bottom-0 left-0 right-0 z-50 px-3 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-md sm:px-4 transition-all duration-300 ${shellClass} ${
         isVisible ? "translate-y-0 opacity-100" : "translate-y-[72%] opacity-70"
       }`}
+      style={{ "--player-accent-rgb": accentRgb } as CSSProperties}
     >
       <div className="mx-auto w-full space-y-2 lg:w-[40vw]">
         <div className="flex items-center gap-3 md:justify-center">
           {chapterHref ? (
-            <Link href={chapterHref} className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 transition hover:bg-gray-100/80 dark:hover:bg-[#3a3b3c] md:flex-none md:max-w-[60%]">
-              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-[#3a3b3c]">
-                <Image
-                  src={resolvedCoverUrl}
-                  alt={currentTrack.title}
-                  width={40}
-                  height={40}
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.title}</p>
-                <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || t("defaultAuthor")}</p>
-              </div>
+            <Link href={chapterHref} className={`flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 transition md:flex-none md:max-w-[60%] ${hoverToneClass}`}>
+              {playerIdentity}
             </Link>
           ) : (
-            <div className="flex min-w-0 flex-1 items-center gap-3 md:flex-none md:max-w-[60%]">
-              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-gray-200 dark:bg-[#3a3b3c]">
-                <Image
-                  src={resolvedCoverUrl}
-                  alt={currentTrack.title}
-                  width={40}
-                  height={40}
-                  loading="lazy"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{currentTrack.title}</p>
-                <p className="truncate text-xs text-gray-500 dark:text-gray-400">{currentTrack.author || t("defaultAuthor")}</p>
-              </div>
-            </div>
+            <div className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 md:flex-none md:max-w-[60%]">{playerIdentity}</div>
           )}
 
           <div className="ml-auto flex shrink-0 items-center gap-1 md:ml-0">
-            <button onClick={handlePrev} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]">
+            <button onClick={handlePrev} disabled={!hasTrack} className={`rounded-full p-2 transition ${ghostControlClass} ${disabledClass}`}>
               <SkipBack className="h-4 w-4" />
             </button>
-            <button onClick={() => togglePlay(!isPlaying)} className="rounded-full bg-pink-600 p-2.5 text-white hover:bg-pink-700">
+            <button onClick={handleTogglePlay} disabled={!hasTrack} className={`rounded-full p-2.5 transition ${playButtonClass} ${disabledClass}`}>
               {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             </button>
-            <button onClick={handleNext} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]">
+            <button onClick={handleNext} disabled={!hasTrack} className={`rounded-full p-2 transition ${ghostControlClass} ${disabledClass}`}>
               <SkipForward className="h-4 w-4" />
             </button>
             <button
               onClick={() => setIsExpandedMobile((prev) => !prev)}
-              className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c] md:hidden"
+              className={`rounded-full p-2 transition md:hidden ${ghostControlClass}`}
               aria-label={t("audioProgress")}
             >
               <ChevronUp className={`h-4 w-4 transition-transform ${isExpandedMobile ? "rotate-180" : ""}`} />
@@ -432,27 +467,28 @@ export default function GlobalPlayer() {
         </div>
 
         <div className={`${isExpandedMobile ? "flex" : "hidden"} items-center gap-2 md:flex md:mx-auto md:w-[82%] lg:w-[68%]`}>
-          <span className="w-12 shrink-0 text-center text-xs tabular-nums text-gray-500 dark:text-gray-400">{formatDuration(currentTime)}</span>
+          <span className="w-12 shrink-0 text-center text-xs tabular-nums text-gray-500 dark:text-gray-400">{formatDuration(hasTrack ? currentTime : 0)}</span>
           <input
             type="range"
             min={0}
-            max={duration || 0}
+            max={hasTrack ? duration || 0 : 0}
             step={1}
-            value={Math.min(currentTime, duration || 0)}
+            value={hasTrack ? Math.min(currentTime, duration || 0) : 0}
             onChange={(event) => seekTo(Number(event.target.value))}
-            className="time-slider h-1 w-full appearance-none rounded-full accent-pink-600 [--time-slider-track:rgb(107_114_128)] dark:[--time-slider-track:rgb(209_213_219)] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-pink-500"
+            disabled={!hasTrack}
+            className={`time-slider h-1 w-full appearance-none rounded-full [--time-slider-track:rgb(107_114_128)] dark:[--time-slider-track:rgb(209_213_219)] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 ${thumbClass} ${disabledClass}`}
             style={{
               WebkitAppearance: "none",
               appearance: "none",
-              background: `linear-gradient(to right, #ec4899 0%, #ec4899 ${Math.min((currentTime / (duration || 1)) * 100, 100)}%, var(--time-slider-track) ${Math.min((currentTime / (duration || 1)) * 100, 100)}%, var(--time-slider-track) 100%)`,
+              background: `linear-gradient(to right, rgb(${accentRgb}) 0%, rgb(${accentRgb}) ${progressPercent}%, var(--time-slider-track) ${progressPercent}%, var(--time-slider-track) 100%)`,
             }}
             aria-label={t("audioProgress")}
           />
-          <span className="w-12 shrink-0 text-center text-xs tabular-nums text-gray-500 dark:text-gray-400">{formatDuration(duration)}</span>
+          <span className="w-12 shrink-0 text-center text-xs tabular-nums text-gray-500 dark:text-gray-400">{formatDuration(hasTrack ? duration : 0)}</span>
         </div>
 
         <div className={`${isExpandedMobile ? "flex" : "hidden"} items-center justify-center gap-2 md:flex md:mx-auto md:w-[82%] md:justify-center lg:w-[68%]`}>
-          <button onClick={() => toggleMute()} className="rounded-full p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]">
+          <button onClick={() => toggleMute()} disabled={!hasTrack} className={`rounded-full p-2 transition ${ghostControlClass} ${disabledClass}`}>
             {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </button>
           <input
@@ -462,9 +498,10 @@ export default function GlobalPlayer() {
             step={0.01}
             value={volume}
             onChange={(event) => setVolume(Number(event.target.value))}
-            className="h-1.5 w-24 cursor-pointer appearance-none rounded-full md:w-28 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-pink-500"
+            disabled={!hasTrack}
+            className={`h-1.5 w-24 cursor-pointer appearance-none rounded-full md:w-28 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 ${thumbClass} ${disabledClass}`}
             style={{
-              background: `linear-gradient(to right, rgb(236 72 153) 0%, rgb(236 72 153) ${Math.round(volume * 100)}%, rgb(209 213 219) ${Math.round(volume * 100)}%, rgb(209 213 219) 100%)`,
+              background: `linear-gradient(to right, rgb(${accentRgb}) 0%, rgb(${accentRgb}) ${volumePercent}%, rgb(209 213 219) ${volumePercent}%, rgb(209 213 219) 100%)`,
             }}
             aria-label={t("volume")}
           />
@@ -472,7 +509,8 @@ export default function GlobalPlayer() {
           <div className="relative" ref={sleepMenuRef}>
             <button
               onClick={() => setShowSleepMenu((prev) => !prev)}
-              className="inline-flex items-center gap-1 rounded-md border border-pink-200 bg-pink-50 px-2 py-1 text-xs font-semibold text-pink-700 hover:bg-pink-100 dark:border-pink-900/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/35"
+              disabled={!hasTrack}
+              className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold transition ${pillClass} ${disabledClass}`}
               title={safeT("timer", "Timer")}
               aria-label={safeT("timer", "Timer")}
             >
@@ -480,7 +518,7 @@ export default function GlobalPlayer() {
               <span>{sleepMinutesLeft ? `${sleepMinutesLeft}m` : safeT("timer", "Timer")}</span>
             </button>
 
-            {showSleepMenu ? (
+            {showSleepMenu && hasTrack ? (
               <div className="absolute bottom-10 left-1/2 z-50 min-w-[120px] -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-2 shadow-xl dark:border-[#303133] dark:bg-[#242526]">
                 <div className="flex flex-col gap-1">
                   {[15, 30, 60].map((minute) => (
@@ -505,7 +543,8 @@ export default function GlobalPlayer() {
 
           <button
             onClick={cycleSpeed}
-            className="rounded-md border border-pink-200 bg-pink-50 px-2 py-1 text-xs font-semibold text-pink-700 hover:bg-pink-100 dark:border-pink-900/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/35"
+            disabled={!hasTrack}
+            className={`rounded-md border px-2 py-1 text-xs font-semibold transition ${pillClass} ${disabledClass}`}
             title={t("speedTitle")}
           >
             {playbackRate}x
@@ -515,32 +554,29 @@ export default function GlobalPlayer() {
 
       {!isExpandedMobile ? (
         <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#3a3b3c] md:hidden">
-          <div className="h-full bg-pink-600 transition-all" style={{ width: `${progress}%` }} />
+          <div className="h-full transition-all" style={{ width: `${progressPercent}%`, backgroundColor: `rgb(${accentRgb})` }} />
         </div>
       ) : null}
 
       <style jsx>{`
-        /* Focus/active ring to match app accent */
         input[type="range"]:focus::-webkit-slider-thumb,
         input[type="range"]:active::-webkit-slider-thumb {
-          box-shadow: 0 0 0 4px rgba(236,72,153,0.12), 0 1px 2px rgba(0,0,0,0.12);
+          box-shadow: 0 0 0 4px rgba(var(--player-accent-rgb), 0.12), 0 1px 2px rgba(0, 0, 0, 0.12);
         }
         input[type="range"]:focus::-moz-range-thumb,
         input[type="range"]:active::-moz-range-thumb {
-          box-shadow: 0 0 0 4px rgba(236,72,153,0.12), 0 1px 2px rgba(0,0,0,0.12);
+          box-shadow: 0 0 0 4px rgba(var(--player-accent-rgb), 0.12), 0 1px 2px rgba(0, 0, 0, 0.12);
         }
 
-        /* Dark mode focus ring */
         :global(.dark) input[type="range"]:focus::-webkit-slider-thumb,
         :global(.dark) input[type="range"]:active::-webkit-slider-thumb {
-          box-shadow: 0 0 0 4px rgba(236,72,153,0.14), 0 1px 2px rgba(0,0,0,0.35);
+          box-shadow: 0 0 0 4px rgba(var(--player-accent-rgb), 0.14), 0 1px 2px rgba(0, 0, 0, 0.35);
         }
         :global(.dark) input[type="range"]:focus::-moz-range-thumb,
         :global(.dark) input[type="range"]:active::-moz-range-thumb {
-          box-shadow: 0 0 0 4px rgba(236,72,153,0.14), 0 1px 2px rgba(0,0,0,0.35);
+          box-shadow: 0 0 0 4px rgba(var(--player-accent-rgb), 0.14), 0 1px 2px rgba(0, 0, 0, 0.35);
         }
       `}</style>
     </div>
   );
 }
-

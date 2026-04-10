@@ -16,7 +16,6 @@ type MusicCardProps = {
   isPlaying: boolean;
   playAriaLabel: string;
   pauseAriaLabel: string;
-  onSelect: () => void;
   onPlayPause: () => void;
   mobilePlayBottomRight?: boolean;
 };
@@ -27,21 +26,11 @@ export default function MusicCard({
   isPlaying,
   playAriaLabel,
   pauseAriaLabel,
-  onSelect,
   onPlayPause,
   mobilePlayBottomRight = false,
 }: MusicCardProps) {
   return (
     <article
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onSelect();
-        }
-      }}
       className={`group rounded-xl border p-2 text-left transition ${
         isActive
           ? "border-pink-500 bg-pink-50 dark:bg-pink-950/20"

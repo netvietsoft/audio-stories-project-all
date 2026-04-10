@@ -282,7 +282,9 @@
     "audioProgress": "Audio progress",
     "volume": "Volume",
     "timer": "Timer",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "emptyTitle": "Choose something to start listening",
+    "emptySubtitle": "Would you like music or an audio story?"
   },
   "MusicPage": {
     "heroEyebrow": "Dedicated Zone",

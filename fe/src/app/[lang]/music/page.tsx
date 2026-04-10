@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { Music2, Grid, List, Play, Pause } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import GlobalPlayer from "@/components/player/GlobalPlayer";
 import MusicCard, { type MusicCardTrack } from "@/components/player/MusicCard";
 import { apiClient } from "@/lib/api/api-client";
 import { useAudioStore } from "@/stores/audio-store";
@@ -78,25 +77,11 @@ export default function MusicPage() {
 
   const currentTrack = useAudioStore((state) => state.currentTrack);
   const isPlaying = useAudioStore((state) => state.isPlaying);
-  const setQueue = useAudioStore((state) => state.setQueue);
-  const setTrack = useAudioStore((state) => state.setTrack);
   const playTrack = useAudioStore((state) => state.playTrack);
   const togglePlay = useAudioStore((state) => state.togglePlay);
 
   const unknownArtist = t("unknownArtist");
   const selectTrackLabel = t("selectTrack");
-
-  useEffect(() => {
-    const audioStore = useAudioStore.getState();
-    audioStore.togglePlay(false);
-    audioStore.setTrack(null);
-
-    document.querySelectorAll("audio").forEach((node) => {
-      if (!node.paused) {
-        node.pause();
-      }
-    });
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -162,16 +147,6 @@ export default function MusicPage() {
     [tracks],
   );
 
-  useEffect(() => {
-    if (!queueForStore.length) return;
-    setQueue(queueForStore);
-
-    if (!currentTrack || !queueForStore.some((item) => item.id === currentTrack.id)) {
-      setTrack(queueForStore[0] ?? null);
-      togglePlay(false);
-    }
-  }, [currentTrack, queueForStore, setQueue, setTrack, togglePlay]);
-
   const visibleTracks = useMemo(() => {
     if (selectedCategory === "All") return tracks;
     return tracks.filter((track) => track.category === selectedCategory);
@@ -204,17 +179,6 @@ export default function MusicPage() {
     }
 
     playTrack(mappedTrack, queueForStore);
-  };
-
-  const selectTrack = (track: MusicTrack) => {
-    setTrack({
-      id: track.id,
-      title: track.title,
-      author: track.artist,
-      audioUrl: track.audioUrl,
-      coverUrl: track.thumbnailUrl,
-    });
-    togglePlay(false);
   };
 
   const formatDuration = (seconds?: number) => {
@@ -356,7 +320,6 @@ export default function MusicPage() {
                     mobilePlayBottomRight={true}
                     playAriaLabel={`${t("playAria")}: ${track.title}`}
                     pauseAriaLabel={`${t("pauseAria")}: ${track.title}`}
-                    onSelect={() => selectTrack(track)}
                     onPlayPause={() => playOrToggleTrack(track)}
                   />
                 );
@@ -426,7 +389,6 @@ export default function MusicPage() {
         )}
       </section>
 
-      <GlobalPlayer />
     </div>
   );
 }

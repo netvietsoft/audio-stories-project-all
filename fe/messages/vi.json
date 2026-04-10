@@ -281,7 +281,9 @@
     "audioProgress": "Tiến trình audio",
     "volume": "Âm lượng",
     "timer": "Hẹn giờ",
-    "cancel": "Hủy"
+    "cancel": "Hủy",
+    "emptyTitle": "Hãy chọn nội dung để bắt đầu nghe",
+    "emptySubtitle": "Bạn muốn nghe nhạc hay đọc truyện?"
   },
   "MusicPage": {
     "heroEyebrow": "Khu nhạc riêng",

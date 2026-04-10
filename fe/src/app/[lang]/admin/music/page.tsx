@@ -14,6 +14,8 @@ type MusicItem = {
   id: string;
   title: string;
   artist: string;
+  description: string | null;
+  tags: string[];
   thumbnailUrl: string | null;
   audioUrl: string;
   audioDuration: number | null;
@@ -64,7 +66,12 @@ export default function AdminMusicPage() {
       });
 
       const rows = Array.isArray(response.data?.data) ? response.data.data : [];
-      setItems(rows);
+      const normalizedRows = rows.map((row) => ({
+        ...row,
+        tags: Array.isArray(row.tags) ? row.tags : [],
+      }));
+
+      setItems(normalizedRows);
       setTotal(response.data?.meta?.total || 0);
       setLastPage(Math.max(1, response.data?.meta?.lastPage || 1));
     } catch (error) {
@@ -103,6 +110,8 @@ export default function AdminMusicPage() {
     const formData = new FormData();
     formData.append("title", payload.title);
     formData.append("artist", payload.artist);
+    formData.append("description", payload.description);
+    formData.append("tags", payload.tags.join(","));
     formData.append("isPublic", String(payload.isPublic));
 
     if (typeof payload.audioDuration === "number") {
@@ -165,6 +174,8 @@ export default function AdminMusicPage() {
         id: editingMusic.id,
         title: editingMusic.title,
         artist: editingMusic.artist,
+        description: editingMusic.description,
+        tags: Array.isArray(editingMusic.tags) ? editingMusic.tags : [],
         thumbnailUrl: editingMusic.thumbnailUrl,
         audioUrl: editingMusic.audioUrl,
         audioDuration: editingMusic.audioDuration,

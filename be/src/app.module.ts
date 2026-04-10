@@ -33,6 +33,7 @@ import { AdsModule } from './ads/ads.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { SocialLinksModule } from './social-links/social-links.module';
 import { MusicModule } from './music/music.module';
+import { PersonalPlaylistModule } from './personal-playlist/personal-playlist.module';
 
 @Module({
   imports: [
@@ -92,6 +93,7 @@ import { MusicModule } from './music/music.module';
     TrackingModule,
     SocialLinksModule,
     MusicModule,
+    PersonalPlaylistModule,
   ],
   controllers: [AppController],
     providers: [

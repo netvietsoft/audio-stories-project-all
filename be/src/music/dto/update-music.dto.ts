@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 const toBoolean = ({ value }: { value: unknown }) => {
   if (typeof value === 'boolean') return value;
@@ -9,6 +9,25 @@ const toBoolean = ({ value }: { value: unknown }) => {
     if (normalized === 'false') return false;
   }
   return value;
+};
+
+const toStringArray = ({ value }: { value: unknown }) => {
+  if (value === undefined || value === null) return undefined;
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item).trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return undefined;
 };
 
 export class UpdateMusicDto {
@@ -29,6 +48,16 @@ export class UpdateMusicDto {
   @IsOptional()
   @IsString()
   audioUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @Transform(toStringArray)
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 
   @IsOptional()
   @Type(() => Number)

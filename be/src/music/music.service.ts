@@ -27,38 +27,104 @@ export class MusicService {
     return this.findByQuery(query, false);
   }
 
+  async findOnePublic(id: string) {
+    const row = await this.prisma.music.findFirst({
+      where: {
+        id,
+        isPublic: true,
+      },
+    });
+
+    if (!row) {
+      throw new NotFoundException('Music not found.');
+    }
+
+    return {
+      data: this.serializeMusic(row),
+    };
+  }
+
+  async incrementPlayCount(id: string) {
+    try {
+      const row = await this.prisma.music.update({
+        where: { id },
+        data: {
+          playCount: { increment: 1 },
+        },
+      });
+
+      return {
+        data: {
+          id: row.id,
+          playCount: row.playCount,
+        },
+      };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('Music not found.');
+      }
+
+      throw error;
+    }
+  }
+
   private async findByQuery(query: MusicQueryDto, onlyPublic: boolean) {
     const page = query.page || 1;
     const limit = query.limit || 12;
+    const normalizedSearch = query.search?.trim();
+    const normalizedTag = query.tag?.trim().toLowerCase();
 
     const where: Prisma.MusicWhereInput = {
       ...(onlyPublic ? { isPublic: true } : {}),
-      ...(query.search
+      ...(normalizedSearch
         ? {
             OR: [
-              { title: { contains: query.search } },
-              { artist: { contains: query.search } },
+              { title: { contains: normalizedSearch } },
+              { artist: { contains: normalizedSearch } },
+              { description: { contains: normalizedSearch } },
             ],
           }
         : {}),
     };
 
-    const [total, data] = await Promise.all([
-      this.prisma.music.count({ where }),
-      this.prisma.music.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: [{ createdAt: 'desc' }],
-      }),
-    ]);
+    if (!normalizedTag) {
+      const [total, rows] = await Promise.all([
+        this.prisma.music.count({ where }),
+        this.prisma.music.findMany({
+          where,
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: [{ createdAt: 'desc' }],
+        }),
+      ]);
+
+      return {
+        data: rows.map((item) => this.serializeMusic(item)),
+        meta: {
+          total,
+          page,
+          lastPage: Math.max(1, Math.ceil(total / limit)),
+        },
+      };
+    }
+
+    const allRows = await this.prisma.music.findMany({
+      where,
+      orderBy: [{ createdAt: 'desc' }],
+    });
+
+    const filtered = allRows.filter((item) =>
+      this.parseTags(item.tags).some((tag) => tag.toLowerCase() === normalizedTag),
+    );
+
+    const paged = filtered.slice((page - 1) * limit, (page - 1) * limit + limit);
 
     return {
-      data,
+      data: paged.map((item) => this.serializeMusic(item)),
       meta: {
-        total,
+        total: filtered.length,
         page,
-        lastPage: Math.ceil(total / limit),
+        lastPage: Math.max(1, Math.ceil(filtered.length / limit)),
       },
     };
   }
@@ -85,16 +151,20 @@ export class MusicService {
       ? await this.audioUploadService.uploadMusicThumbnail(thumbnailFile)
       : thumbnailUrlFromBody;
 
-    return this.prisma.music.create({
+    const created = await this.prisma.music.create({
       data: {
         title,
         artist,
+        description: this.normalizeNullableText(dto.description),
+        tags: this.normalizeTagsInput(dto.tags),
         audioUrl,
         thumbnailUrl,
         audioDuration: this.normalizeDuration(dto.audioDuration),
         isPublic: dto.isPublic ?? true,
       },
     });
+
+    return this.serializeMusic(created);
   }
 
   async update(id: string, dto: UpdateMusicDto, files: UploadFiles) {
@@ -114,6 +184,7 @@ export class MusicService {
       ? undefined
       : this.normalizeRequiredText(dto.audioUrl, 'audioUrl');
     const thumbnailUrlFromBody = this.normalizeNullableText(dto.thumbnailUrl);
+    const nextDescription = dto.description === undefined ? undefined : this.normalizeNullableText(dto.description);
 
     const nextAudioUrl = audioFile
       ? await this.audioUploadService.uploadAudio(audioFile, 'music')
@@ -128,14 +199,18 @@ export class MusicService {
       ...(nextArtist !== undefined ? { artist: nextArtist } : {}),
       ...(nextAudioUrl !== undefined ? { audioUrl: nextAudioUrl } : {}),
       ...(nextThumbnailUrl !== undefined ? { thumbnailUrl: nextThumbnailUrl } : {}),
+      ...(nextDescription !== undefined ? { description: nextDescription } : {}),
+      ...(dto.tags !== undefined ? { tags: this.normalizeTagsInput(dto.tags) } : {}),
       ...(dto.audioDuration !== undefined ? { audioDuration: this.normalizeDuration(dto.audioDuration) } : {}),
       ...(dto.isPublic !== undefined ? { isPublic: dto.isPublic } : {}),
     };
 
-    return this.prisma.music.update({
+    const updated = await this.prisma.music.update({
       where: { id },
       data,
     });
+
+    return this.serializeMusic(updated);
   }
 
   async remove(id: string) {
@@ -148,6 +223,50 @@ export class MusicService {
     await this.prisma.music.delete({ where: { id } });
 
     return { success: true };
+  }
+
+  private serializeMusic(row: {
+    id: string;
+    title: string;
+    artist: string;
+    description: string | null;
+    tags: Prisma.JsonValue | null;
+    thumbnailUrl: string | null;
+    audioUrl: string;
+    audioDuration: number | null;
+    playCount: number;
+    likeCount: number;
+    commentCount: number;
+    isPublic: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }) {
+    return {
+      ...row,
+      tags: this.parseTags(row.tags),
+    };
+  }
+
+  private parseTags(value: Prisma.JsonValue | null): string[] {
+    if (!Array.isArray(value)) return [];
+
+    return value
+      .map((item) => (typeof item === 'string' ? item.trim() : ''))
+      .filter(Boolean);
+  }
+
+  private normalizeTagsInput(value: string[] | undefined): Prisma.InputJsonValue {
+    if (!value?.length) return [];
+
+    const deduped = Array.from(
+      new Set(
+        value
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ),
+    );
+
+    return deduped;
   }
 
   private normalizeRequiredText(value: string | undefined, field: string): string {

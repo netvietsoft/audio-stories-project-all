@@ -3,7 +3,7 @@
 import Link from "@/components/shared/LocalizedLink";
 import { useParams, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronRight, CreditCard, Heart, History, Home, Settings, Wallet } from "lucide-react";
+import { ChevronRight, CreditCard, Heart, History, Home, ListMusic, Settings, Wallet } from "lucide-react";
 
 const isRouteActive = (pathname: string, currentLang: string, href: string) => {
   const fullPath = `/${currentLang}${href}`;
@@ -36,6 +36,11 @@ export default function ProfileSidebar() {
       href: "/profile/history",
       label: t("listeningHistory"),
       icon: History,
+    },
+    {
+      href: "/profile/playlists",
+      label: t("myPlaylists"),
+      icon: ListMusic,
     },
     {
       href: "/profile/transactions",

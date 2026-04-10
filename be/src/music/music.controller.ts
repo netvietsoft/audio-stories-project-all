@@ -83,6 +83,16 @@ export class MusicController {
     return this.musicService.remove(id);
   }
 
+  @Get(':id')
+  findOnePublic(@Param('id') id: string) {
+    return this.musicService.findOnePublic(id);
+  }
+
+  @Post(':id/play')
+  incrementPlayCount(@Param('id') id: string) {
+    return this.musicService.incrementPlayCount(id);
+  }
+
   private validateUploadFiles(files: UploadFiles) {
     const audio = files.audioFile?.[0];
     const thumbnail = files.thumbnailFile?.[0];

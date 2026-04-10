@@ -17,4 +17,8 @@ export class MusicQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @IsOptional()
+  @IsString()
+  tag?: string;
 }

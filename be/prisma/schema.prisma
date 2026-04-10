@@ -50,6 +50,10 @@ model User {
   notifications          Notification[]
   audioReports           AudioReport[]
   playlists              Playlist[]
+  musicComments          MusicComment[]
+  musicLikes             MusicLike[]
+  musicHistory           MusicHistory[]
+  musicPlaylists         MusicPlaylist[]
   chapterComments        ChapterComment[]
   commentReactions       CommentReaction[]
   commentReports         CommentReport[]
@@ -286,16 +290,108 @@ model Music {
   id            String   @id @default(uuid()) @db.VarChar(36)
   title         String   @db.VarChar(300)
   artist        String   @db.VarChar(150)
+  description   String?  @db.Text
+  tags          Json?
   thumbnailUrl  String?  @map("thumbnail_url") @db.Text
   audioUrl      String   @map("audio_url") @db.VarChar(500)
   audioDuration Int?     @map("audio_duration") @db.UnsignedInt
+  playCount     Int      @default(0) @map("play_count") @db.UnsignedInt
+  likeCount     Int      @default(0) @map("like_count") @db.UnsignedInt
+  commentCount  Int      @default(0) @map("comment_count") @db.UnsignedInt
   isPublic      Boolean  @default(true) @map("is_public")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  comments       MusicComment[]
+  likes          MusicLike[]
+  historyEntries MusicHistory[]
+  playlistTracks MusicPlaylistTrack[]
+
   @@index([isPublic])
   @@index([createdAt])
+  @@index([playCount])
+  @@index([likeCount])
+  @@index([commentCount])
   @@map("music_tracks")
+}
+
+model MusicComment {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
+  musicId   String   @map("music_id") @db.VarChar(36)
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  music Music @relation(fields: [musicId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([musicId])
+  @@index([musicId, createdAt])
+  @@map("music_comments")
+}
+
+model MusicLike {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  userId    String   @map("user_id") @db.VarChar(36)
+  musicId   String   @map("music_id") @db.VarChar(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  music Music @relation(fields: [musicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, musicId])
+  @@index([musicId])
+  @@index([userId])
+  @@map("music_likes")
+}
+
+model MusicHistory {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  userId     String   @map("user_id") @db.VarChar(36)
+  musicId    String   @map("music_id") @db.VarChar(36)
+  listenedAt DateTime @default(now()) @map("listened_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  music Music @relation(fields: [musicId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([musicId])
+  @@index([userId, listenedAt])
+  @@map("music_history")
+}
+
+model MusicPlaylist {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  userId     String   @map("user_id") @db.VarChar(36)
+  title      String   @db.VarChar(200)
+  isPublic   Boolean  @default(false) @map("is_public")
+  coverImage String?  @map("cover_image") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user   User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks MusicPlaylistTrack[]
+
+  @@index([userId])
+  @@index([isPublic])
+  @@map("music_playlists")
+}
+
+model MusicPlaylistTrack {
+  playlistId String   @map("playlist_id") @db.VarChar(36)
+  musicId    String   @map("music_id") @db.VarChar(36)
+  orderIndex Int      @default(0) @map("order_index") @db.UnsignedInt
+  addedAt    DateTime @default(now()) @map("added_at")
+
+  playlist MusicPlaylist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  music    Music         @relation(fields: [musicId], references: [id], onDelete: Cascade)
+
+  @@id([playlistId, musicId])
+  @@index([musicId])
+  @@index([orderIndex])
+  @@map("music_playlist_tracks")
 }
 
 model StoryCategory {

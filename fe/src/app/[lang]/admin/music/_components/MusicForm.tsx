@@ -10,6 +10,8 @@ import { Image as ImageIcon, Loader2, Music2, Save, UploadCloud, X } from "lucid
 const schema = z.object({
   title: z.string().trim().min(1, "Vui lòng nhập tiêu đề"),
   artist: z.string().trim().min(1, "Vui lòng nhập tác giả / nghệ sĩ"),
+  description: z.string().max(5000, "Mô tả tối đa 5000 ký tự").optional(),
+  tagsInput: z.string().optional(),
   isPublic: z.enum(["true", "false"]),
   audioDuration: z.number().min(0, "Thời lượng không hợp lệ").optional(),
 });
@@ -20,6 +22,8 @@ export type MusicFormInitialData = {
   id?: string;
   title?: string;
   artist?: string;
+  description?: string | null;
+  tags?: string[];
   thumbnailUrl?: string | null;
   audioUrl?: string;
   audioDuration?: number | null;
@@ -29,6 +33,8 @@ export type MusicFormInitialData = {
 export type MusicFormSubmitPayload = {
   title: string;
   artist: string;
+  description: string;
+  tags: string[];
   isPublic: boolean;
   audioDuration: number | null;
   audioFile?: File;
@@ -75,6 +81,8 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
     defaultValues: {
       title: initialData?.title || "",
       artist: initialData?.artist || "",
+      description: initialData?.description || "",
+      tagsInput: Array.isArray(initialData?.tags) ? initialData.tags.join(", ") : "",
       isPublic: initialData?.isPublic === false ? "false" : "true",
       audioDuration: typeof initialData?.audioDuration === "number" ? initialData.audioDuration : 0,
     },
@@ -151,9 +159,20 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
       return;
     }
 
+    const tags = Array.from(
+      new Set(
+        (values.tagsInput || "")
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ),
+    );
+
     await onSubmit({
       title: values.title.trim(),
       artist: values.artist.trim(),
+      description: (values.description || "").trim(),
+      tags,
       isPublic: values.isPublic === "true",
       audioDuration: typeof values.audioDuration === "number" ? values.audioDuration : null,
       audioFile,
@@ -190,6 +209,27 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
           </div>
 
           <div className="space-y-1.5">
+            <label className="text-sm font-black uppercase tracking-wider text-slate-700">Mô tả</label>
+            <textarea
+              {...register("description")}
+              rows={4}
+              className={`admin-input w-full bg-white ${errors.description ? "admin-input-error" : ""}`}
+            />
+            {errors.description ? <p className="text-xs text-red-500">{errors.description.message}</p> : null}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-black uppercase tracking-wider text-slate-700">Tags (phân tách bằng dấu phẩy)</label>
+            <input
+              {...register("tagsInput")}
+              placeholder="lofi, piano, focus"
+              className={`admin-input w-full bg-white ${errors.tagsInput ? "admin-input-error" : ""}`}
+            />
+            <p className="text-xs font-medium text-slate-500">Ví dụ: lo-fi, deep focus, sleep</p>
+            {errors.tagsInput ? <p className="text-xs text-red-500">{errors.tagsInput.message}</p> : null}
+          </div>
+
+          <div className="space-y-1.5">
             <label className="text-sm font-black uppercase tracking-wider text-slate-700">Trạng thái</label>
             <select {...register("isPublic")} className="admin-input w-full appearance-none bg-white">
               <option value="true">Công khai</option>
@@ -200,7 +240,7 @@ export default function MusicForm({ initialData, onSubmit, onCancel, isLoading }
           <div className="space-y-1.5">
             <label className="text-sm font-black uppercase tracking-wider text-slate-700">Thời lượng (giây)</label>
             <input
-                {...register("audioDuration", { valueAsNumber: true })}
+              {...register("audioDuration", { valueAsNumber: true })}
               type="number"
               readOnly
               tabIndex={-1}

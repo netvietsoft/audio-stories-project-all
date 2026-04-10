@@ -48,6 +48,7 @@ type AudioState = {
   isMuted: boolean;
   isShuffle: boolean;
   repeatMode: RepeatMode;
+  queuedNextMap: Record<string, string[]>;
   seekTarget: number | null;
   setQueue: (queue: AudioTrack[]) => void;
   setTrack: (track: AudioTrack | null) => void;
@@ -56,6 +57,8 @@ type AudioState = {
   playPrev: () => void;
   enqueueNext: (track: AudioTrack) => void;
   enqueueManyNext: (tracks: AudioTrack[]) => void;
+  toggleQueuedNext: (targetId: string, tracks: AudioTrack[]) => void;
+  consumeQueuedTrack: (trackId: string) => void;
   toggleShuffle: () => void;
   setRepeatMode: (mode: RepeatMode) => void;
   cycleRepeatMode: () => void;
@@ -81,6 +84,7 @@ const initialState = {
   isMuted: false,
   isShuffle: false,
   repeatMode: "off" as RepeatMode,
+  queuedNextMap: {},
   seekTarget: null,
 };
 
@@ -105,6 +109,29 @@ const insertTracksNext = (queue: AudioTrack[], currentTrack: AudioTrack | null, 
     ...dedupedTracks,
     ...queueWithoutDuplicates.slice(currentIndex + 1),
   ];
+};
+
+const consumeQueuedTrackMap = (queuedNextMap: Record<string, string[]>, trackId: string) => {
+  let changed = false;
+  const nextMap: Record<string, string[]> = {};
+
+  Object.entries(queuedNextMap).forEach(([targetId, pendingTrackIds]) => {
+    if (!pendingTrackIds.includes(trackId)) {
+      nextMap[targetId] = pendingTrackIds;
+      return;
+    }
+
+    changed = true;
+    const remaining = pendingTrackIds.filter((id) => id !== trackId);
+    if (remaining.length) {
+      nextMap[targetId] = remaining;
+    }
+  });
+
+  return {
+    changed,
+    nextMap,
+  };
 };
 
 export const useAudioStore = create<AudioState>()(
@@ -187,9 +214,74 @@ export const useAudioStore = create<AudioState>()(
         set((state) => ({
           queue: insertTracksNext(state.queue, state.currentTrack, tracks),
         })),
-      toggleShuffle: () => set((state) => ({ isShuffle: !state.isShuffle })),
-      setRepeatMode: (mode) => set({ repeatMode: mode }),
-      cycleRepeatMode: () => set((state) => ({ repeatMode: cycleRepeatMode(state.repeatMode) })),
+      toggleQueuedNext: (targetId, tracks) =>
+        set((state) => {
+          const dedupedTracks = Array.from(new Map(tracks.map((track) => [track.id, track])).values());
+          if (!dedupedTracks.length) return {};
+
+          const existingPendingTrackIds = state.queuedNextMap[targetId];
+          if (existingPendingTrackIds) {
+            const currentId = state.currentTrack?.id;
+            const protectedIds = new Set(
+              Object.entries(state.queuedNextMap)
+                .filter(([queuedTargetId]) => queuedTargetId !== targetId)
+                .flatMap(([, pendingTrackIds]) => pendingTrackIds),
+            );
+
+            const removableIds = new Set(
+              existingPendingTrackIds.filter((id) => id !== currentId && !protectedIds.has(id)),
+            );
+
+            const nextQueue = removableIds.size
+              ? state.queue.filter((track) => track.id === currentId || !removableIds.has(track.id))
+              : state.queue;
+
+            const nextMap = { ...state.queuedNextMap };
+            delete nextMap[targetId];
+
+            return {
+              queue: nextQueue,
+              queuedNextMap: nextMap,
+            };
+          }
+
+          return {
+            queue: insertTracksNext(state.queue, state.currentTrack, dedupedTracks),
+            queuedNextMap: {
+              ...state.queuedNextMap,
+              [targetId]: dedupedTracks.map((track) => track.id),
+            },
+          };
+        }),
+      consumeQueuedTrack: (trackId) =>
+        set((state) => {
+          const { changed, nextMap } = consumeQueuedTrackMap(state.queuedNextMap, trackId);
+          if (!changed) return {};
+          return {
+            queuedNextMap: nextMap,
+          };
+        }),
+      toggleShuffle: () =>
+        set((state) => {
+          const nextShuffle = !state.isShuffle;
+          return {
+            isShuffle: nextShuffle,
+            repeatMode: nextShuffle ? ("off" as RepeatMode) : state.repeatMode,
+          };
+        }),
+      setRepeatMode: (mode) =>
+        set((state) => ({
+          repeatMode: mode,
+          isShuffle: mode !== "off" ? false : state.isShuffle,
+        })),
+      cycleRepeatMode: () =>
+        set((state) => {
+          const nextMode = cycleRepeatMode(state.repeatMode);
+          return {
+            repeatMode: nextMode,
+            isShuffle: nextMode !== "off" ? false : state.isShuffle,
+          };
+        }),
       togglePlay: (isPlaying) =>
         set((state) => ({ isPlaying: isPlaying ?? !state.isPlaying })),
       seekTo: (seconds) =>

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowLeft,
+  ChevronsRight,
   Check,
   Clock3,
   Headphones,
@@ -25,7 +26,16 @@ import AddToPlaylistModal from "@/components/music/AddToPlaylistModal";
 import ShareActionButton from "@/components/shared/ShareActionButton";
 import Link from "@/components/shared/LocalizedLink";
 import { apiClient } from "@/lib/api/api-client";
+import {
+  createMusicComment,
+  deleteMusicComment,
+  listMusicComments,
+  type MusicComment,
+  updateMusicComment,
+} from "@/lib/music/music-comments";
+import { fetchMusicLikeStatus, registerMusicPlayback, toggleMusicLike } from "@/lib/music/music-interactions";
 import { formatCompactCount, formatMusicDuration, normalizeMusicItem } from "@/lib/music/normalize-music";
+import { toMusicQueue, toPlaylistQueue, toSingleQueueTrack } from "@/lib/music/music-queue";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 import type { MusicApiItem, MusicTrack } from "@/types/music";
@@ -42,65 +52,8 @@ type MusicListResponse = {
   };
 };
 
-type LikeStatusResponse = {
-  data: {
-    liked: boolean;
-  };
-};
-
-type LikeActionResponse = {
-  data: {
-    liked: boolean;
-    likeCount: number;
-  };
-};
-
-type MusicComment = {
-  id: string;
-  musicId: string;
-  userId: string;
-  content: string;
-  createdAt: string;
-  updatedAt: string;
-  user: {
-    id: string;
-    displayName: string;
-    avatarUrl: string | null;
-  };
-};
-
-type CommentsResponse = {
-  data: MusicComment[];
-  meta: {
-    total: number;
-    page: number;
-    lastPage: number;
-  };
-};
-
-type CommentMutationResponse = {
-  data: MusicComment;
-};
-
 const formatDuration = formatMusicDuration;
 const formatCount = formatCompactCount;
-
-const toSingleQueueTrack = (target: MusicTrack) => ({
-  id: target.id,
-  title: target.title,
-  author: target.artist,
-  audioUrl: target.audioUrl,
-  coverUrl: target.thumbnailUrl || "/thumbnaildefault.jpg",
-});
-
-const toPlaylistQueue = (target: MusicTrack) =>
-  target.playlistTracks.map((item, index) => ({
-    id: `playlist:${target.id}:${item.id}:${index}`,
-    title: item.title,
-    author: item.artist,
-    audioUrl: item.audioUrl,
-    coverUrl: item.thumbnailUrl || target.thumbnailUrl || "/thumbnaildefault.jpg",
-  }));
 
 export default function MusicDetailPage() {
   const params = useParams<{ lang?: string; id?: string }>();
@@ -110,10 +63,10 @@ export default function MusicDetailPage() {
 
   const currentTrack = useAudioStore((state) => state.currentTrack);
   const isPlaying = useAudioStore((state) => state.isPlaying);
+  const queuedNextMap = useAudioStore((state) => state.queuedNextMap);
   const playTrack = useAudioStore((state) => state.playTrack);
   const togglePlay = useAudioStore((state) => state.togglePlay);
-  const enqueueNext = useAudioStore((state) => state.enqueueNext);
-  const enqueueManyNext = useAudioStore((state) => state.enqueueManyNext);
+  const toggleQueuedNext = useAudioStore((state) => state.toggleQueuedNext);
 
   const accessToken = useUserStore((state) => state.accessToken);
   const user = useUserStore((state) => state.user);
@@ -166,9 +119,7 @@ export default function MusicDetailPage() {
     map.set(track.id, track);
     relatedTracks.forEach((item) => map.set(item.id, item));
 
-    return Array.from(map.values()).flatMap((item) =>
-      item.contentType === "playlist" ? toPlaylistQueue(item) : [toSingleQueueTrack(item)],
-    );
+    return toMusicQueue(Array.from(map.values()));
   }, [relatedTracks, track]);
 
   const loadComments = useCallback(
@@ -178,16 +129,14 @@ export default function MusicDetailPage() {
       setIsLoadingComments(true);
 
       try {
-        const response = await apiClient.get<CommentsResponse>(`/music/${musicId}/comments`, {
-          params: {
-            page,
-            limit: 8,
-          },
+        const response = await listMusicComments(musicId, {
+          page,
+          limit: 8,
         });
 
-        const rows = Array.isArray(response.data?.data) ? response.data.data : [];
-        const nextPage = response.data?.meta?.page || page;
-        const nextLastPage = Math.max(1, response.data?.meta?.lastPage || 1);
+        const rows = Array.isArray(response?.data) ? response.data : [];
+        const nextPage = response?.meta?.page || page;
+        const nextLastPage = Math.max(1, response?.meta?.lastPage || 1);
 
         setComments((prev) => (append ? [...prev, ...rows] : rows));
         setCommentsPage(nextPage);
@@ -334,6 +283,12 @@ export default function MusicDetailPage() {
     };
   }, [findParentPlaylist, loadComments, musicId, t]);
 
+  // ensure we scroll to top when navigating to a different music detail
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [musicId]);
+
   useEffect(() => {
     if (!musicId || !accessToken) {
       setIsLiked(false);
@@ -344,9 +299,9 @@ export default function MusicDetailPage() {
 
     const loadLikeStatus = async () => {
       try {
-        const response = await apiClient.get<LikeStatusResponse>(`/music/interactions/${musicId}/liked`);
+        const liked = await fetchMusicLikeStatus(musicId);
         if (!cancelled) {
-          setIsLiked(Boolean(response.data?.data?.liked));
+          setIsLiked(liked);
         }
       } catch {
         if (!cancelled) {
@@ -372,9 +327,7 @@ export default function MusicDetailPage() {
     const relatedIds = relatedTracks.map((item) => item.id);
 
     const loadRelatedLikeStatus = async () => {
-      const results = await Promise.allSettled(
-        relatedIds.map((id) => apiClient.get<LikeStatusResponse>(`/music/interactions/${id}/liked`)),
-      );
+      const results = await Promise.allSettled(relatedIds.map((id) => fetchMusicLikeStatus(id)));
 
       if (cancelled) return;
 
@@ -382,8 +335,7 @@ export default function MusicDetailPage() {
       results.forEach((result, index) => {
         const id = relatedIds[index];
         if (!id) return;
-        nextState[id] =
-          result.status === "fulfilled" ? Boolean(result.value.data?.data?.liked) : false;
+        nextState[id] = result.status === "fulfilled" ? Boolean(result.value) : false;
       });
 
       setRelatedLikedMap(nextState);
@@ -427,10 +379,7 @@ export default function MusicDetailPage() {
     );
 
     try {
-      await apiClient.post(`/music/${targetMusicId}/play`);
-      if (accessToken) {
-        await apiClient.post(`/music/interactions/${targetMusicId}/history`);
-      }
+      await registerMusicPlayback(targetMusicId, Boolean(accessToken));
     } catch {
       // Keep playback responsive even if tracking fails.
     }
@@ -460,15 +409,9 @@ export default function MusicDetailPage() {
   };
 
   const handlePlayNext = (target: MusicTrack) => {
-    if (target.contentType === "playlist") {
-      const playlistQueue = toPlaylistQueue(target);
-      if (playlistQueue.length) {
-        enqueueManyNext(playlistQueue);
-      }
-      return;
-    }
-
-    enqueueNext(toSingleQueueTrack(target));
+    const targetTracks = target.contentType === "playlist" ? toPlaylistQueue(target) : [toSingleQueueTrack(target)];
+    if (!targetTracks.length) return;
+    toggleQueuedNext(target.id, targetTracks);
   };
 
   const handleToggleLike = async () => {
@@ -482,33 +425,22 @@ export default function MusicDetailPage() {
     setIsLikeLoading(true);
 
     try {
-      if (isLiked) {
-        const response = await apiClient.delete<LikeActionResponse>(`/music/interactions/${track.id}/like`);
-        const likeCount = response.data?.data?.likeCount;
+      const result = await toggleMusicLike(track.id, isLiked);
 
-        setIsLiked(false);
-        setTrack((prev) =>
-          prev
-            ? {
-                ...prev,
-                likeCount: typeof likeCount === "number" ? likeCount : Math.max(0, prev.likeCount - 1),
-              }
-            : prev,
-        );
-      } else {
-        const response = await apiClient.post<LikeActionResponse>(`/music/interactions/${track.id}/like`);
-        const likeCount = response.data?.data?.likeCount;
-
-        setIsLiked(true);
-        setTrack((prev) =>
-          prev
-            ? {
-                ...prev,
-                likeCount: typeof likeCount === "number" ? likeCount : prev.likeCount + 1,
-              }
-            : prev,
-        );
-      }
+      setIsLiked(result.liked);
+      setTrack((prev) =>
+        prev
+          ? {
+              ...prev,
+              likeCount:
+                typeof result.likeCount === "number"
+                  ? result.likeCount
+                  : result.liked
+                    ? prev.likeCount + 1
+                    : Math.max(0, prev.likeCount - 1),
+            }
+          : prev,
+      );
     } catch {
       // Ignore to keep page stable.
     } finally {
@@ -530,45 +462,28 @@ export default function MusicDetailPage() {
     }));
 
     try {
-      if (isTargetLiked) {
-        const response = await apiClient.delete<LikeActionResponse>(`/music/interactions/${target.id}/like`);
-        const likeCount = response.data?.data?.likeCount;
+      const result = await toggleMusicLike(target.id, isTargetLiked);
 
-        setRelatedLikedMap((prev) => ({
-          ...prev,
-          [target.id]: false,
-        }));
+      setRelatedLikedMap((prev) => ({
+        ...prev,
+        [target.id]: result.liked,
+      }));
 
-        setRelatedTracks((prev) =>
-          prev.map((item) =>
-            item.id === target.id
-              ? {
-                  ...item,
-                  likeCount: typeof likeCount === "number" ? likeCount : Math.max(0, item.likeCount - 1),
-                }
-              : item,
-          ),
-        );
-      } else {
-        const response = await apiClient.post<LikeActionResponse>(`/music/interactions/${target.id}/like`);
-        const likeCount = response.data?.data?.likeCount;
-
-        setRelatedLikedMap((prev) => ({
-          ...prev,
-          [target.id]: true,
-        }));
-
-        setRelatedTracks((prev) =>
-          prev.map((item) =>
-            item.id === target.id
-              ? {
-                  ...item,
-                  likeCount: typeof likeCount === "number" ? likeCount : item.likeCount + 1,
-                }
-              : item,
-          ),
-        );
-      }
+      setRelatedTracks((prev) =>
+        prev.map((item) =>
+          item.id === target.id
+            ? {
+                ...item,
+                likeCount:
+                  typeof result.likeCount === "number"
+                    ? result.likeCount
+                    : result.liked
+                      ? item.likeCount + 1
+                      : Math.max(0, item.likeCount - 1),
+              }
+            : item,
+        ),
+      );
     } catch {
       // Keep page stable.
     } finally {
@@ -594,11 +509,7 @@ export default function MusicDetailPage() {
     setIsSubmittingComment(true);
 
     try {
-      const response = await apiClient.post<CommentMutationResponse>(`/music/${track.id}/comments`, {
-        content,
-      });
-
-      const created = response.data?.data;
+      const created = await createMusicComment(track.id, content);
       if (created) {
         setComments((prev) => [created, ...prev]);
         setNewComment("");
@@ -635,11 +546,7 @@ export default function MusicDetailPage() {
     setPendingCommentId(commentId);
 
     try {
-      const response = await apiClient.patch<CommentMutationResponse>(`/music/comments/${commentId}`, {
-        content,
-      });
-
-      const updated = response.data?.data;
+      const updated = await updateMusicComment(commentId, content);
       if (updated) {
         setComments((prev) => prev.map((item) => (item.id === commentId ? updated : item)));
       }
@@ -660,7 +567,7 @@ export default function MusicDetailPage() {
     setPendingCommentId(comment.id);
 
     try {
-      await apiClient.delete(`/music/comments/${comment.id}`);
+      await deleteMusicComment(comment.id);
       setComments((prev) => prev.filter((item) => item.id !== comment.id));
       setTrack((prev) =>
         prev
@@ -688,6 +595,7 @@ export default function MusicDetailPage() {
       (currentTrack?.id === track.id ||
         (track.contentType === "playlist" && toPlaylistQueue(track).some((item) => item.id === currentTrack?.id))),
   );
+  const isCurrentQueuedNext = Boolean(track && queuedNextMap[track.id]);
 
   return (
     <div className="mx-auto w-full max-w-[1280px] space-y-6 pb-40">
@@ -783,9 +691,13 @@ export default function MusicDetailPage() {
 
                     <button
                       onClick={() => handlePlayNext(track)}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-slate-600 transition hover:border-orange-300 hover:text-orange-600 dark:border-[#3a3a3a] dark:bg-[#1f1f1f] dark:text-zinc-300"
+                      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.12em] transition ${
+                        isCurrentQueuedNext
+                          ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
+                          : "border-slate-300 bg-white text-slate-600 hover:border-orange-300 hover:text-orange-600 dark:border-[#3a3a3a] dark:bg-[#1f1f1f] dark:text-zinc-300"
+                      }`}
                     >
-                      <Plus className="h-4 w-4" /> {t("playNext")}
+                      {isCurrentQueuedNext ? <Check className="h-4 w-4" /> : <ChevronsRight className="h-4 w-4" />} {t("playNext")}
                     </button>
 
                     <ShareActionButton
@@ -1019,6 +931,7 @@ export default function MusicDetailPage() {
                         (item.contentType === "playlist" && toPlaylistQueue(item).some((row) => row.id === currentTrack?.id));
                       const isRelatedLiked = Boolean(relatedLikedMap[item.id]);
                       const isRelatedLikeLoading = Boolean(relatedLikeLoadingMap[item.id]);
+                      const isRelatedQueuedNext = Boolean(queuedNextMap[item.id]);
 
                       return (
                         <div key={item.id} className="group rounded-2xl border border-slate-200 p-2.5 transition hover:border-orange-300 dark:border-[#2f2f2f] dark:hover:border-orange-800/50">
@@ -1067,10 +980,14 @@ export default function MusicDetailPage() {
 
                               <button
                                 onClick={() => handlePlayNext(item)}
-                                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 text-slate-600 transition hover:bg-slate-100 dark:border-[#3a3a3a] dark:text-zinc-300 dark:hover:bg-[#252525]"
+                                className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${
+                                  isRelatedQueuedNext
+                                    ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
+                                    : "border-slate-300 text-slate-600 hover:bg-slate-100 dark:border-[#3a3a3a] dark:text-zinc-300 dark:hover:bg-[#252525]"
+                                }`}
                                 aria-label={t("playNext")}
                               >
-                                <Plus className="h-3.5 w-3.5" />
+                                {isRelatedQueuedNext ? <Check className="h-3.5 w-3.5" /> : <ChevronsRight className="h-3.5 w-3.5" />}
                               </button>
 
                               <button

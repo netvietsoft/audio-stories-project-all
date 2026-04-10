@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
+  Check,
+  ChevronsRight,
   Clock3,
   Flame,
   Headphones,
@@ -21,14 +23,22 @@ import AddToPlaylistModal from "@/components/music/AddToPlaylistModal";
 import InlineAdvertisementCard from "@/components/ads/InlineAdvertisementCard";
 import ShareActionButton from "@/components/shared/ShareActionButton";
 import Link from "@/components/shared/LocalizedLink";
+import { interleaveAds } from "@/lib/ads/interleave-ads";
 import { useActiveAdvertisements } from "@/hooks/use-active-advertisements";
 import { useDebounce } from "@/hooks/useDebounce";
 import { apiClient } from "@/lib/api/api-client";
+import { registerMusicPlayback } from "@/lib/music/music-interactions";
 import {
   formatCompactCount,
   formatMusicDuration,
   normalizeMusicItem,
 } from "@/lib/music/normalize-music";
+import {
+  isMusicTrackActive,
+  toMusicQueue,
+  toPlaylistQueue,
+  toSingleQueueTrack,
+} from "@/lib/music/music-queue";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 import type { AdvertisementItem } from "@/types/advertisement";
@@ -44,26 +54,6 @@ type MusicApiResponse = {
 };
 
 const PAGE_SIZE = 10;
-
-const toSingleQueueTrack = (track: MusicTrack) => ({
-  id: track.id,
-  title: track.title,
-  author: track.artist,
-  audioUrl: track.audioUrl,
-  coverUrl: track.thumbnailUrl || "/thumbnaildefault.jpg",
-});
-
-const toPlaylistQueue = (track: MusicTrack) =>
-  track.playlistTracks.map((item, index) => ({
-    id: `playlist:${track.id}:${item.id}:${index}`,
-    title: item.title,
-    author: item.artist,
-    audioUrl: item.audioUrl,
-    coverUrl: item.thumbnailUrl || track.thumbnailUrl || "/thumbnaildefault.jpg",
-  }));
-
-const toGlobalQueue = (tracks: MusicTrack[]) =>
-  tracks.flatMap((track) => (track.contentType === "playlist" ? toPlaylistQueue(track) : [toSingleQueueTrack(track)]));
 
 export default function MusicPage() {
   const t = useTranslations("MusicPage");
@@ -92,10 +82,10 @@ export default function MusicPage() {
   const isPlaying = useAudioStore((state) => state.isPlaying);
   const currentTime = useAudioStore((state) => state.currentTime);
   const duration = useAudioStore((state) => state.duration);
+  const queuedNextMap = useAudioStore((state) => state.queuedNextMap);
   const playTrack = useAudioStore((state) => state.playTrack);
   const togglePlay = useAudioStore((state) => state.togglePlay);
-  const enqueueNext = useAudioStore((state) => state.enqueueNext);
-  const enqueueManyNext = useAudioStore((state) => state.enqueueManyNext);
+  const toggleQueuedNext = useAudioStore((state) => state.toggleQueuedNext);
 
   const activeAds = useActiveAdvertisements({ limit: 8 });
 
@@ -187,7 +177,7 @@ export default function MusicPage() {
     return () => observer.disconnect();
   }, [fetchTracks, isLoadingInitial, isLoadingMore, lastPage, page]);
 
-  const queueForStore = useMemo(() => toGlobalQueue(tracks), [tracks]);
+  const queueForStore = useMemo(() => toMusicQueue(tracks), [tracks]);
 
   const tagOptions = useMemo(() => {
     const map = new Map<string, number>();
@@ -208,14 +198,7 @@ export default function MusicPage() {
   const trendingTracks = useMemo(() => [...tracks].sort((a, b) => b.playCount - a.playCount).slice(0, 5), [tracks]);
 
   const isTrackActive = useCallback(
-    (track: MusicTrack) => {
-      if (!currentTrack) return false;
-      if (track.contentType === "single") {
-        return currentTrack.id === track.id;
-      }
-
-      return toPlaylistQueue(track).some((item) => item.id === currentTrack.id);
-    },
+    (track: MusicTrack) => isMusicTrackActive(track, currentTrack),
     [currentTrack],
   );
 
@@ -253,10 +236,7 @@ export default function MusicPage() {
     );
 
     try {
-      await apiClient.post(`/music/${targetId}/play`);
-      if (accessToken) {
-        await apiClient.post(`/music/interactions/${targetId}/history`);
-      }
+      await registerMusicPlayback(targetId, Boolean(accessToken));
     } catch {
       // Keep playback responsive even when tracking endpoints fail.
     }
@@ -288,37 +268,19 @@ export default function MusicPage() {
   };
 
   const handlePlayNext = (track: MusicTrack) => {
-    if (track.contentType === "playlist") {
-      const playlistQueue = toPlaylistQueue(track);
-      if (playlistQueue.length) {
-        enqueueManyNext(playlistQueue);
-      }
-      return;
-    }
-
-    enqueueNext(toSingleQueueTrack(track));
+    const targetTracks = track.contentType === "playlist" ? toPlaylistQueue(track) : [toSingleQueueTrack(track)];
+    if (!targetTracks.length) return;
+    toggleQueuedNext(track.id, targetTracks);
   };
 
-  const flowItems = useMemo(() => {
-    const items: Array<{ type: "track"; track: MusicTrack } | { type: "ad"; id: string; ad: AdvertisementItem }> = [];
-
-    tracks.forEach((track, index) => {
-      items.push({ type: "track", track });
-
-      if ((index + 1) % 6 === 0 && activeAds.length > 0) {
-        const ad = activeAds[Math.floor(index / 6) % activeAds.length];
-        if (ad) {
-          items.push({
-            type: "ad",
-            id: `ad-${track.id}-${index}`,
-            ad,
-          });
-        }
-      }
-    });
-
-    return items;
-  }, [activeAds, tracks]);
+  const flowItems = useMemo(
+    () =>
+      interleaveAds<MusicTrack, AdvertisementItem>(tracks, activeAds, {
+        every: 6,
+        getAdId: (_ad, track, index) => `ad-${track.id}-${index}`,
+      }),
+    [activeAds, tracks],
+  );
 
   return (
     <div className="mx-auto w-full max-w-[1280px] space-y-6 pb-40">
@@ -486,11 +448,12 @@ export default function MusicPage() {
                   return <InlineAdvertisementCard key={item.id} ad={item.ad} />;
                 }
 
-                const track = item.track;
+                const track = item.item;
                 const isActive = isTrackActive(track);
                 const isRowPlaying = isActive && isPlaying;
                 const progressPercent = isActive && duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
                 const isExpanded = Boolean(expandedPlaylists[track.id]);
+                const isQueuedNext = Boolean(queuedNextMap[track.id]);
                 const previewTracks = track.playlistTracks.slice(0, isExpanded ? 10 : 5);
 
                 return (
@@ -633,9 +596,13 @@ export default function MusicPage() {
 
                         <button
                           onClick={() => handlePlayNext(track)}
-                          className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-slate-700 transition hover:border-orange-300 hover:text-orange-600 dark:border-[#343434] dark:bg-[#1b1b1b] dark:text-zinc-200"
+                          className={`inline-flex flex-1 items-center justify-center gap-1 rounded-xl border px-3 py-2 text-xs font-black uppercase tracking-[0.12em] transition lg:flex-none ${
+                            isQueuedNext
+                              ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600 dark:border-[#343434] dark:bg-[#1b1b1b] dark:text-zinc-200"
+                          }`}
                         >
-                          <Plus className="h-3.5 w-3.5" /> {t("playNext")}
+                          {isQueuedNext ? <Check className="h-3.5 w-3.5" /> : <ChevronsRight className="h-3.5 w-3.5" />} {t("playNext")}
                         </button>
 
                         <ShareActionButton

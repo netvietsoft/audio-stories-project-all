@@ -4,10 +4,12 @@ import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { BookOpen, ChevronUp, Music2, Pause, Play, SkipBack, SkipForward, Timer, Volume2, VolumeX } from "lucide-react";
+import { BookOpen, ChevronUp, Music2, Timer, Volume2, VolumeX } from "lucide-react";
 import ShuffleRepeatControls from "@/components/player/ShuffleRepeatControls";
+import PlayerTransportControls from "@/components/player/PlayerTransportControls";
 
 import { apiClient } from "@/lib/api/api-client";
+import { clampVolume, resolveNextPlaybackRate } from "@/lib/player/control-helpers";
 import { getOrCreateDeviceId } from "@/lib/tracking/device-id";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
@@ -33,9 +35,14 @@ export default function GlobalPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sleepMenuRef = useRef<HTMLDivElement | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [isExpandedMobile, setIsExpandedMobile] = useState(false);
+  const [showSleepMenu, setShowSleepMenu] = useState(false);
+  const [sleepMinutesLeft, setSleepMinutesLeft] = useState<number | null>(null);
   const lastSyncedProgressRef = useRef<Map<string, number>>(new Map());
   const listenTrackedRef = useRef<Map<string, boolean>>(new Map());
+  const lastScrollYRef = useRef(0);
+  const previousTrackIdRef = useRef<string | null>(null);
 
   const accessToken = useUserStore((state) => state.accessToken);
 
@@ -62,8 +69,7 @@ export default function GlobalPlayer() {
   const toggleMute = useAudioStore((state) => state.toggleMute);
   const toggleShuffle = useAudioStore((state) => state.toggleShuffle);
   const cycleRepeatMode = useAudioStore((state) => state.cycleRepeatMode);
-
-  const speedOptions = [0.75, 1, 1.25, 1.5, 2] as const;
+  const consumeQueuedTrack = useAudioStore((state) => state.consumeQueuedTrack);
 
   const syncHistory = useCallback(
     async (force = false) => {
@@ -95,10 +101,7 @@ export default function GlobalPlayer() {
   );
 
   const cycleSpeed = () => {
-    const currentIndex = speedOptions.findIndex((item) => item === playbackRate);
-    const nextIndex = currentIndex < 0 ? 1 : (currentIndex + 1) % speedOptions.length;
-    const nextRate = speedOptions[nextIndex] ?? 1;
-    setPlaybackRate(nextRate);
+    setPlaybackRate(resolveNextPlaybackRate(playbackRate));
   };
 
   const setSleepTimer = useCallback(
@@ -126,12 +129,6 @@ export default function GlobalPlayer() {
   );
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
     const audio = new Audio();
     audio.preload = "metadata";
     audioRef.current = audio;
@@ -160,7 +157,7 @@ export default function GlobalPlayer() {
       audio.removeEventListener("ended", handleEnded);
       audioRef.current = null;
     };
-  }, [mounted, playNext, setCurrentTime, setDuration]);
+  }, [playNext, setCurrentTime, setDuration]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -216,6 +213,25 @@ export default function GlobalPlayer() {
     setCurrentTime(seekTarget);
     clearSeekTarget();
   }, [clearSeekTarget, seekTarget, setCurrentTime]);
+
+  useEffect(() => {
+    const previousTrackId = previousTrackIdRef.current;
+    const activeTrackId = currentTrack?.id || null;
+
+    if (previousTrackId && previousTrackId !== activeTrackId) {
+      consumeQueuedTrack(previousTrackId);
+    }
+
+    previousTrackIdRef.current = activeTrackId;
+  }, [consumeQueuedTrack, currentTrack?.id]);
+
+  useEffect(() => {
+    if (!currentTrack || isPlaying) return;
+    if (!duration || duration <= 0) return;
+    if (currentTime < duration - 0.25) return;
+
+    consumeQueuedTrack(currentTrack.id);
+  }, [consumeQueuedTrack, currentTime, currentTrack, duration, isPlaying]);
 
   useEffect(() => {
     if (!isPlaying) {
@@ -277,12 +293,6 @@ export default function GlobalPlayer() {
     return Math.min(100, Math.max(0, (currentTime / duration) * 100));
   }, [currentTime, duration]);
 
-  const [isVisible, setIsVisible] = useState(true);
-  const [isExpandedMobile, setIsExpandedMobile] = useState(false);
-  const [showSleepMenu, setShowSleepMenu] = useState(false);
-  const [sleepMinutesLeft, setSleepMinutesLeft] = useState<number | null>(null);
-  const lastScrollYRef = useRef(0);
-
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -340,13 +350,7 @@ export default function GlobalPlayer() {
     return () => document.removeEventListener("mousedown", onOutside);
   }, [showSleepMenu]);
 
-  useEffect(() => {
-    if (!currentTrack) {
-      setShowSleepMenu(false);
-    }
-  }, [currentTrack]);
-
-  if (!mounted) {
+  if (typeof window === "undefined") {
     return null;
   }
 
@@ -416,6 +420,11 @@ export default function GlobalPlayer() {
     togglePlay(!isPlaying);
   };
 
+  const seekBy = (seconds: number) => {
+    if (!hasTrack) return;
+    seekTo(currentTime + seconds);
+  };
+
   const playerIdentity = (
     <>
       <div
@@ -458,15 +467,22 @@ export default function GlobalPlayer() {
           )}
 
           <div className="ml-auto flex shrink-0 items-center gap-1 md:ml-0">
-            <button onClick={handlePrev} disabled={!hasTrack} className={`rounded-full p-2 transition ${ghostControlClass} ${disabledClass}`}>
-              <SkipBack className="h-4 w-4" />
-            </button>
-            <button onClick={handleTogglePlay} disabled={!hasTrack} className={`rounded-full p-2.5 transition ${playButtonClass} ${disabledClass}`}>
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </button>
-            <button onClick={handleNext} disabled={!hasTrack} className={`rounded-full p-2 transition ${ghostControlClass} ${disabledClass}`}>
-              <SkipForward className="h-4 w-4" />
-            </button>
+            <PlayerTransportControls
+              isPlaying={isPlaying}
+              canControl={hasTrack}
+              canSeek={hasTrack}
+              showSeekButtons
+              onPrev={handlePrev}
+              onBack10={() => seekBy(-10)}
+              onTogglePlay={handleTogglePlay}
+              onForward10={() => seekBy(10)}
+              onNext={handleNext}
+              className="flex items-center gap-1"
+              buttonClassName={`rounded-full p-2 transition ${ghostControlClass} ${disabledClass}`}
+              playButtonClassName={`rounded-full p-2.5 transition ${playButtonClass} ${disabledClass}`}
+              seekButtonClassName={`hidden sm:inline-flex h-8 min-w-8 items-center justify-center rounded-full border px-2 text-[10px] font-semibold transition ${ghostControlClass} ${disabledClass}`}
+              disabledClassName=""
+            />
             <button
               onClick={() => setIsExpandedMobile((prev) => !prev)}
               className={`rounded-full p-2 transition md:hidden ${ghostControlClass}`}
@@ -508,7 +524,7 @@ export default function GlobalPlayer() {
             max={1}
             step={0.01}
             value={volume}
-            onChange={(event) => setVolume(Number(event.target.value))}
+            onChange={(event) => setVolume(clampVolume(Number(event.target.value)))}
             disabled={!hasTrack}
             className={`h-1.5 w-24 cursor-pointer appearance-none rounded-full md:w-28 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 ${thumbClass} ${disabledClass}`}
             style={{

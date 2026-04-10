@@ -13,7 +13,6 @@ import {
   CreditCard,
   ListMusic,
   Lock,
-  Share2,
   Heart,
   Star,
   ThumbsUp,
@@ -24,14 +23,12 @@ import {
   ArrowRight,
   Coins,
   LockOpen,
-  Waves,
   Headphones,
 } from "lucide-react";
 
 import Image from "next/image";
 import { apiClient } from "@/lib/api/api-client";
-import FavoriteButton from "@/components/shared/FavoriteButton";
-import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscriptionButton";
+import StoryEngagementActions from "@/components/shared/StoryEngagementActions";
 import { getLocaleLabel, getLocalizedValue, getRequestedLocaleValue } from "@/lib/story-localization";
 import { cleanChapterTitle, formatChapterTitle } from "@/lib/formatChapterTitle";
 import { useAudioStore } from "@/stores/audio-store";
@@ -42,6 +39,7 @@ import SocialLinks from "@/components/shared/SocialLinks";
 import { useViewTracking } from "@/hooks/use-view-tracking";
 import { useShareAction } from "@/hooks/use-share-action";
 import { cycleRepeatMode } from "@/lib/player/playback-modes";
+import { resolveNextPlaybackRate } from "@/lib/player/control-helpers";
 import StoryAudioPlayerPanel from "@/components/player/StoryAudioPlayerPanel";
 
 const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
@@ -1183,11 +1181,7 @@ export default function StoryChapterClient() {
   };
 
   const cyclePlaybackRate = () => {
-    const speedOptions = [0.75, 1, 1.25, 1.5, 2] as const;
-    const currentIndex = speedOptions.findIndex((rate) => rate === playbackRate);
-    const nextIndex = currentIndex < 0 ? 1 : (currentIndex + 1) % speedOptions.length;
-    const nextRate = speedOptions[nextIndex] ?? 1;
-    setPlaybackRate(nextRate);
+    setPlaybackRate(resolveNextPlaybackRate(playbackRate));
   };
 
   const onShare = async () => {
@@ -1518,34 +1512,12 @@ export default function StoryChapterClient() {
                 </div>
               </div>
 
-              <div className="mt-3 flex justify-center items-center gap-3 md:gap-4">
-                <FavoriteButton
-                  storyId={story.id}
-                  size="sm"
-                  label={t("favorite")}
-                  labelClassName="hidden md:inline"
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 text-sm font-medium border shadow-sm transition-colors"
-                  activeClassName="border-red-500 bg-red-500 text-white hover:bg-red-600"
-                  inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
-                />
-
-                <StoryUpdateSubscriptionButton
-                  storyId={story.id}
-                  className="px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium shadow-sm transition-colors"
-                  labelClassName="hidden md:inline"
-                  activeClassName="border-emerald-500 bg-emerald-500 text-white hover:bg-emerald-600 dark:border-emerald-400 dark:bg-emerald-500 dark:hover:bg-emerald-600"
-                  inactiveClassName="border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
-                />
-
-                <button
-                  onClick={onShare}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white px-4 py-2 sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
-                  aria-label={t("share")}
-                >
-                  <Share2 className="h-4 w-4" />
-                  <span className="hidden md:inline">{t("share")}</span>
-                </button>
-              </div>
+              <StoryEngagementActions
+                storyId={story.id}
+                favoriteLabel={t("favorite")}
+                shareLabel={t("share")}
+                onShare={onShare}
+              />
 
             </section>
           </div>

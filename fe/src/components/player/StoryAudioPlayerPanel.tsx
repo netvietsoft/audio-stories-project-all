@@ -1,10 +1,11 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Pause, Play, Settings2, SkipBack, SkipForward, Timer, Volume2, VolumeX } from "lucide-react";
+import { Settings2, Timer, Volume2, VolumeX } from "lucide-react";
 
 import type { RepeatMode } from "@/lib/player/playback-modes";
 import ShuffleRepeatControls from "@/components/player/ShuffleRepeatControls";
+import PlayerTransportControls from "@/components/player/PlayerTransportControls";
 
 type StoryAudioPlayerPanelProps = {
   heading: string;
@@ -146,37 +147,18 @@ export default function StoryAudioPlayerPanel({
           </div>
 
           <div className="flex w-full items-center justify-center gap-1.5 sm:gap-2">
-            <button onClick={onPrev} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">
-              <SkipBack className="h-4 w-4" />
-            </button>
-
-            <button
-              onClick={onBack10}
-              disabled={!canSeek}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-[10px] font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
-            >
-              -10
-            </button>
-
-            <button
-              onClick={onTogglePlay}
-              disabled={!canPlay}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-[0_6px_18px_rgba(236,72,153,0.45)] transition hover:scale-105 hover:bg-pink-700 hover:shadow-[0_8px_24px_rgba(236,72,153,0.55)] disabled:cursor-not-allowed disabled:bg-gray-400"
-            >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            </button>
-
-            <button
-              onClick={onForward10}
-              disabled={!canSeek}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-[10px] font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]"
-            >
-              +10
-            </button>
-
-            <button onClick={onNext} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">
-              <SkipForward className="h-4 w-4" />
-            </button>
+            <PlayerTransportControls
+              isPlaying={isPlaying}
+              canControl={canPlay}
+              canSeek={canSeek}
+              showSeekButtons
+              className="flex items-center gap-1.5 sm:gap-2"
+              onPrev={onPrev}
+              onBack10={onBack10}
+              onTogglePlay={onTogglePlay}
+              onForward10={onForward10}
+              onNext={onNext}
+            />
 
             <button
               onClick={onCyclePlaybackRate}

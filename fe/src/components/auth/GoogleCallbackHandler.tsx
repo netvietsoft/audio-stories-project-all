@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
+import { locales } from "@/i18n";
 
 import { apiClient } from "@/lib/api/api-client";
 import { setAuthCookies } from "@/lib/auth/cookies";
@@ -62,9 +63,20 @@ export default function GoogleCallbackHandler() {
         setAuthCookies(accessToken, refreshToken);
 
         const redirectPath = searchParams.get("redirect") || "/";
-        const finalRedirect = redirectPath.startsWith(`/${locale}`) || redirectPath === `/${locale}`
-          ? redirectPath
-          : `/${locale}${redirectPath === "/" ? "" : redirectPath}`;
+
+        // If the redirectPath already contains any supported locale prefix
+        // (e.g. /en/... or /vi/...), don't prefix it again to avoid
+        // producing paths like /vi/en/...
+        const hasLocalePrefix = (() => {
+          try {
+            const pattern = new RegExp(`^/(${(locales as readonly string[]).join("|")})(/|$)`);
+            return pattern.test(redirectPath);
+          } catch {
+            return false;
+          }
+        })();
+
+        const finalRedirect = hasLocalePrefix ? redirectPath : `/${locale}${redirectPath === "/" ? "" : redirectPath}`;
         router.replace(finalRedirect);
       } catch {
         setError(locale === "en" ? "Google login failed. Please try again." : "Đăng nhập Google thất bại. Vui lòng thử lại.");

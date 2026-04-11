@@ -465,28 +465,32 @@ export default function MusicPage() {
                         : "border-slate-200 hover:border-orange-200 hover:bg-slate-50/80 dark:border-[#2f2f2f] dark:hover:bg-[#1f1f1f]"
                     }`}
                   >
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-                      <button
-                        onClick={() => handlePlayOrToggle(track)}
-                        aria-label={isRowPlaying ? t("pauseAria") : t("playAria")}
-                        className="relative h-[110px] w-full overflow-hidden rounded-2xl bg-slate-100 lg:h-[120px] lg:w-[180px]"
-                      >
-                        <Image
-                          src={track.thumbnailUrl || "/thumbnaildefault.jpg"}
-                          alt={track.title}
-                          width={360}
-                          height={240}
-                          unoptimized
-                          className="h-full w-full object-cover"
-                        />
-                        <span className="absolute inset-0 flex items-center justify-center bg-black/25">
-                          <span className={`inline-flex h-11 w-11 items-center justify-center rounded-full ${isRowPlaying ? "bg-orange-500" : "bg-black/65"} text-white`}>
-                            {isRowPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
+                      <div className="lg:w-[180px] shrink-0">
+                        <button
+                          onClick={() => handlePlayOrToggle(track)}
+                          aria-label={isRowPlaying ? t("pauseAria") : t("playAria")}
+                          className="group relative h-[180px] w-full overflow-hidden rounded-2xl bg-slate-100 lg:h-[180px]"
+                        >
+                          <Image
+                            src={track.thumbnailUrl || "/thumbnaildefault.jpg"}
+                            alt={track.title}
+                            width={360}
+                            height={360}
+                            unoptimized
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                          />
+                          <span className={`absolute inset-0 flex items-center justify-center bg-black/25 transition-opacity duration-300 ${isRowPlaying ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                            <span className={`inline-flex h-11 w-11 items-center justify-center rounded-full ${isRowPlaying ? "bg-orange-500" : "bg-black/65"} text-white`}>
+                              {isRowPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                            </span>
                           </span>
-                        </span>
-                      </button>
+                        </button>
+                      </div>
 
-                      <div className="min-w-0 flex-1 space-y-3">
+                      <div className="flex min-w-0 flex-1 flex-col gap-5">
+                        <div className="flex flex-col gap-5 xl:flex-row xl:items-start">
+                          <div className="min-w-0 flex-1 space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className={`truncate text-lg font-black ${isActive ? "text-orange-600 dark:text-orange-300" : "text-slate-900 dark:text-zinc-100"}`}>
                             {track.title}
@@ -540,52 +544,9 @@ export default function MusicPage() {
                           <div className="h-full rounded-full bg-orange-500 transition-all" style={{ width: `${progressPercent}%` }} />
                         </div>
 
-                        {track.contentType === "playlist" && track.playlistTracks.length ? (
-                          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-[#2f2f2f] dark:bg-[#111]">
-                            <div className="mb-2 flex items-center justify-between">
-                              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 dark:text-zinc-400">
-                                {t("playlistTracks", { count: track.playlistTracks.length })}
-                              </p>
-                              {track.playlistTracks.length > 5 ? (
-                                <button
-                                  onClick={() =>
-                                    setExpandedPlaylists((prev) => ({
-                                      ...prev,
-                                      [track.id]: !prev[track.id],
-                                    }))
-                                  }
-                                  className="text-[11px] font-bold uppercase tracking-[0.12em] text-orange-600 hover:text-orange-700"
-                                >
-                                  {isExpanded ? t("collapseList") : t("expandList")}
-                                </button>
-                              ) : null}
-                            </div>
-
-                            <div className={`space-y-1.5 ${isExpanded ? "max-h-56 overflow-y-auto pr-1" : ""}`}>
-                              {previewTracks.map((item, index) => (
-                                <button
-                                  key={`${track.id}-${item.id}-${index}`}
-                                  onClick={() => {
-                                    const playlistQueue = toPlaylistQueue(track);
-                                    const selectedTrack = playlistQueue[index];
-
-                                    if (!selectedTrack) return;
-
-                                    playTrack(selectedTrack, playlistQueue);
-                                  }}
-                                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition hover:bg-white dark:hover:bg-[#1f1f1f]"
-                                >
-                                  <span className="w-5 shrink-0 text-[11px] font-black text-slate-400">{index + 1}</span>
-                                  <span className="truncate text-xs font-semibold text-slate-700 dark:text-zinc-200">{item.title}</span>
-                                  <span className="ml-auto shrink-0 text-[11px] text-slate-500 dark:text-zinc-400">{formatMusicDuration(item.audioDuration)}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        ) : null}
                       </div>
 
-                      <div className="flex shrink-0 flex-row flex-wrap gap-2 lg:w-[176px] lg:flex-col">
+                      <div className="flex shrink-0 flex-row flex-wrap gap-2 xl:w-[176px] xl:flex-col">
                         <button
                           onClick={() => handlePlayOrToggle(track)}
                           className="inline-flex flex-1 items-center justify-center gap-1 rounded-xl bg-orange-500 px-3 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-orange-600 lg:flex-none"
@@ -627,6 +588,86 @@ export default function MusicPage() {
                         >
                           {t("detail")}
                         </Link>
+                      </div>
+                    </div>
+
+                    {track.contentType === "playlist" && track.playlistTracks.length ? (
+                      <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-[#2f2f2f] dark:bg-[#111]">
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500 dark:text-zinc-400">
+                            {t("playlistTracks", { count: track.playlistTracks.length })}
+                          </p>
+                          {track.playlistTracks.length > 5 ? (
+                            <button
+                              onClick={() =>
+                                setExpandedPlaylists((prev) => ({
+                                  ...prev,
+                                  [track.id]: !prev[track.id],
+                                }))
+                              }
+                              className="text-[11px] font-bold uppercase tracking-[0.12em] text-orange-600 hover:text-orange-700"
+                            >
+                              {isExpanded ? t("collapseList") : t("expandList")}
+                            </button>
+                          ) : null}
+                        </div>
+
+                        <div className={`space-y-1 ${isExpanded ? "max-h-72 overflow-y-auto pr-1" : ""}`}>
+                          {previewTracks.map((item, index) => {
+                            const isSubTrackPlaying = isPlaying && currentTrack?.id === item.id;
+                            
+                            return (
+                            <div
+                              key={`${track.id}-${item.id}-${index}`}
+                              className="group flex w-full items-center gap-3 rounded-xl px-2 py-1.5 transition hover:bg-white dark:hover:bg-[#1f1f1f]"
+                            >
+                              <span className="w-5 shrink-0 text-center text-[11px] font-black text-slate-400">{index + 1}</span>
+                              
+                              <button 
+                                className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-slate-200 dark:bg-[#222]"
+                                onClick={() => {
+                                  if (currentTrack?.id === item.id) {
+                                    togglePlay(!isPlaying);
+                                    return;
+                                  }
+
+                                  const playlistQueue = toPlaylistQueue(track);
+                                  const selectedTrack = playlistQueue[index];
+                                  if (!selectedTrack) return;
+                                  playTrack(selectedTrack, playlistQueue);
+                                }}
+                                aria-label={isSubTrackPlaying ? t("pauseAria") : t("playAria")}
+                              >
+                                <Image
+                                  src={item.thumbnailUrl || "/thumbnaildefault.jpg"}
+                                  alt={item.title}
+                                  width={40}
+                                  height={40}
+                                  unoptimized
+                                  className="h-full w-full object-cover transition duration-300 group-hover:opacity-60"
+                                />
+                                <span className={`absolute inset-0 flex items-center justify-center transition ${isSubTrackPlaying ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                                  {isSubTrackPlaying ? <Pause className="h-5 w-5 text-white" /> : <Play className="h-5 w-5 text-white" />}
+                                </span>
+                              </button>
+
+                              <div className="flex min-w-0 flex-1 flex-col justify-center">
+                                <span className="truncate text-sm font-bold text-slate-800 dark:text-zinc-200">{item.title}</span>
+                                <span className="truncate text-xs font-semibold text-slate-500 dark:text-zinc-400">{item.artist}</span>
+                              </div>
+
+                              <div className="ml-auto flex shrink-0 items-center gap-4">
+                                <span className="hidden items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-zinc-400 sm:flex">
+                                  <Headphones className="h-3.5 w-3.5" /> {formatCompactCount(item.playCount)}
+                                </span>
+                                <span className="w-12 text-right text-xs font-semibold text-slate-500 dark:text-zinc-400">{formatMusicDuration(item.audioDuration)}</span>
+                              </div>
+                            </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
                       </div>
                     </div>
                   </article>

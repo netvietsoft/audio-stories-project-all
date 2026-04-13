@@ -24,6 +24,11 @@ const formatDuration = (seconds?: number | null) => {
   return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
 };
 
+const resolveFiniteDuration = (value?: number | null) => {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) return 0;
+  return value;
+};
+
 export default function GlobalPlayer() {
   const t = useTranslations("Player");
   const safeT = (key: string, fallback: string) => {
@@ -39,6 +44,8 @@ export default function GlobalPlayer() {
   const [isVisible, setIsVisible] = useState(true);
   const [isExpandedMobile, setIsExpandedMobile] = useState(false);
   const lastSyncedProgressRef = useRef<Map<string, number>>(new Map());
+  const lastSyncedMusicProgressRef = useRef<Map<string, number>>(new Map());
+  const lastMusicSyncedAtRef = useRef<Map<string, number>>(new Map());
   const listenTrackedRef = useRef<Map<string, boolean>>(new Map());
   const lastScrollYRef = useRef(0);
   const previousTrackIdRef = useRef<string | null>(null);
@@ -99,6 +106,40 @@ export default function GlobalPlayer() {
     [accessToken, currentTrack],
   );
 
+  const syncMusicHistory = useCallback(
+    async (force = false) => {
+      if (!accessToken || !currentTrack) return;
+      if (currentTrack.storyId) return;
+
+      const musicId = currentTrack.id;
+      if (!musicId) return;
+
+      const liveTime = Math.floor(audioRef.current?.currentTime || 0);
+      const liveDuration = resolveFiniteDuration(audioRef.current?.duration || 0);
+      const clampedLiveTime = liveDuration > 0 ? Math.min(liveTime, Math.floor(liveDuration)) : liveTime;
+      if (!force && clampedLiveTime < 3) return;
+
+      const lastSynced = lastSyncedMusicProgressRef.current.get(musicId) || 0;
+      const now = Date.now();
+      const lastSyncedAt = lastMusicSyncedAtRef.current.get(musicId) || 0;
+
+      if (!force && (clampedLiveTime <= lastSynced || now - lastSyncedAt < 5_000)) {
+        return;
+      }
+
+      try {
+        await apiClient.patch(`/music/interactions/${musicId}/history`, {
+          progressSeconds: clampedLiveTime,
+        });
+        lastSyncedMusicProgressRef.current.set(musicId, clampedLiveTime);
+        lastMusicSyncedAtRef.current.set(musicId, now);
+      } catch {
+        // Keep player resilient if music history sync is temporarily unavailable.
+      }
+    },
+    [accessToken, currentTrack],
+  );
+
   const cycleSpeed = () => {
     setPlaybackRate(resolveNextPlaybackRate(playbackRate));
   };
@@ -109,12 +150,17 @@ export default function GlobalPlayer() {
     audioRef.current = audio;
 
     const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime || 0);
+      const liveDuration = resolveFiniteDuration(audio.duration);
+      const liveTime = Math.max(0, audio.currentTime || 0);
+      setCurrentTime(liveDuration > 0 ? Math.min(liveTime, liveDuration) : liveTime);
     };
 
     const handleLoadedMetadata = () => {
-      setDuration(audio.duration || 0);
-      setCurrentTime(audio.currentTime || 0);
+      // Real media metadata duration must override any fallback duration from DB.
+      const realDuration = resolveFiniteDuration(audio.duration);
+      const liveTime = Math.max(0, audio.currentTime || 0);
+      setDuration(realDuration);
+      setCurrentTime(realDuration > 0 ? Math.min(liveTime, realDuration) : liveTime);
     };
 
     const handleEnded = () => {
@@ -250,6 +296,51 @@ export default function GlobalPlayer() {
   }, [syncHistory]);
 
   useEffect(() => {
+    if (!currentTrack || currentTrack.storyId) return;
+
+    if (!isPlaying) {
+      void syncMusicHistory(true);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      void syncMusicHistory(false);
+    }, 8_000);
+
+    return () => {
+      clearInterval(timer);
+      void syncMusicHistory(true);
+    };
+  }, [currentTrack, isPlaying, syncMusicHistory]);
+
+  useEffect(() => {
+    return () => {
+      void syncMusicHistory(true);
+    };
+  }, [syncMusicHistory]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      void syncHistory(true);
+      void syncMusicHistory(true);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "hidden") return;
+      void syncHistory(true);
+      void syncMusicHistory(true);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [syncHistory, syncMusicHistory]);
+
+  useEffect(() => {
     if (!currentTrack || !isPlaying) return;
 
     const storyId = currentTrack.storyId;
@@ -282,10 +373,16 @@ export default function GlobalPlayer() {
     };
   }, [currentTrack, isPlaying]);
 
+  const safeDuration = useMemo(() => resolveFiniteDuration(duration), [duration]);
+  const safeCurrentTime = useMemo(
+    () => (safeDuration > 0 ? Math.min(Math.max(0, currentTime), safeDuration) : Math.max(0, currentTime)),
+    [currentTime, safeDuration],
+  );
+
   const progress = useMemo(() => {
-    if (!duration || duration <= 0) return 0;
-    return Math.min(100, Math.max(0, (currentTime / duration) * 100));
-  }, [currentTime, duration]);
+    if (!safeDuration) return 0;
+    return Math.min(100, Math.max(0, (safeCurrentTime / safeDuration) * 100));
+  }, [safeCurrentTime, safeDuration]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -375,7 +472,7 @@ export default function GlobalPlayer() {
 
   const seekBy = (seconds: number) => {
     if (!hasTrack) return;
-    seekTo(currentTime + seconds);
+    seekTo(safeCurrentTime + seconds);
   };
 
   const playerIdentity = (
@@ -447,13 +544,13 @@ export default function GlobalPlayer() {
         </div>
 
         <div className={`${isExpandedMobile ? "flex" : "hidden"} items-center gap-2 md:flex md:mx-auto md:w-[82%] lg:w-[68%]`}>
-          <span className="w-12 shrink-0 text-center text-xs tabular-nums text-gray-500 dark:text-gray-400">{formatDuration(hasTrack ? currentTime : 0)}</span>
+          <span className="w-12 shrink-0 text-center text-xs tabular-nums text-gray-500 dark:text-gray-400">{formatDuration(hasTrack ? safeCurrentTime : 0)}</span>
           <input
             type="range"
             min={0}
-            max={hasTrack ? duration || 0 : 0}
+            max={hasTrack ? safeDuration || 0 : 0}
             step={1}
-            value={hasTrack ? Math.min(currentTime, duration || 0) : 0}
+            value={hasTrack ? safeCurrentTime : 0}
             onChange={(event) => seekTo(Number(event.target.value))}
             disabled={!hasTrack}
             className={`time-slider h-1 w-full appearance-none rounded-full [--time-slider-track:rgb(107_114_128)] dark:[--time-slider-track:rgb(209_213_219)] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 ${thumbClassName} ${disabledClass}`}
@@ -464,7 +561,7 @@ export default function GlobalPlayer() {
             }}
             aria-label={t("audioProgress")}
           />
-          <span className="w-12 shrink-0 text-center text-xs tabular-nums text-gray-500 dark:text-gray-400">{formatDuration(hasTrack ? duration : 0)}</span>
+          <span className="w-12 shrink-0 text-center text-xs tabular-nums text-gray-500 dark:text-gray-400">{formatDuration(hasTrack ? safeDuration : 0)}</span>
         </div>
 
         <div className={`${isExpandedMobile ? "flex" : "hidden"} items-center justify-center gap-2 md:flex md:mx-auto md:w-[82%] md:justify-center lg:w-[68%]`}>

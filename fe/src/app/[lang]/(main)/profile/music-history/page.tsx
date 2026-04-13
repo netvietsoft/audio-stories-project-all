@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "@/components/shared/LocalizedLink";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Clock3, Headphones, Loader2, Music2, PlayCircle, Trash2 } from "lucide-react";
+import { Clock3, Headphones, Music2, PlayCircle, Trash2 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
 import { formatMusicDuration, formatCompactCount } from "@/lib/music/normalize-music";
@@ -38,6 +38,13 @@ type MusicHistoryResponse = {
   };
 };
 
+const DURATION_CACHE_KEY = "music-history-real-duration-v1";
+
+const normalizeDuration = (value: number) => {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.floor(value));
+};
+
 export default function ProfileMusicHistoryPage() {
   const t = useTranslations("ProfileMusicHistoryPage");
   const locale = useLocale();
@@ -46,9 +53,115 @@ export default function ProfileMusicHistoryPage() {
   const currentLang = params?.lang === "en" ? "en" : "vi";
   const accessToken = useUserStore((state) => state.accessToken);
   const playTrack = useAudioStore((state) => state.playTrack);
+  const currentTrack = useAudioStore((state) => state.currentTrack);
+  const currentTime = useAudioStore((state) => state.currentTime);
+  const duration = useAudioStore((state) => state.duration);
+  const probedDurationIdsRef = useRef<Set<string>>(new Set());
 
   const [items, setItems] = useState<MusicHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [realDurationMap, setRealDurationMap] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(DURATION_CACHE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Record<string, number>;
+      if (!parsed || typeof parsed !== "object") return;
+      setRealDurationMap(parsed);
+    } catch {
+      // Ignore malformed cache and continue with runtime probing.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(DURATION_CACHE_KEY, JSON.stringify(realDurationMap));
+    } catch {
+      // Keep UI resilient if localStorage is unavailable.
+    }
+  }, [realDurationMap]);
+
+  useEffect(() => {
+    if (!currentTrack || currentTrack.storyId || duration <= 0) return;
+
+    const normalized = normalizeDuration(duration);
+    if (!normalized) return;
+
+    setRealDurationMap((prev) => {
+      if (prev[currentTrack.id] === normalized) return prev;
+      return {
+        ...prev,
+        [currentTrack.id]: normalized,
+      };
+    });
+  }, [currentTrack, duration]);
+
+  useEffect(() => {
+    if (!items.length) return;
+
+    let cancelled = false;
+
+    const cleanupFns: Array<() => void> = [];
+
+    items.forEach((item) => {
+      const musicId = item.music.id;
+      const audioUrl = item.music.audioUrl;
+      if (!musicId || !audioUrl) return;
+      if (realDurationMap[musicId] && realDurationMap[musicId] > 0) return;
+      if (probedDurationIdsRef.current.has(musicId)) return;
+
+      probedDurationIdsRef.current.add(musicId);
+
+      const probe = new Audio();
+      probe.preload = "metadata";
+
+      const cleanup = () => {
+        probe.removeEventListener("loadedmetadata", handleLoadedMetadata);
+        probe.removeEventListener("error", handleError);
+        probe.src = "";
+        probedDurationIdsRef.current.delete(musicId);
+      };
+
+      const handleLoadedMetadata = () => {
+        if (cancelled) {
+          cleanup();
+          return;
+        }
+
+        const realDuration = normalizeDuration(probe.duration || 0);
+        if (realDuration > 0) {
+          setRealDurationMap((prev) => {
+            if (prev[musicId] === realDuration) return prev;
+            return {
+              ...prev,
+              [musicId]: realDuration,
+            };
+          });
+        }
+
+        cleanup();
+      };
+
+      const handleError = () => {
+        cleanup();
+      };
+
+      probe.addEventListener("loadedmetadata", handleLoadedMetadata, { once: true });
+      probe.addEventListener("error", handleError, { once: true });
+      probe.src = audioUrl;
+      probe.load();
+
+      cleanupFns.push(cleanup);
+    });
+
+    return () => {
+      cancelled = true;
+      cleanupFns.forEach((fn) => fn());
+    };
+  }, [items, realDurationMap]);
 
   const dateFormatter = useMemo(
     () =>
@@ -94,7 +207,7 @@ export default function ProfileMusicHistoryPage() {
         coverUrl: item.music.thumbnailUrl || "/thumbnaildefault.jpg",
       },
       item.progressSeconds || 0,
-      [],
+      item.music.audioDuration || 0,
     );
   };
 
@@ -146,8 +259,21 @@ export default function ProfileMusicHistoryPage() {
       ) : (
         <div className="space-y-3">
           {items.map((item) => {
-            const duration = item.music.audioDuration || 0;
-            const progress = duration > 0 ? Math.min(100, Math.floor((item.progressSeconds / duration) * 100)) : 0;
+            const isCurrentTrack = !currentTrack?.storyId && currentTrack?.id === item.music.id;
+            const databaseDuration = item.music.audioDuration || 0;
+            const cachedRealDuration = realDurationMap[item.music.id] || 0;
+            const effectiveDurationSeconds = isCurrentTrack
+              ? (duration > 0 ? duration : cachedRealDuration || databaseDuration)
+              : cachedRealDuration || databaseDuration;
+            const rawProgressSeconds = isCurrentTrack ? Math.max(0, Math.floor(currentTime)) : item.progressSeconds;
+            const effectiveProgressSeconds =
+              effectiveDurationSeconds > 0
+                ? Math.min(rawProgressSeconds, Math.floor(effectiveDurationSeconds))
+                : rawProgressSeconds;
+            const progress =
+              effectiveDurationSeconds > 0
+                ? Math.min(100, Math.floor((effectiveProgressSeconds / effectiveDurationSeconds) * 100))
+                : 0;
 
             return (
               <div
@@ -177,12 +303,17 @@ export default function ProfileMusicHistoryPage() {
                         <Headphones className="h-3 w-3" /> {formatCompactCount(item.music.playCount)}
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <Clock3 className="h-3 w-3" /> {formatMusicDuration(item.progressSeconds)} / {formatMusicDuration(item.music.audioDuration)}
+                        <Clock3 className="h-3 w-3" /> {formatMusicDuration(effectiveProgressSeconds)} / {formatMusicDuration(effectiveDurationSeconds)}
                       </span>
                     </div>
 
                     <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#2b2b2d]">
-                      <div className="h-full rounded-full bg-pink-600 transition-all" style={{ width: `${progress}%` }} />
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          isCurrentTrack ? "bg-pink-600" : "bg-slate-400 dark:bg-slate-500"
+                        }`}
+                        style={{ width: `${progress}%` }}
+                      />
                     </div>
 
                     <div className="mt-2 flex items-center gap-2 text-[10px] text-gray-400 dark:text-gray-500">

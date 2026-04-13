@@ -56,6 +56,7 @@ type AudioState = {
     track: AudioTrack,
     arg2?: number | AudioTrack[],
     arg3?: number | AudioTrack[],
+    arg4?: number | AudioTrack[],
   ) => void;
   playNext: () => void;
   playPrev: () => void;
@@ -143,34 +144,64 @@ const normalizeStartTime = (value: number | undefined) => {
   return Math.max(0, value);
 };
 
+const normalizeDuration = (value: number | undefined) => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return Math.max(0, value);
+};
+
 const resolvePlayTrackArgs = (
   arg2?: number | AudioTrack[],
   arg3?: number | AudioTrack[],
-): { queue: AudioTrack[] | undefined; startTime: number | null } => {
+  arg4?: number | AudioTrack[],
+): { queue: AudioTrack[] | undefined; startTime: number | null; totalDuration: number | null } => {
   let queue: AudioTrack[] | undefined;
   let startTime: number | null = null;
+  let totalDuration: number | null = null;
 
   if (Array.isArray(arg2)) {
     queue = arg2;
     if (typeof arg3 === "number") {
       startTime = normalizeStartTime(arg3);
     }
-    return { queue, startTime };
+    if (typeof arg4 === "number") {
+      totalDuration = normalizeDuration(arg4);
+    }
+    return { queue, startTime, totalDuration };
   }
 
   if (typeof arg2 === "number") {
     startTime = normalizeStartTime(arg2);
+
+    if (typeof arg3 === "number") {
+      totalDuration = normalizeDuration(arg3);
+      if (Array.isArray(arg4)) {
+        queue = arg4;
+      }
+      return { queue, startTime, totalDuration };
+    }
+
     if (Array.isArray(arg3)) {
       queue = arg3;
+      if (typeof arg4 === "number") {
+        totalDuration = normalizeDuration(arg4);
+      }
     }
-    return { queue, startTime };
+    return { queue, startTime, totalDuration };
   }
 
   if (Array.isArray(arg3)) {
     queue = arg3;
   }
 
-  return { queue, startTime };
+  if (typeof arg3 === "number") {
+    startTime = normalizeStartTime(arg3);
+  }
+
+  if (typeof arg4 === "number") {
+    totalDuration = normalizeDuration(arg4);
+  }
+
+  return { queue, startTime, totalDuration };
 };
 
 export const useAudioStore = create<AudioState>()(
@@ -185,16 +216,16 @@ export const useAudioStore = create<AudioState>()(
           duration: 0,
           seekTarget: null,
         }),
-      playTrack: (track, arg2, arg3) =>
-        set((state) => {
-          const { queue, startTime } = resolvePlayTrackArgs(arg2, arg3);
+      playTrack: (track, arg2, arg3, arg4) =>
+        set(() => {
+          const { queue, startTime, totalDuration } = resolvePlayTrackArgs(arg2, arg3, arg4);
 
           return {
-            queue: queue ?? state.queue,
+            queue: queue ?? [track],
             currentTrack: track,
             isPlaying: true,
             currentTime: startTime ?? 0,
-            duration: 0,
+            duration: totalDuration ?? 0,
             seekTarget: startTime,
           };
         }),

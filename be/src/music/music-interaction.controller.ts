@@ -1,9 +1,10 @@
-import { Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 
 import { Account } from '@/auth/decorators/account.decorator';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { ListMusicFavoritesDto } from './dto/list-music-favorites.dto';
 import { ListMusicHistoryDto } from './dto/list-music-history.dto';
+import { UpdateMusicHistoryProgressDto } from './dto/update-music-history-progress.dto';
 import { MusicInteractionService } from './music-interaction.service';
 
 @Controller('music/interactions')
@@ -33,6 +34,15 @@ export class MusicInteractionController {
   @Post(':musicId/history')
   addHistory(@Param('musicId') musicId: string, @Account() account: any) {
     return this.interactionService.addHistory(this.userIdFromAccount(account), musicId);
+  }
+
+  @Patch(':musicId/history')
+  updateHistoryProgress(
+    @Param('musicId') musicId: string,
+    @Body() dto: UpdateMusicHistoryProgressDto,
+    @Account() account: any,
+  ) {
+    return this.interactionService.updateHistoryProgress(this.userIdFromAccount(account), musicId, dto.progressSeconds);
   }
 
   @Get('history')

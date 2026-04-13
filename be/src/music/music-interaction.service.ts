@@ -9,6 +9,11 @@ import { ListMusicHistoryDto } from './dto/list-music-history.dto';
 export class MusicInteractionService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private normalizeProgressSeconds(value: number) {
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, Math.floor(value));
+  }
+
   private parseTags(value: Prisma.JsonValue | null): string[] {
     if (!Array.isArray(value)) return [];
 
@@ -178,15 +183,78 @@ export class MusicInteractionService {
   async addHistory(userId: string, musicId: string) {
     await this.ensureMusic(musicId);
 
-    const row = await this.prisma.musicHistory.create({
-      data: {
+    const existing = await this.prisma.musicHistory.findFirst({
+      where: {
         userId,
         musicId,
       },
+      orderBy: { listenedAt: 'desc' },
+      select: { id: true },
     });
+
+    const now = new Date();
+
+    const row = existing
+      ? await this.prisma.musicHistory.update({
+          where: { id: existing.id },
+          data: {
+            listenedAt: now,
+          },
+        })
+      : await this.prisma.musicHistory.create({
+          data: {
+            userId,
+            musicId,
+            listenedAt: now,
+          },
+        });
 
     return {
       data: row,
+    };
+  }
+
+  async updateHistoryProgress(userId: string, musicId: string, progressSeconds: number) {
+    await this.ensureMusic(musicId);
+
+    const nextProgress = this.normalizeProgressSeconds(progressSeconds);
+    const now = new Date();
+
+    const existing = await this.prisma.musicHistory.findFirst({
+      where: {
+        userId,
+        musicId,
+      },
+      orderBy: { listenedAt: 'desc' },
+      select: { id: true },
+    });
+
+    const row = existing
+      ? await this.prisma.musicHistory.update({
+          where: { id: existing.id },
+          data: {
+            progressSeconds: nextProgress,
+            listenedAt: now,
+          },
+        })
+      : await this.prisma.musicHistory.create({
+          data: {
+            userId,
+            musicId,
+            progressSeconds: nextProgress,
+            listenedAt: now,
+          },
+        });
+
+    return {
+      data: {
+        id: row.id,
+        userId: row.userId,
+        musicId: row.musicId,
+        progressSeconds: row.progressSeconds,
+        listenedAt: row.listenedAt,
+        updatedAt: row.listenedAt,
+      },
     };
   }
 

@@ -74,8 +74,8 @@ export default function MusicLikeButton({
         disabled={isLoading}
         className={`inline-flex items-center gap-1 text-xs font-semibold transition disabled:opacity-60 ${
           isLiked
-            ? "text-orange-600 dark:text-orange-300"
-            : "text-slate-500 hover:text-orange-600 dark:text-zinc-400 dark:hover:text-orange-300"
+            ? "text-pink-600 dark:text-pink-300"
+            : "text-slate-500 hover:text-pink-600 dark:text-zinc-400 dark:hover:text-pink-300"
         } ${className}`}
         aria-label={isLiked ? "Unlike" : "Like"}
       >
@@ -96,8 +96,8 @@ export default function MusicLikeButton({
       disabled={isLoading}
       className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] transition disabled:opacity-60 ${
         isLiked
-          ? "border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-900/50 dark:bg-orange-950/30 dark:text-orange-300"
-          : "border-slate-300 bg-white text-slate-600 hover:border-orange-300 hover:text-orange-600 dark:border-[#3a3a3a] dark:bg-[#1f1f1f] dark:text-zinc-300"
+          ? "border-pink-300 bg-pink-50 text-pink-700 dark:border-pink-900/50 dark:bg-pink-950/30 dark:text-pink-300"
+          : "border-slate-300 bg-white text-slate-600 hover:border-pink-300 hover:text-pink-600 dark:border-[#3a3a3a] dark:bg-[#1f1f1f] dark:text-zinc-300"
       } ${className}`}
       aria-label={isLiked ? "Unlike" : "Like"}
     >

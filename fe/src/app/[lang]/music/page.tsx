@@ -285,7 +285,7 @@ export default function MusicPage() {
         key={track.id}
         className={`group relative overflow-hidden rounded-2xl border bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-[#171717] ${
           active
-            ? "border-orange-400 ring-1 ring-orange-300/50 dark:border-orange-700 dark:ring-orange-900/30"
+            ? "border-pink-400 ring-1 ring-pink-300/50 dark:border-pink-700 dark:ring-pink-900/30"
             : "border-slate-200 dark:border-[#2d2d2d]"
         }`}
       >
@@ -320,7 +320,7 @@ export default function MusicPage() {
               <div className="min-w-0">
                 <Link
                   href={`/music/${track.slug}`}
-                  className="block truncate text-base font-black text-slate-900 hover:text-orange-600 dark:text-zinc-100"
+                  className="block truncate text-base font-black text-slate-900 hover:text-pink-600 dark:text-zinc-100"
                 >
                   {track.title}
                 </Link>
@@ -342,7 +342,7 @@ export default function MusicPage() {
                 {track.tags.slice(0, 4).map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-600 dark:bg-orange-950/30 dark:text-orange-300"
+                    className="rounded-full bg-pink-50 px-2 py-0.5 text-[10px] font-bold text-pink-600 dark:bg-pink-950/30 dark:text-pink-300"
                   >
                     {tag}
                   </span>
@@ -365,7 +365,7 @@ export default function MusicPage() {
                 likeCount={track.likeCount}
                 compact
               />
-              <Link href={`/music/${track.slug}`} className="inline-flex items-center gap-1 hover:text-orange-600">
+              <Link href={`/music/${track.slug}`} className="inline-flex items-center gap-1 hover:text-pink-600">
                 <MessageCircle className="h-3 w-3" /> {formatCompactCount(track.commentCount)}
               </Link>
             </div>
@@ -376,7 +376,7 @@ export default function MusicPage() {
                 title={track.title}
                 text={`${track.title} - ${track.artist}`}
                 url={`${typeof window !== "undefined" ? window.location.origin : ""}/music/${track.slug}`}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-orange-300 hover:text-orange-600 dark:border-[#3a3a3a] dark:text-zinc-400"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-pink-300 hover:text-pink-600 dark:border-[#3a3a3a] dark:text-zinc-400"
                 iconClassName="h-3.5 w-3.5"
               />
               <PlayNextButton
@@ -409,7 +409,7 @@ export default function MusicPage() {
         key={track.id}
         className={`group relative overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md dark:bg-[#171717] ${
           active
-            ? "border-orange-400 ring-1 ring-orange-300/50 dark:border-orange-700 dark:ring-orange-900/30"
+            ? "border-pink-400 ring-1 ring-pink-300/50 dark:border-pink-700 dark:ring-pink-900/30"
             : "border-slate-200 dark:border-[#2d2d2d]"
         }`}
       >
@@ -442,7 +442,7 @@ export default function MusicPage() {
               <div className="min-w-0">
                 <Link
                   href={`/music/${track.slug}`}
-                  className="block truncate text-base font-black text-slate-900 hover:text-orange-600 dark:text-zinc-100"
+                  className="block truncate text-base font-black text-slate-900 hover:text-pink-600 dark:text-zinc-100"
                 >
                   {track.title}
                 </Link>
@@ -462,7 +462,7 @@ export default function MusicPage() {
             <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-zinc-400">
               <Clock3 className="h-3 w-3" />{" "}
               {formatMusicDuration(track.audioDuration)}
-              <span className="ml-2 font-semibold text-orange-600 dark:text-orange-300">{t("tracksCount", { count: childTracks.length })}</span>
+              <span className="ml-2 font-semibold text-pink-600 dark:text-pink-300">{t("tracksCount", { count: childTracks.length })}</span>
             </div>
 
             {/* Stats */}
@@ -480,7 +480,7 @@ export default function MusicPage() {
                 title={track.title}
                 text={`${track.title} - ${track.artist}`}
                 url={`${typeof window !== "undefined" ? window.location.origin : ""}/music/${track.slug}`}
-                className="inline-flex items-center gap-1 text-slate-500 hover:text-orange-600 dark:text-zinc-400"
+                className="inline-flex items-center gap-1 text-slate-500 hover:text-pink-600 dark:text-zinc-400"
                 iconClassName="h-3 w-3"
               />
             </div>
@@ -502,8 +502,8 @@ export default function MusicPage() {
                   onClick={() => handlePlayPlaylistItem(track, index + (isExpanded ? 0 : 0))}
                   className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${
                     childPlaying
-                      ? "bg-orange-500 text-white"
-                      : "bg-slate-100 text-slate-600 group-hover/child:bg-orange-100 group-hover/child:text-orange-600 dark:bg-[#2a2a2a] dark:text-zinc-300"
+                      ? "bg-pink-500 text-white"
+                        : "bg-slate-100 text-slate-600 group-hover/child:bg-pink-100 group-hover/child:text-pink-600 dark:bg-[#2a2a2a] dark:text-zinc-300"
                   }`}
                 >
                   {childPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
@@ -561,7 +561,7 @@ export default function MusicPage() {
           <div className="border-t border-slate-100 px-4 py-2.5 dark:border-[#2a2a2a]">
             <button
               onClick={() => toggleExpand(track.id)}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-black uppercase tracking-[0.12em] text-orange-600 transition hover:bg-orange-50 dark:text-orange-300 dark:hover:bg-orange-950/20"
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-black uppercase tracking-[0.12em] text-pink-600 transition hover:bg-pink-50 dark:text-pink-300 dark:hover:bg-pink-950/20"
             >
               {isExpanded ? (
                 <>
@@ -584,16 +584,16 @@ export default function MusicPage() {
   return (
     <div className="mx-auto w-full max-w-[1280px] space-y-6 pb-40">
       {/* Hero */}
-      <section className="overflow-hidden rounded-[32px] border border-orange-200/70 bg-gradient-to-br from-orange-50 via-amber-50 to-white p-6 text-slate-900 shadow-sm sm:p-8 dark:border-orange-900/30 dark:from-[#24170f] dark:via-[#1d1612] dark:to-[#121212] dark:text-zinc-100">
+      <section className="overflow-hidden rounded-[32px] border border-pink-200/70 bg-gradient-to-br from-pink-50 via-rose-50 to-white p-6 text-slate-900 shadow-sm sm:p-8 dark:border-pink-900/30 dark:from-[#2a101a] dark:via-[#1d1117] dark:to-[#121212] dark:text-zinc-100">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div className="max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-orange-500 dark:text-orange-300">{t("heroEyebrow")}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-pink-500 dark:text-pink-300">{t("heroEyebrow")}</p>
             <h1 className="mt-3 text-3xl font-black leading-tight sm:text-4xl">{t("heroTitle")}</h1>
             <p className="mt-3 text-sm font-medium text-slate-600 dark:text-zinc-300">{t("heroDescription")}</p>
           </div>
 
-          <div className="rounded-2xl border border-orange-300/70 bg-white/70 px-4 py-3 text-right backdrop-blur dark:border-orange-900/50 dark:bg-black/20">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-500 dark:text-orange-300">{t("deckStats")}</p>
+          <div className="rounded-2xl border border-pink-300/70 bg-white/70 px-4 py-3 text-right backdrop-blur dark:border-pink-900/50 dark:bg-black/20">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-pink-500 dark:text-pink-300">{t("deckStats")}</p>
             <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{total || tracks.length}</p>
             <p className="text-xs font-semibold text-slate-500 dark:text-zinc-400">{t("tracksOnline")}</p>
           </div>
@@ -613,7 +613,7 @@ export default function MusicPage() {
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder={t("trackListTitle")}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm font-medium outline-none transition focus:border-orange-400 focus:bg-white dark:border-[#303030] dark:bg-[#101010] dark:text-zinc-100"
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-3 text-sm font-medium outline-none transition focus:border-pink-400 focus:bg-white dark:border-[#303030] dark:bg-[#101010] dark:text-zinc-100"
               />
             </div>
           </div>
@@ -625,7 +625,7 @@ export default function MusicPage() {
               {activeTag !== "all" ? (
                 <button
                   onClick={() => setActiveTag("all")}
-                  className="text-[11px] font-bold text-orange-500 hover:underline"
+                  className="text-[11px] font-bold text-pink-500 hover:underline"
                 >
                   {t("resetFilter")}
                 </button>
@@ -638,8 +638,8 @@ export default function MusicPage() {
                   onClick={() => setActiveTag(tag.key === activeTag ? "all" : tag.key)}
                   className={`rounded-full border px-3 py-1 text-xs font-bold transition ${
                     tag.key === activeTag
-                      ? "border-orange-400 bg-orange-500 text-white dark:border-orange-600"
-                      : "border-slate-200 bg-slate-50 text-slate-600 hover:border-orange-300 hover:text-orange-600 dark:border-[#333] dark:bg-[#1e1e1e] dark:text-zinc-300"
+                      ? "border-pink-400 bg-pink-500 text-white dark:border-pink-600"
+                      : "border-slate-200 bg-slate-50 text-slate-600 hover:border-pink-300 hover:text-pink-600 dark:border-[#333] dark:bg-[#1e1e1e] dark:text-zinc-300"
                   }`}
                 >
                   {tag.key} <span className="ml-1 opacity-60">{tag.count}</span>
@@ -652,7 +652,7 @@ export default function MusicPage() {
           {trendingTracks.length > 0 ? (
             <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#2d2d2d] dark:bg-[#171717]">
               <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">
-                <Flame className="h-3.5 w-3.5 text-orange-500" /> {t("trendingTitle")}
+                <Flame className="h-3.5 w-3.5 text-pink-500" /> {t("trendingTitle")}
               </p>
               <div className="space-y-2">
                 {trendingTracks.map((track, index) => {
@@ -694,7 +694,7 @@ export default function MusicPage() {
           <div className="flex items-center justify-between">
             <p className="text-sm font-black uppercase tracking-[0.15em] text-slate-500 dark:text-zinc-400">
               {t("trackListTitle")}{" "}
-              <span className="text-orange-500">({total || tracks.length})</span>
+              <span className="text-pink-500">({total || tracks.length})</span>
             </p>
           </div>
 
@@ -733,7 +733,7 @@ export default function MusicPage() {
 
           {isLoadingMore ? (
             <div className="flex items-center justify-center gap-2 py-6">
-              <Loader2 className="h-5 w-5 animate-spin text-orange-500" />
+              <Loader2 className="h-5 w-5 animate-spin text-pink-500" />
               <span className="text-sm text-slate-500 dark:text-zinc-400">{t("loadMore")}</span>
             </div>
           ) : null}

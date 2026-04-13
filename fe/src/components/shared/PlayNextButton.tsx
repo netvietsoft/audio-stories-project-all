@@ -21,8 +21,8 @@ export default function PlayNextButton({
   label,
   compact = false,
   className = "",
-  activeClassName = "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300",
-  inactiveClassName = "border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600 dark:border-[#343434] dark:bg-[#1b1b1b] dark:text-zinc-200",
+  activeClassName = "border-pink-300 bg-pink-50 text-pink-700 dark:border-pink-900/50 dark:bg-pink-950/30 dark:text-pink-300",
+  inactiveClassName = "border-slate-200 bg-white text-slate-700 hover:border-pink-300 hover:text-pink-600 dark:border-[#343434] dark:bg-[#1b1b1b] dark:text-zinc-200",
 }: PlayNextButtonProps) {
   const queuedNextMap = useAudioStore((state) => state.queuedNextMap);
   const toggleQueuedNext = useAudioStore((state) => state.toggleQueuedNext);

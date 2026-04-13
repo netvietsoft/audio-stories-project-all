@@ -438,7 +438,7 @@ export default function MusicDetailPage() {
         key={comment.id}
         className={`${
           isChild
-            ? "ml-8 border-l-2 border-orange-200/40 pl-4 dark:border-orange-900/30"
+            ? "ml-8 border-l-2 border-pink-200/40 pl-4 dark:border-pink-900/30"
             : "rounded-2xl border border-slate-200 bg-white p-4 dark:border-[#2f2f2f] dark:bg-[#141414]"
         }`}
       >
@@ -500,7 +500,7 @@ export default function MusicDetailPage() {
               value={editingCommentContent}
               onChange={(event) => setEditingCommentContent(event.target.value)}
               rows={3}
-              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-orange-400 dark:border-[#333] dark:bg-[#191919] dark:text-zinc-200"
+              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-pink-400 dark:border-[#333] dark:bg-[#191919] dark:text-zinc-200"
             />
             <div className="mt-2 flex items-center justify-end gap-2">
               <button
@@ -512,7 +512,7 @@ export default function MusicDetailPage() {
               <button
                 onClick={() => void saveEditedComment(comment.id)}
                 disabled={pendingCommentId === comment.id}
-                className="inline-flex items-center gap-1 rounded-full bg-orange-500 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-orange-600 disabled:opacity-60"
+                className="inline-flex items-center gap-1 rounded-full bg-pink-500 px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-pink-600 disabled:opacity-60"
               >
                 {pendingCommentId === comment.id ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -534,8 +534,8 @@ export default function MusicDetailPage() {
               onClick={() => void handleToggleCommentLike(comment.id)}
               className={`inline-flex items-center gap-1 text-xs font-semibold transition ${
                 isCommentLiked
-                  ? "text-orange-600 dark:text-orange-300"
-                  : "text-slate-400 hover:text-orange-600 dark:text-zinc-500 dark:hover:text-orange-300"
+                  ? "text-pink-600 dark:text-pink-300"
+                  : "text-slate-400 hover:text-pink-600 dark:text-zinc-500 dark:hover:text-pink-300"
               }`}
             >
               <ThumbsUp className={`h-3 w-3 ${isCommentLiked ? "fill-current" : ""}`} />
@@ -548,7 +548,7 @@ export default function MusicDetailPage() {
                   setReplyingToId(replyingToId === comment.id ? null : comment.id);
                   setReplyContent("");
                 }}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 transition hover:text-orange-600 dark:text-zinc-500"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 transition hover:text-pink-600 dark:text-zinc-500"
               >
                 <CornerDownRight className="h-3 w-3" /> {t("reply")}
               </button>
@@ -599,7 +599,7 @@ export default function MusicDetailPage() {
           <div className="space-y-4 p-6 sm:p-8">
             <div className="flex items-center gap-2">
               {track.contentType === "playlist" ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.15em] text-orange-700 dark:bg-orange-950/30 dark:text-orange-300">
+                <span className="inline-flex items-center gap-1 rounded-full bg-pink-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.15em] text-pink-700 dark:bg-pink-950/30 dark:text-pink-300">
                   <ListMusic className="h-3 w-3" /> Playlist
                 </span>
               ) : null}
@@ -622,7 +622,7 @@ export default function MusicDetailPage() {
                   <Link
                     key={tag}
                     href={`/music?tag=${encodeURIComponent(tag)}`}
-                    className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-600 transition hover:bg-orange-100 dark:bg-orange-950/30 dark:text-orange-300"
+                    className="rounded-full bg-pink-50 px-3 py-1 text-xs font-bold text-pink-600 transition hover:bg-pink-100 dark:bg-pink-950/30 dark:text-pink-300"
                   >
                     {tag}
                   </Link>
@@ -654,7 +654,7 @@ export default function MusicDetailPage() {
             <div className="flex flex-wrap items-center gap-2 pt-2">
               <button
                 onClick={() => handlePlayTrack(track)}
-                className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-orange-500/25 transition hover:bg-orange-600"
+                className="inline-flex items-center gap-2 rounded-full bg-pink-500 px-5 py-2.5 text-sm font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-pink-500/25 transition hover:bg-pink-600"
               >
                 {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 {playing ? t("pauseNow") : t("playNow")}
@@ -670,7 +670,7 @@ export default function MusicDetailPage() {
               <ShareActionButton
                 title={track.title}
                 text={`${track.title} - ${track.artist}`}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:border-orange-300 hover:text-orange-600 dark:border-[#3a3a3a] dark:text-zinc-300"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:border-pink-300 hover:text-pink-600 dark:border-[#3a3a3a] dark:text-zinc-300"
                 iconClassName="h-3.5 w-3.5"
                 label={t("share")}
               />
@@ -734,7 +734,7 @@ export default function MusicDetailPage() {
                   </div>
 
                   <div className="min-w-0">
-                    <Link href={`/music/${child.slug}`} className="block truncate text-sm font-bold text-slate-800 hover:text-orange-600 dark:text-zinc-100">
+                    <Link href={`/music/${child.slug}`} className="block truncate text-sm font-bold text-slate-800 hover:text-pink-600 dark:text-zinc-100">
                       {child.title}
                     </Link>
                     <p className="truncate text-xs text-slate-500 dark:text-zinc-400">{child.artist}</p>
@@ -745,7 +745,7 @@ export default function MusicDetailPage() {
 
                   <button
                     onClick={() => handlePlayPlaylistChild(track, index)}
-                    className="inline-flex h-9 w-9 items-center justify-center justify-self-end rounded-full bg-orange-500 text-white transition hover:bg-orange-600"
+                    className="inline-flex h-9 w-9 items-center justify-center justify-self-end rounded-full bg-pink-500 text-white transition hover:bg-pink-600"
                   >
                     {isChildPlaying ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
                   </button>
@@ -762,7 +762,7 @@ export default function MusicDetailPage() {
         <article className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 dark:border-[#2c2c2c] dark:bg-[#171717]">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-black uppercase tracking-[0.15em] text-slate-500 dark:text-zinc-400">
-              {t("commentsTitle")} <span className="text-orange-500">({commentsTotal})</span>
+              {t("commentsTitle")} <span className="text-pink-500">({commentsTotal})</span>
             </h2>
 
             <div className="flex items-center gap-1">
@@ -770,8 +770,8 @@ export default function MusicDetailPage() {
                 onClick={() => setCommentSort("newest")}
                 className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition ${
                   commentSort === "newest"
-                    ? "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300"
-                    : "text-slate-500 hover:text-orange-600 dark:text-zinc-400"
+                    ? "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300"
+                    : "text-slate-500 hover:text-pink-600 dark:text-zinc-400"
                 }`}
               >
                 <ArrowDown className="h-3 w-3" /> {t("newest")}
@@ -780,8 +780,8 @@ export default function MusicDetailPage() {
                 onClick={() => setCommentSort("oldest")}
                 className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-bold transition ${
                   commentSort === "oldest"
-                    ? "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300"
-                    : "text-slate-500 hover:text-orange-600 dark:text-zinc-400"
+                    ? "bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300"
+                    : "text-slate-500 hover:text-pink-600 dark:text-zinc-400"
                 }`}
               >
                 <ArrowUp className="h-3 w-3" /> {t("oldest")}
@@ -806,7 +806,7 @@ export default function MusicDetailPage() {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder={t("commentPlaceholder")}
-                  className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-orange-400 dark:border-[#333] dark:bg-[#191919] dark:text-zinc-200"
+                  className="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-pink-400 dark:border-[#333] dark:bg-[#191919] dark:text-zinc-200"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
@@ -817,7 +817,7 @@ export default function MusicDetailPage() {
                 <button
                   onClick={() => void handleSubmitComment()}
                   disabled={isSubmittingComment || !newComment.trim()}
-                  className="inline-flex items-center gap-1 rounded-xl bg-orange-500 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-orange-600 disabled:opacity-60"
+                  className="inline-flex items-center gap-1 rounded-xl bg-pink-500 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-pink-600 disabled:opacity-60"
                 >
                   {isSubmittingComment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                 </button>
@@ -841,7 +841,7 @@ export default function MusicDetailPage() {
               <button
                 onClick={() => void loadComments(commentsPage + 1, false)}
                 disabled={isLoadingComments}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-slate-700 transition hover:border-orange-300 hover:text-orange-600 disabled:opacity-60 dark:border-[#3a3a3a] dark:text-zinc-300"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-slate-700 transition hover:border-pink-300 hover:text-pink-600 disabled:opacity-60 dark:border-[#3a3a3a] dark:text-zinc-300"
               >
                 {isLoadingComments ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                 {t("loadMoreComments")}
@@ -857,7 +857,7 @@ export default function MusicDetailPage() {
               <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-500 dark:text-zinc-400">
                 {t("relatedTitle")}
               </h3>
-              <Link href="/music" className="text-[11px] font-bold text-orange-500 hover:underline">
+              <Link href="/music" className="text-[11px] font-bold text-pink-500 hover:underline">
                 {t("viewAll")}
               </Link>
             </div>
@@ -870,7 +870,7 @@ export default function MusicDetailPage() {
                   const targetTracks = item.contentType === "playlist" ? toPlaylistQueue(item) : [toSingleQueueTrack(item)];
 
                   return (
-                    <div key={item.id} className="group rounded-2xl border border-slate-200 p-2.5 transition hover:border-orange-300 dark:border-[#2f2f2f] dark:hover:border-orange-800/50">
+                    <div key={item.id} className="group rounded-2xl border border-slate-200 p-2.5 transition hover:border-pink-300 dark:border-[#2f2f2f] dark:hover:border-pink-800/50">
                       <div className="flex items-center gap-3">
                         <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-slate-100 dark:bg-[#242424]">
                           <Image
@@ -890,7 +890,7 @@ export default function MusicDetailPage() {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <Link href={`/music/${item.slug}`} className="block truncate text-sm font-bold text-slate-800 hover:text-orange-600 dark:text-zinc-100">
+                          <Link href={`/music/${item.slug}`} className="block truncate text-sm font-bold text-slate-800 hover:text-pink-600 dark:text-zinc-100">
                             {item.title}
                           </Link>
                           <p className="truncate text-xs text-slate-500 dark:text-zinc-400">{item.artist}</p>

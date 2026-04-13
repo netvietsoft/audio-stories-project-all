@@ -81,7 +81,6 @@ async function main() {
   const usedSlugs = new Set(existingSlugs.map((item) => item.slug));
 
   const mainUser = users[0];
-
   const singles = [] as Awaited<ReturnType<typeof prisma.music.create>>[];
 
   for (let i = 0; i < SINGLE_SEED.length; i += 1) {

@@ -34,7 +34,8 @@ export default function ProfilePage() {
     const currentLang = params?.lang === "en" ? "en" : "vi";
     const locale = useLocale();
     const t = useTranslations("ProfilePage");
-    const { user } = useUserStore();
+    const user = useUserStore((state) => state.user);
+    const isAuthHydrated = useUserStore((state) => state.isHydrated);
     const [mounted, setMounted] = useState(false);
     const [isLoadingData, setIsLoadingData] = useState(false);
     const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
@@ -46,13 +47,14 @@ export default function ProfilePage() {
     }, []);
 
     useEffect(() => {
-        if (mounted && !user) {
+        if (!mounted || !isAuthHydrated) return;
+        if (!user) {
             router.push(`/${currentLang}`);
         }
-    }, [currentLang, mounted, router, user]);
+    }, [currentLang, isAuthHydrated, mounted, router, user]);
 
     useEffect(() => {
-        if (!mounted || !user) return;
+        if (!mounted || !isAuthHydrated || !user) return;
 
         const fetchRealProfileData = async () => {
             setIsLoadingData(true);
@@ -82,7 +84,7 @@ export default function ProfilePage() {
         };
 
         void fetchRealProfileData();
-    }, [mounted, user]);
+    }, [isAuthHydrated, mounted, user]);
 
     const activeDays = useMemo(() => {
         return new Set(historyItems.map((item) => new Date(item.lastListenedAt).toDateString())).size;

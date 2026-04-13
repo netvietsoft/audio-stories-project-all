@@ -57,6 +57,7 @@ export default function ProfileHistoryPage() {
   const params = useParams<{ lang?: string }>();
   const currentLang = params?.lang === "en" ? "en" : "vi";
   const accessToken = useUserStore((state) => state.accessToken);
+  const isAuthHydrated = useUserStore((state) => state.isHydrated);
   const playTrack = useAudioStore((state) => state.playTrack);
   const tChapter = useChapterTranslations("StoryChapterClient");
 
@@ -79,12 +80,13 @@ export default function ProfileHistoryPage() {
   };
 
   useEffect(() => {
+    if (!isAuthHydrated) return;
     if (!accessToken) {
       router.push(`/${currentLang}`);
       return;
     }
     void fetchHistory();
-  }, [accessToken, currentLang, router]);
+  }, [accessToken, currentLang, isAuthHydrated, router]);
 
   const handleResume = (item: HistoryItem) => {
     const href = `/${currentLang}/story/${item.story.slug}/chuong-${item.chapter.chapterNumber}`;

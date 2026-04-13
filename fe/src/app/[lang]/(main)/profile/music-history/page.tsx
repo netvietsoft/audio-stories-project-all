@@ -52,6 +52,7 @@ export default function ProfileMusicHistoryPage() {
   const params = useParams<{ lang?: string }>();
   const currentLang = params?.lang === "en" ? "en" : "vi";
   const accessToken = useUserStore((state) => state.accessToken);
+  const isAuthHydrated = useUserStore((state) => state.isHydrated);
   const playTrack = useAudioStore((state) => state.playTrack);
   const currentTrack = useAudioStore((state) => state.currentTrack);
   const currentTime = useAudioStore((state) => state.currentTime);
@@ -190,12 +191,13 @@ export default function ProfileMusicHistoryPage() {
   };
 
   useEffect(() => {
+    if (!isAuthHydrated) return;
     if (!accessToken) {
       router.push(`/${currentLang}`);
       return;
     }
     void fetchHistory();
-  }, [accessToken, currentLang, router]);
+  }, [accessToken, currentLang, isAuthHydrated, router]);
 
   const handleResume = (item: MusicHistoryItem) => {
     playTrack(
@@ -293,9 +295,16 @@ export default function ProfileMusicHistoryPage() {
                   </Link>
 
                   <div className="min-w-0 flex-1">
-                    <Link href={`/music/${item.music.slug}`} className="block truncate text-sm font-bold text-gray-900 hover:text-pink-600 dark:text-gray-100">
-                      {item.music.title}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/music/${item.music.slug}`} className="block truncate text-sm font-bold text-gray-900 hover:text-pink-600 dark:text-gray-100">
+                        {item.music.title}
+                      </Link>
+                      {isCurrentTrack ? (
+                        <span className="inline-flex shrink-0 items-center rounded-full bg-pink-600/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-pink-700 dark:bg-pink-500/20 dark:text-pink-300">
+                          {t("playingNow")}
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">{item.music.artist}</p>
 
                     <div className="mt-1 flex items-center gap-3 text-[11px] text-gray-500 dark:text-gray-400">

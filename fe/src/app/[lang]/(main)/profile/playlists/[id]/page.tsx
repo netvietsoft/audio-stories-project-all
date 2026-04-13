@@ -69,6 +69,7 @@ export default function PlaylistDetailPage() {
 
   const router = useRouter();
   const accessToken = useUserStore((state) => state.accessToken);
+  const isAuthHydrated = useUserStore((state) => state.isHydrated);
 
   const currentTrack = useAudioStore((state) => state.currentTrack);
   const isPlaying = useAudioStore((state) => state.isPlaying);
@@ -149,13 +150,14 @@ export default function PlaylistDetailPage() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthHydrated) return;
     if (!accessToken) {
       router.push(`/${currentLang}`);
       return;
     }
 
     void fetchDetail();
-  }, [accessToken, currentLang, playlistId, router, t]);
+  }, [accessToken, currentLang, isAuthHydrated, playlistId, router, t]);
 
   const startRename = () => {
     if (!playlist || isSavingTitle) return;

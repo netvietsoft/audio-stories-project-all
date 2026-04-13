@@ -38,6 +38,7 @@ export default function FavoriteStoriesPage() {
   const params = useParams<{ lang?: string }>();
   const currentLang = params?.lang === "en" ? "en" : "vi";
   const accessToken = useUserStore((state) => state.accessToken);
+  const isAuthHydrated = useUserStore((state) => state.isHydrated);
 
   const [stories, setStories] = useState<StoryItem[]>([]);
   const [page, setPage] = useState(1);
@@ -66,17 +67,19 @@ export default function FavoriteStoriesPage() {
   };
 
   useEffect(() => {
+    if (!isAuthHydrated) return;
     if (!accessToken) {
       router.push(`/${currentLang}`);
       return;
     }
-  }, [accessToken, currentLang, router]);
+  }, [accessToken, currentLang, isAuthHydrated, router]);
 
   useEffect(() => {
+    if (!isAuthHydrated) return;
     if (!accessToken) return;
     void fetchFavorites(1, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
+  }, [accessToken, isAuthHydrated]);
 
   return (
     <div className="space-y-6">

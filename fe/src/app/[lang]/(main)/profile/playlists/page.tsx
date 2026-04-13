@@ -38,6 +38,7 @@ export default function ProfilePlaylistsPage() {
   const params = useParams<{ lang?: string }>();
   const currentLang = params?.lang === "en" ? "en" : "vi";
   const accessToken = useUserStore((state) => state.accessToken);
+  const isAuthHydrated = useUserStore((state) => state.isHydrated);
 
   const dateFormatter = useMemo(
     () =>
@@ -84,13 +85,14 @@ export default function ProfilePlaylistsPage() {
   };
 
   useEffect(() => {
+    if (!isAuthHydrated) return;
     if (!accessToken) {
       router.push(`/${currentLang}`);
       return;
     }
 
     void fetchPlaylists();
-  }, [accessToken, currentLang, router]);
+  }, [accessToken, currentLang, isAuthHydrated, router]);
 
   useEffect(() => {
     return () => {

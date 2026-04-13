@@ -35,6 +35,8 @@ type UserState = {
   user: UserProfile | null;
   accessToken: string | null;
   refreshToken: string | null;
+  isHydrated: boolean;
+  setHydrated: (isHydrated: boolean) => void;
   setAuth: (payload: {
     user: UserProfile;
     accessToken: string;
@@ -49,20 +51,25 @@ const initialState = {
   user: null,
   accessToken: null,
   refreshToken: null,
+  isHydrated: false,
 };
 
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
       ...initialState,
-      setAuth: ({ user, accessToken, refreshToken }) => set({ user, accessToken, refreshToken }),
-      updateAccessToken: (accessToken) => set({ accessToken }),
-      setUser: (user) => set({ user }),
-      clearAuth: () => set(initialState),
+      setHydrated: (isHydrated) => set({ isHydrated }),
+      setAuth: ({ user, accessToken, refreshToken }) => set({ user, accessToken, refreshToken, isHydrated: true }),
+      updateAccessToken: (accessToken) => set({ accessToken, isHydrated: true }),
+      setUser: (user) => set({ user, isHydrated: true }),
+      clearAuth: () => set({ user: null, accessToken: null, refreshToken: null, isHydrated: true }),
     }),
     {
       name: USER_STORAGE_KEY,
       storage: createJSONStorage(getStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true);
+      },
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,

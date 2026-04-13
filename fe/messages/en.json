@@ -820,6 +820,7 @@
     "clearAll": "Clear all",
     "clearConfirm": "Are you sure you want to clear all music history?",
     "empty": "No music listening history yet.",
+    "playingNow": "Now Playing",
     "resume": "Resume",
     "delete": "Delete"
   }

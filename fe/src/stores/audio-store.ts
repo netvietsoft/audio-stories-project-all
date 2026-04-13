@@ -52,7 +52,11 @@ type AudioState = {
   seekTarget: number | null;
   setQueue: (queue: AudioTrack[]) => void;
   setTrack: (track: AudioTrack | null) => void;
-  playTrack: (track: AudioTrack, queue?: AudioTrack[]) => void;
+  playTrack: (
+    track: AudioTrack,
+    arg2?: number | AudioTrack[],
+    arg3?: number | AudioTrack[],
+  ) => void;
   playNext: () => void;
   playPrev: () => void;
   enqueueNext: (track: AudioTrack) => void;
@@ -134,6 +138,41 @@ const consumeQueuedTrackMap = (queuedNextMap: Record<string, string[]>, trackId:
   };
 };
 
+const normalizeStartTime = (value: number | undefined) => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  return Math.max(0, value);
+};
+
+const resolvePlayTrackArgs = (
+  arg2?: number | AudioTrack[],
+  arg3?: number | AudioTrack[],
+): { queue: AudioTrack[] | undefined; startTime: number | null } => {
+  let queue: AudioTrack[] | undefined;
+  let startTime: number | null = null;
+
+  if (Array.isArray(arg2)) {
+    queue = arg2;
+    if (typeof arg3 === "number") {
+      startTime = normalizeStartTime(arg3);
+    }
+    return { queue, startTime };
+  }
+
+  if (typeof arg2 === "number") {
+    startTime = normalizeStartTime(arg2);
+    if (Array.isArray(arg3)) {
+      queue = arg3;
+    }
+    return { queue, startTime };
+  }
+
+  if (Array.isArray(arg3)) {
+    queue = arg3;
+  }
+
+  return { queue, startTime };
+};
+
 export const useAudioStore = create<AudioState>()(
   persist(
     (set, get) => ({
@@ -146,15 +185,19 @@ export const useAudioStore = create<AudioState>()(
           duration: 0,
           seekTarget: null,
         }),
-      playTrack: (track, queue) =>
-        set((state) => ({
-          queue: queue ?? state.queue,
-          currentTrack: track,
-          isPlaying: true,
-          currentTime: 0,
-          duration: 0,
-          seekTarget: null,
-        })),
+      playTrack: (track, arg2, arg3) =>
+        set((state) => {
+          const { queue, startTime } = resolvePlayTrackArgs(arg2, arg3);
+
+          return {
+            queue: queue ?? state.queue,
+            currentTrack: track,
+            isPlaying: true,
+            currentTime: startTime ?? 0,
+            duration: 0,
+            seekTarget: startTime,
+          };
+        }),
       playNext: () => {
         const { queue, currentTrack } = get();
         if (!queue.length || !currentTrack) {

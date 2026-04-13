@@ -58,7 +58,6 @@ export default function ProfileHistoryPage() {
   const currentLang = params?.lang === "en" ? "en" : "vi";
   const accessToken = useUserStore((state) => state.accessToken);
   const playTrack = useAudioStore((state) => state.playTrack);
-  const seekTo = useAudioStore((state) => state.seekTo);
   const tChapter = useChapterTranslations("StoryChapterClient");
 
   const [items, setItems] = useState<HistoryItem[]>([]);
@@ -105,9 +104,9 @@ export default function ProfileHistoryPage() {
           audioUrl: item.chapter.r2AudioUrl,
           coverUrl: item.story.thumbnailUrl || undefined,
         },
+        item.progressSeconds || 0,
         [],
       );
-      seekTo(item.progressSeconds || 0);
     }
 
     router.push(href);

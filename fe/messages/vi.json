@@ -606,6 +606,8 @@
     "createPlaceholder": "Tên playlist",
     "createButton": "Tạo playlist",
     "creating": "Đang tạo...",
+    "createSuccess": "Đã tạo playlist thành công.",
+    "createFailed": "Không thể tạo playlist. Vui lòng thử lại.",
     "tracksCount": "{count} bài hát",
     "updatedAt": "Cập nhật",
     "open": "Mở"

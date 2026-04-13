@@ -184,9 +184,28 @@ export default function GlobalPlayer() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || seekTarget === null) return;
-    audio.currentTime = seekTarget;
-    setCurrentTime(seekTarget);
-    clearSeekTarget();
+
+    const applySeek = () => {
+      const target = Math.max(0, seekTarget);
+      audio.currentTime = target;
+      setCurrentTime(target);
+      clearSeekTarget();
+    };
+
+    if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) {
+      applySeek();
+      return;
+    }
+
+    const handleLoadedMetadata = () => {
+      applySeek();
+    };
+
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata, { once: true });
+
+    return () => {
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+    };
   }, [clearSeekTarget, seekTarget, setCurrentTime]);
 
   useEffect(() => {

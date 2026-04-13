@@ -607,6 +607,8 @@
     "createPlaceholder": "Playlist name",
     "createButton": "Create playlist",
     "creating": "Creating...",
+    "createSuccess": "Playlist created successfully.",
+    "createFailed": "Unable to create playlist. Please try again.",
     "tracksCount": "{count} tracks",
     "updatedAt": "Updated",
     "open": "Open"

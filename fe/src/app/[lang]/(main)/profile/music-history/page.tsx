@@ -46,7 +46,6 @@ export default function ProfileMusicHistoryPage() {
   const currentLang = params?.lang === "en" ? "en" : "vi";
   const accessToken = useUserStore((state) => state.accessToken);
   const playTrack = useAudioStore((state) => state.playTrack);
-  const seekTo = useAudioStore((state) => state.seekTo);
 
   const [items, setItems] = useState<MusicHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,11 +93,9 @@ export default function ProfileMusicHistoryPage() {
         audioUrl: item.music.audioUrl,
         coverUrl: item.music.thumbnailUrl || "/thumbnaildefault.jpg",
       },
+      item.progressSeconds || 0,
       [],
     );
-    if (item.progressSeconds > 0) {
-      seekTo(item.progressSeconds);
-    }
   };
 
   const handleDelete = async (id: string) => {

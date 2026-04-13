@@ -41,6 +41,7 @@ import { useShareAction } from "@/hooks/use-share-action";
 import { cycleRepeatMode } from "@/lib/player/playback-modes";
 import { resolveNextPlaybackRate } from "@/lib/player/control-helpers";
 import StoryAudioPlayerPanel from "@/components/player/StoryAudioPlayerPanel";
+import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscriptionButton";
 
 const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
 

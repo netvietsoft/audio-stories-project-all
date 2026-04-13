@@ -4,9 +4,12 @@ import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { BookOpen, ChevronUp, Music2, Timer, Volume2, VolumeX } from "lucide-react";
+import { BookOpen, ChevronUp, Music2 } from "lucide-react";
 import ShuffleRepeatControls from "@/components/player/ShuffleRepeatControls";
 import PlayerTransportControls from "@/components/player/PlayerTransportControls";
+import VolumeControl from "@/components/player/VolumeControl";
+import SpeedControl from "@/components/player/SpeedControl";
+import SleepTimerControl from "@/components/player/SleepTimerControl";
 
 import { apiClient } from "@/lib/api/api-client";
 import { clampVolume, resolveNextPlaybackRate } from "@/lib/player/control-helpers";
@@ -33,12 +36,8 @@ export default function GlobalPlayer() {
   };
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sleepMenuRef = useRef<HTMLDivElement | null>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [isExpandedMobile, setIsExpandedMobile] = useState(false);
-  const [showSleepMenu, setShowSleepMenu] = useState(false);
-  const [sleepMinutesLeft, setSleepMinutesLeft] = useState<number | null>(null);
   const lastSyncedProgressRef = useRef<Map<string, number>>(new Map());
   const listenTrackedRef = useRef<Map<string, boolean>>(new Map());
   const lastScrollYRef = useRef(0);
@@ -103,30 +102,6 @@ export default function GlobalPlayer() {
   const cycleSpeed = () => {
     setPlaybackRate(resolveNextPlaybackRate(playbackRate));
   };
-
-  const setSleepTimer = useCallback(
-    (minutes: number | null) => {
-      if (sleepTimerRef.current) {
-        clearTimeout(sleepTimerRef.current);
-        sleepTimerRef.current = null;
-      }
-
-      if (!minutes) {
-        setSleepMinutesLeft(null);
-        setShowSleepMenu(false);
-        return;
-      }
-
-      setSleepMinutesLeft(minutes);
-      sleepTimerRef.current = setTimeout(() => {
-        togglePlay(false);
-        setSleepMinutesLeft(null);
-        sleepTimerRef.current = null;
-      }, minutes * 60_000);
-      setShowSleepMenu(false);
-    },
-    [togglePlay],
-  );
 
   useEffect(() => {
     const audio = new Audio();
@@ -310,46 +285,6 @@ export default function GlobalPlayer() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(
-    () => () => {
-      if (sleepTimerRef.current) {
-        clearTimeout(sleepTimerRef.current);
-        sleepTimerRef.current = null;
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (!sleepMinutesLeft) return;
-
-    const timer = setInterval(() => {
-      setSleepMinutesLeft((prev) => {
-        if (!prev) return null;
-        if (prev <= 1) {
-          clearInterval(timer);
-          return null;
-        }
-        return prev - 1;
-      });
-    }, 60_000);
-
-    return () => clearInterval(timer);
-  }, [sleepMinutesLeft]);
-
-  useEffect(() => {
-    if (!showSleepMenu) return;
-
-    const onOutside = (event: MouseEvent) => {
-      if (sleepMenuRef.current && !sleepMenuRef.current.contains(event.target as Node)) {
-        setShowSleepMenu(false);
-      }
-    };
-
-    document.addEventListener("mousedown", onOutside);
-    return () => document.removeEventListener("mousedown", onOutside);
-  }, [showSleepMenu]);
-
   if (typeof window === "undefined") {
     return null;
   }
@@ -373,7 +308,6 @@ export default function GlobalPlayer() {
 
   const accentRgb = isMusicTrack ? "236 72 153" : "75 85 99";
   const progressPercent = hasTrack ? progress : 0;
-  const volumePercent = Math.round(Math.max(0, Math.min(1, volume)) * 100);
 
   const shellClass = isMusicTrack
     ? "bg-pink-50/95 border-t border-pink-200/80 dark:bg-[#2a1720]/95 dark:border-pink-900/40"
@@ -394,7 +328,7 @@ export default function GlobalPlayer() {
   const playButtonClass = isMusicTrack
     ? "bg-pink-600 text-white hover:bg-pink-700"
     : "bg-gray-700 text-white hover:bg-gray-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white";
-  const thumbClass = isMusicTrack
+  const thumbClassName = isMusicTrack
     ? "[&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:bg-pink-500"
     : "[&::-webkit-slider-thumb]:bg-gray-600 [&::-moz-range-thumb]:bg-gray-600 dark:[&::-webkit-slider-thumb]:bg-zinc-100 dark:[&::-moz-range-thumb]:bg-zinc-100";
   const disabledClass = "disabled:cursor-not-allowed disabled:opacity-40";
@@ -433,7 +367,7 @@ export default function GlobalPlayer() {
         }`}
       >
         {hasTrack ? (
-          <Image src={resolvedCoverUrl} alt={displayTitle} width={40} height={40} loading="lazy" className="h-full w-full object-cover" />
+          <Image src={resolvedCoverUrl} alt={displayTitle || "Cover"} width={40} height={40} loading="lazy" className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-gray-500 dark:text-zinc-300">
             <BookOpen className="h-3.5 w-3.5" />
@@ -503,7 +437,7 @@ export default function GlobalPlayer() {
             value={hasTrack ? Math.min(currentTime, duration || 0) : 0}
             onChange={(event) => seekTo(Number(event.target.value))}
             disabled={!hasTrack}
-            className={`time-slider h-1 w-full appearance-none rounded-full [--time-slider-track:rgb(107_114_128)] dark:[--time-slider-track:rgb(209_213_219)] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 ${thumbClass} ${disabledClass}`}
+            className={`time-slider h-1 w-full appearance-none rounded-full [--time-slider-track:rgb(107_114_128)] dark:[--time-slider-track:rgb(209_213_219)] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 ${thumbClassName} ${disabledClass}`}
             style={{
               WebkitAppearance: "none",
               appearance: "none",
@@ -515,67 +449,31 @@ export default function GlobalPlayer() {
         </div>
 
         <div className={`${isExpandedMobile ? "flex" : "hidden"} items-center justify-center gap-2 md:flex md:mx-auto md:w-[82%] md:justify-center lg:w-[68%]`}>
-          <button onClick={() => toggleMute()} disabled={!hasTrack} className={`rounded-full p-2 transition ${ghostControlClass} ${disabledClass}`}>
-            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-          </button>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={volume}
-            onChange={(event) => setVolume(clampVolume(Number(event.target.value)))}
+          <VolumeControl
+            volume={volume}
+            isMuted={isMuted}
             disabled={!hasTrack}
-            className={`h-1.5 w-24 cursor-pointer appearance-none rounded-full md:w-28 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 ${thumbClass} ${disabledClass}`}
-            style={{
-              background: `linear-gradient(to right, rgb(${accentRgb}) 0%, rgb(${accentRgb}) ${volumePercent}%, rgb(209 213 219) ${volumePercent}%, rgb(209 213 219) 100%)`,
-            }}
-            aria-label={t("volume")}
+            accentRgb={accentRgb}
+            onVolumeChange={(v) => setVolume(clampVolume(v))}
+            onToggleMute={() => toggleMute()}
+            buttonClassName={`rounded-full p-2 transition ${ghostControlClass}`}
+            thumbClassName={thumbClassName}
           />
 
-          <div className="relative" ref={sleepMenuRef}>
-            <button
-              onClick={() => setShowSleepMenu((prev) => !prev)}
-              disabled={!hasTrack}
-              className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold transition ${pillClass} ${disabledClass}`}
-              title={safeT("timer", "Timer")}
-              aria-label={safeT("timer", "Timer")}
-            >
-              <Timer className="h-3.5 w-3.5" />
-              <span>{sleepMinutesLeft ? `${sleepMinutesLeft}m` : safeT("timer", "Timer")}</span>
-            </button>
-
-            {showSleepMenu && hasTrack ? (
-              <div className="absolute bottom-10 left-1/2 z-50 min-w-[120px] -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-2 shadow-xl dark:border-[#303133] dark:bg-[#242526]">
-                <div className="flex flex-col gap-1">
-                  {[15, 30, 60].map((minute) => (
-                    <button
-                      key={minute}
-                      onClick={() => setSleepTimer(minute)}
-                      className="rounded-md px-2 py-1 text-left text-xs text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#3a3b3c]"
-                    >
-                      {minute}m
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setSleepTimer(null)}
-                    className="rounded-md px-2 py-1 text-left text-xs text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/20"
-                  >
-                    <span>{t("cancel")}</span>
-                  </button>
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <button
-            onClick={cycleSpeed}
+          <SleepTimerControl
             disabled={!hasTrack}
-            className={`rounded-md border px-2 py-1 text-xs font-semibold transition ${pillClass} ${disabledClass}`}
-            title={t("speedTitle")}
-          >
-            {playbackRate}x
-          </button>
+            onSleepTriggered={() => togglePlay(false)}
+            buttonClassName={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold transition ${pillClass}`}
+            label={safeT("timer", "Timer")}
+          />
+
+          <SpeedControl
+            playbackRate={playbackRate}
+            disabled={!hasTrack}
+            onCycleSpeed={cycleSpeed}
+            className={`rounded-md border px-2 py-1 text-xs font-semibold transition ${pillClass}`}
+            label={t("speedTitle")}
+          />
 
           <ShuffleRepeatControls
             isShuffle={isShuffle}

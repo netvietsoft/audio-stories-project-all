@@ -52,6 +52,7 @@ model User {
   playlists              Playlist[]
   musicComments          MusicComment[]
   musicLikes             MusicLike[]
+  musicCommentLikes      MusicCommentLike[]
   musicHistory           MusicHistory[]
   musicPlaylists         MusicPlaylist[]
   chapterComments        ChapterComment[]
@@ -327,17 +328,37 @@ model MusicComment {
   id        String   @id @default(uuid()) @db.VarChar(36)
   userId    String   @map("user_id") @db.VarChar(36)
   musicId   String   @map("music_id") @db.VarChar(36)
+  parentId  String?  @map("parent_id") @db.VarChar(36)
   content   String   @db.Text
+  likeCount Int      @default(0) @map("like_count") @db.UnsignedInt
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  music Music @relation(fields: [musicId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  music    Music          @relation(fields: [musicId], references: [id], onDelete: Cascade)
+  parent   MusicComment?  @relation("MusicCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  children MusicComment[] @relation("MusicCommentReplies")
+  likes    MusicCommentLike[]
 
   @@index([userId])
   @@index([musicId])
   @@index([musicId, createdAt])
+  @@index([parentId])
   @@map("music_comments")
+}
+
+model MusicCommentLike {
+  userId    String   @map("user_id") @db.VarChar(36)
+  commentId String   @map("comment_id") @db.VarChar(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment MusicComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, commentId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("music_comment_likes")
 }
 
 model MusicLike {
@@ -356,10 +377,11 @@ model MusicLike {
 }
 
 model MusicHistory {
-  id         String   @id @default(uuid()) @db.VarChar(36)
-  userId     String   @map("user_id") @db.VarChar(36)
-  musicId    String   @map("music_id") @db.VarChar(36)
-  listenedAt DateTime @default(now()) @map("listened_at")
+  id              String   @id @default(uuid()) @db.VarChar(36)
+  userId          String   @map("user_id") @db.VarChar(36)
+  musicId         String   @map("music_id") @db.VarChar(36)
+  progressSeconds Int      @default(0) @map("progress_seconds") @db.UnsignedInt
+  listenedAt      DateTime @default(now()) @map("listened_at")
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   music Music @relation(fields: [musicId], references: [id], onDelete: Cascade)

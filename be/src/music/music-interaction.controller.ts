@@ -40,6 +40,16 @@ export class MusicInteractionController {
     return this.interactionService.listHistory(this.userIdFromAccount(account), query);
   }
 
+  @Delete('history/:id')
+  deleteHistoryEntry(@Param('id') id: string, @Account() account: any) {
+    return this.interactionService.deleteHistoryEntry(this.userIdFromAccount(account), id);
+  }
+
+  @Delete('history')
+  clearHistory(@Account() account: any) {
+    return this.interactionService.clearHistory(this.userIdFromAccount(account));
+  }
+
   @Get('favorites')
   listFavorites(@Account() account: any, @Query() query: ListMusicFavoritesDto) {
     return this.interactionService.listFavorites(this.userIdFromAccount(account), query);

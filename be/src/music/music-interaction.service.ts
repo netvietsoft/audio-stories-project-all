@@ -211,6 +211,7 @@ export class MusicInteractionService {
     return {
       data: rows.map((row) => ({
         id: row.id,
+        progressSeconds: row.progressSeconds || 0,
         listenedAt: row.listenedAt,
         music: this.serializeMusic(row.music),
       })),
@@ -220,6 +221,31 @@ export class MusicInteractionService {
         lastPage: Math.max(1, Math.ceil(total / limit)),
       },
     };
+  }
+
+  async deleteHistoryEntry(userId: string, entryId: string) {
+    const entry = await this.prisma.musicHistory.findUnique({
+      where: { id: entryId },
+      select: { id: true, userId: true },
+    });
+
+    if (!entry || entry.userId !== userId) {
+      throw new NotFoundException('History entry not found.');
+    }
+
+    await this.prisma.musicHistory.delete({
+      where: { id: entryId },
+    });
+
+    return { ok: true };
+  }
+
+  async clearHistory(userId: string) {
+    await this.prisma.musicHistory.deleteMany({
+      where: { userId },
+    });
+
+    return { ok: true };
   }
 
   async listFavorites(userId: string, query: ListMusicFavoritesDto) {

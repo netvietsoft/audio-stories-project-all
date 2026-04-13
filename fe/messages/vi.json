@@ -338,7 +338,15 @@
     "collapseList": "Thu gọn",
     "playlistOnlyHint": "Playlist hệ thống",
     "loadingMore": "Đang tải thêm...",
-    "noMore": "Bạn đã xem hết danh sách"
+    "noMore": "Bạn đã xem hết danh sách",
+    "resetFilter": "Đặt lại",
+    "trendingTitle": "🔥 Xu hướng",
+    "expandPlaylist": "Xem hết {count} bài",
+    "collapsePlaylist": "Thu nhỏ",
+    "emptyResults": "Không tìm thấy bản nhạc phù hợp.",
+    "playNow": "Phát",
+    "pauseNow": "Dừng",
+    "loadMore": "Đang tải thêm..."
   },
   "MusicDetailPage": {
     "backToList": "Quay lại danh sách",
@@ -373,7 +381,13 @@
     "loginToLike": "Bạn cần đăng nhập để thích track.",
     "loginToUseComment": "Bạn cần đăng nhập để bình luận.",
     "deleteConfirm": "Bạn có chắc muốn xóa bình luận này?",
-    "emptyComments": "Chưa có bình luận nào."
+    "emptyComments": "Chưa có bình luận nào.",
+    "notFound": "Không tìm thấy bản nhạc.",
+    "newest": "Mới nhất",
+    "oldest": "Cũ nhất",
+    "reply": "Trả lời",
+    "replyPlaceholder": "Viết trả lời...",
+    "viewAll": "Xem tất cả"
   },
   "Common": {
     "loading": "Đang tải...",
@@ -548,6 +562,7 @@
     "topUpCredits": "Nạp credits",
     "transactionHistory": "Lịch sử giao dịch",
     "listeningHistory": "Lịch sử nghe",
+    "musicHistory": "Nhạc đã nghe",
     "myPlaylists": "My Playlists",
     "recentActivity": "Thông tin tài khoản",
     "clearAll": "Xóa toàn bộ",
@@ -796,5 +811,13 @@
     "vietqrDescription": "Chuyển khoản ngân hàng",
     "internationalCard": "Thẻ quốc tế",
     "selectPaymentMethod": "Chọn phương thức thanh toán"
+  },
+  "ProfileMusicHistoryPage": {
+    "title": "Nhạc đã nghe",
+    "clearAll": "Xóa toàn bộ",
+    "clearConfirm": "Bạn có chắc muốn xóa toàn bộ lịch sử nghe nhạc?",
+    "empty": "Chưa có lịch sử nghe nhạc.",
+    "resume": "Nghe tiếp",
+    "delete": "Xóa"
   }
 }

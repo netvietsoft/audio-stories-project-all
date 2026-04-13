@@ -12,7 +12,7 @@ export const toSingleQueueTrack = (track: MusicTrack): AudioTrack => ({
 });
 
 export const toPlaylistQueue = (track: MusicTrack): AudioTrack[] =>
-  track.playlistTracks.map((item, index) => ({
+  (track.playlistTracks || []).map((item, index) => ({
     id: `playlist:${track.id}:${item.id}:${index}`,
     title: item.title,
     author: item.artist,

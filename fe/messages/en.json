@@ -339,7 +339,15 @@
     "collapseList": "Collapse",
     "playlistOnlyHint": "System playlist",
     "loadingMore": "Loading more...",
-    "noMore": "You have reached the end"
+    "noMore": "You have reached the end",
+    "resetFilter": "Reset",
+    "trendingTitle": "Trending",
+    "expandPlaylist": "View all {count} tracks",
+    "collapsePlaylist": "Collapse",
+    "emptyResults": "No tracks match your search.",
+    "playNow": "Play",
+    "pauseNow": "Pause",
+    "loadMore": "Loading more..."
   },
   "MusicDetailPage": {
     "backToList": "Back to library",
@@ -374,7 +382,13 @@
     "loginToLike": "You need to sign in to like this track.",
     "loginToUseComment": "You need to sign in to comment.",
     "deleteConfirm": "Delete this comment?",
-    "emptyComments": "No comments yet."
+    "emptyComments": "No comments yet.",
+    "notFound": "Track not found.",
+    "newest": "Newest",
+    "oldest": "Oldest",
+    "reply": "Reply",
+    "replyPlaceholder": "Write a reply...",
+    "viewAll": "View all"
   },
   "Common": {
     "loading": "Loading...",
@@ -549,6 +563,7 @@
     "topUpCredits": "Top up credits",
     "transactionHistory": "Transaction history",
     "listeningHistory": "Listening history",
+    "musicHistory": "Music history",
     "myPlaylists": "My Playlists",
     "recentActivity": "Account information",
     "clearAll": "Clear all",
@@ -797,5 +812,13 @@
     "vietqrDescription": "Direct bank transfer",
     "internationalCard": "International Cards",
     "selectPaymentMethod": "Select Payment Method"
+  },
+  "ProfileMusicHistoryPage": {
+    "title": "Music History",
+    "clearAll": "Clear all",
+    "clearConfirm": "Are you sure you want to clear all music history?",
+    "empty": "No music listening history yet.",
+    "resume": "Resume",
+    "delete": "Delete"
   }
 }

@@ -120,27 +120,47 @@ async function main() {
             userId: u.id,
             musicId: track.id,
             listenedAt: new Date(Date.now() - Math.floor(Math.random() * 10000000)),
+            progressSeconds: Math.random() > 0.4 ? Math.floor(Math.random() * (track.audioDuration || 180) * 0.9) : undefined,
           }
         });
       }
     }
 
     // Tự động seed một số comments cho vài bài hát nổi bật hơn
-    if (Math.random() > 0.6) {
-      const commentCount = Math.floor(Math.random() * 3) + 1;
+    if (Math.random() > 0.4) {
+      const commentCount = Math.floor(Math.random() * 4) + 1;
       for (let j = 0; j < commentCount; j++) {
         const randomUser = users[Math.floor(Math.random() * users.length)];
-        await prisma.musicComment.create({
+        const createdComment = await prisma.musicComment.create({
           data: {
             userId: randomUser.id,
             musicId: track.id,
-            content: `Bài này hay quá, thật tuyệt vời! Lần duyệt thứ ${j + 1}`
+            content: `Bài này nghe cuốn quá! Lần thứ ${j + 1} nghe lại.`,
+            likeCount: Math.floor(Math.random() * 20)
           }
         });
         await prisma.music.update({
           where: { id: track.id },
           data: { commentCount: { increment: 1 } }
         });
+
+        // Seed a reply if it's the first comment
+        if (j === 0 && Math.random() > 0.3) {
+          const replyUser = users[Math.floor(Math.random() * users.length)];
+          await prisma.musicComment.create({
+            data: {
+              userId: replyUser.id,
+              musicId: track.id,
+              parentId: createdComment.id,
+              content: `Chuẩn luôn bạn ơi @${randomUser.displayName || 'bạn'}! Nghe cực chill.`,
+              likeCount: Math.floor(Math.random() * 5)
+            }
+          });
+          await prisma.music.update({
+            where: { id: track.id },
+            data: { commentCount: { increment: 1 } }
+          });
+        }
       }
     }
   }

@@ -9,6 +9,7 @@ import { Image as ImageIcon, Loader2, Music2, Save, UploadCloud, X } from "lucid
 
 const schema = z.object({
   title: z.string().trim().min(1, "Vui lòng nhập tiêu đề"),
+  slug: z.string().trim().min(1, "Vui lòng nhập slug"),
   artist: z.string().trim().min(1, "Vui lòng nhập tác giả / nghệ sĩ"),
   description: z.string().max(5000, "Mô tả tối đa 5000 ký tự").optional(),
   tagsInput: z.string().optional(),
@@ -30,6 +31,7 @@ type MusicTrackOption = {
 export type MusicFormInitialData = {
   id?: string;
   title?: string;
+  slug?: string;
   artist?: string;
   description?: string | null;
   tags?: string[];
@@ -43,6 +45,7 @@ export type MusicFormInitialData = {
 
 export type MusicFormSubmitPayload = {
   title: string;
+  slug: string;
   artist: string;
   description: string;
   tags: string[];
@@ -76,6 +79,16 @@ const revokeObjectUrl = (url?: string | null) => {
   }
 };
 
+const toSlug = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[đĐ]/g, "d")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+
 export default function MusicForm({
   initialData,
   availableTracks = [],
@@ -92,6 +105,7 @@ export default function MusicForm({
   const [audioError, setAudioError] = useState<string | null>(null);
   const [playlistError, setPlaylistError] = useState<string | null>(null);
   const [playlistQuery, setPlaylistQuery] = useState("");
+  const [lastAutoSlug, setLastAutoSlug] = useState(() => toSlug(initialData?.title || ""));
   const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>(
     Array.isArray(initialData?.playlistTrackIds) ? initialData.playlistTrackIds : [],
   );
@@ -106,6 +120,7 @@ export default function MusicForm({
     resolver: zodResolver(schema),
     defaultValues: {
       title: initialData?.title || "",
+      slug: initialData?.slug || toSlug(initialData?.title || ""),
       artist: initialData?.artist || "",
       description: initialData?.description || "",
       tagsInput: Array.isArray(initialData?.tags) ? initialData.tags.join(", ") : "",
@@ -116,7 +131,19 @@ export default function MusicForm({
   });
 
   const contentType = useWatch({ control, name: "contentType" });
+  const title = useWatch({ control, name: "title" });
+  const slug = useWatch({ control, name: "slug" });
   const watchedDuration = useWatch({ control, name: "audioDuration" });
+
+  useEffect(() => {
+    const nextAutoSlug = toSlug(title || "");
+    if (!nextAutoSlug) return;
+
+    if (!slug || slug === lastAutoSlug) {
+      setValue("slug", nextAutoSlug, { shouldDirty: true, shouldValidate: true });
+      setLastAutoSlug(nextAutoSlug);
+    }
+  }, [lastAutoSlug, setValue, slug, title]);
 
   useEffect(() => {
     return () => {
@@ -241,6 +268,7 @@ export default function MusicForm({
 
     await onSubmit({
       title: values.title.trim(),
+      slug: toSlug(values.slug.trim()),
       artist: values.artist.trim(),
       description: (values.description || "").trim(),
       tags,
@@ -278,6 +306,16 @@ export default function MusicForm({
               className={`admin-input w-full bg-white ${errors.title ? "admin-input-error" : ""}`}
             />
             {errors.title ? <p className="text-xs text-red-500">{errors.title.message}</p> : null}
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-black uppercase tracking-wider text-slate-700">Slug</label>
+            <input
+              {...register("slug")}
+              className={`admin-input w-full bg-white ${errors.slug ? "admin-input-error" : ""}`}
+            />
+            <p className="text-xs font-medium text-slate-500">Tự động sinh từ tiêu đề, có thể chỉnh tay.</p>
+            {errors.slug ? <p className="text-xs text-red-500">{errors.slug.message}</p> : null}
           </div>
 
           <div className="space-y-1.5">

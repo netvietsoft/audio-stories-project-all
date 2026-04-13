@@ -36,6 +36,11 @@ export class CreateMusicDto {
   @MaxLength(300)
   title!: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(350)
+  slug?: string;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)

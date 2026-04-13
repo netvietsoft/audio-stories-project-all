@@ -12,6 +12,7 @@ import MusicForm, {
 
 type MusicItem = {
   id: string;
+  slug: string;
   title: string;
   artist: string;
   description: string | null;
@@ -86,6 +87,7 @@ export default function AdminMusicPage() {
       const rows = Array.isArray(response.data?.data) ? response.data.data : [];
       const normalizedRows: MusicItem[] = rows.map((row) => ({
         ...row,
+        slug: typeof row.slug === "string" && row.slug.trim() ? row.slug.trim() : row.id,
         contentType: (row.contentType === "playlist" ? "playlist" : "single") as MusicItem["contentType"],
         playlistTrackIds: Array.isArray(row.playlistTrackIds) ? row.playlistTrackIds : [],
         tags: Array.isArray(row.tags) ? row.tags : [],
@@ -167,6 +169,7 @@ export default function AdminMusicPage() {
 
     const formData = new FormData();
     formData.append("title", payload.title);
+    formData.append("slug", payload.slug);
     formData.append("artist", payload.artist);
     formData.append("description", payload.description);
     formData.append("tags", payload.tags.join(","));
@@ -256,6 +259,7 @@ export default function AdminMusicPage() {
   const initialFormData: MusicFormInitialData | undefined = editingMusic
     ? {
         id: editingMusic.id,
+        slug: editingMusic.slug,
         title: editingMusic.title,
         artist: editingMusic.artist,
         description: editingMusic.description,

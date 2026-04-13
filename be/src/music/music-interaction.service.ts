@@ -19,6 +19,7 @@ export class MusicInteractionService {
 
   private serializeMusic(row: {
     id: string;
+    slug: string;
     title: string;
     artist: string;
     description: string | null;

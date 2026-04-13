@@ -38,6 +38,11 @@ export class UpdateMusicDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(350)
+  slug?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(150)
   artist?: string;
 

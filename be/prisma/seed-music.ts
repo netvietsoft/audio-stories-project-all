@@ -1,211 +1,213 @@
-import { PrismaClient, MusicContentType } from '@prisma/client';
+import { MusicContentType, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+type SeedSingle = {
+  title: string;
+  artist: string;
+  description: string;
+  duration: number;
+  tags: string[];
+};
+
+type SeedPlaylist = {
+  title: string;
+  artist: string;
+  description: string;
+  tags: string[];
+  size: number;
+};
+
+const SINGLE_SEED: SeedSingle[] = [
+  { title: 'Chill Vibes Lofi', artist: 'Lofi Girl', description: 'Nhac lofi thu gian hoc tap', duration: 180, tags: ['lofi', 'chill', 'study'] },
+  { title: 'Rainy Night Piano', artist: 'John Doe', description: 'Tieng dan piano trong dem mua', duration: 250, tags: ['piano', 'instrumental'] },
+  { title: 'Cyberpunk City', artist: 'Synthwave Boy', description: 'Nhac dien tu soi dong', duration: 210, tags: ['synthwave', 'electronic'] },
+  { title: 'Morning Coffee', artist: 'Acoustic Band', description: 'Nhac acoustic buoi sang som', duration: 195, tags: ['acoustic', 'morning'] },
+  { title: 'Epic Mountain', artist: 'Orchestra Pro', description: 'Nhac thinh phong hung trang', duration: 320, tags: ['epic', 'orchestra'] },
+  { title: 'Sunset Drive', artist: 'Retro Master', description: 'Nhac lofi chill luc hoang hon', duration: 240, tags: ['lofi', 'retro'] },
+  { title: 'Deep Sleep', artist: 'Ambient Sounds', description: 'Nhac ambient de ngu dinh tam', duration: 300, tags: ['ambient', 'sleep'] },
+  { title: 'Workout Beats', artist: 'DJ Gym', description: 'Nhac tap gym soi dong', duration: 215, tags: ['gym', 'beat'] },
+  { title: 'Focus Energy', artist: 'Dr. Focus', description: 'Am thanh song nao tap trung', duration: 400, tags: ['focus', 'binaural'] },
+  { title: 'Summer Pop', artist: 'Idol Pop', description: 'Bai hat pop soi dong cho mua he', duration: 185, tags: ['pop', 'summer'] },
+  { title: 'Sad Song', artist: 'Broken Lips', description: 'Mot bai nhac buon cho ngay mua', duration: 220, tags: ['sad', 'pop', 'vocal'] },
+  { title: 'Healing Water', artist: 'Nature Spirit', description: 'Tieng suoi roc rach chua lanh', duration: 280, tags: ['nature', 'healing'] },
+  { title: 'Rock The Stage', artist: 'Metal Head', description: 'Rock day nang luong', duration: 210, tags: ['rock', 'metal'] },
+  { title: 'Jazz Club', artist: 'Saxophone Man', description: 'Dem nhac jazz nhe nhang', duration: 260, tags: ['jazz', 'saxophone'] },
+  { title: 'K-pop Dance', artist: 'K-Stars', description: 'Nhip dieu manh me cho dance', duration: 190, tags: ['kpop', 'dance'] },
+];
+
+const PLAYLIST_SEED: SeedPlaylist[] = [
+  { title: 'Top Lofi De Hoc Tap', artist: 'He Thong', description: 'Playlist lofi giup tap trung', tags: ['lofi', 'study', 'playlist'], size: 5 },
+  { title: 'Nhac Acoustic Nhe Nhang', artist: 'He Thong', description: 'Nhung bai hat moc mac cuoi tuan', tags: ['acoustic', 'guitar', 'playlist'], size: 4 },
+  { title: 'Top Hits Tuan Nay', artist: 'He Thong', description: 'Cac bai hat co luot nghe cao', tags: ['top', 'hits', 'playlist'], size: 6 },
+];
+
+const toSlug = (value: string): string =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+
+const getUniqueSlug = (raw: string, used: Set<string>) => {
+  const base = toSlug(raw) || `music-${Date.now()}`;
+  let index = 0;
+
+  while (true) {
+    const candidate = index === 0 ? base : `${base}-${index + 1}`;
+    if (!used.has(candidate)) {
+      used.add(candidate);
+      return candidate;
+    }
+    index += 1;
+  }
+};
+
 async function main() {
-  console.log('Bắt đầu seed dữ liệu test cho phần Music...');
+  console.log('Bat dau seed du lieu test cho phan Music...');
 
   const users = await prisma.user.findMany({ take: 5 });
   if (users.length === 0) {
-    console.warn('Không tìm thấy user nào, vui lòng chạy seed chính trước (yarn seed) hoặc tạo user!');
+    console.warn('Khong tim thay user, vui long chay seed chinh truoc.');
     return;
   }
+
+  const existingSlugs = await prisma.music.findMany({
+    select: { slug: true },
+  });
+  const usedSlugs = new Set(existingSlugs.map((item) => item.slug));
+
   const mainUser = users[0];
 
-  // --- TẠO CÁC BÀI NHẠC LẺ (TRACKS) ---
-  const singlesData = [
-    { title: 'Chill Vibes Lofi', artist: 'Lofi Girl', description: 'Nhạc lofi thư giãn học tập', duration: 180, tags: ['lofi', 'chill', 'study'] },
-    { title: 'Rainy Night Piano', artist: 'John Doe', description: 'Tiếng đàn piano trong đêm mưa', duration: 250, tags: ['piano', 'instrumental'] },
-    { title: 'Cyberpunk City', artist: 'Synthwave Boy', description: 'Nhạc điện tử sôi động', duration: 210, tags: ['synthwave', 'electronic'] },
-    { title: 'Morning Coffee', artist: 'Acoustic Band', description: 'Nhạc acoustic buổi sáng sớm', duration: 195, tags: ['acoustic', 'morning'] },
-    { title: 'Epic Mountain', artist: 'Orchestra Pro', description: 'Nhạc thính phòng hùng tráng', duration: 320, tags: ['epic', 'orchestra'] },
-    { title: 'Sunset Drive', artist: 'Retro Master', description: 'Nhạc lofi cực chill lúc hoàng hôn', duration: 240, tags: ['lofi', 'retro'] },
-    { title: 'Deep Sleep', artist: 'Ambient Sounds', description: 'Nhạc ambient dễ ngủ định tâm', duration: 300, tags: ['ambient', 'sleep'] },
-    { title: 'Workout Beats', artist: 'DJ Gym', description: 'Nhạc tập gym cực kỳ sung mãn', duration: 215, tags: ['gym', 'beat'] },
-    { title: 'Focus Energy', artist: 'Dr. Focus', description: 'Âm thanh sóng não tập trung', duration: 400, tags: ['focus', 'binaural'] },
-    { title: 'Summer Pop', artist: 'Idol Pop', description: 'Bài hát pop cực kỳ sôi động cho mùa hè', duration: 185, tags: ['pop', 'summer'] },
-    { title: 'Sad Song', artist: 'Broken Lips', description: 'Một bài nhạc buồn cho ngày mưa', duration: 220, tags: ['sad', 'pop', 'vocal'] },
-    { title: 'Healing Water', artist: 'Nature Spirit', description: 'Tiếng suối róc rách chữa lành', duration: 280, tags: ['nature', 'healing'] },
-    { title: 'Rock The Stage', artist: 'Metal Head', description: 'Rock cháy máy cùng ban nhạc metal', duration: 210, tags: ['rock', 'metal'] },
-    { title: 'Jazz Club', artist: 'Saxophone Man', description: 'Đêm nhạc acoustic tại quán jazz nhỏ', duration: 260, tags: ['jazz', 'saxophone'] },
-    { title: 'K-pop Dance', artist: 'K-Stars', description: 'Nhịp điệu dồn dập khiến bạn muốn nhảy múa', duration: 190, tags: ['kpop', 'dance'] }
-  ];
+  const singles = [] as Awaited<ReturnType<typeof prisma.music.create>>[];
 
-  const createdSingles: any[] = [];
-  for (let i = 0; i < singlesData.length; i++) {
-    const data = singlesData[i];
-    const track = await prisma.music.create({
+  for (let i = 0; i < SINGLE_SEED.length; i += 1) {
+    const item = SINGLE_SEED[i];
+
+    const created = await prisma.music.create({
       data: {
-        title: data.title,
-        artist: data.artist,
-        description: data.description,
-        tags: data.tags,
-        // Dùng ảnh ngẫu nhiên nhưng cố định kích thước
-        thumbnailUrl: `https://picsum.photos/seed/music_single_${i}/600/600`, 
-        // 5 bài âm thanh public sample để test (lặp lại file)
+        title: item.title,
+        slug: getUniqueSlug(item.title, usedSlugs),
+        artist: item.artist,
+        description: item.description,
+        tags: item.tags,
+        thumbnailUrl: `https://picsum.photos/seed/music_single_${i}/600/600`,
         audioUrl: `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${(i % 5) + 1}.mp3`,
-        audioDuration: data.duration,
+        audioDuration: item.duration,
         contentType: MusicContentType.single,
+        playlistTrackIds: [],
         playCount: Math.floor(Math.random() * 5000) + 100,
         likeCount: Math.floor(Math.random() * 500) + 10,
         commentCount: 0,
         isPublic: true,
-      }
+      },
     });
-    createdSingles.push(track);
+
+    singles.push(created);
   }
-  console.log(`Đã tạo ${createdSingles.length} bài hát lẻ (single).`);
 
-  // --- TẠO CÁC SYSTEM PLAYLISTS ---
-  // (Đúng như mô tả: playlist hệ thống sẽ là Music track nhưng có contentType='playlist' và mảng playlistTrackIds)
-  const systemPlaylistsData = [
-    { title: 'Top Lofi Để Học Tập', artist: 'Hệ Thống', description: 'Playlist lofi cực chill giúp tập trung tối đa', tags: ['lofi', 'study', 'playlist'] },
-    { title: 'Nhạc Acoustic Nhẹ Nhàng', artist: 'Hệ Thống', description: 'Những bài hát mộc mạc thư giãn cuối tuần', tags: ['acoustic', 'guitar', 'playlist'] },
-    { title: 'Top Hits Tuần Này', artist: 'Hệ Thống', description: 'Các bài hát có lượt nghe cao nhất', tags: ['top', 'hits', 'pop'] },
-  ];
+  console.log(`Da tao ${singles.length} bai hat single.`);
 
-  const createdSysPlaylists: any[] = [];
-  for (let i = 0; i < systemPlaylistsData.length; i++) {
-    // Chọn random 4-6 bài từ singles
-    const shuffled = [...createdSingles].sort(() => 0.5 - Math.random());
-    const selectedTracks = shuffled.slice(0, Math.floor(Math.random() * 3) + 4);
-    const trackIds = selectedTracks.map(t => t.id);
+  const playlists = [] as Awaited<ReturnType<typeof prisma.music.create>>[];
 
-    const playlist = await prisma.music.create({
+  for (let i = 0; i < PLAYLIST_SEED.length; i += 1) {
+    const item = PLAYLIST_SEED[i];
+    const shuffled = [...singles].sort(() => 0.5 - Math.random());
+    const selectedTracks = shuffled.slice(0, item.size);
+    const trackIds = selectedTracks.map((track) => track.id);
+
+    const created = await prisma.music.create({
       data: {
-        title: systemPlaylistsData[i].title,
-        artist: systemPlaylistsData[i].artist,
-        description: systemPlaylistsData[i].description,
-        tags: systemPlaylistsData[i].tags,
-        // Ảnh vuông của playlist hệ thống
-        thumbnailUrl: `https://picsum.photos/seed/music_sys_playlist_${i}/600/600`,
-        // AudioUrl (có thể lấy audio của bài đầu tiên cho việc play thử hoặc rỗng tùy theo logic, ở đây cứ gắn bài 1)
-        audioUrl: selectedTracks[0].audioUrl,
-        audioDuration: selectedTracks.reduce((sum, current) => sum + (current.audioDuration || 0), 0),
+        title: item.title,
+        slug: getUniqueSlug(item.title, usedSlugs),
+        artist: item.artist,
+        description: item.description,
+        tags: item.tags,
+        thumbnailUrl: `https://picsum.photos/seed/music_playlist_${i}/600/600`,
+        audioUrl: selectedTracks[0]?.audioUrl || '',
+        audioDuration: selectedTracks.reduce((sum, track) => sum + (track.audioDuration || 0), 0),
         contentType: MusicContentType.playlist,
-        playlistTrackIds: trackIds, // Lưu ds các track id thuộc playlist này
+        playlistTrackIds: trackIds,
         playCount: Math.floor(Math.random() * 10000) + 500,
         likeCount: Math.floor(Math.random() * 1000) + 50,
         commentCount: 0,
         isPublic: true,
-      }
+      },
     });
-    createdSysPlaylists.push(playlist);
-  }
-  console.log(`Đã tạo ${createdSysPlaylists.length} playlist trên hệ thống.`);
 
-  // --- TẠO CÁC TEST DATA TƯƠNG TÁC (COMMENTS, LIKES, HISTORY) ---
-  for (const track of createdSingles) {
-    // Random likes from users
-    for (const u of users) {
+    playlists.push(created);
+  }
+
+  console.log(`Da tao ${playlists.length} playlist he thong.`);
+
+  for (const track of singles) {
+    for (const user of users) {
       if (Math.random() > 0.5) {
         await prisma.musicLike.create({
           data: {
-            userId: u.id,
+            userId: user.id,
             musicId: track.id,
-          }
+          },
         });
-        
-        // Cập nhật like count (để khớp)
+
         await prisma.music.update({
           where: { id: track.id },
-          data: { likeCount: { increment: 1 } }
+          data: { likeCount: { increment: 1 } },
         });
       }
 
-      // Random history
       if (Math.random() > 0.3) {
         await prisma.musicHistory.create({
           data: {
-            userId: u.id,
+            userId: user.id,
             musicId: track.id,
             listenedAt: new Date(Date.now() - Math.floor(Math.random() * 10000000)),
-            progressSeconds: Math.random() > 0.4 ? Math.floor(Math.random() * (track.audioDuration || 180) * 0.9) : undefined,
-          }
+            progressSeconds: Math.random() > 0.4
+              ? Math.floor(Math.random() * (track.audioDuration || 180) * 0.9)
+              : undefined,
+          },
         });
-      }
-    }
-
-    // Tự động seed một số comments cho vài bài hát nổi bật hơn
-    if (Math.random() > 0.4) {
-      const commentCount = Math.floor(Math.random() * 4) + 1;
-      for (let j = 0; j < commentCount; j++) {
-        const randomUser = users[Math.floor(Math.random() * users.length)];
-        const createdComment = await prisma.musicComment.create({
-          data: {
-            userId: randomUser.id,
-            musicId: track.id,
-            content: `Bài này nghe cuốn quá! Lần thứ ${j + 1} nghe lại.`,
-            likeCount: Math.floor(Math.random() * 20)
-          }
-        });
-        await prisma.music.update({
-          where: { id: track.id },
-          data: { commentCount: { increment: 1 } }
-        });
-
-        // Seed a reply if it's the first comment
-        if (j === 0 && Math.random() > 0.3) {
-          const replyUser = users[Math.floor(Math.random() * users.length)];
-          await prisma.musicComment.create({
-            data: {
-              userId: replyUser.id,
-              musicId: track.id,
-              parentId: createdComment.id,
-              content: `Chuẩn luôn bạn ơi @${randomUser.displayName || 'bạn'}! Nghe cực chill.`,
-              likeCount: Math.floor(Math.random() * 5)
-            }
-          });
-          await prisma.music.update({
-            where: { id: track.id },
-            data: { commentCount: { increment: 1 } }
-          });
-        }
       }
     }
   }
-  console.log('Đã tạo tương tác (Likes, History, Comments).');
 
-  // --- TẠO PLAYLIST CÁ NHÂN CỦA USER ---
-  // Để user test chức năng "thêm vào playlist cá nhân lưu trữ" (như mô tả pop-up tạo/chọn của người dùng)
-  
   const userPlaylist = await prisma.musicPlaylist.create({
     data: {
       userId: mainUser.id,
-      title: 'Nhạc Yêu Thích Của Tôi',
+      title: 'Nhac Yeu Thich Cua Toi',
       isPublic: false,
       coverImage: 'https://picsum.photos/seed/user_personal_playlist/500/500',
-    }
+    },
   });
 
-  const nextUpPlaylist = await prisma.musicPlaylist.create({
+  await prisma.musicPlaylist.create({
     data: {
       userId: mainUser.id,
-      title: 'Danh sách phát tiếp theo',
+      title: 'Danh sach phat tiep theo',
       isPublic: false,
-    }
+    },
   });
 
-  // Gắn vài bài ngẫu nhiên vào playlist cá nhân này
-  const favTrackIds = createdSingles.slice(0, 3).map(t => t.id);
-  for (let i = 0; i < favTrackIds.length; i++) {
+  const favoriteTrackIds = singles.slice(0, 3).map((track) => track.id);
+  for (let i = 0; i < favoriteTrackIds.length; i += 1) {
     await prisma.musicPlaylistTrack.create({
       data: {
         playlistId: userPlaylist.id,
-        musicId: favTrackIds[i],
-        orderIndex: i
-      }
+        musicId: favoriteTrackIds[i],
+        orderIndex: i,
+      },
     });
   }
-  
-  console.log(`Đã tạo các playlist cá nhân cho user [${mainUser.displayName} / ${mainUser.email}]`);
-  
-  console.log('✅ SEED MUSIC THÀNH CÔNG!');
+
+  console.log('Seed music thanh cong.');
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
+  .catch((error) => {
+    console.error(error);
     process.exit(1);
   })
   .finally(async () => {

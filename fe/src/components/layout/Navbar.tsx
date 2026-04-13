@@ -339,7 +339,7 @@ export default function Navbar() {
     setShowSearchDropdown(false);
 
     if (isMusicRoute) {
-      router.push(`/${currentLang}/music/${item.id}`);
+      router.push(`/${currentLang}/music/${item.slug}`);
       return;
     }
 

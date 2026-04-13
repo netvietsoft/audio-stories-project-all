@@ -956,7 +956,10 @@ async function main() {
       audioDuration: 317,
       isPublic: false,
     },
-  ];
+  ].map((item, index) => ({
+    ...item,
+    slug: `${slugify(item.title)}-${index + 1}`,
+  }));
 
   await prisma.music.deleteMany({});
   await prisma.music.createMany({ data: musicSeeds });

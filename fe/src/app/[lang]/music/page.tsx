@@ -319,7 +319,7 @@ export default function MusicPage() {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <Link
-                  href={`/music/${track.id}`}
+                  href={`/music/${track.slug}`}
                   className="block truncate text-base font-black text-slate-900 hover:text-orange-600 dark:text-zinc-100"
                 >
                   {track.title}
@@ -365,7 +365,7 @@ export default function MusicPage() {
                 likeCount={track.likeCount}
                 compact
               />
-              <Link href={`/music/${track.id}`} className="inline-flex items-center gap-1 hover:text-orange-600">
+              <Link href={`/music/${track.slug}`} className="inline-flex items-center gap-1 hover:text-orange-600">
                 <MessageCircle className="h-3 w-3" /> {formatCompactCount(track.commentCount)}
               </Link>
             </div>
@@ -375,7 +375,7 @@ export default function MusicPage() {
               <ShareActionButton
                 title={track.title}
                 text={`${track.title} - ${track.artist}`}
-                url={`${typeof window !== "undefined" ? window.location.origin : ""}/music/${track.id}`}
+                url={`${typeof window !== "undefined" ? window.location.origin : ""}/music/${track.slug}`}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-orange-300 hover:text-orange-600 dark:border-[#3a3a3a] dark:text-zinc-400"
                 iconClassName="h-3.5 w-3.5"
               />
@@ -441,7 +441,7 @@ export default function MusicPage() {
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <Link
-                  href={`/music/${track.id}`}
+                  href={`/music/${track.slug}`}
                   className="block truncate text-base font-black text-slate-900 hover:text-orange-600 dark:text-zinc-100"
                 >
                   {track.title}
@@ -479,7 +479,7 @@ export default function MusicPage() {
               <ShareActionButton
                 title={track.title}
                 text={`${track.title} - ${track.artist}`}
-                url={`${typeof window !== "undefined" ? window.location.origin : ""}/music/${track.id}`}
+                url={`${typeof window !== "undefined" ? window.location.origin : ""}/music/${track.slug}`}
                 className="inline-flex items-center gap-1 text-slate-500 hover:text-orange-600 dark:text-zinc-400"
                 iconClassName="h-3 w-3"
               />

@@ -18,6 +18,7 @@ type MusicHistoryItem = {
   listenedAt: string;
   music: {
     id: string;
+    slug: string;
     title: string;
     artist: string;
     thumbnailUrl: string | null;
@@ -157,7 +158,7 @@ export default function ProfileMusicHistoryPage() {
                 className="rounded-2xl border border-gray-200 bg-white p-4 transition hover:bg-gray-50 dark:border-zinc-800 dark:bg-[#232325] dark:hover:bg-[#2a2a2a]"
               >
                 <div className="flex gap-4">
-                  <Link href={`/music/${item.music.id}`} className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-100 dark:bg-[#2b2b2d]">
+                  <Link href={`/music/${item.music.slug}`} className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-gray-100 dark:bg-[#2b2b2d]">
                     <Image
                       src={item.music.thumbnailUrl || "/thumbnaildefault.jpg"}
                       alt={item.music.title}
@@ -169,7 +170,7 @@ export default function ProfileMusicHistoryPage() {
                   </Link>
 
                   <div className="min-w-0 flex-1">
-                    <Link href={`/music/${item.music.id}`} className="block truncate text-sm font-bold text-gray-900 hover:text-pink-600 dark:text-gray-100">
+                    <Link href={`/music/${item.music.slug}`} className="block truncate text-sm font-bold text-gray-900 hover:text-pink-600 dark:text-gray-100">
                       {item.music.title}
                     </Link>
                     <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">{item.music.artist}</p>

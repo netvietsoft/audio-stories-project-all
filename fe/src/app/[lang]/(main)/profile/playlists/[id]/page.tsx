@@ -13,6 +13,7 @@ import { useUserStore } from "@/stores/user-store";
 
 type MusicTrack = {
   id: string;
+  slug: string;
   title: string;
   artist: string;
   description: string | null;
@@ -414,7 +415,7 @@ export default function PlaylistDetailPage() {
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <Link href={`/music/${item.music.id}`} className="block truncate text-sm font-black text-gray-900 hover:text-pink-600 dark:text-gray-100">
+                        <Link href={`/music/${item.music.slug}`} className="block truncate text-sm font-black text-gray-900 hover:text-pink-600 dark:text-gray-100">
                           {item.music.title}
                         </Link>
                         <p className="truncate text-xs text-gray-500 dark:text-gray-400">{item.music.artist}</p>

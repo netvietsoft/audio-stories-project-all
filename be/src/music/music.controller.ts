@@ -83,9 +83,9 @@ export class MusicController {
     return this.musicService.remove(id);
   }
 
-  @Get(':id')
-  findOnePublic(@Param('id') id: string) {
-    return this.musicService.findOnePublic(id);
+  @Get(':slug')
+  findOnePublic(@Param('slug') slug: string) {
+    return this.musicService.findOnePublic(slug);
   }
 
   @Post(':id/play')

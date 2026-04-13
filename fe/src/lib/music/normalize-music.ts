@@ -49,6 +49,7 @@ const normalizePlaylistTracks = (value: unknown): MusicPlaylistTrackSummary[] =>
 
       return {
         id: row.id,
+        slug: typeof row.slug === "string" && row.slug.trim() ? row.slug.trim() : row.id,
         title: (row.title || "").trim() || "Untitled",
         artist: (row.artist || "").trim() || "Unknown artist",
         thumbnailUrl: row.thumbnailUrl || null,
@@ -68,6 +69,7 @@ export const normalizeMusicItem = (item: MusicApiItem, fallbackIndex?: number): 
 
   return {
     ...item,
+    slug: typeof item.slug === "string" && item.slug.trim() ? item.slug.trim() : item.id,
     title: item.title?.trim() || (typeof fallbackIndex === "number" ? `Track ${fallbackIndex + 1}` : "Track"),
     artist: item.artist?.trim() || "Unknown artist",
     description: item.description || null,

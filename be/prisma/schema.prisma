@@ -295,6 +295,7 @@ model Advertisement {
 model Music {
   id            String   @id @default(uuid()) @db.VarChar(36)
   title         String   @db.VarChar(300)
+  slug          String   @unique @db.VarChar(350)
   artist        String   @db.VarChar(150)
   description   String?  @db.Text
   tags          Json?

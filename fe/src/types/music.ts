@@ -2,6 +2,7 @@ export type MusicContentType = "single" | "playlist";
 
 export type MusicPlaylistTrackSummary = {
   id: string;
+  slug: string;
   title: string;
   artist: string;
   thumbnailUrl: string | null;
@@ -14,6 +15,7 @@ export type MusicPlaylistTrackSummary = {
 
 export type MusicTrack = {
   id: string;
+  slug: string;
   title: string;
   artist: string;
   description: string | null;

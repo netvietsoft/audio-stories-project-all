@@ -64,8 +64,8 @@ type RelatedResponse = {
 };
 
 export default function MusicDetailPage() {
-  const params = useParams<{ lang?: string; id?: string }>();
-  const musicId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
+  const params = useParams<{ lang?: string; slug?: string }>();
+  const musicSlug = Array.isArray(params?.slug) ? params?.slug[0] : params?.slug;
   const t = useTranslations("MusicDetailPage");
 
   const user = useUserStore((state) => state.user);
@@ -117,7 +117,7 @@ export default function MusicDetailPage() {
   // ─── Fetch detail ─────────────────────────────
 
   useEffect(() => {
-    if (!musicId) return;
+    if (!musicSlug) return;
 
     let active = true;
 
@@ -126,8 +126,8 @@ export default function MusicDetailPage() {
 
       try {
         const [detailRes, relatedRes] = await Promise.all([
-          apiClient.get<MusicDetailResponse>(`/music/${musicId}`),
-          apiClient.get<RelatedResponse>(`/music/${musicId}/related`).catch(() => ({ data: { data: [] as MusicApiItem[] } })),
+          apiClient.get<MusicDetailResponse>(`/music/${musicSlug}`),
+          apiClient.get<RelatedResponse>(`/music/${musicSlug}/related`).catch(() => ({ data: { data: [] as MusicApiItem[] } })),
         ]);
 
         if (!active) return;
@@ -153,15 +153,15 @@ export default function MusicDetailPage() {
     return () => {
       active = false;
     };
-  }, [musicId]);
+  }, [musicSlug]);
 
   // ─── Fetch like status ────────────────────────
 
   useEffect(() => {
-    if (!musicId || !accessToken) return;
+    if (!track?.id || !accessToken) return;
     let active = true;
 
-    void fetchMusicLikeStatus(musicId)
+    void fetchMusicLikeStatus(track.id)
       .then((liked) => {
         if (active) setIsLiked(liked);
       })
@@ -170,18 +170,18 @@ export default function MusicDetailPage() {
     return () => {
       active = false;
     };
-  }, [accessToken, musicId]);
+  }, [accessToken, track?.id]);
 
   // ─── Comments ─────────────────────────────────
 
   const loadComments = useCallback(
     async (targetPage: number, reset = false) => {
-      if (!musicId) return;
+      if (!track?.id) return;
 
       setIsLoadingComments(true);
 
       try {
-        const result = await listMusicComments(musicId, {
+        const result = await listMusicComments(track.id, {
           page: targetPage,
           limit: 10,
           sort: commentSort,
@@ -206,7 +206,7 @@ export default function MusicDetailPage() {
         setIsLoadingComments(false);
       }
     },
-    [commentSort, musicId],
+    [commentSort, track?.id],
   );
 
   useEffect(() => {
@@ -214,12 +214,12 @@ export default function MusicDetailPage() {
   }, [loadComments]);
 
   const handleSubmitComment = async () => {
-    if (!musicId || !newComment.trim() || isSubmittingComment) return;
+    if (!track?.id || !newComment.trim() || isSubmittingComment) return;
 
     setIsSubmittingComment(true);
 
     try {
-      const created = await createMusicComment(musicId, newComment.trim());
+      const created = await createMusicComment(track.id, newComment.trim());
       if (created) {
         setComments((prev) => (commentSort === "newest" ? [created, ...prev] : [...prev, created]));
         setCommentsTotal((prev) => prev + 1);
@@ -385,6 +385,20 @@ export default function MusicDetailPage() {
     }
 
     playTrack(toSingleQueueTrack(item), [toSingleQueueTrack(item)]);
+  };
+
+  const handlePlayPlaylistChild = (parent: MusicTrack, index: number) => {
+    const queue = toPlaylistQueue(parent);
+    const target = queue[index];
+    if (!target) return;
+
+    const isCurrent = currentTrack?.id === target.id;
+    if (isCurrent) {
+      togglePlay(!isPlaying);
+      return;
+    }
+
+    playTrack(target, queue);
   };
 
   // ─── Render ───────────────────────────────────
@@ -691,6 +705,57 @@ export default function MusicDetailPage() {
         </div>
       </section>
 
+      {track.contentType === "playlist" ? (
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-[#2c2c2c] dark:bg-[#171717]">
+          <div className="border-b border-slate-100 px-6 py-4 dark:border-[#2b2b2b]">
+            <h2 className="text-sm font-black uppercase tracking-[0.15em] text-slate-500 dark:text-zinc-400">
+              Danh sách bài hát
+            </h2>
+          </div>
+          <div className="divide-y divide-slate-100 dark:divide-[#2b2b2b]">
+            {track.playlistTracks.map((child, index) => {
+              const queue = toPlaylistQueue(track);
+              const target = queue[index];
+              const isCurrent = target ? currentTrack?.id === target.id : false;
+              const isChildPlaying = isCurrent && isPlaying;
+
+              return (
+                <div key={`${track.id}-${child.id}-${index}`} className="grid grid-cols-[48px_56px_minmax(0,1fr)_minmax(0,170px)_74px_52px] items-center gap-2 px-4 py-3 sm:px-6">
+                  <span className="text-center text-xs font-bold text-slate-400 dark:text-zinc-500">{index + 1}</span>
+                  <div className="h-10 w-10 overflow-hidden rounded-md bg-slate-100 dark:bg-[#252525]">
+                    <Image
+                      src={child.thumbnailUrl || track.thumbnailUrl || "/thumbnaildefault.jpg"}
+                      alt={child.title}
+                      width={80}
+                      height={80}
+                      unoptimized
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+
+                  <div className="min-w-0">
+                    <Link href={`/music/${child.slug}`} className="block truncate text-sm font-bold text-slate-800 hover:text-orange-600 dark:text-zinc-100">
+                      {child.title}
+                    </Link>
+                    <p className="truncate text-xs text-slate-500 dark:text-zinc-400">{child.artist}</p>
+                  </div>
+
+                  <p className="hidden truncate text-xs text-slate-500 sm:block dark:text-zinc-400">{child.artist}</p>
+                  <p className="text-right text-xs font-semibold text-slate-500 dark:text-zinc-400">{formatMusicDuration(child.audioDuration)}</p>
+
+                  <button
+                    onClick={() => handlePlayPlaylistChild(track, index)}
+                    className="inline-flex h-9 w-9 items-center justify-center justify-self-end rounded-full bg-orange-500 text-white transition hover:bg-orange-600"
+                  >
+                    {isChildPlaying ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
       {/* Comments + Related */}
       <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Comments */}
@@ -825,7 +890,7 @@ export default function MusicDetailPage() {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <Link href={`/music/${item.id}`} className="block truncate text-sm font-bold text-slate-800 hover:text-orange-600 dark:text-zinc-100">
+                          <Link href={`/music/${item.slug}`} className="block truncate text-sm font-bold text-slate-800 hover:text-orange-600 dark:text-zinc-100">
                             {item.title}
                           </Link>
                           <p className="truncate text-xs text-slate-500 dark:text-zinc-400">{item.artist}</p>

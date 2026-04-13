@@ -266,6 +266,18 @@ if [ "$RESET_DB" = "yes" ]; then
     else
         echo "  ✅ Database seeded"
     fi
+
+    echo "🎵 Seeding music data..."
+    if [ -f "prisma/seed-music.ts" ]; then
+        npx ts-node prisma/seed-music.ts
+        if [ \$? -ne 0 ]; then
+            echo "  ⚠️  Warning: Music seed failed or partially completed"
+        else
+            echo "  ✅ Music data seeded"
+        fi
+    else
+        echo "  ⚠️  Warning: prisma/seed-music.ts not found, skipping music seed"
+    fi
 else
     echo "📦 Running migrations..."
     npx prisma migrate deploy

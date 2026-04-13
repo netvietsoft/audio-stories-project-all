@@ -523,33 +523,41 @@ export default function MusicPage() {
                 <span className="w-6 shrink-0 text-center text-[11px] font-bold text-slate-400 dark:text-zinc-500">{index + 1}</span>
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-800 dark:text-zinc-100">{child.title}</p>
+                  <Link
+                    href={`/music/${child.slug}`}
+                    className="block truncate text-sm font-semibold text-slate-800 hover:text-pink-600 dark:text-zinc-100"
+                  >
+                    {child.title}
+                  </Link>
                   <p className="truncate text-[11px] text-slate-500 dark:text-zinc-400">{child.artist}</p>
                 </div>
 
-                <span className="hidden shrink-0 text-[11px] text-slate-500 sm:block dark:text-zinc-400">
-                  {formatMusicDuration(child.audioDuration)}
-                </span>
+                <div className="ml-auto flex shrink-0 items-center gap-2">
+                  <span className="hidden w-12 shrink-0 text-right text-[11px] text-slate-500 sm:block dark:text-zinc-400">
+                    {formatMusicDuration(child.audioDuration)}
+                  </span>
 
-                {/* Hover actions */}
-                <div className="flex items-center gap-1 opacity-0 transition group-hover/child:opacity-100">
-                  <MusicLikeButton
-                    musicId={child.id}
-                    initialLiked={false}
-                    likeCount={child.likeCount}
-                    compact
-                  />
-                  <ShareActionButton
-                    title={child.title}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:text-orange-500"
-                    iconClassName="h-3 w-3"
-                  />
-                  <AddToPlaylistButton
-                    musicId={child.id}
-                    musicTitle={child.title}
-                    compact
-                    className="!h-7 !w-7"
-                  />
+                  {/* Hover actions */}
+                  <div className="flex w-[7.25rem] items-center justify-end gap-1 opacity-0 transition group-hover/child:opacity-100">
+                    <MusicLikeButton
+                      musicId={child.id}
+                      initialLiked={false}
+                      likeCount={child.likeCount}
+                      compact
+                      className="w-[3.25rem] justify-center"
+                    />
+                    <ShareActionButton
+                      title={child.title}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:text-orange-500"
+                      iconClassName="h-3 w-3"
+                    />
+                    <AddToPlaylistButton
+                      musicId={child.id}
+                      musicTitle={child.title}
+                      compact
+                      className="!h-7 !w-7"
+                    />
+                  </div>
                 </div>
               </div>
             );
@@ -677,7 +685,12 @@ export default function MusicPage() {
                         </button>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-bold text-slate-800 dark:text-zinc-100">{track.title}</p>
+                        <Link
+                          href={`/music/${track.slug}`}
+                          className="block truncate text-xs font-bold text-slate-800 hover:text-pink-600 dark:text-zinc-100"
+                        >
+                          {track.title}
+                        </Link>
                         <p className="truncate text-[10px] text-slate-500 dark:text-zinc-400">{track.artist}</p>
                       </div>
                       <span className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500">{formatCompactCount(track.playCount)}</span>

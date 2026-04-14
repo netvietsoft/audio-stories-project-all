@@ -505,7 +505,8 @@ export default function MusicPage() {
 
         {/* Playlist child tracks */}
         <div className={`border-t border-slate-100 dark:border-[#2a2a2a] ${isExpanded && childTracks.length > PLAYLIST_MAX_VISIBLE ? "max-h-[420px] overflow-y-auto" : ""}`}>
-          {visibleTracks.map((child, index) => {
+          <div className="grid gap-0 md:grid-cols-2">
+            {visibleTracks.map((child, index) => {
             const childActive = currentTrack?.id?.includes(child.id);
             const childPlaying = childActive && isPlaying;
 
@@ -578,6 +579,7 @@ export default function MusicPage() {
               </div>
             );
           })}
+          </div>
         </div>
 
         {/* Expand/collapse */}

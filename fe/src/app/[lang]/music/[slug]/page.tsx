@@ -803,13 +803,13 @@ export default function MusicDetailPage() {
       </section>
 
       {track.contentType === "playlist" ? (
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-[#2c2c2c] dark:bg-[#171717]">
+        <section className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-[#2c2c2c] dark:bg-[#171717]">
           <div className="border-b border-slate-100 px-6 py-4 dark:border-[#2b2b2b]">
-            <h2 className="text-sm font-black uppercase tracking-[0.15em] text-slate-500 dark:text-zinc-400">
+            <h2 className="text-sm font-black text-slate-500 dark:text-zinc-400">
               Danh sách bài hát
             </h2>
           </div>
-          <div className="divide-y divide-slate-100 dark:divide-[#2b2b2b]">
+          <div className="grid gap-3 p-4 sm:p-6 md:grid-cols-2">
             {track.playlistTracks.map((child, index) => {
               const queue = toPlaylistQueue(track);
               const target = queue[index];
@@ -817,34 +817,49 @@ export default function MusicDetailPage() {
               const isChildPlaying = isCurrent && isPlaying;
 
               return (
-                <div key={`${track.id}-${child.id}-${index}`} className="grid grid-cols-[48px_auto_minmax(0,1fr)_auto_auto] items-center gap-2 px-4 py-3 sm:px-6 sm:gap-3">
-                  <span className="text-center text-xs font-bold text-slate-400 dark:text-zinc-500">{index + 1}</span>
-                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-slate-100 dark:bg-[#252525]">
-                    <Image
-                      src={child.thumbnailUrl || track.thumbnailUrl || "/thumbnaildefault.jpg"}
-                      alt={child.title}
-                      width={80}
-                      height={80}
-                      unoptimized
-                      className="h-full w-full object-cover"
-                    />
+                <div key={`${track.id}-${child.id}-${index}`} className="rounded-lg border border-slate-100 p-3 transition hover:border-pink-300 dark:border-[#2f2f2f] dark:hover:border-pink-800/50">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <span className="mt-1 shrink-0 text-xs font-bold text-slate-400 dark:text-zinc-500">{index + 1}</span>
+                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-slate-100 dark:bg-[#252525]">
+                      <Image
+                        src={child.thumbnailUrl || track.thumbnailUrl || "/thumbnaildefault.jpg"}
+                        alt={child.title}
+                        width={96}
+                        height={96}
+                        unoptimized
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/music/${child.slug}`} className="block truncate text-sm font-bold text-slate-800 hover:text-pink-600 dark:text-zinc-100">
+                        {child.title}
+                      </Link>
+                      <p className="truncate text-xs text-slate-500 dark:text-zinc-400">{child.artist}</p>
+                      
+                      <div className="mt-2 flex items-center gap-4 text-[11px] text-slate-500 dark:text-zinc-400">
+                        <span className="inline-flex items-center gap-1">
+                          <Clock3 className="h-3 w-3" /> {formatMusicDuration(child.audioDuration)}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <Headphones className="h-3 w-3" /> {formatCompactCount(child.playCount)}
+                        </span>
+                        <button
+                          className="inline-flex items-center gap-1 transition hover:text-pink-600"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Heart className="h-3 w-3" /> {formatCompactCount(child.likeCount)}
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handlePlayPlaylistChild(track, index)}
+                      className="mt-1 shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-pink-500 text-white transition hover:bg-pink-600"
+                    >
+                      {isChildPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
+                    </button>
                   </div>
-
-                  <div className="min-w-0">
-                    <Link href={`/music/${child.slug}`} className="block truncate text-sm font-bold text-slate-800 hover:text-pink-600 dark:text-zinc-100">
-                      {child.title}
-                    </Link>
-                    <p className="truncate text-xs text-slate-500 dark:text-zinc-400">{child.artist}</p>
-                  </div>
-
-                  <p className="text-right text-xs font-semibold text-slate-500 dark:text-zinc-400">{formatMusicDuration(child.audioDuration)}</p>
-
-                  <button
-                    onClick={() => handlePlayPlaylistChild(track, index)}
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white transition hover:bg-pink-600"
-                  >
-                    {isChildPlaying ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
-                  </button>
                 </div>
               );
             })}
@@ -857,7 +872,7 @@ export default function MusicDetailPage() {
         {/* Comments */}
         <article className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 dark:border-[#2c2c2c] dark:bg-[#171717]">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black uppercase tracking-[0.15em] text-slate-500 dark:text-zinc-400">
+            <h2 className="text-sm font-black text-slate-500 dark:text-zinc-400">
               {t("commentsTitle")} <span className="text-pink-500">({commentsTotal})</span>
             </h2>
 
@@ -950,7 +965,7 @@ export default function MusicDetailPage() {
         <aside className="space-y-4">
           <article className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#2c2c2c] dark:bg-[#171717]">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-500 dark:text-zinc-400">
+              <h3 className="text-sm font-black text-slate-500 dark:text-zinc-400">
                 {t("relatedTitle")}
               </h3>
               <Link href="/music" className="text-[11px] font-bold text-pink-500 hover:underline">

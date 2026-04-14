@@ -8,6 +8,7 @@ import {
   ChevronUp,
   Clock3,
   Flame,
+  Heart,
   Headphones,
   ListMusic,
   Loader2,
@@ -289,9 +290,8 @@ export default function MusicPage() {
             : "border-slate-200 dark:border-[#2d2d2d]"
         }`}
       >
-        <div className="flex gap-3 sm:gap-4">
-          {/* Thumbnail + Play button */}
-          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-28 sm:w-28 dark:bg-[#242424]">
+        <div className="flex min-h-[8rem] items-stretch gap-4 sm:min-h-[9rem] sm:gap-5 lg:min-h-[10rem]">
+          <div className="relative w-24 shrink-0 self-stretch overflow-hidden rounded-xl bg-slate-100 sm:w-28 lg:w-32 dark:bg-[#242424]">
             <Image
               src={track.thumbnailUrl || "/thumbnaildefault.jpg"}
               alt={track.title || "thumbnail"}
@@ -300,13 +300,6 @@ export default function MusicPage() {
               unoptimized
               className="h-full w-full object-cover"
             />
-            <button
-              onClick={() => handlePlayOrToggle(track)}
-              className="absolute inset-0 hidden items-center justify-center bg-black/40 text-white opacity-0 transition group-hover:opacity-100 sm:flex"
-              aria-label={playing ? t("pauseNow") : t("playNow")}
-            >
-              {playing ? <Pause className="h-7 w-7" /> : <Play className="ml-0.5 h-7 w-7" />}
-            </button>
             {active ? (
               <div className="absolute bottom-1 right-1 rounded-full bg-orange-500 p-0.5">
                 <Headphones className="h-3 w-3 text-white" />
@@ -315,11 +308,11 @@ export default function MusicPage() {
           </div>
 
           {/* Info */}
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="min-w-0">
+          <div className="min-w-0 flex flex-1 flex-col self-stretch gap-2">
+            <div className="min-w-0 space-y-1.5">
               <Link
                 href={`/music/${track.slug}`}
-                className="block truncate text-base font-black text-slate-900 hover:text-pink-600 dark:text-zinc-100"
+                className="block line-clamp-2 text-[15px] font-black leading-5 text-slate-900 hover:text-pink-600 dark:text-zinc-100"
               >
                 {track.title}
               </Link>
@@ -343,54 +336,63 @@ export default function MusicPage() {
               </div>
             ) : null}
 
-            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto text-xs text-slate-500 dark:text-zinc-400">
+            <div className="no-scrollbar flex items-center gap-2.5 overflow-x-auto text-xs text-slate-500 dark:text-zinc-400">
               <span className="inline-flex items-center gap-1">
                 <Clock3 className="h-3 w-3" /> {formatMusicDuration(track.audioDuration)}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Headphones className="h-3 w-3" /> {formatCompactCount(track.playCount)}
               </span>
-              <MusicLikeButton
-                musicId={track.id}
-                initialLiked={false}
-                likeCount={track.likeCount}
-                compact
-                className="shrink-0"
-              />
-              <Link href={`/music/${track.slug}`} className="inline-flex shrink-0 items-center gap-1 hover:text-pink-600">
+              <span className="inline-flex shrink-0 items-center gap-1">
+                <Heart className="h-3 w-3" /> {formatCompactCount(track.likeCount)}
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-1">
                 <MessageCircle className="h-3 w-3" /> {formatCompactCount(track.commentCount)}
-              </Link>
+              </span>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
+            <div className="mt-auto flex flex-wrap items-center gap-2.5 pt-1.5">
+              <button
+                onClick={() => handlePlayOrToggle(track)}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white shadow-md transition hover:bg-pink-600"
+                aria-label={playing ? t("pauseNow") : t("playNow")}
+              >
+                {playing ? <Pause className="h-3 w-3" /> : <Play className="ml-0.5 h-3 w-3" />}
+              </button>
+
+              <div className="rounded-full border border-pink-200 bg-pink-50 px-2 py-1 dark:border-pink-900/40 dark:bg-pink-950/20">
+                <MusicLikeButton
+                  musicId={track.id}
+                  initialLiked={false}
+                  likeCount={track.likeCount}
+                  compact
+                  showCount={false}
+                  className="shrink-0"
+                />
+              </div>
+
               <ShareActionButton
                 title={track.title}
                 text={`${track.title} - ${track.artist}`}
                 url={`${typeof window !== "undefined" ? window.location.origin : ""}/music/${track.slug}`}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-pink-300 hover:text-pink-600 dark:border-[#3a3a3a] dark:text-zinc-400"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-pink-600 dark:bg-[#2b2b2b] dark:text-zinc-300 dark:hover:bg-[#343434]"
                 iconClassName="h-3.5 w-3.5"
               />
               <PlayNextButton
                 targetId={track.id}
                 tracks={targetTracks}
                 compact
+                activeClassName="bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300"
+                inactiveClassName="bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-pink-600 dark:bg-[#2b2b2b] dark:text-zinc-300 dark:hover:bg-[#343434]"
               />
               <AddToPlaylistButton
                 musicId={track.id}
                 musicTitle={track.title}
                 compact
+                className="bg-pink-50 hover:bg-pink-100 dark:bg-pink-950/20 dark:hover:bg-pink-950/35"
               />
             </div>
           </div>
-
-          <button
-            onClick={() => handlePlayOrToggle(track)}
-            className="inline-flex h-9 w-9 shrink-0 self-end items-center justify-center rounded-full bg-pink-500 text-white shadow-md transition hover:bg-pink-600 sm:hidden"
-            aria-label={playing ? t("pauseNow") : t("playNow")}
-          >
-            {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
-          </button>
         </div>
       </article>
     );
@@ -401,6 +403,7 @@ export default function MusicPage() {
     const playing = active && isPlaying;
     const isExpanded = Boolean(expandedPlaylists[track.id]);
     const childTracks = track.playlistTracks;
+    const targetTracks = toPlaylistQueue(track);
     const visibleTracks = isExpanded ? childTracks.slice(0, PLAYLIST_MAX_VISIBLE) : childTracks.slice(0, PLAYLIST_PREVIEW_COUNT);
     const hasMoreTracks = childTracks.length > PLAYLIST_PREVIEW_COUNT;
 
@@ -413,9 +416,8 @@ export default function MusicPage() {
             : "border-slate-200 dark:border-[#2d2d2d]"
         }`}
       >
-        <div className="flex gap-3 p-4 sm:gap-4">
-          {/* Thumbnail + Play button */}
-          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-28 sm:w-28 dark:bg-[#242424]">
+        <div className="flex min-h-[8rem] items-stretch gap-4 p-4 sm:min-h-[9rem] sm:gap-5 lg:min-h-[10rem]">
+          <div className="relative w-24 shrink-0 self-stretch overflow-hidden rounded-xl bg-slate-100 sm:w-28 lg:w-32 dark:bg-[#242424]">
             <Image
               src={track.thumbnailUrl || "/thumbnaildefault.jpg"}
               alt={track.title || "thumbnail"}
@@ -424,24 +426,17 @@ export default function MusicPage() {
               unoptimized
               className="h-full w-full object-cover"
             />
-            <button
-              onClick={() => handlePlayOrToggle(track)}
-              className="absolute inset-0 hidden items-center justify-center bg-black/40 text-white opacity-0 transition group-hover:opacity-100 sm:flex"
-              aria-label={playing ? t("pauseNow") : t("playNow")}
-            >
-              {playing ? <Pause className="h-7 w-7" /> : <Play className="ml-0.5 h-7 w-7" />}
-            </button>
             <div className="absolute left-1 top-1 flex items-center gap-1 rounded-md bg-black/50 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur">
               <ListMusic className="h-3 w-3" /> {childTracks.length}
             </div>
           </div>
 
           {/* Info */}
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="min-w-0">
+          <div className="min-w-0 flex flex-1 flex-col self-stretch gap-2">
+            <div className="min-w-0 space-y-1.5">
               <Link
                 href={`/music/${track.slug}`}
-                className="block truncate text-base font-black text-slate-900 hover:text-pink-600 dark:text-zinc-100"
+                className="block line-clamp-2 text-[15px] font-black leading-5 text-slate-900 hover:text-pink-600 dark:text-zinc-100"
               >
                 {track.title}
               </Link>
@@ -454,40 +449,58 @@ export default function MusicPage() {
               <p className="line-clamp-1 text-xs text-slate-500 dark:text-zinc-400">{track.description}</p>
             ) : null}
 
-            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto text-xs text-slate-500 dark:text-zinc-400">
+            <div className="no-scrollbar flex items-center gap-2.5 overflow-x-auto text-xs text-slate-500 dark:text-zinc-400">
               <span className="inline-flex items-center gap-1">
                 <Clock3 className="h-3 w-3" /> {formatMusicDuration(track.audioDuration)}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Headphones className="h-3 w-3" /> {formatCompactCount(track.playCount)}
               </span>
-              <MusicLikeButton
-                musicId={track.id}
-                initialLiked={false}
-                likeCount={track.likeCount}
-                compact
-                className="shrink-0"
-              />
-              <Link href={`/music/${track.slug}`} className="inline-flex shrink-0 items-center gap-1 hover:text-pink-600">
+              <span className="inline-flex shrink-0 items-center gap-1">
+                <Heart className="h-3 w-3" /> {formatCompactCount(track.likeCount)}
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-1">
                 <MessageCircle className="h-3 w-3" /> {formatCompactCount(track.commentCount)}
-              </Link>
+              </span>
+            </div>
+
+            <div className="mt-auto flex flex-wrap items-center gap-2.5 pt-1.5">
+              <button
+                onClick={() => handlePlayOrToggle(track)}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white shadow-md transition hover:bg-pink-600"
+                aria-label={playing ? t("pauseNow") : t("playNow")}
+              >
+                {playing ? <Pause className="h-3 w-3" /> : <Play className="ml-0.5 h-3 w-3" />}
+              </button>
+
+              <div className="rounded-full border border-pink-200 bg-pink-50 px-2 py-1 dark:border-pink-900/40 dark:bg-pink-950/20">
+                <MusicLikeButton
+                  musicId={track.id}
+                  initialLiked={false}
+                  likeCount={track.likeCount}
+                  compact
+                  showCount={false}
+                  className="shrink-0"
+                />
+              </div>
+
               <ShareActionButton
                 title={track.title}
                 text={`${track.title} - ${track.artist}`}
                 url={`${typeof window !== "undefined" ? window.location.origin : ""}/music/${track.slug}`}
-                className="inline-flex shrink-0 items-center gap-1 text-slate-500 hover:text-pink-600 dark:text-zinc-400"
-                iconClassName="h-3 w-3"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200 hover:text-pink-600 dark:bg-[#2b2b2b] dark:text-zinc-300 dark:hover:bg-[#343434]"
+                iconClassName="h-3.5 w-3.5"
+              />
+
+              <PlayNextButton
+                targetId={track.id}
+                tracks={targetTracks}
+                compact
+                activeClassName="bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300"
+                inactiveClassName="bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-pink-600 dark:bg-[#2b2b2b] dark:text-zinc-300 dark:hover:bg-[#343434]"
               />
             </div>
           </div>
-
-          <button
-            onClick={() => handlePlayOrToggle(track)}
-            className="inline-flex h-9 w-9 shrink-0 self-end items-center justify-center rounded-full bg-pink-500 text-white shadow-md transition hover:bg-pink-600 sm:hidden"
-            aria-label={playing ? t("pauseNow") : t("playNow")}
-          >
-            {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
-          </button>
         </div>
 
         {/* Playlist child tracks */}

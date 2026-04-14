@@ -624,30 +624,30 @@ export default function MusicDetailPage() {
               <h1 className="text-lg font-bold leading-tight text-slate-900 md:text-[1.7rem] dark:text-zinc-100">{track.title}</h1>
 
               <div className="grid grid-cols-1 gap-y-2 md:grid-cols-2 md:gap-x-8">
-                <div className="text-left">
-                  <p className="mb-0.5 text-xs text-slate-500 dark:text-zinc-400">{t("author")}</p>
-                  <p className="truncate font-semibold text-slate-900 dark:text-zinc-100">{track.artist}</p>
-                </div>
+                <p className="flex min-w-0 items-center gap-1 text-sm leading-tight text-slate-700 dark:text-zinc-300">
+                  <span className="shrink-0 text-slate-500 dark:text-zinc-400">{t("author")}:</span>
+                  <span className="truncate font-semibold text-slate-900 dark:text-zinc-100">{track.artist}</span>
+                </p>
 
-                <div className="text-left">
-                  <p className="mb-0.5 text-xs text-slate-500 dark:text-zinc-400">{t("status")}</p>
+                <p className="flex min-w-0 items-center gap-1 text-sm leading-tight text-slate-700 dark:text-zinc-300">
+                  <span className="shrink-0 text-slate-500 dark:text-zinc-400">{t("status")}:</span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-pink-100 px-2.5 py-0.5 text-xs font-semibold text-pink-700 dark:bg-pink-950/30 dark:text-pink-300">
                     {track.contentType === "playlist" ? <ListMusic className="h-3 w-3" /> : null}
                     {track.contentType === "playlist" ? "Playlist" : "Single"}
                   </span>
-                </div>
+                </p>
 
-                <div className="text-left">
-                  <p className="mb-0.5 text-xs text-slate-500 dark:text-zinc-400">{t("lastUpdated")}</p>
-                  <p className="font-medium text-slate-900 dark:text-zinc-100">
+                <p className="flex min-w-0 items-center gap-1 text-sm leading-tight text-slate-700 dark:text-zinc-300">
+                  <span className="shrink-0 text-slate-500 dark:text-zinc-400">{t("lastUpdated")}:</span>
+                  <span className="font-medium text-slate-900 dark:text-zinc-100">
                     {track.updatedAt ? dateFormatter.format(new Date(track.updatedAt)) : "-"}
-                  </p>
-                </div>
+                  </span>
+                </p>
 
-                <div className="text-left">
-                  <p className="mb-0.5 text-xs text-slate-500 dark:text-zinc-400">{t("duration")}</p>
-                  <p className="font-medium text-slate-900 dark:text-zinc-100">{formatMusicDuration(track.audioDuration)}</p>
-                </div>
+                <p className="flex min-w-0 items-center gap-1 text-sm leading-tight text-slate-700 dark:text-zinc-300">
+                  <span className="shrink-0 text-slate-500 dark:text-zinc-400">{t("duration")}:</span>
+                  <span className="font-medium text-slate-900 dark:text-zinc-100">{formatMusicDuration(track.audioDuration)}</span>
+                </p>
               </div>
 
               {track.tags.length > 0 ? (
@@ -664,70 +664,140 @@ export default function MusicDetailPage() {
                 </div>
               ) : null}
 
-              {track.description ? (
-                <p className="pt-1 text-sm leading-7 text-slate-600 dark:text-zinc-300">{track.description}</p>
-              ) : null}
-
-              <div className="flex items-center justify-start gap-6 border-y border-slate-100 py-2 text-xs text-slate-500 dark:border-[#2b2b2b] dark:text-zinc-400 sm:gap-8">
-                <span className="flex flex-col items-center gap-0.5">
-                  <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
-                    <Headphones className="h-3.5 w-3.5" /> {formatCompactCount(track.playCount)}
-                  </span>
-                  <span className="text-[10px]">{t("plays")}</span>
-                </span>
-                <span className="flex flex-col items-center gap-0.5">
-                  <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
-                    <Heart className="h-3.5 w-3.5" /> {formatCompactCount(track.likeCount)}
-                  </span>
-                  <span className="text-[10px]">{t("likes")}</span>
-                </span>
-                <span className="flex flex-col items-center gap-0.5">
-                  <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
-                    <MessageCircle className="h-3.5 w-3.5" /> {formatCompactCount(track.commentCount)}
-                  </span>
-                  <span className="text-[10px]">{t("comments")}</span>
-                </span>
-              </div>
-
-              <div className="mt-2 flex flex-wrap items-center justify-start gap-2 sm:gap-3">
-                <button
-                  onClick={() => handlePlayTrack(track)}
-                  className="inline-flex items-center gap-2 rounded-full bg-pink-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-pink-600"
-                >
-                  {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  {playing ? t("pauseNow") : t("playNow")}
-                </button>
-
-                <MusicLikeButton
-                  musicId={track.id}
-                  initialLiked={isLiked}
-                  likeCount={track.likeCount}
-                  compact
-                  showCount={false}
-                  className="h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
-                  onLikeChanged={(liked, newCount) => {
-                    setIsLiked(liked);
-                    setTrack((prev) => (prev ? { ...prev, likeCount: newCount } : prev));
-                  }}
-                />
-
-                <ShareActionButton
-                  title={track.title}
-                  text={`${track.title} - ${track.artist}`}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
-                  iconClassName="h-3.5 w-3.5"
-                  label={t("share")}
-                />
-
-                {track.contentType === "single" ? (
-                  <AddToPlaylistButton
-                    musicId={track.id}
-                    musicTitle={track.title}
-                    label={t("addToPlaylist")}
-                  />
+              <div className="hidden md:block md:space-y-3">
+                {track.description ? (
+                  <p className="pt-1 text-sm leading-7 text-slate-600 dark:text-zinc-300">{track.description}</p>
                 ) : null}
+
+                <div className="flex items-center justify-start gap-6 border-y border-slate-100 py-2 text-xs text-slate-500 dark:border-[#2b2b2b] dark:text-zinc-400 sm:gap-8">
+                  <span className="flex flex-col items-center gap-0.5">
+                    <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                      <Headphones className="h-3.5 w-3.5" /> {formatCompactCount(track.playCount)}
+                    </span>
+                    <span className="text-[10px]">{t("plays")}</span>
+                  </span>
+                  <span className="flex flex-col items-center gap-0.5">
+                    <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                      <Heart className="h-3.5 w-3.5" /> {formatCompactCount(track.likeCount)}
+                    </span>
+                    <span className="text-[10px]">{t("likes")}</span>
+                  </span>
+                  <span className="flex flex-col items-center gap-0.5">
+                    <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                      <MessageCircle className="h-3.5 w-3.5" /> {formatCompactCount(track.commentCount)}
+                    </span>
+                    <span className="text-[10px]">{t("comments")}</span>
+                  </span>
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center justify-start gap-2 sm:gap-3">
+                  <button
+                    onClick={() => handlePlayTrack(track)}
+                    className="inline-flex items-center gap-2 rounded-full bg-pink-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-pink-600"
+                  >
+                    {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    {playing ? t("pauseNow") : t("playNow")}
+                  </button>
+
+                  <MusicLikeButton
+                    musicId={track.id}
+                    initialLiked={isLiked}
+                    likeCount={track.likeCount}
+                    showCount={false}
+                    label={t("like")}
+                    className="h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
+                    onLikeChanged={(liked, newCount) => {
+                      setIsLiked(liked);
+                      setTrack((prev) => (prev ? { ...prev, likeCount: newCount } : prev));
+                    }}
+                  />
+
+                  <ShareActionButton
+                    title={track.title}
+                    text={`${track.title} - ${track.artist}`}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
+                    iconClassName="h-3.5 w-3.5"
+                    label={t("share")}
+                  />
+
+                  {track.contentType === "single" ? (
+                    <AddToPlaylistButton
+                      musicId={track.id}
+                      musicTitle={track.title}
+                      label={t("addToPlaylist")}
+                    />
+                  ) : null}
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-3 md:hidden">
+          {track.description ? (
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-sm leading-7 text-slate-600 dark:text-zinc-300">{track.description}</p>
+            </div>
+          ) : null}
+
+          <div className="mx-auto flex max-w-3xl items-center justify-center gap-6 border-y border-slate-100 py-2 text-xs text-slate-500 dark:border-[#2b2b2b] dark:text-zinc-400 sm:gap-8">
+            <span className="flex flex-col items-center gap-0.5">
+              <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                <Headphones className="h-3.5 w-3.5" /> {formatCompactCount(track.playCount)}
+              </span>
+              <span className="text-[10px]">{t("plays")}</span>
+            </span>
+            <span className="flex flex-col items-center gap-0.5">
+              <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                <Heart className="h-3.5 w-3.5" /> {formatCompactCount(track.likeCount)}
+              </span>
+              <span className="text-[10px]">{t("likes")}</span>
+            </span>
+            <span className="flex flex-col items-center gap-0.5">
+              <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                <MessageCircle className="h-3.5 w-3.5" /> {formatCompactCount(track.commentCount)}
+              </span>
+              <span className="text-[10px]">{t("comments")}</span>
+            </span>
+          </div>
+
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-2 sm:gap-3">
+            <button
+              onClick={() => handlePlayTrack(track)}
+              className="inline-flex items-center gap-2 rounded-full bg-pink-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-pink-600"
+            >
+              {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              {playing ? t("pauseNow") : t("playNow")}
+            </button>
+
+            <MusicLikeButton
+              musicId={track.id}
+              initialLiked={isLiked}
+              likeCount={track.likeCount}
+              compact
+              showCount={false}
+              className="h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
+              onLikeChanged={(liked, newCount) => {
+                setIsLiked(liked);
+                setTrack((prev) => (prev ? { ...prev, likeCount: newCount } : prev));
+              }}
+            />
+
+            <ShareActionButton
+              title={track.title}
+              text={`${track.title} - ${track.artist}`}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
+              iconClassName="h-3.5 w-3.5"
+              ariaLabel={t("share")}
+            />
+
+            {track.contentType === "single" ? (
+              <AddToPlaylistButton
+                musicId={track.id}
+                musicTitle={track.title}
+                compact
+              />
+            ) : null}
           </div>
         </div>
       </section>
@@ -747,9 +817,9 @@ export default function MusicDetailPage() {
               const isChildPlaying = isCurrent && isPlaying;
 
               return (
-                <div key={`${track.id}-${child.id}-${index}`} className="grid grid-cols-[48px_56px_minmax(0,1fr)_minmax(0,170px)_74px_52px] items-center gap-2 px-4 py-3 sm:px-6">
+                <div key={`${track.id}-${child.id}-${index}`} className="grid grid-cols-[48px_auto_minmax(0,1fr)_auto_auto] items-center gap-2 px-4 py-3 sm:px-6 sm:gap-3">
                   <span className="text-center text-xs font-bold text-slate-400 dark:text-zinc-500">{index + 1}</span>
-                  <div className="h-10 w-10 overflow-hidden rounded-md bg-slate-100 dark:bg-[#252525]">
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-slate-100 dark:bg-[#252525]">
                     <Image
                       src={child.thumbnailUrl || track.thumbnailUrl || "/thumbnaildefault.jpg"}
                       alt={child.title}
@@ -767,12 +837,11 @@ export default function MusicDetailPage() {
                     <p className="truncate text-xs text-slate-500 dark:text-zinc-400">{child.artist}</p>
                   </div>
 
-                  <p className="hidden truncate text-xs text-slate-500 sm:block dark:text-zinc-400">{child.artist}</p>
                   <p className="text-right text-xs font-semibold text-slate-500 dark:text-zinc-400">{formatMusicDuration(child.audioDuration)}</p>
 
                   <button
                     onClick={() => handlePlayPlaylistChild(track, index)}
-                    className="inline-flex h-9 w-9 items-center justify-center justify-self-end rounded-full bg-pink-500 text-white transition hover:bg-pink-600"
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white transition hover:bg-pink-600"
                   >
                     {isChildPlaying ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
                   </button>

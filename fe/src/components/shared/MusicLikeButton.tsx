@@ -15,6 +15,7 @@ type MusicLikeButtonProps = {
   /** compact icon-only mode (no label, smaller) */
   compact?: boolean;
   showCount?: boolean;
+  label?: string;
   className?: string;
   onLikeChanged?: (liked: boolean, newCount: number) => void;
 };
@@ -25,6 +26,7 @@ export default function MusicLikeButton({
   likeCount,
   compact = false,
   showCount = true,
+  label,
   className = "",
   onLikeChanged,
 }: MusicLikeButtonProps) {
@@ -108,7 +110,7 @@ export default function MusicLikeButton({
       ) : (
         <Heart className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`} />
       )}
-      {showCount ? <span>{formatCompactCount(count)}</span> : null}
+      {showCount ? <span>{formatCompactCount(count)}</span> : label ? <span>{label}</span> : null}
     </button>
   );
 }

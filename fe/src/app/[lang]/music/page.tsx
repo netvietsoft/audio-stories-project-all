@@ -289,7 +289,7 @@ export default function MusicPage() {
             : "border-slate-200 dark:border-[#2d2d2d]"
         }`}
       >
-        <div className="flex gap-4">
+        <div className="flex gap-3 sm:gap-4">
           {/* Thumbnail + Play button */}
           <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-28 sm:w-28 dark:bg-[#242424]">
             <Image
@@ -302,7 +302,7 @@ export default function MusicPage() {
             />
             <button
               onClick={() => handlePlayOrToggle(track)}
-              className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition group-hover:opacity-100"
+              className="absolute inset-0 hidden items-center justify-center bg-black/40 text-white opacity-0 transition group-hover:opacity-100 sm:flex"
               aria-label={playing ? t("pauseNow") : t("playNow")}
             >
               {playing ? <Pause className="h-7 w-7" /> : <Play className="ml-0.5 h-7 w-7" />}
@@ -316,21 +316,14 @@ export default function MusicPage() {
 
           {/* Info */}
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <Link
-                  href={`/music/${track.slug}`}
-                  className="block truncate text-base font-black text-slate-900 hover:text-pink-600 dark:text-zinc-100"
-                >
-                  {track.title}
-                </Link>
-                <p className="truncate text-sm text-slate-500 dark:text-zinc-400">{track.artist}</p>
-              </div>
-              {track.updatedAt ? (
-                <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-[#242424] dark:text-zinc-400">
-                  {new Date(track.updatedAt!).toLocaleDateString()}
-                </span>
-              ) : null}
+            <div className="min-w-0">
+              <Link
+                href={`/music/${track.slug}`}
+                className="block truncate text-base font-black text-slate-900 hover:text-pink-600 dark:text-zinc-100"
+              >
+                {track.title}
+              </Link>
+              <p className="truncate text-sm text-slate-500 dark:text-zinc-400">{track.artist}</p>
             </div>
 
             {track.description ? (
@@ -350,12 +343,10 @@ export default function MusicPage() {
               </div>
             ) : null}
 
-            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-zinc-400">
-              <Clock3 className="h-3 w-3" /> {formatMusicDuration(track.audioDuration)}
-            </div>
-
-            {/* Stats row */}
-            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-zinc-400">
+            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto text-xs text-slate-500 dark:text-zinc-400">
+              <span className="inline-flex items-center gap-1">
+                <Clock3 className="h-3 w-3" /> {formatMusicDuration(track.audioDuration)}
+              </span>
               <span className="inline-flex items-center gap-1">
                 <Headphones className="h-3 w-3" /> {formatCompactCount(track.playCount)}
               </span>
@@ -364,8 +355,9 @@ export default function MusicPage() {
                 initialLiked={false}
                 likeCount={track.likeCount}
                 compact
+                className="shrink-0"
               />
-              <Link href={`/music/${track.slug}`} className="inline-flex items-center gap-1 hover:text-pink-600">
+              <Link href={`/music/${track.slug}`} className="inline-flex shrink-0 items-center gap-1 hover:text-pink-600">
                 <MessageCircle className="h-3 w-3" /> {formatCompactCount(track.commentCount)}
               </Link>
             </div>
@@ -391,6 +383,14 @@ export default function MusicPage() {
               />
             </div>
           </div>
+
+          <button
+            onClick={() => handlePlayOrToggle(track)}
+            className="inline-flex h-9 w-9 shrink-0 self-end items-center justify-center rounded-full bg-pink-500 text-white shadow-md transition hover:bg-pink-600 sm:hidden"
+            aria-label={playing ? t("pauseNow") : t("playNow")}
+          >
+            {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
+          </button>
         </div>
       </article>
     );
@@ -413,7 +413,7 @@ export default function MusicPage() {
             : "border-slate-200 dark:border-[#2d2d2d]"
         }`}
       >
-        <div className="flex gap-4 p-4">
+        <div className="flex gap-3 p-4 sm:gap-4">
           {/* Thumbnail + Play button */}
           <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-28 sm:w-28 dark:bg-[#242424]">
             <Image
@@ -426,7 +426,7 @@ export default function MusicPage() {
             />
             <button
               onClick={() => handlePlayOrToggle(track)}
-              className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition group-hover:opacity-100"
+              className="absolute inset-0 hidden items-center justify-center bg-black/40 text-white opacity-0 transition group-hover:opacity-100 sm:flex"
               aria-label={playing ? t("pauseNow") : t("playNow")}
             >
               {playing ? <Pause className="h-7 w-7" /> : <Play className="ml-0.5 h-7 w-7" />}
@@ -438,35 +438,26 @@ export default function MusicPage() {
 
           {/* Info */}
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <Link
-                  href={`/music/${track.slug}`}
-                  className="block truncate text-base font-black text-slate-900 hover:text-pink-600 dark:text-zinc-100"
-                >
-                  {track.title}
-                </Link>
-                <p className="truncate text-sm text-slate-500 dark:text-zinc-400">{track.artist}</p>
-              </div>
-              {track.updatedAt ? (
-                <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-[#242424] dark:text-zinc-400">
-                  {new Date(track.updatedAt!).toLocaleDateString()}
-                </span>
-              ) : null}
+            <div className="min-w-0">
+              <Link
+                href={`/music/${track.slug}`}
+                className="block truncate text-base font-black text-slate-900 hover:text-pink-600 dark:text-zinc-100"
+              >
+                {track.title}
+              </Link>
+              <p className="truncate text-sm text-slate-500 dark:text-zinc-400">
+                {track.artist} <span className="text-pink-600 dark:text-pink-300">- {t("tracksCount", { count: childTracks.length })}</span>
+              </p>
             </div>
 
             {track.description ? (
               <p className="line-clamp-1 text-xs text-slate-500 dark:text-zinc-400">{track.description}</p>
             ) : null}
 
-            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-zinc-400">
-              <Clock3 className="h-3 w-3" />{" "}
-              {formatMusicDuration(track.audioDuration)}
-              <span className="ml-2 font-semibold text-pink-600 dark:text-pink-300">{t("tracksCount", { count: childTracks.length })}</span>
-            </div>
-
-            {/* Stats */}
-            <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-zinc-400">
+            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto text-xs text-slate-500 dark:text-zinc-400">
+              <span className="inline-flex items-center gap-1">
+                <Clock3 className="h-3 w-3" /> {formatMusicDuration(track.audioDuration)}
+              </span>
               <span className="inline-flex items-center gap-1">
                 <Headphones className="h-3 w-3" /> {formatCompactCount(track.playCount)}
               </span>
@@ -475,16 +466,28 @@ export default function MusicPage() {
                 initialLiked={false}
                 likeCount={track.likeCount}
                 compact
+                className="shrink-0"
               />
+              <Link href={`/music/${track.slug}`} className="inline-flex shrink-0 items-center gap-1 hover:text-pink-600">
+                <MessageCircle className="h-3 w-3" /> {formatCompactCount(track.commentCount)}
+              </Link>
               <ShareActionButton
                 title={track.title}
                 text={`${track.title} - ${track.artist}`}
                 url={`${typeof window !== "undefined" ? window.location.origin : ""}/music/${track.slug}`}
-                className="inline-flex items-center gap-1 text-slate-500 hover:text-pink-600 dark:text-zinc-400"
+                className="inline-flex shrink-0 items-center gap-1 text-slate-500 hover:text-pink-600 dark:text-zinc-400"
                 iconClassName="h-3 w-3"
               />
             </div>
           </div>
+
+          <button
+            onClick={() => handlePlayOrToggle(track)}
+            className="inline-flex h-9 w-9 shrink-0 self-end items-center justify-center rounded-full bg-pink-500 text-white shadow-md transition hover:bg-pink-600 sm:hidden"
+            aria-label={playing ? t("pauseNow") : t("playNow")}
+          >
+            {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
+          </button>
         </div>
 
         {/* Playlist child tracks */}
@@ -496,19 +499,8 @@ export default function MusicPage() {
             return (
               <div
                 key={`${track.id}-${child.id}-${index}`}
-                className="group/child flex items-center gap-3 border-b border-slate-50 px-4 py-2.5 transition hover:bg-slate-50 last:border-b-0 dark:border-[#222] dark:hover:bg-[#1e1e1e]"
+                className="group/child flex min-w-0 items-center gap-2 sm:gap-3 border-b border-slate-50 px-3 sm:px-4 py-2.5 transition hover:bg-slate-50 last:border-b-0 dark:border-[#222] dark:hover:bg-[#1e1e1e]"
               >
-                <button
-                  onClick={() => handlePlayPlaylistItem(track, index + (isExpanded ? 0 : 0))}
-                  className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${
-                    childPlaying
-                      ? "bg-pink-500 text-white"
-                        : "bg-slate-100 text-slate-600 group-hover/child:bg-pink-100 group-hover/child:text-pink-600 dark:bg-[#2a2a2a] dark:text-zinc-300"
-                  }`}
-                >
-                  {childPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
-                </button>
-
                 <div className="h-8 w-8 shrink-0 overflow-hidden rounded-md bg-slate-100 dark:bg-[#2a2a2a]">
                   <Image
                     src={child.thumbnailUrl || track.thumbnailUrl || "/thumbnaildefault.jpg"}
@@ -520,7 +512,7 @@ export default function MusicPage() {
                   />
                 </div>
 
-                <span className="w-6 shrink-0 text-center text-[11px] font-bold text-slate-400 dark:text-zinc-500">{index + 1}</span>
+                <span className="w-5 shrink-0 text-center text-[11px] font-bold text-slate-400 dark:text-zinc-500">{index + 1}</span>
 
                 <div className="min-w-0 flex-1">
                   <Link
@@ -532,13 +524,13 @@ export default function MusicPage() {
                   <p className="truncate text-[11px] text-slate-500 dark:text-zinc-400">{child.artist}</p>
                 </div>
 
-                <div className="ml-auto flex shrink-0 items-center gap-2">
-                  <span className="hidden w-12 shrink-0 text-right text-[11px] text-slate-500 sm:block dark:text-zinc-400">
+                <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
+                  <span className="w-10 sm:w-12 shrink-0 text-right text-[11px] text-slate-500 dark:text-zinc-400">
                     {formatMusicDuration(child.audioDuration)}
                   </span>
 
                   {/* Hover actions */}
-                  <div className="flex w-[7.25rem] items-center justify-end gap-1 opacity-0 transition group-hover/child:opacity-100">
+                  <div className="hidden w-[7.25rem] items-center justify-end gap-1 opacity-0 transition group-hover/child:opacity-100 sm:flex">
                     <MusicLikeButton
                       musicId={child.id}
                       initialLiked={false}
@@ -559,6 +551,17 @@ export default function MusicPage() {
                     />
                   </div>
                 </div>
+
+                <button
+                  onClick={() => handlePlayPlaylistItem(track, index)}
+                  className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition ${
+                    childPlaying
+                      ? "bg-pink-500 text-white"
+                      : "bg-slate-100 text-slate-600 group-hover/child:bg-pink-100 group-hover/child:text-pink-600 dark:bg-[#2a2a2a] dark:text-zinc-300"
+                  }`}
+                >
+                  {childPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
+                </button>
               </div>
             );
           })}
@@ -590,7 +593,7 @@ export default function MusicPage() {
   // ─── Main JSX ─────────────────────────────────
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] space-y-6 pb-40">
+    <div className="mx-auto w-full max-w-[1280px] min-w-0 overflow-x-clip space-y-6 pb-40">
       {/* Hero */}
       <section className="overflow-hidden rounded-[32px] border border-pink-200/70 bg-gradient-to-br from-pink-50 via-rose-50 to-white p-6 text-slate-900 shadow-sm sm:p-8 dark:border-pink-900/30 dark:from-[#2a101a] dark:via-[#1d1117] dark:to-[#121212] dark:text-zinc-100">
         <div className="flex flex-wrap items-start justify-between gap-5">
@@ -609,9 +612,9 @@ export default function MusicPage() {
       </section>
 
       {/* Grid: sidebar + main */}
-      <section className="grid gap-6 xl:grid-cols-[minmax(260px,28%)_minmax(0,72%)]">
+      <section className="grid min-w-0 gap-6 xl:grid-cols-[minmax(260px,28%)_minmax(0,72%)]">
         {/* Sidebar */}
-        <aside className="space-y-4">
+        <aside className="min-w-0 space-y-4">
           {/* Search */}
           <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#2d2d2d] dark:bg-[#171717]">
             <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">{t("searchLabel")}</label>
@@ -703,7 +706,7 @@ export default function MusicPage() {
         </aside>
 
         {/* Main track list */}
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-black uppercase tracking-[0.15em] text-slate-500 dark:text-zinc-400">
               {t("trackListTitle")}{" "}

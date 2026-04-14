@@ -29,6 +29,19 @@ const resolveFiniteDuration = (value?: number | null) => {
   return value;
 };
 
+const resolveMusicInteractionId = (trackId?: string | null) => {
+  if (!trackId) return null;
+
+  // Playlist queue tracks use a synthetic id format: playlist:<playlistId>:<musicId>:<index>
+  if (trackId.startsWith("playlist:")) {
+    const parts = trackId.split(":");
+    const childMusicId = parts[2];
+    return childMusicId || null;
+  }
+
+  return trackId;
+};
+
 export default function GlobalPlayer() {
   const t = useTranslations("Player");
   const safeT = (key: string, fallback: string) => {
@@ -111,7 +124,7 @@ export default function GlobalPlayer() {
       if (!accessToken || !currentTrack) return;
       if (currentTrack.storyId) return;
 
-      const musicId = currentTrack.id;
+      const musicId = resolveMusicInteractionId(currentTrack.id);
       if (!musicId) return;
 
       const liveTime = Math.floor(audioRef.current?.currentTime || 0);

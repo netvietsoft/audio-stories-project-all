@@ -373,7 +373,6 @@ export default function StoryDetailClient() {
                 title={storyTitle}
                 text={t("sharePrompt")}
                 fallbackPrompt={t("copiedLink")}
-                label={t("share")}
                 className="h-10 w-10 p-0 flex items-center justify-center sm:h-auto sm:w-auto sm:px-5 sm:py-2.5 text-sm font-medium text-gray-700 border border-gray-100 bg-white shadow-sm transition-colors hover:bg-gray-50 dark:border-gray-700 dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749] whitespace-nowrap rounded-full"
                 iconClassName="h-[18px] w-[18px] sm:h-3.5 sm:w-3.5"
                 ariaLabel={t("share")}

@@ -8,10 +8,12 @@ import {
   ArrowDown,
   ArrowUp,
   Check,
+  ChevronRight,
   Clock3,
   CornerDownRight,
   Headphones,
   Heart,
+  Home,
   ListMusic,
   Loader2,
   MessageCircle,
@@ -66,6 +68,7 @@ type RelatedResponse = {
 export default function MusicDetailPage() {
   const params = useParams<{ lang?: string; slug?: string }>();
   const musicSlug = Array.isArray(params?.slug) ? params?.slug[0] : params?.slug;
+  const currentLang = Array.isArray(params?.lang) ? params?.lang[0] : params?.lang;
   const t = useTranslations("MusicDetailPage");
 
   const user = useUserStore((state) => state.user);
@@ -108,8 +111,7 @@ export default function MusicDetailPage() {
   const dateFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat("vi-VN", {
-        dateStyle: "medium",
-        timeStyle: "short",
+        dateStyle: "short",
       }),
     [],
   );
@@ -593,114 +595,139 @@ export default function MusicDetailPage() {
 
   return (
     <div className="mx-auto max-w-[1280px] space-y-6 pb-40">
+      <div className="flex items-center gap-2 px-2 text-sm text-slate-500 dark:text-zinc-400">
+        <Link href="/" className="inline-flex items-center gap-1 hover:text-pink-600">
+          <Home className="h-3.5 w-3.5" />
+          <span>{currentLang === "en" ? "Home" : "Trang chủ"}</span>
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5" />
+        <span className="truncate text-slate-700 dark:text-zinc-200">{track.title}</span>
+      </div>
+
       {/* Hero */}
-      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-[#2c2c2c] dark:bg-[#171717]">
-        <div className="grid gap-0 md:grid-cols-[1fr_280px] lg:grid-cols-[1fr_340px]">
-          <div className="space-y-4 p-6 sm:p-8">
-            <div className="flex items-center gap-2">
-              {track.contentType === "playlist" ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-pink-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.15em] text-pink-700 dark:bg-pink-950/30 dark:text-pink-300">
-                  <ListMusic className="h-3 w-3" /> Playlist
-                </span>
-              ) : null}
-              {track.updatedAt ? (
-                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-[#242424] dark:text-zinc-400">
-                  {dateFormatter.format(new Date(track.updatedAt))}
-                </span>
-              ) : null}
-            </div>
-
-            <h1 className="text-2xl font-black leading-tight text-slate-900 sm:text-3xl dark:text-zinc-100">
-              {track.title}
-            </h1>
-
-            <p className="text-base font-semibold text-slate-600 dark:text-zinc-300">{track.artist}</p>
-
-            {track.tags.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
-                {track.tags.map((tag) => (
-                  <Link
-                    key={tag}
-                    href={`/music?tag=${encodeURIComponent(tag)}`}
-                    className="rounded-full bg-pink-50 px-3 py-1 text-xs font-bold text-pink-600 transition hover:bg-pink-100 dark:bg-pink-950/30 dark:text-pink-300"
-                  >
-                    {tag}
-                  </Link>
-                ))}
-              </div>
-            ) : null}
-
-            {track.description ? (
-              <p className="text-sm leading-6 text-slate-600 dark:text-zinc-300">{track.description}</p>
-            ) : null}
-
-            {/* Stats */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-zinc-400">
-              <span className="inline-flex items-center gap-1.5">
-                <Headphones className="h-4 w-4" /> {formatCompactCount(track.playCount)} {t("plays")}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Heart className="h-4 w-4" /> {formatCompactCount(track.likeCount)}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <MessageCircle className="h-4 w-4" /> {formatCompactCount(track.commentCount)}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Clock3 className="h-4 w-4" /> {formatMusicDuration(track.audioDuration)}
-              </span>
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-wrap items-center gap-2 pt-2">
-              <button
-                onClick={() => handlePlayTrack(track)}
-                className="inline-flex items-center gap-2 rounded-full bg-pink-500 px-5 py-2.5 text-sm font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-pink-500/25 transition hover:bg-pink-600"
-              >
-                {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                {playing ? t("pauseNow") : t("playNow")}
-              </button>
-
-              <MusicLikeButton
-                musicId={track.id}
-                initialLiked={isLiked}
-                likeCount={track.likeCount}
-                onLikeChanged={(liked) => setIsLiked(liked)}
+      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-6 dark:border-[#2c2c2c] dark:bg-[#171717]">
+        <div className="mx-auto grid max-w-3xl grid-cols-[122px_minmax(0,1fr)] items-start gap-4 sm:grid-cols-[138px_minmax(0,1fr)] md:max-w-5xl md:grid-cols-[200px_minmax(0,1fr)] md:items-stretch md:gap-6">
+          <div className="w-[122px] shrink-0 sm:w-[138px] md:w-[200px] md:self-stretch">
+            <div className="relative w-full overflow-hidden rounded-lg shadow-xl aspect-[2/3] md:h-full md:aspect-auto">
+              <Image
+                src={track.thumbnailUrl || "/thumbnaildefault.jpg"}
+                alt={track.title}
+                fill
+                unoptimized
+                className="object-cover"
               />
-
-              <ShareActionButton
-                title={track.title}
-                text={`${track.title} - ${track.artist}`}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:border-pink-300 hover:text-pink-600 dark:border-[#3a3a3a] dark:text-zinc-300"
-                iconClassName="h-3.5 w-3.5"
-                label={t("share")}
-              />
-
-              {track.contentType === "single" ? (
-                <AddToPlaylistButton
-                  musicId={track.id}
-                  musicTitle={track.title}
-                  label={t("addToPlaylist")}
-                />
-              ) : null}
             </div>
           </div>
 
-          {/* Cover */}
-          <div className="relative h-64 bg-slate-100 md:h-full dark:bg-[#1c1c1c]">
-            <Image
-              src={track.thumbnailUrl || "/thumbnaildefault.jpg"}
-              alt={track.title}
-              width={680}
-              height={680}
-              unoptimized
-              className="h-full w-full object-cover"
-            />
-            <button
-              onClick={() => handlePlayTrack(track)}
-              className="absolute inset-0 flex items-center justify-center bg-black/30 text-white opacity-0 transition hover:opacity-100"
-            >
-              {playing ? <Pause className="h-12 w-12" /> : <Play className="ml-1 h-12 w-12" />}
-            </button>
+          <div className="min-w-0">
+            <div className="space-y-2 text-sm md:max-w-xl">
+              <h1 className="text-lg font-bold leading-tight text-slate-900 md:text-[1.7rem] dark:text-zinc-100">{track.title}</h1>
+
+              <div className="grid grid-cols-1 gap-y-2 md:grid-cols-2 md:gap-x-8">
+                <div className="text-left">
+                  <p className="mb-0.5 text-xs text-slate-500 dark:text-zinc-400">{t("author")}</p>
+                  <p className="truncate font-semibold text-slate-900 dark:text-zinc-100">{track.artist}</p>
+                </div>
+
+                <div className="text-left">
+                  <p className="mb-0.5 text-xs text-slate-500 dark:text-zinc-400">{t("status")}</p>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-pink-100 px-2.5 py-0.5 text-xs font-semibold text-pink-700 dark:bg-pink-950/30 dark:text-pink-300">
+                    {track.contentType === "playlist" ? <ListMusic className="h-3 w-3" /> : null}
+                    {track.contentType === "playlist" ? "Playlist" : "Single"}
+                  </span>
+                </div>
+
+                <div className="text-left">
+                  <p className="mb-0.5 text-xs text-slate-500 dark:text-zinc-400">{t("lastUpdated")}</p>
+                  <p className="font-medium text-slate-900 dark:text-zinc-100">
+                    {track.updatedAt ? dateFormatter.format(new Date(track.updatedAt)) : "-"}
+                  </p>
+                </div>
+
+                <div className="text-left">
+                  <p className="mb-0.5 text-xs text-slate-500 dark:text-zinc-400">{t("duration")}</p>
+                  <p className="font-medium text-slate-900 dark:text-zinc-100">{formatMusicDuration(track.audioDuration)}</p>
+                </div>
+              </div>
+
+              {track.tags.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {track.tags.map((tag) => (
+                    <Link
+                      key={tag}
+                      href={`/music?tag=${encodeURIComponent(tag)}`}
+                      className="rounded-full bg-pink-50 px-3 py-1 text-xs font-bold text-pink-600 transition hover:bg-pink-100 dark:bg-pink-950/30 dark:text-pink-300"
+                    >
+                      {tag}
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
+
+              {track.description ? (
+                <p className="pt-1 text-sm leading-7 text-slate-600 dark:text-zinc-300">{track.description}</p>
+              ) : null}
+
+              <div className="flex items-center justify-start gap-6 border-y border-slate-100 py-2 text-xs text-slate-500 dark:border-[#2b2b2b] dark:text-zinc-400 sm:gap-8">
+                <span className="flex flex-col items-center gap-0.5">
+                  <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                    <Headphones className="h-3.5 w-3.5" /> {formatCompactCount(track.playCount)}
+                  </span>
+                  <span className="text-[10px]">{t("plays")}</span>
+                </span>
+                <span className="flex flex-col items-center gap-0.5">
+                  <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                    <Heart className="h-3.5 w-3.5" /> {formatCompactCount(track.likeCount)}
+                  </span>
+                  <span className="text-[10px]">{t("likes")}</span>
+                </span>
+                <span className="flex flex-col items-center gap-0.5">
+                  <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                    <MessageCircle className="h-3.5 w-3.5" /> {formatCompactCount(track.commentCount)}
+                  </span>
+                  <span className="text-[10px]">{t("comments")}</span>
+                </span>
+              </div>
+
+              <div className="mt-2 flex flex-wrap items-center justify-start gap-2 sm:gap-3">
+                <button
+                  onClick={() => handlePlayTrack(track)}
+                  className="inline-flex items-center gap-2 rounded-full bg-pink-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-pink-600"
+                >
+                  {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                  {playing ? t("pauseNow") : t("playNow")}
+                </button>
+
+                <MusicLikeButton
+                  musicId={track.id}
+                  initialLiked={isLiked}
+                  likeCount={track.likeCount}
+                  compact
+                  showCount={false}
+                  className="h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
+                  onLikeChanged={(liked, newCount) => {
+                    setIsLiked(liked);
+                    setTrack((prev) => (prev ? { ...prev, likeCount: newCount } : prev));
+                  }}
+                />
+
+                <ShareActionButton
+                  title={track.title}
+                  text={`${track.title} - ${track.artist}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
+                  iconClassName="h-3.5 w-3.5"
+                  label={t("share")}
+                />
+
+                {track.contentType === "single" ? (
+                  <AddToPlaylistButton
+                    musicId={track.id}
+                    musicTitle={track.title}
+                    label={t("addToPlaylist")}
+                  />
+                ) : null}
+              </div>
+            </div>
           </div>
         </div>
       </section>

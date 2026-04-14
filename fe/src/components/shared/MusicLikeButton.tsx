@@ -98,7 +98,7 @@ export default function MusicLikeButton({
       type="button"
       onClick={(e) => void handleClick(e)}
       disabled={isLoading}
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-black uppercase tracking-[0.12em] transition disabled:opacity-60 ${
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-md font-black transition disabled:opacity-60 ${
         isLiked
           ? "border-pink-300 bg-pink-50 text-pink-700 dark:border-pink-900/50 dark:bg-pink-950/30 dark:text-pink-300"
           : "border-slate-300 bg-white text-slate-600 hover:border-pink-300 hover:text-pink-600 dark:border-[#3a3a3a] dark:bg-[#1f1f1f] dark:text-zinc-300"

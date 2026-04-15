@@ -99,6 +99,9 @@ fi
 read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
 SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 
+# SSH keepalive options to reduce broken pipe on long-running deploy steps
+SSH_OPTIONS="-o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o ConnectTimeout=20"
+
 # Ask if user wants to reset database
 read -p "Do you want to RESET database? (yes/no, default: no): " RESET_DB
 RESET_DB=$(echo "${RESET_DB:-no}" | tr -d '\r' | tr '[:upper:]' '[:lower:]')
@@ -148,20 +151,20 @@ tar -czf be-source.tar.gz $TAR_FILES
 
 # Upload to server
 echo "📤 Uploading..."
-ssh $SSH_USER@$HOST "mkdir -p $SERVER_DIR"
+ssh $SSH_OPTIONS $SSH_USER@$HOST "mkdir -p $SERVER_DIR"
 
 if [ -f "be-source.tar.gz" ]; then
-    scp be-source.tar.gz $SSH_USER@$HOST:$SERVER_DIR/
+    scp $SSH_OPTIONS be-source.tar.gz $SSH_USER@$HOST:$SERVER_DIR/
 fi
 
 # Upload .env file
 if [ -f "$ENV_FILE" ]; then
-    scp $ENV_FILE $SSH_USER@$HOST:$SERVER_DIR/.env
+    scp $SSH_OPTIONS $ENV_FILE $SSH_USER@$HOST:$SERVER_DIR/.env
 fi
 
 # Deploy on server
 echo "🚀 Deploying on server..."
-ssh $SSH_USER@$HOST << EOF
+ssh $SSH_OPTIONS -T $SSH_USER@$HOST << EOF
 cd $SERVER_DIR
 
 # Extract source

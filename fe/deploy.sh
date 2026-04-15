@@ -86,15 +86,34 @@ env=$(echo "$env" | tr -d '\r')
 if [ "$env" == 'DEV' ]; then
     echo "Deploying DEV"
     HOST=72.62.198.196
-    ENV_FILE=.env.dev
+    PRIMARY_ENV_FILE=.env.development
+    LEGACY_ENV_FILE=.env.dev
 elif [ "$env" == 'PROD' ]; then
     echo "Deploying PROD"
     HOST=72.62.198.196
-    ENV_FILE=.env.prod
+    PRIMARY_ENV_FILE=.env.production
+    LEGACY_ENV_FILE=.env.prod
 else
     echo "❌ Invalid environment: '$env'"
     exit 1
 fi
+
+if [ -f "$PRIMARY_ENV_FILE" ]; then
+    ENV_FILE="$PRIMARY_ENV_FILE"
+elif [ -f "$LEGACY_ENV_FILE" ]; then
+    echo "⚠️  Using legacy env file: $LEGACY_ENV_FILE"
+    ENV_FILE="$LEGACY_ENV_FILE"
+else
+    echo "❌ Env file not found. Expected '$PRIMARY_ENV_FILE' (or legacy '$LEGACY_ENV_FILE')"
+    exit 1
+fi
+
+API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+if [ -z "$API_URL" ]; then
+    echo "❌ NEXT_PUBLIC_API_URL is missing or empty in $ENV_FILE"
+    exit 1
+fi
+echo "🌐 Using NEXT_PUBLIC_API_URL=$API_URL"
 
 read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
 SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')

@@ -86,6 +86,24 @@ const refreshAccessToken = async (): Promise<string | null> => {
 };
 
 adminApiClient.interceptors.request.use((config) => {
+  const headerAccessor = config.headers as
+    | { get?: (name: string) => string | undefined; set?: (name: string, value: string) => void }
+    | Record<string, unknown>
+    | undefined;
+
+  const existingAuthHeader =
+    (headerAccessor && typeof headerAccessor.get === "function" ? headerAccessor.get("Authorization") : undefined) ||
+    (headerAccessor && typeof headerAccessor === "object"
+      ? ((headerAccessor as Record<string, unknown>).Authorization as string | undefined)
+      : undefined) ||
+    (headerAccessor && typeof headerAccessor === "object"
+      ? ((headerAccessor as Record<string, unknown>).authorization as string | undefined)
+      : undefined);
+
+  if (existingAuthHeader) {
+    return config;
+  }
+
   const accessToken =
     useAdminStore.getState().accessToken ||
     (typeof window !== "undefined" ? localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) : null);

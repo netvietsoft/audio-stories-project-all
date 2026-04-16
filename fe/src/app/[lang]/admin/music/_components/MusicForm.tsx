@@ -64,6 +64,7 @@ type MusicFormProps = {
   onSubmit: (payload: MusicFormSubmitPayload) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
+  submitError?: string | null;
 };
 
 const formatSeconds = (seconds?: number | null) => {
@@ -95,6 +96,7 @@ export default function MusicForm({
   onSubmit,
   onCancel,
   isLoading,
+  submitError,
 }: MusicFormProps) {
   const [thumbnailFile, setThumbnailFile] = useState<File | undefined>(undefined);
   const [audioFile, setAudioFile] = useState<File | undefined>(undefined);
@@ -284,6 +286,13 @@ export default function MusicForm({
 
   return (
     <form onSubmit={handleSubmit(submitForm)} className="space-y-6">
+      {submitError ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <p className="mb-1 font-black uppercase tracking-wider text-rose-800">Lỗi từ máy chủ</p>
+          <pre className="whitespace-pre-wrap break-words font-sans text-xs leading-5 text-rose-700">{submitError}</pre>
+        </div>
+      ) : null}
+
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="space-y-4 lg:w-1/2">
           <h3 className="flex items-center gap-2 text-lg font-black text-slate-900">

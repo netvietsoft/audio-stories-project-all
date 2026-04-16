@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Music2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import axios from "axios";
 
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
 import MusicForm, {
@@ -59,6 +60,85 @@ const formatDuration = (seconds?: number | null) => {
   return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
 };
 
+const extractApiErrorMessage = (error: unknown) => {
+  if (!axios.isAxiosError(error)) {
+    return error instanceof Error ? error.message : "Lưu nhạc thất bại. Vui lòng thử lại.";
+  }
+
+  const status = error.response?.status;
+  const data = error.response?.data;
+
+  const formatPrimitive = (value: unknown) => {
+    if (value === null || value === undefined || value === "") return null;
+    if (typeof value === "string") return value.trim() || null;
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+    return null;
+  };
+
+  const collectMessages = (value: unknown): string[] => {
+    if (!value) return [];
+    const primitive = formatPrimitive(value);
+    if (primitive) return [primitive];
+    if (Array.isArray(value)) {
+      return value.flatMap((item) => collectMessages(item));
+    }
+    if (typeof value === "object") {
+      const record = value as Record<string, unknown>;
+      const directMessages = [record.message, record.error, record.detail, record.details].flatMap((item) =>
+        collectMessages(item),
+      );
+
+      const detailPairs = Object.entries(record)
+        .filter(([key]) => !["message", "error", "detail", "details"].includes(key))
+        .flatMap(([key, value]) => {
+          if (value === null || value === undefined || value === "") return [];
+          if (Array.isArray(value)) {
+            return [`${key}: ${value.map((item) => String(item)).join(", ")}`];
+          }
+          if (typeof value === "object") {
+            return [`${key}: ${JSON.stringify(value)}`];
+          }
+          return [`${key}: ${String(value)}`];
+        });
+
+      return [...directMessages, ...detailPairs].filter(Boolean);
+    }
+    return [];
+  };
+
+  const messages = collectMessages(data?.message)
+    .concat(collectMessages(data?.error))
+    .concat(collectMessages(data?.detail))
+    .concat(collectMessages(data?.details));
+
+  const uniqueMessages = Array.from(new Set(messages.map((item) => item.trim()).filter(Boolean)));
+
+  if (uniqueMessages.length > 0) {
+    return uniqueMessages.join("\n");
+  }
+
+  if (typeof data === "string" && data.trim()) {
+    return data.trim();
+  }
+
+  if (data && typeof data === "object") {
+    const record = data as Record<string, unknown>;
+    const fallbackDetails = Object.entries(record)
+      .filter(([key]) => !["message", "error", "detail", "details", "statusCode"].includes(key))
+      .map(([key, value]) => `${key}: ${typeof value === "object" ? JSON.stringify(value) : String(value)}`);
+
+    if (fallbackDetails.length) {
+      return fallbackDetails.join("\n");
+    }
+  }
+
+  if (status) {
+    return `Lỗi HTTP ${status}: ${error.message}`;
+  }
+
+  return error.message || "Lưu nhạc thất bại. Vui lòng thử lại.";
+};
+
 export default function AdminMusicPage() {
   const [items, setItems] = useState<MusicItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +151,7 @@ export default function AdminMusicPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMusic, setEditingMusic] = useState<MusicItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -162,10 +243,12 @@ export default function AdminMusicPage() {
     if (isSubmitting) return;
     setIsModalOpen(false);
     setEditingMusic(null);
+    setSubmitError(null);
   };
 
   const submitMusic = async (payload: MusicFormSubmitPayload) => {
     setIsSubmitting(true);
+    setSubmitError(null);
 
     const formData = new FormData();
     formData.append("title", payload.title);
@@ -231,7 +314,7 @@ export default function AdminMusicPage() {
       }
     } catch (error) {
       console.error("Failed to save music:", error);
-      alert("Lưu nhạc thất bại. Vui lòng thử lại.");
+      setSubmitError(extractApiErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -438,8 +521,8 @@ export default function AdminMusicPage() {
       </div>
 
       {isModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-4xl overflow-hidden rounded-[36px] bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3 backdrop-blur-sm sm:p-4">
+          <div className="flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl sm:rounded-[36px]">
             <div className="flex items-center justify-between border-b border-slate-100 px-7 py-5">
               <h2 className="text-2xl font-black text-slate-900">
                 {editingMusic ? "Chỉnh sửa nhạc" : "Thêm bản nhạc mới"}
@@ -452,13 +535,14 @@ export default function AdminMusicPage() {
               </button>
             </div>
 
-            <div className="p-7">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-7">
               <MusicForm
                 initialData={initialFormData}
                 availableTracks={trackOptions}
                 onSubmit={submitMusic}
                 onCancel={closeModal}
                 isLoading={isSubmitting}
+                submitError={submitError}
               />
             </div>
           </div>

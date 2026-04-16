@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "@/components/shared/LocalizedLink";
+import LanguageFlagIcon from "@/components/shared/LanguageFlagIcon";
 import Image from "next/image";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -71,6 +72,17 @@ type LanguageItem = {
   displayOrder: number;
 };
 
+const localeToCountryCode = (localeKey: string) => {
+  switch (localeKey) {
+    case "en":
+      return "us";
+    case "vi":
+      return "vn";
+    default:
+      return localeKey;
+  }
+};
+
 export default function Navbar() {
   const router = useRouter();
   const params = useParams<{ lang?: string }>();
@@ -138,6 +150,8 @@ export default function Navbar() {
     isRouteActive(href) ? "text-pink-600 dark:text-pink-400" : "text-inherit";
 
   const isDarkTheme = mounted && theme === "dark";
+  const currentLanguage = availableLanguages.find((item) => item.key === currentLang);
+  const currentLanguageLabel = currentLanguage?.name || currentLang.toUpperCase();
 
   // Debug log
   useEffect(() => {
@@ -654,18 +668,22 @@ export default function Navbar() {
                   className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1.5 dark:border-[#303133] dark:bg-[#242526] hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors xl:hidden"
                   aria-label={t("language")}
                 >
-                  <span className="text-sm leading-none" aria-hidden>
-                    {currentLang === "en" ? "🇺🇸" : "🇻🇳"}
-                  </span>
+                  <LanguageFlagIcon
+                    countryCode={localeToCountryCode(currentLang)}
+                    title={currentLanguageLabel}
+                    className="h-4 w-5"
+                  />
                   <ChevronDown className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
                 </button>
                 <button 
                   onClick={() => setIsLangOpen(!isLangOpen)}
                   className="hidden items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1.5 dark:border-[#303133] dark:bg-[#242526] hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors xl:flex"
                 >
-                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 uppercase">
-                    {(availableLanguages.find((item) => item.key === currentLang)?.key || currentLang).toUpperCase()}
-                  </span>
+                  <LanguageFlagIcon
+                    countryCode={localeToCountryCode(currentLang)}
+                    title={currentLanguageLabel}
+                    className="h-4 w-5"
+                  />
                   <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                 </button>
 
@@ -690,7 +708,14 @@ export default function Navbar() {
                                 : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-[#3a3b3c]"
                           }`}
                         >
-                          {language.name}
+                          <span className="inline-flex items-center gap-2">
+                            <LanguageFlagIcon
+                              countryCode={localeToCountryCode(language.key)}
+                              title={language.name}
+                              className="h-4 w-5"
+                            />
+                            <span className="truncate">{language.name}</span>
+                          </span>
                         </button>
                       );
                     })}

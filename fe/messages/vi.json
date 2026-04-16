@@ -6,7 +6,7 @@
   },
   "Navbar": {
     "home": "Trang chủ",
-    "music": "Nhạc Không Lời",
+    "music": "Nhạc",
     "categories": "Thể loại",
     "viewAll": "Xem tất cả",
     "new": "Mới đăng",
@@ -285,7 +285,7 @@
   },
   "MusicPage": {
     "heroEyebrow": "Khu nhạc riêng",
-    "heroTitle": "Nhạc Không Lời",
+    "heroTitle": "Nhạc",
     "heroDescription": "Không lời, không phân tâm. Thưởng thức không gian nghe nhạc tập trung với giao diện Spotify và Sticky Player đầy đủ điều khiển.",
     "trackListTitle": "Danh sách nhạc",
     "nowPlaying": "Đang phát",
@@ -293,7 +293,7 @@
     "cancelTimer": "Hủy hẹn giờ",
     "minutesShort": "phút",
     "selectTrack": "Chọn một bản để phát",
-    "fallbackArtist": "Kho nhạc không lời",
+    "fallbackArtist": "Kho nhạc",
     "unknownArtist": "Nghệ sĩ đang cập nhật",
     "chapterPrefix": "Chương",
     "untitledStory": "Truyện chưa đặt tên",

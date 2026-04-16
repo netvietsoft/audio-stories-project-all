@@ -364,7 +364,7 @@ export default function AdminMusicPage() {
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-fuchsia-600 shadow-lg shadow-fuchsia-200">
               <Music2 className="h-6 w-6 text-white" />
             </span>
-            Quản lý Nhạc Không Lời
+            Quản lý Nhạc
           </h1>
           <p className="mt-2 font-medium text-slate-500">Danh sách nhạc dùng chung toàn hệ thống, không theo ngôn ngữ.</p>
         </div>

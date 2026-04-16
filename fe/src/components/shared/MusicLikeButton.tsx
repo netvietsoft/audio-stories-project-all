@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Heart, Loader2 } from "lucide-react";
 
-import { toggleMusicLike } from "@/lib/music/music-interactions";
+import { fetchMusicLikeStatus, toggleMusicLike } from "@/lib/music/music-interactions";
 import { formatCompactCount } from "@/lib/music/normalize-music";
 import { useAuthModalStore } from "@/stores/auth-modal-store";
 import { useUserStore } from "@/stores/user-store";
+
+const likeStatusCache = new Map<string, boolean>();
 
 type MusicLikeButtonProps = {
   musicId: string;
@@ -37,6 +39,46 @@ export default function MusicLikeButton({
   const [count, setCount] = useState(likeCount);
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    setIsLiked(initialLiked);
+  }, [initialLiked, musicId]);
+
+  useEffect(() => {
+    setCount(likeCount);
+  }, [likeCount, musicId]);
+
+  useEffect(() => {
+    if (!musicId) return;
+
+    if (!accessToken) {
+      setIsLiked(initialLiked);
+      return;
+    }
+
+    const cached = likeStatusCache.get(musicId);
+    if (typeof cached === "boolean") {
+      setIsLiked(cached);
+      return;
+    }
+
+    let active = true;
+
+    void fetchMusicLikeStatus(musicId)
+      .then((liked) => {
+        likeStatusCache.set(musicId, liked);
+        if (active) {
+          setIsLiked(liked);
+        }
+      })
+      .catch(() => {
+        // Keep current optimistic state when status check fails.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken, initialLiked, musicId]);
+
   const handleClick = async (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -62,6 +104,7 @@ export default function MusicLikeButton({
 
       setIsLiked(nextLiked);
       setCount(nextCount);
+      likeStatusCache.set(musicId, nextLiked);
       onLikeChanged?.(nextLiked, nextCount);
     } catch {
       // Keep UI stable on failure.

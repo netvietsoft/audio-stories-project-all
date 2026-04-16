@@ -403,6 +403,21 @@ export default function MusicDetailPage() {
     playTrack(target, queue);
   };
 
+  const resolvePlaylistQueue = useCallback(async (item: MusicTrack) => {
+    const existingQueue = toPlaylistQueue(item);
+    if (existingQueue.length) return existingQueue;
+
+    if (!item.slug) return [];
+
+    try {
+      const response = await apiClient.get<MusicDetailResponse>(`/music/${item.slug}`);
+      const normalized = normalizeMusicItem(response.data.data);
+      return toPlaylistQueue(normalized);
+    } catch {
+      return [];
+    }
+  }, []);
+
   // ─── Render ───────────────────────────────────
 
   if (isLoading) {
@@ -979,6 +994,7 @@ export default function MusicDetailPage() {
                   const isRelActive = isMusicTrackActive(item, currentTrack);
                   const isRelPlaying = isRelActive && isPlaying;
                   const targetTracks = item.contentType === "playlist" ? toPlaylistQueue(item) : [toSingleQueueTrack(item)];
+                  const targetId = item.contentType === "playlist" ? `playlist:${item.id}` : item.id;
 
                   return (
                     <div key={item.id} className="group rounded-2xl border border-slate-200 p-2.5 transition hover:border-pink-300 dark:border-[#2f2f2f] dark:hover:border-pink-800/50">
@@ -1014,7 +1030,12 @@ export default function MusicDetailPage() {
 
                         <div className="flex items-center gap-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
                           <MusicLikeButton musicId={item.id} initialLiked={false} likeCount={item.likeCount} compact />
-                          <PlayNextButton targetId={item.id} tracks={targetTracks} compact />
+                          <PlayNextButton
+                            targetId={targetId}
+                            tracks={targetTracks}
+                            resolveTracks={item.contentType === "playlist" ? () => resolvePlaylistQueue(item) : undefined}
+                            compact
+                          />
                           {item.contentType === "single" ? (
                             <AddToPlaylistButton musicId={item.id} musicTitle={item.title} compact />
                           ) : null}

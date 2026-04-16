@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Check, ChevronsRight } from "lucide-react";
 
 import { useAudioStore } from "@/stores/audio-store";
@@ -8,6 +9,7 @@ import type { AudioTrack } from "@/stores/audio-store";
 type PlayNextButtonProps = {
   targetId: string;
   tracks: AudioTrack[];
+  resolveTracks?: () => Promise<AudioTrack[]>;
   label?: string;
   compact?: boolean;
   className?: string;
@@ -18,6 +20,7 @@ type PlayNextButtonProps = {
 export default function PlayNextButton({
   targetId,
   tracks,
+  resolveTracks,
   label,
   compact = false,
   className = "",
@@ -26,27 +29,52 @@ export default function PlayNextButton({
 }: PlayNextButtonProps) {
   const queuedNextMap = useAudioStore((state) => state.queuedNextMap);
   const toggleQueuedNext = useAudioStore((state) => state.toggleQueuedNext);
+  const [isResolving, setIsResolving] = useState(false);
 
   const isQueuedNext = Boolean(queuedNextMap[targetId]);
 
-  const handleClick = (event: React.MouseEvent) => {
+  const handleClick = async (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    if (!tracks.length) return;
-    toggleQueuedNext(targetId, tracks);
+
+    if (tracks.length) {
+      toggleQueuedNext(targetId, tracks);
+      return;
+    }
+
+    if (!resolveTracks || isResolving) return;
+
+    setIsResolving(true);
+    try {
+      const resolvedTracks = await resolveTracks();
+      if (!resolvedTracks.length) return;
+      toggleQueuedNext(targetId, resolvedTracks);
+    } catch {
+      // Keep button stable when resolving playlist tracks fails.
+    } finally {
+      setIsResolving(false);
+    }
   };
 
   if (compact) {
     return (
       <button
         type="button"
-        onClick={handleClick}
+        onClick={(event) => {
+          void handleClick(event);
+        }}
         className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition ${
           isQueuedNext ? activeClassName : inactiveClassName
         } ${className}`}
         aria-label={label || "Play Next"}
       >
-        {isQueuedNext ? <Check className="h-3.5 w-3.5" /> : <ChevronsRight className="h-3.5 w-3.5" />}
+        {isResolving ? (
+          <span className="h-3.5 w-3.5 animate-pulse rounded-full bg-current/60" />
+        ) : isQueuedNext ? (
+          <Check className="h-3.5 w-3.5" />
+        ) : (
+          <ChevronsRight className="h-3.5 w-3.5" />
+        )}
       </button>
     );
   }
@@ -54,13 +82,21 @@ export default function PlayNextButton({
   return (
     <button
       type="button"
-      onClick={handleClick}
+      onClick={(event) => {
+        void handleClick(event);
+      }}
       className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-black uppercase tracking-[0.12em] transition ${
         isQueuedNext ? activeClassName : inactiveClassName
       } ${className}`}
       aria-label={label || "Play Next"}
     >
-      {isQueuedNext ? <Check className="h-3.5 w-3.5" /> : <ChevronsRight className="h-3.5 w-3.5" />}
+      {isResolving ? (
+        <span className="h-3.5 w-3.5 animate-pulse rounded-full bg-current/60" />
+      ) : isQueuedNext ? (
+        <Check className="h-3.5 w-3.5" />
+      ) : (
+        <ChevronsRight className="h-3.5 w-3.5" />
+      )}
       {label ? <span>{label}</span> : null}
     </button>
   );

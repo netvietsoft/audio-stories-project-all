@@ -55,6 +55,10 @@ type MusicApiResponse = {
   };
 };
 
+type MusicDetailResponse = {
+  data: MusicApiItem;
+};
+
 const PAGE_SIZE = 10;
 const PLAYLIST_PREVIEW_COUNT = 5;
 const PLAYLIST_MAX_VISIBLE = 10;
@@ -260,6 +264,21 @@ export default function MusicPage() {
     playTrack(targetTrack, playlistQueue);
     void registerPlayback(parentTrack.id);
   };
+
+  const resolvePlaylistQueue = useCallback(async (track: MusicTrack) => {
+    const queue = toPlaylistQueue(track);
+    if (queue.length) return queue;
+
+    if (!track.slug) return [];
+
+    try {
+      const response = await apiClient.get<MusicDetailResponse>(`/music/${track.slug}`);
+      const normalized = normalizeMusicItem(response.data.data);
+      return toPlaylistQueue(normalized);
+    } catch {
+      return [];
+    }
+  }, []);
 
   const toggleExpand = (trackId: string) => {
     setExpandedPlaylists((prev) => ({ ...prev, [trackId]: !prev[trackId] }));
@@ -493,8 +512,9 @@ export default function MusicPage() {
               />
 
               <PlayNextButton
-                targetId={track.id}
+                targetId={`playlist:${track.id}`}
                 tracks={targetTracks}
+                resolveTracks={() => resolvePlaylistQueue(track)}
                 compact
                 activeClassName="bg-pink-100 text-pink-700 dark:bg-pink-950/30 dark:text-pink-300"
                 inactiveClassName="bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-pink-600 dark:bg-[#2b2b2b] dark:text-zinc-300 dark:hover:bg-[#343434]"

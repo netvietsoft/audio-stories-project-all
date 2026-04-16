@@ -66,8 +66,40 @@ export class UserFeaturesService {
     this.redisEnabled = true;
     this.redis = new Redis(redisUrl, {
       lazyConnect: true,
-      maxRetriesPerRequest: 1,
       enableReadyCheck: true,
+      // Reconnection strategy: retry with exponential backoff
+      retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000); // Cap at 2 seconds
+        return delay;
+      },
+      // Use 3 retries per request for better resilience
+      maxRetriesPerRequest: 3,
+      // Connection timeout and command timeout for better handling
+      connectTimeout: 10000,
+      commandTimeout: 5000,
+    });
+
+    // Attach error handler to prevent unhandled errors from crashing the app
+    this.redis.on('error', (err) => {
+      this.logger.error(`Redis Client Error: ${err?.message || err}`);
+      // Error is logged but not thrown - allows app to continue operating
+    });
+
+    this.redis.on('connect', () => {
+      this.logger.log('Redis Client connected to UserFeatures service');
+      // Enable TCP keep-alive on the underlying socket (30s interval)
+      try {
+        const socket = (this.redis as any).stream?.socket;
+        if (socket) {
+          socket.setKeepAlive(true, 30000);
+        }
+      } catch (err) {
+        this.logger.warn(`Failed to set socket keepAlive: ${err?.message || err}`);
+      }
+    });
+
+    this.redis.on('reconnecting', () => {
+      this.logger.log('Redis Client reconnecting to UserFeatures service...');
     });
 
     void this.redis.connect().catch((error) => {
@@ -734,26 +766,49 @@ export class UserFeaturesService {
     if (!this.redisEnabled || !this.redis) return;
 
     try {
-      const moved = await this.redis.eval(
-        `if redis.call('EXISTS', KEYS[1]) == 1 then
-          if redis.call('EXISTS', KEYS[2]) == 1 then
-            return 0
+      let moved: any;
+      try {
+        moved = await this.redis.eval(
+          `if redis.call('EXISTS', KEYS[1]) == 1 then
+            if redis.call('EXISTS', KEYS[2]) == 1 then
+              return 0
+            end
+            redis.call('RENAME', KEYS[1], KEYS[2])
+            return 1
           end
-          redis.call('RENAME', KEYS[1], KEYS[2])
-          return 1
-        end
-        return -1`,
-        2,
-        this.HISTORY_SYNC_KEY,
-        this.HISTORY_PROCESSING_KEY,
-      );
+          return -1`,
+          2,
+          this.HISTORY_SYNC_KEY,
+          this.HISTORY_PROCESSING_KEY,
+        );
+      } catch (redisError) {
+        this.logger.warn(
+          `[UserFeatures] Failed to check history sync status in Redis: ${redisError?.message || redisError}. Skipping this flush cycle.`,
+        );
+        return; // Skip this cycle - next cycle will retry
+      }
 
       if (Number(moved) <= 0) return;
 
-      const payload = await this.redis.hgetall(this.HISTORY_PROCESSING_KEY);
+      let payload: Record<string, string>;
+      try {
+        payload = await this.redis.hgetall(this.HISTORY_PROCESSING_KEY);
+      } catch (redisError) {
+        this.logger.warn(
+          `[UserFeatures] Failed to read history sync data from Redis: ${redisError?.message || redisError}. Skipping this flush cycle.`,
+        );
+        return; // Skip this cycle - next cycle will retry
+      }
+
       const fields = Object.keys(payload);
       if (!fields.length) {
-        await this.redis.del(this.HISTORY_PROCESSING_KEY);
+        try {
+          await this.redis.del(this.HISTORY_PROCESSING_KEY);
+        } catch (delError) {
+          this.logger.warn(
+            `[UserFeatures] Failed to clean up empty processing key: ${delError?.message || delError}`,
+          );
+        }
         return;
       }
 
@@ -793,10 +848,20 @@ export class UserFeaturesService {
         await this.prisma.$transaction(writes);
       }
 
-      await this.redis.del(this.HISTORY_PROCESSING_KEY);
+      try {
+        await this.redis.del(this.HISTORY_PROCESSING_KEY);
+      } catch (delError) {
+        this.logger.warn(
+          `[UserFeatures] Failed to delete processing key from Redis: ${delError?.message || delError}. Data is safe but cleanup incomplete.`,
+        );
+        // Not critical - continue even if cleanup fails
+      }
       this.logger.log(`History sync cron flushed ${writes.length} items.`);
     } catch (error) {
-      this.logger.error(`History sync cron failed: ${error?.message || error}`);
+      this.logger.error(
+        `[UserFeatures] History sync cron failed: ${error?.message || error}. Will retry on next cycle.`,
+      );
+      // Error is logged but NOT re-thrown - prevents cronjob from crashing the application
     }
   }
 }

@@ -33,8 +33,40 @@ export class TrackingService {
     this.redisEnabled = true;
     this.redis = new Redis(redisUrl, {
       lazyConnect: true,
-      maxRetriesPerRequest: 1,
       enableReadyCheck: true,
+      // Reconnection strategy: retry with exponential backoff
+      retryStrategy: (times) => {
+        const delay = Math.min(times * 50, 2000); // Cap at 2 seconds
+        return delay;
+      },
+      // Use 3 retries per request for better resilience
+      maxRetriesPerRequest: 3,
+      // Connection timeout and command timeout for better handling
+      connectTimeout: 10000,
+      commandTimeout: 5000,
+    });
+
+    // Attach error handler to prevent unhandled errors from crashing the app
+    this.redis.on('error', (err) => {
+      this.logger.error(`Redis Client Error: ${err?.message || err}`);
+      // Error is logged but not thrown - allows app to continue operating
+    });
+
+    this.redis.on('connect', () => {
+      this.logger.log('Redis Client connected to Tracking service');
+      // Enable TCP keep-alive on the underlying socket (30s interval)
+      try {
+        const socket = (this.redis as any).stream?.socket;
+        if (socket) {
+          socket.setKeepAlive(true, 30000);
+        }
+      } catch (err) {
+        this.logger.warn(`Failed to set socket keepAlive: ${err?.message || err}`);
+      }
+    });
+
+    this.redis.on('reconnecting', () => {
+      this.logger.log('Redis Client reconnecting...');
     });
 
     void this.redis.connect().catch((error) => {
@@ -106,10 +138,20 @@ export class TrackingService {
     try {
       this.logger.log(`[Tracking BE] Bat dau tien trinh Flush Redis -> Database...`);
 
-      const [storyKeys, chapterKeys] = await Promise.all([
-        this.scanKeys(`${this.STORY_VIEWS_PREFIX}*`),
-        this.scanKeys(`${this.CHAPTER_VIEWS_PREFIX}*`),
-      ]);
+      let storyKeys: string[] = [];
+      let chapterKeys: string[] = [];
+
+      try {
+        [storyKeys, chapterKeys] = await Promise.all([
+          this.scanKeys(`${this.STORY_VIEWS_PREFIX}*`),
+          this.scanKeys(`${this.CHAPTER_VIEWS_PREFIX}*`),
+        ]);
+      } catch (scanError) {
+        this.logger.warn(
+          `[Tracking BE] Failed to scan Redis keys: ${scanError?.message || scanError}. Skipping this flush cycle.`,
+        );
+        return; // Skip this cycle - next cycle will retry
+      }
 
       if (!storyKeys.length && !chapterKeys.length) {
         return;
@@ -196,8 +238,16 @@ export class TrackingService {
           await this.prisma.$transaction(writes);
         } catch (dbError) {
           // Rollback counters back to live keys if DB flush fails.
+          this.logger.warn(`Database transaction failed, attempting to restore counters to Redis...`);
           for (const entry of processingEntries) {
-            await this.redis.multi().incrby(entry.originalKey, entry.count).del(entry.processingKey).exec();
+            try {
+              await this.redis.multi().incrby(entry.originalKey, entry.count).del(entry.processingKey).exec();
+            } catch (restoreError) {
+              this.logger.error(
+                `Failed to restore counter for key [${entry.originalKey}]: ${restoreError?.message || restoreError}`,
+              );
+              // Best effort - continue with next entry even if restore fails
+            }
           }
           throw dbError;
         }
@@ -205,13 +255,23 @@ export class TrackingService {
 
       const processingKeys = processingEntries.map((entry) => entry.processingKey);
       if (processingKeys.length > 0) {
-        await this.redis.del(...processingKeys);
+        try {
+          await this.redis.del(...processingKeys);
+        } catch (delError) {
+          this.logger.warn(
+            `Failed to delete processing keys from Redis: ${delError?.message || delError}. Data is safe but cleanup incomplete.`,
+          );
+          // Not critical - continue even if cleanup fails
+        }
       }
 
       this.logger.log(`[Tracking BE] Du lieu da ghi vao Database thanh cong! Da xoa cac key processing.`);
       this.logger.log(`Flushed tracking counters safely. Keys processed: ${processingEntries.length}.`);
     } catch (error) {
-      this.logger.error(`Failed to flush tracking counters: ${error?.message || error}`);
+      this.logger.error(
+        `[Tracking BE] Failed to flush tracking counters: ${error?.message || error}. Will retry on next cycle.`,
+      );
+      // Error is logged but NOT re-thrown - prevents cronjob from crashing the application
     }
   }
 }

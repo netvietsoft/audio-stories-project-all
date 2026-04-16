@@ -435,31 +435,17 @@ export default function GlobalPlayer() {
     ? currentTrack!.author || t("defaultAuthor")
     : safeT("emptySubtitle", "Would you like music or an audio story?");
 
-  const accentRgb = isMusicTrack ? "236 72 153" : "75 85 99";
+  const accentRgb = "236 72 153";
   const progressPercent = hasTrack ? progress : 0;
 
-  const shellClass = isMusicTrack
-    ? "bg-pink-50/95 border-t border-pink-200/80 dark:bg-[#2a1720]/95 dark:border-pink-900/40"
-    : "bg-gray-50/90 border-t border-gray-200/70 dark:bg-[#242526]/95 dark:border-[#353738]";
-  const hoverToneClass = isMusicTrack ? "hover:bg-pink-100/70 dark:hover:bg-pink-900/20" : "hover:bg-gray-100/80 dark:hover:bg-[#3a3b3c]";
-  const ghostControlClass = isMusicTrack
-    ? "text-pink-700 hover:bg-pink-100 dark:text-pink-300 dark:hover:bg-pink-900/20"
-    : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-[#3a3b3c]";
-  const pillClass = isMusicTrack
-    ? "border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100 dark:border-pink-900/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/35"
-    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100 dark:border-[#3a3b3c] dark:bg-[#2f3133] dark:text-gray-200 dark:hover:bg-[#3a3b3c]";
-  const modeButtonInactiveClass = isMusicTrack
-    ? "border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100 dark:border-pink-900/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/35"
-    : "border-gray-300 bg-white text-gray-600 hover:bg-gray-100 dark:border-[#3a3b3c] dark:bg-[#2f3133] dark:text-gray-200 dark:hover:bg-[#3a3b3c]";
-  const modeButtonActiveClass = isMusicTrack
-    ? "border-pink-500 bg-pink-500 text-white hover:bg-pink-600 dark:border-pink-400 dark:bg-pink-500"
-    : "border-gray-700 bg-gray-700 text-white hover:bg-gray-800 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900";
-  const playButtonClass = isMusicTrack
-    ? "bg-pink-600 text-white hover:bg-pink-700"
-    : "bg-gray-700 text-white hover:bg-gray-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white";
-  const thumbClassName = isMusicTrack
-    ? "[&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:bg-pink-500"
-    : "[&::-webkit-slider-thumb]:bg-gray-600 [&::-moz-range-thumb]:bg-gray-600 dark:[&::-webkit-slider-thumb]:bg-zinc-100 dark:[&::-moz-range-thumb]:bg-zinc-100";
+  const shellClass = "bg-pink-50/95 border-t border-pink-200/80 dark:bg-[#2a1720]/95 dark:border-pink-900/40";
+  const hoverToneClass = "hover:bg-pink-100/70 dark:hover:bg-pink-900/20";
+  const ghostControlClass = "text-pink-700 hover:bg-pink-100 dark:text-pink-300 dark:hover:bg-pink-900/20";
+  const pillClass = "border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100 dark:border-pink-900/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/35";
+  const modeButtonInactiveClass = "border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100 dark:border-pink-900/60 dark:bg-pink-900/20 dark:text-pink-300 dark:hover:bg-pink-900/35";
+  const modeButtonActiveClass = "border-pink-500 bg-pink-500 text-white hover:bg-pink-600 dark:border-pink-400 dark:bg-pink-500";
+  const playButtonClass = "bg-pink-600 text-white hover:bg-pink-700";
+  const thumbClassName = "[&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:bg-pink-500";
   const disabledClass = "disabled:cursor-not-allowed disabled:opacity-40";
 
   const handlePrev = () => {
@@ -492,7 +478,7 @@ export default function GlobalPlayer() {
     <>
       <div
         className={`relative h-10 w-10 shrink-0 overflow-hidden rounded-md ${
-          isMusicTrack ? "bg-pink-100 dark:bg-pink-950/30" : "bg-gray-200 dark:bg-[#3a3b3c]"
+          "bg-pink-100 dark:bg-pink-950/30"
         }`}
       >
         {hasTrack ? (

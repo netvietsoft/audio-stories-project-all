@@ -372,7 +372,8 @@ export default function Navbar() {
     if (!isSupported) return;
     if (nextLocale === currentLang) return;
 
-    const nextPath = `/${nextLocale}`;
+    const queryString = searchParams.toString();
+    const nextPath = `/${nextLocale}${normalizedPathname === "/" ? "" : normalizedPathname}${queryString ? `?${queryString}` : ""}`;
 
     document.cookie = `${localeCookieName}=${nextLocale}; path=/; max-age=31536000`;
     closeMobileMenu();
@@ -504,7 +505,7 @@ export default function Navbar() {
             {/* RIGHT SECTION */}
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
               {/* Mobile Search Bar - Always visible inline on top row */}
-              <div className="relative w-28 shrink-0 sm:w-32 lg:hidden" ref={mobileSearchRef}>
+              <div className="relative w-40 shrink-0 sm:w-56 lg:hidden" ref={mobileSearchRef}>
                 <input
                   type="text"
                   value={searchQuery}
@@ -574,7 +575,7 @@ export default function Navbar() {
               </div>
 
               {/* Desktop Search Bar - Only visible on 2xl+ */}
-              <div className="relative mx-2 hidden 2xl:flex flex-grow max-w-sm md:max-w-md" ref={searchRef}>
+              <div className="relative mx-2 hidden 2xl:flex flex-grow max-w-lg xl:max-w-xl" ref={searchRef}>
                 <input
                   type="text"
                   value={searchQuery}

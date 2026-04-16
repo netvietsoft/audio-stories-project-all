@@ -170,7 +170,7 @@ export default function StoryAudioPlayerPanel({
           </div>
 
           <div className="mt-1 flex w-full min-w-0 items-center justify-center gap-1.5 sm:gap-2">
-            <button onClick={onToggleMute} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-gray-600 shadow-sm transition hover:bg-gray-100 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-200 dark:hover:bg-[#464749]">{isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}</button>
+            <button onClick={onToggleMute} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white shadow-sm transition hover:bg-pink-600 dark:bg-pink-500 dark:text-white dark:hover:bg-pink-400">{isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}</button>
             <input
               type="range"
               min={0}
@@ -266,7 +266,7 @@ export default function StoryAudioPlayerPanel({
           height: 10px;
           border-radius: 50%;
           background: rgb(236 72 153);
-          border: 1px solid rgb(15 23 42);
+          border: 0;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
         }
         input[type="range"].volume-slider::-moz-range-thumb {
@@ -274,7 +274,7 @@ export default function StoryAudioPlayerPanel({
           height: 10px;
           border-radius: 50%;
           background: rgb(236 72 153);
-          border: 1px solid rgb(15 23 42);
+          border: 0;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
         }
         input[type="range"].volume-slider:focus::-webkit-slider-thumb,
@@ -287,12 +287,12 @@ export default function StoryAudioPlayerPanel({
         }
         :global(.dark) input[type="range"].volume-slider::-webkit-slider-thumb {
           background: rgb(236 72 153);
-          border: 1px solid white;
+          border: 0;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
         }
         :global(.dark) input[type="range"].volume-slider::-moz-range-thumb {
           background: rgb(236 72 153);
-          border: 1px solid white;
+          border: 0;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
         }
       `}</style>

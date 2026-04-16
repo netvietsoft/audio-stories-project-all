@@ -33,7 +33,8 @@ export class AudioUploadService {
   constructor(private readonly configService: ConfigService) {
     const endpoint = this.configService.get<string>('R2_ENDPOINT');
     const accessKeyId = this.configService.get<string>('R2_ACCESS_KEY_ID');
-    const secretAccessKey = this.configService.get<string>('R2_SECRET_KEY_ID');
+    const secretAccessKey =
+      this.configService.get<string>('R2_SECRET_ACCESS_KEY') || this.configService.get<string>('R2_SECRET_KEY_ID');
     const bucketName = this.configService.get<string>('R2_BUCKET_NAME');
     const publicBaseUrl = this.configService.get<string>('R2_URL');
 
@@ -79,8 +80,44 @@ export class AudioUploadService {
       );
 
       return `${this.publicBaseUrl}/${key}`;
-    } catch {
-      throw new InternalServerErrorException('Failed to upload file to Cloudflare R2');
+    } catch (error) {
+      const awsError = error as {
+        name?: string;
+        message?: string;
+        code?: string;
+        $metadata?: { httpStatusCode?: number; requestId?: string; extendedRequestId?: string };
+      };
+
+      const details = {
+        bucket: this.bucketName,
+        key,
+        folder,
+        fileName: file.originalname,
+        mimeType: file.mimetype,
+        awsName: awsError?.name,
+        awsCode: awsError?.code,
+        httpStatusCode: awsError?.$metadata?.httpStatusCode,
+        requestId: awsError?.$metadata?.requestId,
+        extendedRequestId: awsError?.$metadata?.extendedRequestId,
+        awsMessage: awsError?.message,
+      };
+
+      const isInvalidBucketName =
+        awsError?.name === 'InvalidBucketName' ||
+        awsError?.code === 'InvalidBucketName' ||
+        /bucket name/i.test(awsError?.message || '');
+
+      const message = isInvalidBucketName
+        ? 'R2 bucket name is invalid. Cloudflare R2 bucket names cannot contain underscores. Please rename the bucket (for example: audio-truyen-r2) and update R2_BUCKET_NAME.'
+        : 'Failed to upload file to Cloudflare R2';
+
+      // Keep a structured log for operators, while returning a useful message to the client.
+      console.error('[AudioUploadService] Failed to upload file to Cloudflare R2', details, error);
+
+      throw new InternalServerErrorException({
+        message,
+        details,
+      });
     }
   }
 

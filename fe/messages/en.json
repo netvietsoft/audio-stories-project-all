@@ -45,6 +45,8 @@
     "musicHiphop": "Hip Hop",
     "musicTrending": "Trending Music",
     "musicLatest": "New Uploads",
+    "switchToStory": "Switch to Story",
+    "switchToMusic": "Switch to Music",
     "dateFormat": "en-US"
   },
   "LandingChoicePage": {

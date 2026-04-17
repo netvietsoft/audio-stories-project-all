@@ -11,7 +11,7 @@ import {
   Search, Moon, Sun, Bell,
   ChevronDown, LogOut, Coins, X,
   UserCircle, History, Heart,
-  Home, LayoutGrid, Zap, Flame, Trophy, Sparkles, Music2
+  Home, LayoutGrid, Zap, Flame, Trophy, Sparkles, Music2, ArrowRight
 } from "lucide-react";
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/auth";
 import { clearAuthCookies } from "@/lib/auth/cookies";
@@ -132,6 +132,8 @@ export default function Navbar() {
   const activeMusicTag = (searchParams.get("tag") || "").trim().toLowerCase();
   const resolvedSearchPlaceholder = isMusicRoute ? t("musicSearchPlaceholder") : searchPlaceholder;
   const sectionLandingHref = isMusicRoute ? "/music" : "/story";
+  const switchSectionHref = isMusicRoute ? "/story" : "/music";
+  const switchSectionLabel = isMusicRoute ? t("switchToStory") : t("switchToMusic");
 
   const isRouteActive = (href: string) => {
     if (href === "/") {
@@ -571,6 +573,16 @@ export default function Navbar() {
 
             {/* RIGHT SECTION */}
             <div className="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-2">
+              <Link
+                href={switchSectionHref}
+                className="hidden lg:inline-flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:brightness-110 hover:shadow-md"
+                aria-label={switchSectionLabel}
+                title={switchSectionLabel}
+              >
+                <span className="whitespace-nowrap">{switchSectionLabel}</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+
               {/* Mobile Search Bar - Always visible inline on top row */}
               <div className="relative w-40 shrink-0 sm:w-56 lg:hidden" ref={mobileSearchRef}>
                 <input
@@ -1007,6 +1019,15 @@ export default function Navbar() {
             {/* Menu Items - Scrollable */}
             <div className="flex-1 overflow-y-auto">
               <nav className="p-3 space-y-1">
+                <Link
+                  href={switchSectionHref}
+                  onClick={closeMobileMenu}
+                  className="mb-2 flex items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm"
+                >
+                  <span>{switchSectionLabel}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+
                 {/* Main Navigation */}
                 {isMusicRoute ? (
                   <>

@@ -22,6 +22,7 @@
         "prisma:generate": "prisma generate",
         "prisma:migrate": "dotenv -e .env -- prisma migrate dev",
         "prisma:migrate:deploy": "prisma migrate deploy",
+        "prisma:migrate:deploy:safe": "node scripts/prisma-safe-migrate.cjs",
         "prisma:push": "prisma db push",
         "prisma:seed": "dotenv -e .env -- prisma db seed"
     },

@@ -141,7 +141,7 @@ echo "✅ .env file prepared for build"
 
 # Create archive of source code
 echo "📦 Creating archive of source code..."
-TAR_FILES="src prisma package.json ecosystem.config.js nest-cli.json tsconfig.json tsconfig.build.json"
+TAR_FILES="src prisma scripts package.json ecosystem.config.js nest-cli.json tsconfig.json tsconfig.build.json"
 
 # Add optional files if they exist
 [ -f "package-lock.json" ] && TAR_FILES="$TAR_FILES package-lock.json" && echo "  ✓ Including package-lock.json"
@@ -170,7 +170,7 @@ cd $SERVER_DIR
 # Extract source
 if [ -f "be-source.tar.gz" ]; then
     echo "Extracting source..."
-    rm -rf src prisma package.json package-lock.json nest-cli.json tsconfig.json tsconfig.build.json
+    rm -rf src prisma scripts package.json package-lock.json nest-cli.json tsconfig.json tsconfig.build.json
     tar -xzf be-source.tar.gz
     rm -f be-source.tar.gz
 fi
@@ -252,7 +252,7 @@ if [ "$RESET_DB" = "yes" ]; then
     echo "  ✅ Database reset complete"
     
     echo "🌱 Running migrations from scratch..."
-    npx prisma migrate deploy
+    npm run prisma:migrate:deploy:safe
     
     if [ \$? -ne 0 ]; then
         echo "  ❌ Failed to apply migrations"
@@ -283,7 +283,7 @@ if [ "$RESET_DB" = "yes" ]; then
     fi
 else
     echo "📦 Running migrations..."
-    npx prisma migrate deploy
+    npm run prisma:migrate:deploy:safe
     echo "  ✅ Migrations applied"
 fi
 

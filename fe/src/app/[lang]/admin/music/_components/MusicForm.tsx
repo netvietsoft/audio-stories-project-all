@@ -154,8 +154,16 @@ export default function MusicForm({
     },
   });
 
-  const contentType = useWatch({ control, name: "contentType" });
-  const accessType = useWatch({ control, name: "accessType" });
+  const contentType = useWatch({
+    control,
+    name: "contentType",
+    defaultValue: initialData?.contentType || "single",
+  });
+  const accessType = useWatch({
+    control,
+    name: "accessType",
+    defaultValue: initialData?.accessType || "free",
+  });
   const title = useWatch({ control, name: "title" });
   const slug = useWatch({ control, name: "slug" });
   const watchedDuration = useWatch({ control, name: "audioDuration" });
@@ -500,9 +508,10 @@ export default function MusicForm({
           </div>
 
           {contentType !== "playlist" ? (
-            <div className="space-y-2">
+            <div key="audio-upload" className="space-y-2">
               <label className="text-sm font-black uppercase tracking-wider text-slate-700">Audio</label>
               <input
+                key="audio-file-input"
                 type="file"
                 accept="audio/*"
                 onChange={handleAudioChange}
@@ -516,9 +525,10 @@ export default function MusicForm({
               {audioError ? <p className="text-xs text-red-500">{audioError}</p> : null}
             </div>
           ) : (
-            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <div key="playlist-builder" className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
               <label className="text-sm font-black uppercase tracking-wider text-slate-700">Track trong playlist</label>
               <input
+                key="playlist-query-input"
                 value={playlistQuery}
                 onChange={(event) => setPlaylistQuery(event.target.value)}
                 placeholder="Tìm track theo tiêu đề hoặc nghệ sĩ..."

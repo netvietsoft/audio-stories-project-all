@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, FileText, TrendingUp, Activity, Loader2 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import useRequireAdmin from '@/hooks/useRequireAdmin';
 
 interface DashboardStats {
     totalUsers: number;
@@ -29,7 +30,16 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    const { isAdmin, isLoading: adminAuthLoading } = useRequireAdmin(false);
+
     useEffect(() => {
+        if (adminAuthLoading) return;
+
+        if (!isAdmin) {
+            setIsLoading(false);
+            return;
+        }
+
         const fetchStats = async () => {
             try {
                 const res = await apiClient.get('/auth/admin/stats');
@@ -40,8 +50,9 @@ export default function AdminDashboard() {
                 setIsLoading(false);
             }
         };
+
         fetchStats();
-    }, []);
+    }, [isAdmin, adminAuthLoading]);
 
     const formatTimeAgo = (dateStr: string) => {
         const date = new Date(dateStr);

@@ -8,6 +8,8 @@ import { ThemeProvider } from 'next-themes';
 
 import { useState, useEffect } from 'react';
 import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import AdminRequireLogin from '@/components/admin/AdminRequireLogin';
+import useRequireAdmin from '@/hooks/useRequireAdmin';
 import { useAdminStore } from '@/stores/admin-store';
 
 export default function AdminLayout({
@@ -109,6 +111,14 @@ export default function AdminLayout({
 
     // Skip layout for login page
     const isLoginPage = pathname?.includes('/admin/login');
+
+    // Use centralized hook to determine admin auth state.
+    const { isAdmin } = useRequireAdmin(false);
+
+    if (!isLoginPage && !isAdmin) {
+        return <AdminRequireLogin />;
+    }
+
     if (isLoginPage) {
         return <ThemeProvider forcedTheme="light" attribute="class">{children}</ThemeProvider>;
     }

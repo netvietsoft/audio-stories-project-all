@@ -31,6 +31,20 @@ const envImagePatterns = [
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  async redirects() {
+    return [
+      { source: "/:lang(vi|en)/new", destination: "/:lang/story/new", permanent: false },
+      { source: "/:lang(vi|en)/trending", destination: "/:lang/story/trending", permanent: false },
+      { source: "/:lang(vi|en)/interactive", destination: "/:lang/story/interactive", permanent: false },
+      { source: "/:lang(vi|en)/ranking", destination: "/:lang/story/ranking", permanent: false },
+      { source: "/:lang(vi|en)/vinh-danh", destination: "/:lang/story/vinh-danh", permanent: false },
+      { source: "/:lang(vi|en)/stories", destination: "/:lang/story/stories", permanent: false },
+      { source: "/:lang(vi|en)/stories/:slug", destination: "/:lang/story/stories/:slug", permanent: false },
+      { source: "/:lang(vi|en)/categories/:slug", destination: "/:lang/story/categories/:slug", permanent: false },
+      { source: "/:lang(vi|en)/search", destination: "/:lang/story/search", permanent: false },
+      { source: "/:lang(vi|en)/explore", destination: "/:lang/story/explore", permanent: false },
+    ];
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "placehold.co" },

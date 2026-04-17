@@ -3,10 +3,12 @@ import type { MetadataRoute } from "next";
 // Static pages
 const staticRoutes: { url: string; priority: number; changeFrequency: MetadataRoute.Sitemap[0]["changeFrequency"] }[] = [
   { url: "/", priority: 1.0, changeFrequency: "daily" },
-  { url: "/trending", priority: 0.9, changeFrequency: "daily" },
-  { url: "/new", priority: 0.9, changeFrequency: "daily" },
-  { url: "/categories", priority: 0.8, changeFrequency: "weekly" },
-  { url: "/vinh-danh", priority: 0.7, changeFrequency: "daily" },
+  { url: "/story", priority: 0.95, changeFrequency: "daily" },
+  { url: "/music", priority: 0.95, changeFrequency: "daily" },
+  { url: "/story/trending", priority: 0.9, changeFrequency: "daily" },
+  { url: "/story/new", priority: 0.9, changeFrequency: "daily" },
+  { url: "/story/stories", priority: 0.8, changeFrequency: "weekly" },
+  { url: "/story/vinh-danh", priority: 0.7, changeFrequency: "daily" },
   { url: "/about", priority: 0.5, changeFrequency: "monthly" },
   { url: "/terms", priority: 0.4, changeFrequency: "monthly" },
   { url: "/privacy", priority: 0.4, changeFrequency: "monthly" },
@@ -51,7 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (categoriesRes.status === "fulfilled" && categoriesRes.value.ok) {
       const cats: { slug: string }[] = await categoriesRes.value.json();
       categoryEntries = (cats || []).map((cat) => ({
-        url: `${siteUrl}/categories/${cat.slug}`,
+        url: `${siteUrl}/story/categories/${cat.slug}`,
         lastModified: now,
         changeFrequency: "weekly" as const,
         priority: 0.6,

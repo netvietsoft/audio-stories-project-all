@@ -696,7 +696,7 @@ export default function MusicPage() {
 
           {/* Trending */}
           {trendingTracks.length > 0 ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#2d2d2d] dark:bg-[#171717]">
+            <div id="music-trending" className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#2d2d2d] dark:bg-[#171717]">
               <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-[0.18em] text-slate-500 dark:text-zinc-400">
                 <Flame className="h-3.5 w-3.5 text-pink-500" /> {t("trendingTitle")}
               </p>
@@ -741,7 +741,7 @@ export default function MusicPage() {
         </aside>
 
         {/* Main track list */}
-        <div className="min-w-0 space-y-4">
+        <div id="music-latest" className="min-w-0 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-black uppercase tracking-[0.15em] text-slate-500 dark:text-zinc-400">
               {t("trackListTitle")}{" "}

@@ -430,25 +430,25 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
       key: "action",
       label: t("actionTitle"),
       stories: actionStories,
-      href: categoryIdBySlug.get("action") ? `/explore?categoryId=${categoryIdBySlug.get("action")}` : "/explore",
+      href: categoryIdBySlug.get("action") ? `/story/explore?categoryId=${categoryIdBySlug.get("action")}` : "/story/explore",
     },
     {
       key: "xuyen-khong",
       label: t("xuyenKhongTitle"),
       stories: xuyenKhongStories,
-      href: categoryIdBySlug.get("xuyen-khong") ? `/explore?categoryId=${categoryIdBySlug.get("xuyen-khong")}` : "/explore",
+      href: categoryIdBySlug.get("xuyen-khong") ? `/story/explore?categoryId=${categoryIdBySlug.get("xuyen-khong")}` : "/story/explore",
     },
     {
       key: "shounen",
       label: t("shounenTitle"),
       stories: shounenStories,
-      href: categoryIdBySlug.get("shounen") ? `/explore?categoryId=${categoryIdBySlug.get("shounen")}` : "/explore",
+      href: categoryIdBySlug.get("shounen") ? `/story/explore?categoryId=${categoryIdBySlug.get("shounen")}` : "/story/explore",
     },
     {
       key: "tien-hiep",
       label: t("tienHiepTitle"),
       stories: tienHiepStories,
-      href: categoryIdBySlug.get("tien-hiep") ? `/explore?categoryId=${categoryIdBySlug.get("tien-hiep")}` : "/explore",
+      href: categoryIdBySlug.get("tien-hiep") ? `/story/explore?categoryId=${categoryIdBySlug.get("tien-hiep")}` : "/story/explore",
     },
   ].filter((tab) => tab.stories.length > 0);
 
@@ -506,11 +506,11 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
                 {t("listenNow")}
               </a>
             ) : (
-              <Link href={activeHero ? activeHero.href : "/explore"} className="whitespace-nowrap rounded-full bg-amber-400 px-3.5 py-2 text-xs font-semibold text-slate-900 transition-colors hover:bg-amber-300 sm:px-5 sm:py-2.5 sm:text-sm">
+              <Link href={activeHero ? activeHero.href : "/story/explore"} className="whitespace-nowrap rounded-full bg-amber-400 px-3.5 py-2 text-xs font-semibold text-slate-900 transition-colors hover:bg-amber-300 sm:px-5 sm:py-2.5 sm:text-sm">
                 {t("listenNow")}
               </Link>
             )}
-            <Link href="/trending" className="whitespace-nowrap rounded-full border border-white/30 px-3.5 py-2 text-xs font-semibold transition-colors hover:bg-white/10 sm:px-5 sm:py-2.5 sm:text-sm">
+              <Link href="/story/trending" className="whitespace-nowrap rounded-full border border-white/30 px-3.5 py-2 text-xs font-semibold transition-colors hover:bg-white/10 sm:px-5 sm:py-2.5 sm:text-sm">
               {t("viewTrending")}
             </Link>
           </div>
@@ -663,7 +663,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
           <section className="space-y-3">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("hashtagsTitle")}</h2>
-              <Link href="/stories" className="text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
+              <Link href="/story/stories" className="text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
                 {t("viewAll")}
               </Link>
             </div>
@@ -685,7 +685,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
                   return (
                     <Link
                       key={cat.id}
-                      href={`/explore?categoryId=${cat.id}&lang=${lang}`}
+                      href={`/story/explore?categoryId=${cat.id}&lang=${lang}`}
                       className="group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg w-[90%] mx-auto h-10 sm:h-12 md:h-14 flex items-center justify-center overflow-hidden"
                     >
                       {/* Background Image */}
@@ -709,7 +709,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
                 return (
                   <Link
                     key={cat.id}
-                    href={`/explore?categoryId=${cat.id}&lang=${lang}`}
+                    href={`/story/explore?categoryId=${cat.id}&lang=${lang}`}
                     className={`group relative overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-lg w-[90%] mx-auto h-10 sm:h-12 md:h-14 flex items-center justify-center overflow-hidden`}
                   >
                     {/* Gradient Background */}
@@ -736,7 +736,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
                 <div>
                   <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{locale === "en" ? "High-Rating Stories" : "Truyện Rating Cao"}</h2>
                 </div>
-                <Link href="/search?sort=rating" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
+                <Link href="/story/search?sort=rating" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
                   {t("viewAll")}
                 </Link>
               </div>
@@ -751,7 +751,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
             <div>
               <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{t("trendingTitle")}</h2>
             </div>
-            <Link href="/trending" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
+            <Link href="/story/trending" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
               {t("viewAll")}
             </Link>
           </div>
@@ -767,7 +767,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
               <div>
                 <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{t("newestTitle")}</h2>
               </div>
-              <Link href="/new" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
+              <Link href="/story/new" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
                 {t("viewAll")}
               </Link>
             </div>
@@ -790,7 +790,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
               <div>
                 <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{locale === "en" ? "Completed Stories" : "Truyện Hoàn Thành"}</h2>
               </div>
-              <Link href="/search?status=completed&sort=rating" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
+              <Link href="/story/search?status=completed&sort=rating" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
                 {t("viewAll")}
               </Link>
             </div>
@@ -822,7 +822,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
                   </h2>
                 </div>
                 <Link 
-                  href={`/explore?categoryId=${category.id}`} 
+                  href={`/story/explore?categoryId=${category.id}`} 
                   className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400"
                 >
                   {t("viewAll")}
@@ -850,7 +850,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
             <div className="flex-1 min-w-0">
               <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{t("hallTitle")}</h2>
             </div>
-            <Link href="/vinh-danh" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400 whitespace-nowrap">
+            <Link href="/story/vinh-danh" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400 whitespace-nowrap">
               {t("viewFullRanking")}
             </Link>
           </div>

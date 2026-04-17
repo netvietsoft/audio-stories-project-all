@@ -129,7 +129,9 @@ export default function Navbar() {
   const searchPlaceholder = t("searchPlaceholder");
   const normalizedPathname = (pathname || "").replace(/^\/(vi|en)(?=\/|$)/, "") || "/";
   const isMusicRoute = normalizedPathname === "/music" || normalizedPathname.startsWith("/music/");
+  const activeMusicTag = (searchParams.get("tag") || "").trim().toLowerCase();
   const resolvedSearchPlaceholder = isMusicRoute ? t("musicSearchPlaceholder") : searchPlaceholder;
+  const sectionLandingHref = isMusicRoute ? "/music" : "/story";
 
   const isRouteActive = (href: string) => {
     if (href === "/") {
@@ -146,12 +148,31 @@ export default function Navbar() {
         : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
     }`;
 
+  const neutralNavItemClassName =
+    "flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors whitespace-nowrap text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800";
+
+  const musicTagClassName = (tag: string) =>
+    `flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors whitespace-nowrap ${
+      activeMusicTag === tag.toLowerCase()
+        ? "text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-950/30"
+        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+    }`;
+
   const navLabelClassName = (href: string) =>
     isRouteActive(href) ? "text-pink-600 dark:text-pink-400" : "text-inherit";
 
   const isDarkTheme = mounted && theme === "dark";
   const currentLanguage = availableLanguages.find((item) => item.key === currentLang);
   const currentLanguageLabel = currentLanguage?.name || currentLang.toUpperCase();
+  const musicMenuLabels = {
+    home: currentLang === "en" ? "Music Home" : "Trang nhac",
+    usUk: currentLang === "en" ? "US-UK" : "Nhac US-UK",
+    kpop: "K-Pop",
+    vpop: "V-Pop",
+    hiphop: "Hip Hop",
+    trending: currentLang === "en" ? "Trending Music" : "Nhac thinh hanh",
+    latest: currentLang === "en" ? "New Uploads" : "Nhac moi dang",
+  };
 
   // Debug log
   useEffect(() => {
@@ -190,6 +211,11 @@ export default function Navbar() {
   }, [user]);
 
   useEffect(() => {
+    if (isMusicRoute) {
+      setTopCategories([]);
+      return;
+    }
+
     const loadTopCategories = async () => {
       try {
         const response = await apiClient.get<{ data: TopCategoryItem[] }>("/stories/categories/top", {
@@ -202,7 +228,7 @@ export default function Navbar() {
     };
 
     void loadTopCategories();
-  }, [currentLang]);
+  }, [currentLang, isMusicRoute]);
 
   useEffect(() => {
     const fetchLanguages = async () => {
@@ -340,7 +366,7 @@ export default function Navbar() {
     if (e.key === "Enter" && searchQuery.trim()) {
       const nextPath = isMusicRoute
         ? `/${currentLang}/music?keyword=${encodeURIComponent(searchQuery)}`
-        : `/${currentLang}/search?keyword=${encodeURIComponent(searchQuery)}`;
+        : `/${currentLang}/story/search?keyword=${encodeURIComponent(searchQuery)}`;
       router.push(nextPath);
       setSearchQuery("");
       setShowSearchDropdown(false);
@@ -377,7 +403,7 @@ export default function Navbar() {
   };
 
   const getViewAllSearchHref = () =>
-    isMusicRoute ? `/music?keyword=${encodeURIComponent(searchQuery)}` : `/search?keyword=${encodeURIComponent(searchQuery)}`;
+    isMusicRoute ? `/music?keyword=${encodeURIComponent(searchQuery)}` : `/story/search?keyword=${encodeURIComponent(searchQuery)}`;
 
   const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
@@ -414,7 +440,7 @@ export default function Navbar() {
 
             {/* LOGO & MENU CHÍNH (Desktop) */}
             <div className="flex min-w-0 flex-shrink items-center gap-2 lg:gap-8">
-              <Link href="/" className="flex min-w-0 flex-shrink-0 items-center gap-2 text-2xl font-bold">
+              <Link href={sectionLandingHref} className="flex min-w-0 flex-shrink-0 items-center gap-2 text-2xl font-bold">
                 <span className="sm:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-pink-700 text-white text-xl shadow-md">
                   N
                 </span>
@@ -424,95 +450,122 @@ export default function Navbar() {
 
               {/* Menu Desktop (Responsive: text on 2xl+, icons on xl and below) */}
               <nav className="hidden lg:flex items-center space-x-1 text-sm font-medium text-gray-700 dark:text-gray-200">
-                <Link href="/" className={navItemClassName("/")} aria-label={t("home")} title={t("home")}>
-                  <Home className="w-5 h-5 2xl:hidden" />
-                  <span className={`hidden 2xl:inline ${navLabelClassName("/")}`}>{t("home")}</span>
-                </Link>
-                <Link href={`/${currentLang}/music`} className={navItemClassName("/music")} aria-label={t("music")} title={t("music")}>
-                  <Music2 className="w-5 h-5 2xl:hidden" />
-                  <span className={`hidden 2xl:inline ${navLabelClassName("/music")}`}>{t("music")}</span>
-                </Link>
-                <div
-                  ref={categoryMenuRef}
-                  className="relative"
-                >
-                  <button 
-                    onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                    className={navItemClassName("/stories")}
-                    aria-label={t("categories")}
-                    title={t("categories")}
-                  >
-                    <LayoutGrid className="w-5 h-5 2xl:hidden" />
-                    <span className={`hidden 2xl:inline ${navLabelClassName("/stories")}`}>{t("categories")}</span>
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                  {isCategoryOpen && (
-                    <div className="absolute top-full left-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 mt-1">
-                      {topCategories.map((item) => (
-                        <Link 
-                          key={item.id} 
-                          href={`/categories/${item.slug}`} 
-                          onClick={() => setIsCategoryOpen(false)}
-                          className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        >
-                          {item.name}
-                        </Link>
-                      ))}
-                      <Link 
-                        href="/stories" 
-                        onClick={() => setIsCategoryOpen(false)}
-                        className="block px-4 py-2 text-pink-600 dark:text-pink-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700"
+                {isMusicRoute ? (
+                  <>
+                    <Link href="/music" className={navItemClassName("/music")} aria-label={musicMenuLabels.home} title={musicMenuLabels.home}>
+                      <Music2 className="w-5 h-5 2xl:hidden" />
+                      <span className={`hidden 2xl:inline ${navLabelClassName("/music")}`}>{musicMenuLabels.home}</span>
+                    </Link>
+                    <Link href="/music?tag=us%20uk" className={musicTagClassName("us uk")} aria-label={musicMenuLabels.usUk} title={musicMenuLabels.usUk}>
+                      <span className="text-xs font-semibold 2xl:text-sm">{musicMenuLabels.usUk}</span>
+                    </Link>
+                    <Link href="/music?tag=kpop" className={musicTagClassName("kpop")} aria-label={musicMenuLabels.kpop} title={musicMenuLabels.kpop}>
+                      <span className="text-xs font-semibold 2xl:text-sm">{musicMenuLabels.kpop}</span>
+                    </Link>
+                    <Link href="/music?tag=vpop" className={musicTagClassName("vpop")} aria-label={musicMenuLabels.vpop} title={musicMenuLabels.vpop}>
+                      <span className="text-xs font-semibold 2xl:text-sm">{musicMenuLabels.vpop}</span>
+                    </Link>
+                    <Link href="/music?tag=hiphop" className={musicTagClassName("hiphop")} aria-label={musicMenuLabels.hiphop} title={musicMenuLabels.hiphop}>
+                      <span className="text-xs font-semibold 2xl:text-sm">{musicMenuLabels.hiphop}</span>
+                    </Link>
+                    <Link href="/music#music-trending" className={neutralNavItemClassName} aria-label={musicMenuLabels.trending} title={musicMenuLabels.trending}>
+                      <Flame className="w-5 h-5 2xl:hidden" />
+                      <span className="hidden 2xl:inline">{musicMenuLabels.trending}</span>
+                    </Link>
+                    <Link href="/music#music-latest" className={neutralNavItemClassName} aria-label={musicMenuLabels.latest} title={musicMenuLabels.latest}>
+                      <Zap className="w-5 h-5 2xl:hidden" />
+                      <span className="hidden 2xl:inline">{musicMenuLabels.latest}</span>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/story" className={navItemClassName("/story")} aria-label={t("home")} title={t("home")}>
+                      <Home className="w-5 h-5 2xl:hidden" />
+                      <span className={`hidden 2xl:inline ${navLabelClassName("/story")}`}>{t("home")}</span>
+                    </Link>
+                    <div
+                      ref={categoryMenuRef}
+                      className="relative"
+                    >
+                      <button
+                        onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                        className={navItemClassName("/story/stories")}
+                        aria-label={t("categories")}
+                        title={t("categories")}
                       >
-                        {t("viewAll")} &rarr;
-                      </Link>
+                        <LayoutGrid className="w-5 h-5 2xl:hidden" />
+                        <span className={`hidden 2xl:inline ${navLabelClassName("/story/stories")}`}>{t("categories")}</span>
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                      {isCategoryOpen && (
+                        <div className="absolute top-full left-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 mt-1">
+                          {topCategories.map((item) => (
+                            <Link
+                              key={item.id}
+                              href={`/story/categories/${item.slug}`}
+                              onClick={() => setIsCategoryOpen(false)}
+                              className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              {item.name}
+                            </Link>
+                          ))}
+                          <Link
+                            href="/story/stories"
+                            onClick={() => setIsCategoryOpen(false)}
+                            className="block px-4 py-2 text-pink-600 dark:text-pink-400 font-medium hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            {t("viewAll")} &rarr;
+                          </Link>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <Link href="/new" className={navItemClassName("/new")} aria-label={t("new")} title={t("new")}>
-                  <Zap className="w-5 h-5 2xl:hidden" />
-                  <span className={`hidden 2xl:inline ${navLabelClassName("/new")}`}>{t("new")}</span>
-                </Link>
-                <Link href="/trending" className={navItemClassName("/trending")} aria-label={t("trending")} title={t("trending")}>
-                  <Flame className="w-5 h-5 2xl:hidden" />
-                  <span className={`hidden 2xl:inline ${navLabelClassName("/trending")}`}>{t("trending")}</span>
-                </Link>
-                <Link href="/interactive" className={navItemClassName("/interactive")} aria-label={t("interactiveStories")} title={t("interactiveStories")}>
-                  <Sparkles className="w-5 h-5 2xl:hidden" />
-                  <span className={`hidden 2xl:inline ${navLabelClassName("/interactive")}`}>{t("interactiveStories")}</span>
-                </Link>
-                <div
-                  ref={rankingMenuRef}
-                  className="relative"
-                >
-                  <button 
-                    onClick={() => setIsRankingOpen(!isRankingOpen)}
-                    className={navItemClassName("/ranking")}
-                    aria-label={t("ranking")}
-                    title={currentLang === "vi" ? "BXH" : "Ranking"}
-                  >
-                    <Trophy className="w-5 h-5 2xl:hidden" />
-                    <span className={`hidden 2xl:inline ${navLabelClassName("/ranking")}`}>{currentLang === "vi" ? "BXH" : "Ranking"}</span>
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                  {isRankingOpen && (
-                    <div className="absolute top-full left-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 mt-1">
-                      <Link 
-                        href="/ranking" 
-                        onClick={() => setIsRankingOpen(false)}
-                        className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    <Link href="/story/new" className={navItemClassName("/story/new")} aria-label={t("new")} title={t("new")}>
+                      <Zap className="w-5 h-5 2xl:hidden" />
+                      <span className={`hidden 2xl:inline ${navLabelClassName("/story/new")}`}>{t("new")}</span>
+                    </Link>
+                    <Link href="/story/trending" className={navItemClassName("/story/trending")} aria-label={t("trending")} title={t("trending")}>
+                      <Flame className="w-5 h-5 2xl:hidden" />
+                      <span className={`hidden 2xl:inline ${navLabelClassName("/story/trending")}`}>{t("trending")}</span>
+                    </Link>
+                    <Link href="/story/interactive" className={navItemClassName("/story/interactive")} aria-label={t("interactiveStories")} title={t("interactiveStories")}>
+                      <Sparkles className="w-5 h-5 2xl:hidden" />
+                      <span className={`hidden 2xl:inline ${navLabelClassName("/story/interactive")}`}>{t("interactiveStories")}</span>
+                    </Link>
+                    <div
+                      ref={rankingMenuRef}
+                      className="relative"
+                    >
+                      <button
+                        onClick={() => setIsRankingOpen(!isRankingOpen)}
+                        className={navItemClassName("/story/ranking")}
+                        aria-label={t("ranking")}
+                        title={currentLang === "vi" ? "BXH" : "Ranking"}
                       >
-                        {t("ranking")}
-                      </Link>
-                      <Link 
-                        href="/vinh-danh" 
-                        onClick={() => setIsRankingOpen(false)}
-                        className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        {t("memberRanking")}
-                      </Link>
+                        <Trophy className="w-5 h-5 2xl:hidden" />
+                        <span className={`hidden 2xl:inline ${navLabelClassName("/story/ranking")}`}>{currentLang === "vi" ? "BXH" : "Ranking"}</span>
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                      {isRankingOpen && (
+                        <div className="absolute top-full left-0 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 mt-1">
+                          <Link
+                            href="/story/ranking"
+                            onClick={() => setIsRankingOpen(false)}
+                            className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            {t("ranking")}
+                          </Link>
+                          <Link
+                            href="/story/vinh-danh"
+                            onClick={() => setIsRankingOpen(false)}
+                            className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            {t("memberRanking")}
+                          </Link>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </nav>
             </div>
 
@@ -955,92 +1008,152 @@ export default function Navbar() {
             <div className="flex-1 overflow-y-auto">
               <nav className="p-3 space-y-1">
                 {/* Main Navigation */}
-                <Link 
-                  href="/" 
-                  onClick={closeMobileMenu} 
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-                >
-                  <Home className={`w-5 h-5 ${isRouteActive("/") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
-                  <span className="text-sm font-medium">{t("home")}</span>
-                </Link>
+                {isMusicRoute ? (
+                  <>
+                    <Link
+                      href="/music"
+                      onClick={closeMobileMenu}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/music") && !activeMusicTag ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Music2 className={`w-5 h-5 ${isRouteActive("/music") && !activeMusicTag ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                      <span className="text-sm font-medium">{musicMenuLabels.home}</span>
+                    </Link>
 
-                <Link
-                  href={`/${currentLang}/music`}
-                  onClick={closeMobileMenu}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/music") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-                >
-                  <Music2 className={`w-5 h-5 ${isRouteActive("/music") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
-                  <span className="text-sm font-medium">{t("music")}</span>
-                </Link>
+                    <Link
+                      href="/music?tag=us%20uk"
+                      onClick={closeMobileMenu}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${activeMusicTag === "us uk" ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Music2 className={`w-5 h-5 ${activeMusicTag === "us uk" ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                      <span className="text-sm font-medium">{musicMenuLabels.usUk}</span>
+                    </Link>
 
-                <Link 
-                  href="/stories" 
-                  onClick={closeMobileMenu} 
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/stories") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-                >
-                  <LayoutGrid className={`w-5 h-5 ${isRouteActive("/stories") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
-                  <span className="text-sm font-medium">{t("categories")}</span>
-                </Link>
+                    <Link
+                      href="/music?tag=kpop"
+                      onClick={closeMobileMenu}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${activeMusicTag === "kpop" ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Music2 className={`w-5 h-5 ${activeMusicTag === "kpop" ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                      <span className="text-sm font-medium">{musicMenuLabels.kpop}</span>
+                    </Link>
 
-                <Link 
-                  href="/new" 
-                  onClick={closeMobileMenu} 
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/new") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-                >
-                  <Zap className={`w-5 h-5 ${isRouteActive("/new") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
-                  <span className="text-sm font-medium">{t("new")}</span>
-                </Link>
+                    <Link
+                      href="/music?tag=vpop"
+                      onClick={closeMobileMenu}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${activeMusicTag === "vpop" ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Music2 className={`w-5 h-5 ${activeMusicTag === "vpop" ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                      <span className="text-sm font-medium">{musicMenuLabels.vpop}</span>
+                    </Link>
 
-                <Link 
-                  href="/trending" 
-                  onClick={closeMobileMenu} 
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/trending") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-                >
-                  <Flame className={`w-5 h-5 ${isRouteActive("/trending") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
-                  <span className="text-sm font-medium">{t("trending")}</span>
-                </Link>
+                    <Link
+                      href="/music?tag=hiphop"
+                      onClick={closeMobileMenu}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${activeMusicTag === "hiphop" ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Music2 className={`w-5 h-5 ${activeMusicTag === "hiphop" ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                      <span className="text-sm font-medium">{musicMenuLabels.hiphop}</span>
+                    </Link>
 
-                <Link 
-                  href="/interactive" 
-                  onClick={closeMobileMenu} 
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/interactive") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-                >
-                  <Sparkles className={`w-5 h-5 ${isRouteActive("/interactive") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
-                  <span className="text-sm font-medium">{t("interactiveStories")}</span>
-                </Link>
+                    <Link
+                      href="/music#music-trending"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <Flame className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-medium">{musicMenuLabels.trending}</span>
+                    </Link>
 
-                {/* BXH Collapsible */}
-                <div>
-                  <button 
-                    onClick={() => setIsRankingOpen(!isRankingOpen)}
-                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/ranking") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Trophy className={`w-5 h-5 ${isRouteActive("/ranking") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
-                      <span className="text-sm font-medium">BXH</span>
-                    </div>
-                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isRankingOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                  
-                  {isRankingOpen && (
-                    <div className="ml-8 mt-1 space-y-1">
-                      <Link 
-                        href="/ranking" 
-                        onClick={closeMobileMenu} 
-                        className="block px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    <Link
+                      href="/music#music-latest"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <Zap className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-sm font-medium">{musicMenuLabels.latest}</span>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/story"
+                      onClick={closeMobileMenu}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/story") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Home className={`w-5 h-5 ${isRouteActive("/story") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                      <span className="text-sm font-medium">{t("home")}</span>
+                    </Link>
+
+                    <Link
+                      href="/story/stories"
+                      onClick={closeMobileMenu}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/story/stories") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <LayoutGrid className={`w-5 h-5 ${isRouteActive("/story/stories") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                      <span className="text-sm font-medium">{t("categories")}</span>
+                    </Link>
+
+                    <Link
+                      href="/story/new"
+                      onClick={closeMobileMenu}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/story/new") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Zap className={`w-5 h-5 ${isRouteActive("/story/new") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                      <span className="text-sm font-medium">{t("new")}</span>
+                    </Link>
+
+                    <Link
+                      href="/story/trending"
+                      onClick={closeMobileMenu}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/story/trending") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Flame className={`w-5 h-5 ${isRouteActive("/story/trending") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                      <span className="text-sm font-medium">{t("trending")}</span>
+                    </Link>
+
+                    <Link
+                      href="/story/interactive"
+                      onClick={closeMobileMenu}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/story/interactive") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
+                    >
+                      <Sparkles className={`w-5 h-5 ${isRouteActive("/story/interactive") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                      <span className="text-sm font-medium">{t("interactiveStories")}</span>
+                    </Link>
+
+                    {/* BXH Collapsible */}
+                    <div>
+                      <button
+                        onClick={() => setIsRankingOpen(!isRankingOpen)}
+                        className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg transition-colors ${isRouteActive("/story/ranking") ? "bg-pink-50 text-pink-600 dark:bg-pink-950/30 dark:text-pink-400" : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"}`}
                       >
-                        {t("ranking")}
-                      </Link>
-                      <Link 
-                        href="/vinh-danh" 
-                        onClick={closeMobileMenu} 
-                        className="block px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        {t("memberRanking")}
-                      </Link>
+                        <div className="flex items-center gap-3">
+                          <Trophy className={`w-5 h-5 ${isRouteActive("/story/ranking") ? "text-pink-600 dark:text-pink-400" : "text-gray-500 dark:text-gray-400"}`} />
+                          <span className="text-sm font-medium">BXH</span>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isRankingOpen ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {isRankingOpen && (
+                        <div className="ml-8 mt-1 space-y-1">
+                          <Link
+                            href="/story/ranking"
+                            onClick={closeMobileMenu}
+                            className="block px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                          >
+                            {t("ranking")}
+                          </Link>
+                          <Link
+                            href="/story/vinh-danh"
+                            onClick={closeMobileMenu}
+                            className="block px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                          >
+                            {t("memberRanking")}
+                          </Link>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
 
                 {/* Divider */}
                 {user && <div className="my-2 border-t border-gray-200 dark:border-gray-800"></div>}

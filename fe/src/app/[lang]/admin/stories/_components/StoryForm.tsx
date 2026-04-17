@@ -505,7 +505,8 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                         </div>
                     </div>
 
-                    {/* Hàng 3: Chọn tác giả nguyên 1 hàng (Searchable Dropdown) */}
+                    {/* Hàng 3-5: Tác giả + thể loại + chương trên cùng 1 hàng */}
+                    <div className={`grid grid-cols-1 gap-6 ${initialData?.id ? 'md:grid-cols-2' : 'xl:grid-cols-3'}`}>
                     <div className="space-y-2" ref={authorRef}>
                         <div className="flex items-center justify-between">
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Tác giả</label>
@@ -773,6 +774,8 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             )}
                         </div>
                     )}
+
+                    </div>
 
                     <div className="space-y-2">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">

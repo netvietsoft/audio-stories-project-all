@@ -36,6 +36,16 @@ export class MusicInteractionController {
     return this.interactionService.addHistory(this.userIdFromAccount(account), musicId);
   }
 
+  @Get(':musicId/access')
+  getAccessStatus(@Param('musicId') musicId: string, @Account() account: any) {
+    return this.interactionService.getAccessStatus(this.userIdFromAccount(account), musicId);
+  }
+
+  @Post(':musicId/unlock')
+  unlockMusic(@Param('musicId') musicId: string, @Account() account: any) {
+    return this.interactionService.unlockMusic(this.userIdFromAccount(account), musicId);
+  }
+
   @Patch(':musicId/history')
   updateHistoryProgress(
     @Param('musicId') musicId: string,

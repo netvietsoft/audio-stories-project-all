@@ -54,6 +54,7 @@ model User {
   musicLikes             MusicLike[]
   musicCommentLikes      MusicCommentLike[]
   musicHistory           MusicHistory[]
+  musicUnlocks           MusicUnlock[]
   musicPlaylists         MusicPlaylist[]
   chapterComments        ChapterComment[]
   commentReactions       CommentReaction[]
@@ -197,7 +198,13 @@ enum StoryStatus {
 
 enum MusicContentType {
   single
+  podcast
   playlist
+}
+
+enum MusicAccessType {
+  free
+  vip
 }
 
 model Story {
@@ -303,6 +310,9 @@ model Music {
   audioUrl      String   @map("audio_url") @db.VarChar(500)
   audioDuration Int?     @map("audio_duration") @db.UnsignedInt
   contentType   MusicContentType @default(single) @map("content_type")
+  accessType    MusicAccessType @default(free) @map("access_type")
+  unlockPrice   Int      @default(0) @map("unlock_price") @db.UnsignedInt
+  introEnabled  Boolean  @default(true) @map("intro_enabled")
   playlistTrackIds Json? @map("playlist_track_ids")
   playCount     Int      @default(0) @map("play_count") @db.UnsignedInt
   likeCount     Int      @default(0) @map("like_count") @db.UnsignedInt
@@ -315,6 +325,8 @@ model Music {
   likes          MusicLike[]
   historyEntries MusicHistory[]
   playlistTracks MusicPlaylistTrack[]
+  unlocks        MusicUnlock[] @relation("MusicUnlockTrack")
+  unlocksAsSource MusicUnlock[] @relation("MusicUnlockSourcePlaylist")
 
   @@index([isPublic])
   @@index([createdAt])
@@ -393,6 +405,31 @@ model MusicHistory {
   @@map("music_history")
 }
 
+enum MusicUnlockSourceType {
+  track
+  playlist
+}
+
+model MusicUnlock {
+  id               String                @id @default(uuid()) @db.VarChar(36)
+  userId           String                @map("user_id") @db.VarChar(36)
+  musicId          String                @map("music_id") @db.VarChar(36)
+  sourceType       MusicUnlockSourceType @default(track) @map("source_type")
+  sourcePlaylistId String?               @map("source_playlist_id") @db.VarChar(36)
+  creditsSpent     Int                   @default(0) @map("credits_spent") @db.UnsignedInt
+  createdAt        DateTime              @default(now()) @map("created_at")
+
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  music          Music  @relation("MusicUnlockTrack", fields: [musicId], references: [id], onDelete: Cascade)
+  sourcePlaylist Music? @relation("MusicUnlockSourcePlaylist", fields: [sourcePlaylistId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, musicId])
+  @@index([userId])
+  @@index([musicId])
+  @@index([sourcePlaylistId])
+  @@map("music_unlocks")
+}
+
 model MusicPlaylist {
   id         String   @id @default(uuid()) @db.VarChar(36)
   userId     String   @map("user_id") @db.VarChar(36)
@@ -459,6 +496,7 @@ model Chapter {
   youtubeVideoId String?           @map("youtube_video_id") @db.VarChar(20)
   audioDuration  Int?              @map("audio_duration") @db.UnsignedInt
   accessType     ChapterAccessType @default(free) @map("access_type")
+  unlockPrice    Int               @default(0) @map("unlock_price") @db.UnsignedInt
   isInteractive  Boolean           @default(false) @map("is_interactive")
   unlocksAt      DateTime?         @map("unlocks_at")
   viewCount      BigInt            @default(0) @map("view_count") @db.UnsignedBigInt

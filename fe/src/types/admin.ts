@@ -48,6 +48,7 @@ export interface Chapter {
     youtubeVideoId?: string | null;
     audioDuration?: number | null;
     accessType?: 'free' | 'timed' | 'vip';
+    unlockPrice?: number;
     language?: string | null;
     createdAt: string;
     storyId?: string | null;

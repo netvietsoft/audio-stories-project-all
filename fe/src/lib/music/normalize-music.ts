@@ -1,4 +1,4 @@
-import type { MusicApiItem, MusicContentType, MusicPlaylistTrackSummary, MusicTrack } from "@/types/music";
+import type { MusicAccessType, MusicApiItem, MusicContentType, MusicPlaylistTrackSummary, MusicTrack } from "@/types/music";
 
 export const formatMusicDuration = (seconds?: number | null) => {
   if (!seconds || seconds <= 0) return "--:--";
@@ -23,7 +23,12 @@ export const normalizeTags = (value: unknown): string[] => {
 };
 
 const normalizeContentType = (value: unknown): MusicContentType => {
+  if (value === "podcast") return "podcast";
   return value === "playlist" ? "playlist" : "single";
+};
+
+const normalizeAccessType = (value: unknown): MusicAccessType => {
+  return value === "vip" ? "vip" : "free";
 };
 
 const normalizePlaylistTrackIds = (value: unknown): string[] => {
@@ -66,6 +71,11 @@ const normalizePlaylistTracks = (value: unknown): MusicPlaylistTrackSummary[] =>
 export const normalizeMusicItem = (item: MusicApiItem, fallbackIndex?: number): MusicTrack => {
   const playlistTracks = normalizePlaylistTracks(item.playlistTracks);
   const contentType = normalizeContentType(item.contentType);
+  const accessType = normalizeAccessType((item as Record<string, unknown>).accessType);
+  const unlockPriceRaw = (item as Record<string, unknown>).unlockPrice;
+  const unlockPrice = typeof unlockPriceRaw === "number" && Number.isFinite(unlockPriceRaw) ? Math.max(0, Math.floor(unlockPriceRaw)) : 0;
+  const introEnabledRaw = (item as Record<string, unknown>).introEnabled;
+  const introEnabled = typeof introEnabledRaw === "boolean" ? introEnabledRaw : true;
 
   return {
     ...item,
@@ -75,6 +85,9 @@ export const normalizeMusicItem = (item: MusicApiItem, fallbackIndex?: number): 
     description: item.description || null,
     tags: normalizeTags(item.tags),
     contentType,
+    accessType,
+    unlockPrice,
+    introEnabled,
     playlistTrackIds: normalizePlaylistTrackIds(item.playlistTrackIds),
     playlistTracks,
     thumbnailUrl: item.thumbnailUrl || (contentType === "playlist" ? playlistTracks[0]?.thumbnailUrl || null : null),

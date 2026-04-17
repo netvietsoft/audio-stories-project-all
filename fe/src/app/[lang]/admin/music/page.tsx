@@ -21,7 +21,10 @@ type MusicItem = {
   thumbnailUrl: string | null;
   audioUrl: string;
   audioDuration: number | null;
-  contentType: "single" | "playlist";
+  contentType: "single" | "podcast" | "playlist";
+  accessType: "free" | "vip";
+  unlockPrice: number;
+  introEnabled: boolean;
   playlistTrackIds: string[];
   playlistTracks?: Array<{
     id: string;
@@ -169,7 +172,10 @@ export default function AdminMusicPage() {
       const normalizedRows: MusicItem[] = rows.map((row) => ({
         ...row,
         slug: typeof row.slug === "string" && row.slug.trim() ? row.slug.trim() : row.id,
-        contentType: (row.contentType === "playlist" ? "playlist" : "single") as MusicItem["contentType"],
+        contentType: (row.contentType === "playlist" ? "playlist" : row.contentType === "podcast" ? "podcast" : "single") as MusicItem["contentType"],
+        accessType: row.accessType === "vip" ? "vip" : "free",
+        unlockPrice: typeof row.unlockPrice === "number" ? row.unlockPrice : 0,
+        introEnabled: typeof row.introEnabled === "boolean" ? row.introEnabled : true,
         playlistTrackIds: Array.isArray(row.playlistTrackIds) ? row.playlistTrackIds : [],
         tags: Array.isArray(row.tags) ? row.tags : [],
       }));
@@ -199,8 +205,7 @@ export default function AdminMusicPage() {
         const response = await apiClient.get<MusicResponse>("/music/admin", {
           params: {
             page: 1,
-            limit: 200,
-            contentType: "single",
+            limit: 300,
           },
         });
 
@@ -208,13 +213,15 @@ export default function AdminMusicPage() {
 
         const rows = Array.isArray(response.data?.data) ? response.data.data : [];
         setTrackOptions(
-          rows.map((item) => ({
+          rows
+            .filter((item) => item.contentType !== "playlist")
+            .map((item) => ({
             id: item.id,
             title: item.title,
             artist: item.artist,
             thumbnailUrl: item.thumbnailUrl,
             audioDuration: item.audioDuration,
-          })),
+            })),
         );
       } catch {
         if (cancelled) return;
@@ -258,6 +265,9 @@ export default function AdminMusicPage() {
     formData.append("tags", payload.tags.join(","));
     formData.append("isPublic", String(payload.isPublic));
     formData.append("contentType", payload.contentType);
+    formData.append("accessType", payload.accessType);
+    formData.append("unlockPrice", String(payload.unlockPrice));
+    formData.append("introEnabled", String(payload.introEnabled));
 
     if (payload.playlistTrackIds.length) {
       formData.append("playlistTrackIds", payload.playlistTrackIds.join(","));
@@ -296,20 +306,21 @@ export default function AdminMusicPage() {
         const nextResponse = await apiClient.get<MusicResponse>("/music/admin", {
           params: {
             page: 1,
-            limit: 200,
-            contentType: "single",
+            limit: 300,
           },
         });
 
         const rows = Array.isArray(nextResponse.data?.data) ? nextResponse.data.data : [];
         setTrackOptions(
-          rows.map((item) => ({
+          rows
+            .filter((item) => item.contentType !== "playlist")
+            .map((item) => ({
             id: item.id,
             title: item.title,
             artist: item.artist,
             thumbnailUrl: item.thumbnailUrl,
             audioDuration: item.audioDuration,
-          })),
+            })),
         );
       }
     } catch (error) {
@@ -352,6 +363,9 @@ export default function AdminMusicPage() {
         audioDuration: editingMusic.audioDuration,
         isPublic: editingMusic.isPublic,
         contentType: editingMusic.contentType,
+        accessType: editingMusic.accessType,
+        unlockPrice: editingMusic.unlockPrice,
+        introEnabled: editingMusic.introEnabled,
         playlistTrackIds: editingMusic.playlistTrackIds,
       }
     : undefined;
@@ -446,10 +460,25 @@ export default function AdminMusicPage() {
                     <td className="px-6 py-4 text-sm font-medium text-slate-700">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
-                          row.contentType === "playlist" ? "bg-pink-100 text-pink-700" : "bg-indigo-100 text-indigo-700"
+                          row.contentType === "playlist"
+                            ? "bg-pink-100 text-pink-700"
+                            : row.contentType === "podcast"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-indigo-100 text-indigo-700"
                         }`}
                       >
-                        {row.contentType === "playlist" ? `Playlist (${row.playlistTrackIds.length})` : "Single"}
+                        {row.contentType === "playlist"
+                          ? `Playlist (${row.playlistTrackIds.length})`
+                          : row.contentType === "podcast"
+                            ? "Podcast"
+                            : "Single"}
+                      </span>
+                      <span
+                        className={`ml-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
+                          row.accessType === "vip" ? "bg-orange-100 text-orange-700" : "bg-emerald-100 text-emerald-700"
+                        }`}
+                      >
+                        {row.accessType === "vip" ? `VIP ${row.unlockPrice}cr` : "Free"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm font-bold text-slate-700">{formatDuration(row.audioDuration)}</td>

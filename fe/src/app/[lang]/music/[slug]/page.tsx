@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ArrowDown,
@@ -32,7 +32,7 @@ import PlayNextButton from "@/components/shared/PlayNextButton";
 import ShareActionButton from "@/components/shared/ShareActionButton";
 import Link from "@/components/shared/LocalizedLink";
 import { apiClient } from "@/lib/api/api-client";
-import { registerMusicPlayback, fetchMusicLikeStatus } from "@/lib/music/music-interactions";
+import { fetchMusicAccessStatus, fetchMusicLikeStatus, unlockMusicItem } from "@/lib/music/music-interactions";
 import {
   type MusicComment,
   listMusicComments,
@@ -65,25 +65,144 @@ type RelatedResponse = {
   data: MusicApiItem[];
 };
 
+type DetailAccessState = {
+  accessType: "free" | "vip";
+  unlockPrice: number;
+  unlocked: boolean;
+  unlockSource: "free" | "track" | "playlist" | null;
+};
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  const maybeMessage = (error as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+  if (Array.isArray(maybeMessage) && maybeMessage.length) return maybeMessage[0] || fallback;
+  if (typeof maybeMessage === "string" && maybeMessage.trim()) return maybeMessage;
+  return fallback;
+};
+
+const WAVEFORM_BAR_COUNT = 72;
+
+const createWaveformBars = (seedKey: string) => {
+  const seed = seedKey
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+
+  return Array.from({ length: WAVEFORM_BAR_COUNT }, (_, index) => {
+    const wave1 = Math.sin((index + 1) * ((seed % 11) + 1) * 0.17);
+    const wave2 = Math.cos((index + 3) * ((seed % 7) + 2) * 0.09);
+    const amplitude = Math.abs(wave1 * 0.65 + wave2 * 0.35);
+    return 20 + Math.round(amplitude * 72);
+  });
+};
+
+const formatTimelineTime = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "00:00";
+  const mm = Math.floor(seconds / 60);
+  const ss = Math.floor(seconds % 60);
+  return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+};
+
+function WaveformTimeline({
+  bars,
+  progress,
+  currentTime,
+  duration,
+  disabled,
+  onSeek,
+}: {
+  bars: number[];
+  progress: number;
+  currentTime: number;
+  duration: number;
+  disabled: boolean;
+  onSeek: (event: MouseEvent<HTMLDivElement>) => void;
+}) {
+  const safeProgress = Math.max(0, Math.min(100, progress));
+
+  return (
+    <div className="space-y-2.5">
+      <div
+        role="slider"
+        aria-label="Waveform timeline"
+        aria-valuemin={0}
+        aria-valuemax={Math.max(Math.round(duration), 0)}
+        aria-valuenow={Math.max(Math.round(currentTime), 0)}
+        aria-disabled={disabled}
+        className={`group relative flex h-14 items-end gap-1 overflow-hidden rounded-2xl border border-pink-100 bg-gradient-to-r from-rose-50 via-white to-slate-50 px-2 py-2 ${
+          disabled ? "cursor-default" : "cursor-pointer"
+        }`}
+        onClick={onSeek}
+      >
+        {bars.map((height, index) => {
+          const barProgress = ((index + 1) / bars.length) * 100;
+          const played = barProgress <= safeProgress;
+          const style: CSSProperties = {
+            height: `${height}%`,
+            animationDelay: `${(index % 9) * 0.08}s`,
+            animationDuration: `${1.1 + (index % 5) * 0.16}s`,
+          };
+
+          return (
+            <span
+              key={`wave-${index}`}
+              className={`flex-1 rounded-full transition-colors duration-200 ${
+                played ? "bg-gradient-to-t from-pink-500 to-pink-400 animate-pulse" : "bg-slate-300"
+              }`}
+              style={style}
+            />
+          );
+        })}
+
+        <span
+          className="pointer-events-none absolute inset-y-0 left-0 bg-gradient-to-r from-pink-300/25 via-pink-200/20 to-transparent"
+          style={{ width: `${safeProgress}%` }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+        <span>{formatTimelineTime(currentTime)}</span>
+        <span>{formatTimelineTime(duration)}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function MusicDetailPage() {
+  const router = useRouter();
   const params = useParams<{ lang?: string; slug?: string }>();
   const musicSlug = Array.isArray(params?.slug) ? params?.slug[0] : params?.slug;
   const currentLang = Array.isArray(params?.lang) ? params?.lang[0] : params?.lang;
   const t = useTranslations("MusicDetailPage");
 
   const user = useUserStore((state) => state.user);
+  const setUser = useUserStore((state) => state.setUser);
   const accessToken = useUserStore((state) => state.accessToken);
   const isAdmin = user?.roles?.includes("admin") || false;
 
   const currentTrack = useAudioStore((state) => state.currentTrack);
   const isPlaying = useAudioStore((state) => state.isPlaying);
+  const currentTime = useAudioStore((state) => state.currentTime);
+  const duration = useAudioStore((state) => state.duration);
   const playTrack = useAudioStore((state) => state.playTrack);
   const togglePlay = useAudioStore((state) => state.togglePlay);
+  const seekTo = useAudioStore((state) => state.seekTo);
 
   const [track, setTrack] = useState<MusicTrack | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [relatedTracks, setRelatedTracks] = useState<MusicTrack[]>([]);
   const [isLiked, setIsLiked] = useState(false);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+  const [accessState, setAccessState] = useState<DetailAccessState>({
+    accessType: "free",
+    unlockPrice: 0,
+    unlocked: true,
+    unlockSource: null,
+  });
+  const [accessNotice, setAccessNotice] = useState<{ tone: "error" | "success" | "info"; text: string } | null>(null);
+
+  const trackId = track?.id;
+  const trackAccessType = track?.accessType;
+  const trackUnlockPrice = track?.unlockPrice ?? 0;
 
   // Comments state
   const [comments, setComments] = useState<MusicComment[]>([]);
@@ -160,10 +279,10 @@ export default function MusicDetailPage() {
   // ─── Fetch like status ────────────────────────
 
   useEffect(() => {
-    if (!track?.id || !accessToken) return;
+    if (!trackId || !accessToken) return;
     let active = true;
 
-    void fetchMusicLikeStatus(track.id)
+    void fetchMusicLikeStatus(trackId)
       .then((liked) => {
         if (active) setIsLiked(liked);
       })
@@ -172,7 +291,153 @@ export default function MusicDetailPage() {
     return () => {
       active = false;
     };
-  }, [accessToken, track?.id]);
+  }, [accessToken, trackId]);
+
+  useEffect(() => {
+    setAccessNotice(null);
+  }, [trackId]);
+
+  useEffect(() => {
+    if (!trackId) return;
+
+    const normalizedAccessType = trackAccessType === "vip" ? "vip" : "free";
+    const normalizedUnlockPrice = Math.max(0, Math.floor(trackUnlockPrice || 0));
+
+    if (normalizedAccessType === "free" || normalizedUnlockPrice <= 0) {
+      setAccessState({
+        accessType: "free",
+        unlockPrice: 0,
+        unlocked: true,
+        unlockSource: "free",
+      });
+      setIsCheckingAccess(false);
+      return;
+    }
+
+    if (!accessToken) {
+      setAccessState({
+        accessType: "vip",
+        unlockPrice: normalizedUnlockPrice,
+        unlocked: false,
+        unlockSource: null,
+      });
+      setIsCheckingAccess(false);
+      return;
+    }
+
+    let active = true;
+    setIsCheckingAccess(true);
+
+    void fetchMusicAccessStatus(trackId)
+      .then((status) => {
+        if (!active || !status) return;
+        setAccessState({
+          accessType: status.accessType === "vip" ? "vip" : "free",
+          unlockPrice: Math.max(0, Math.floor(status.unlockPrice || 0)),
+          unlocked: Boolean(status.unlocked),
+          unlockSource: status.unlockSource || null,
+        });
+      })
+      .catch(() => {
+        if (!active) return;
+        setAccessState({
+          accessType: normalizedAccessType,
+          unlockPrice: normalizedUnlockPrice,
+          unlocked: false,
+          unlockSource: null,
+        });
+      })
+      .finally(() => {
+        if (active) setIsCheckingAccess(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken, trackAccessType, trackId, trackUnlockPrice]);
+
+  const redirectToLogin = useCallback(() => {
+    const locale = currentLang || "vi";
+    const fallbackPath = `/${locale}/music/${musicSlug || ""}`;
+    const currentPath = typeof window !== "undefined" ? window.location.pathname : fallbackPath;
+    router.push(`/${locale}/login?next=${encodeURIComponent(currentPath)}`);
+  }, [currentLang, musicSlug, router]);
+
+  const isTrackLocked = accessState.accessType === "vip" && accessState.unlockPrice > 0 && !accessState.unlocked;
+
+  const ensureCurrentTrackPlayable = useCallback(() => {
+    if (!track || !isTrackLocked) return true;
+
+    if (!accessToken) {
+      setAccessNotice({
+        tone: "info",
+        text: currentLang === "en"
+          ? "Please log in to unlock this track."
+          : "Vui lòng đăng nhập để mở khóa bài này.",
+      });
+      redirectToLogin();
+      return false;
+    }
+
+    setAccessNotice({
+      tone: "error",
+      text: currentLang === "en"
+        ? "This track is locked. Please unlock before playing."
+        : "Bài này đang bị khóa. Hãy mở khóa trước khi phát.",
+    });
+    return false;
+  }, [accessToken, currentLang, isTrackLocked, redirectToLogin, track]);
+
+  const handleUnlockCurrentTrack = async () => {
+    if (!track) return;
+
+    if (!accessToken) {
+      setAccessNotice({
+        tone: "info",
+        text: currentLang === "en"
+          ? "Please log in to unlock this track."
+          : "Vui lòng đăng nhập để mở khóa bài này.",
+      });
+      redirectToLogin();
+      return;
+    }
+
+    setIsUnlocking(true);
+    setAccessNotice(null);
+
+    try {
+      const result = await unlockMusicItem(track.id);
+
+      setAccessState((prev) => ({
+        ...prev,
+        unlockPrice: typeof result?.unlockPrice === "number" ? Math.max(0, Math.floor(result.unlockPrice)) : prev.unlockPrice,
+        unlocked: true,
+        unlockSource: result?.unlockSource || "track",
+      }));
+
+      if (user && typeof result?.balance === "number") {
+        setUser({ ...user, credits: result.balance });
+      }
+
+      const chargedCredits = typeof result?.chargedCredits === "number" ? Math.max(0, result.chargedCredits) : 0;
+      setAccessNotice({
+        tone: "success",
+        text: currentLang === "en"
+          ? `Unlocked successfully${chargedCredits > 0 ? ` (-${chargedCredits} credits)` : ""}.`
+          : `Mở khóa thành công${chargedCredits > 0 ? ` (-${chargedCredits} credits)` : ""}.`,
+      });
+    } catch (error) {
+      setAccessNotice({
+        tone: "error",
+        text: getApiErrorMessage(
+          error,
+          currentLang === "en" ? "Unable to unlock this track." : "Không thể mở khóa bài này.",
+        ),
+      });
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
 
   // ─── Comments ─────────────────────────────────
 
@@ -367,18 +632,22 @@ export default function MusicDetailPage() {
   // ─── Player actions ───────────────────────────
 
   const handlePlayTrack = (item: MusicTrack) => {
-    const playlistQueue = item.contentType === "playlist" ? toPlaylistQueue(item) : [];
-    const isCurrentMatch =
-      item.contentType === "single"
-        ? currentTrack?.id === item.id
-        : playlistQueue.some((row) => row.id === currentTrack?.id);
+    if (item.id === track?.id && !ensureCurrentTrackPlayable()) {
+      return;
+    }
+
+    const isPlaylist = item.contentType === "playlist";
+    const playlistQueue = isPlaylist ? toPlaylistQueue(item) : [];
+    const isCurrentMatch = isPlaylist
+      ? playlistQueue.some((row) => row.id === currentTrack?.id)
+      : currentTrack?.id === item.id;
 
     if (isCurrentMatch) {
       togglePlay(!isPlaying);
       return;
     }
 
-    if (item.contentType === "playlist") {
+    if (isPlaylist) {
       if (!playlistQueue.length) return;
       const firstTrack = playlistQueue[0];
       if (!firstTrack) return;
@@ -390,6 +659,10 @@ export default function MusicDetailPage() {
   };
 
   const handlePlayPlaylistChild = (parent: MusicTrack, index: number) => {
+    if (parent.id === track?.id && !ensureCurrentTrackPlayable()) {
+      return;
+    }
+
     const queue = toPlaylistQueue(parent);
     const target = queue[index];
     if (!target) return;
@@ -418,6 +691,22 @@ export default function MusicDetailPage() {
     }
   }, []);
 
+  const waveformBars = useMemo(() => createWaveformBars(track?.id || "music-wave"), [track?.id]);
+  const isActive = track ? isMusicTrackActive(track, currentTrack) : false;
+  const playing = isActive && isPlaying;
+  const playbackDuration = track
+    ? (isActive ? (duration > 0 ? duration : track.audioDuration || 0) : (track.audioDuration || 0))
+    : 0;
+  const playbackTime = isActive ? Math.min(currentTime, playbackDuration || currentTime) : 0;
+  const playbackProgress = playbackDuration > 0 ? Math.min(100, (playbackTime / playbackDuration) * 100) : 0;
+
+  const handleWaveSeek = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if (!isActive || playbackDuration <= 0 || isTrackLocked) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    seekTo(ratio * playbackDuration);
+  }, [isActive, isTrackLocked, playbackDuration, seekTo]);
+
   // ─── Render ───────────────────────────────────
 
   if (isLoading) {
@@ -441,9 +730,6 @@ export default function MusicDetailPage() {
       </div>
     );
   }
-
-  const isActive = isMusicTrackActive(track, currentTrack);
-  const playing = isActive && isPlaying;
 
   const renderCommentItem = (comment: MusicComment, isChild = false) => {
     const canManage = Boolean(isAdmin || (user?.id && user.id === comment.userId));
@@ -620,53 +906,63 @@ export default function MusicDetailPage() {
       </div>
 
       {/* Hero */}
-      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-4 shadow-sm md:p-6 dark:border-[#2c2c2c] dark:bg-[#171717]">
-        <div className="mx-auto grid max-w-3xl grid-cols-[122px_minmax(0,1fr)] items-start gap-4 sm:grid-cols-[138px_minmax(0,1fr)] md:max-w-5xl md:grid-cols-[200px_minmax(0,1fr)] md:items-stretch md:gap-6">
-          <div className="w-[122px] shrink-0 sm:w-[138px] md:w-[200px] md:self-stretch">
-            <div className="relative w-full overflow-hidden rounded-lg shadow-xl aspect-[2/3] md:h-full md:aspect-auto">
-              <Image
-                src={track.thumbnailUrl || "/thumbnaildefault.jpg"}
-                alt={track.title}
-                fill
-                unoptimized
-                className="object-cover"
-              />
-            </div>
+      <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm dark:border-[#2c2c2c] dark:bg-[#171717]">
+        <div className="grid lg:grid-cols-[260px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
+          <div className="relative min-h-[250px] sm:min-h-[320px] lg:min-h-[430px]">
+            <Image
+              src={track.thumbnailUrl || "/thumbnaildefault.jpg"}
+              alt={track.title}
+              fill
+              unoptimized
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent" />
           </div>
 
-          <div className="min-w-0">
-            <div className="space-y-2 text-sm md:max-w-xl">
-              <h1 className="text-lg font-bold leading-tight text-slate-900 md:text-[1.7rem] dark:text-zinc-100">{track.title}</h1>
+          <div className="flex min-h-[430px] flex-col px-5 pb-5 pt-5 sm:px-7 sm:pb-7 sm:pt-6">
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-pink-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] text-pink-700 dark:bg-pink-950/30 dark:text-pink-300">
+                  {track.contentType === "playlist" ? <ListMusic className="h-3 w-3" /> : <Headphones className="h-3 w-3" />}
+                  {track.contentType === "playlist" ? "Playlist" : track.contentType === "podcast" ? "Podcast" : "Single"}
+                </span>
 
-              <div className="grid grid-cols-1 gap-y-2 md:grid-cols-2 md:gap-x-8">
-                <p className="flex min-w-0 items-center gap-1 text-sm leading-tight text-slate-700 dark:text-zinc-300">
+                <span
+                  className={`inline-flex rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] ${
+                    track.accessType === "vip"
+                      ? "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300"
+                      : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                  }`}
+                >
+                  {track.accessType === "vip"
+                    ? `${currentLang === "en" ? "VIP Unlock" : "VIP mở khóa"} ${track.unlockPrice} credits`
+                    : (currentLang === "en" ? "Free" : "Miễn phí")}
+                </span>
+              </div>
+
+              <h1 className="text-2xl font-black leading-tight text-slate-900 sm:text-[2rem] dark:text-zinc-100">{track.title}</h1>
+
+              <div className="grid grid-cols-1 gap-2 text-sm md:grid-cols-2 md:gap-x-8">
+                <p className="flex min-w-0 items-center gap-1 text-slate-700 dark:text-zinc-300">
                   <span className="shrink-0 text-slate-500 dark:text-zinc-400">{t("author")}:</span>
                   <span className="truncate font-semibold text-slate-900 dark:text-zinc-100">{track.artist}</span>
                 </p>
 
-                <p className="flex min-w-0 items-center gap-1 text-sm leading-tight text-slate-700 dark:text-zinc-300">
-                  <span className="shrink-0 text-slate-500 dark:text-zinc-400">{t("status")}:</span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-pink-100 px-2.5 py-0.5 text-xs font-semibold text-pink-700 dark:bg-pink-950/30 dark:text-pink-300">
-                    {track.contentType === "playlist" ? <ListMusic className="h-3 w-3" /> : null}
-                    {track.contentType === "playlist" ? "Playlist" : "Single"}
-                  </span>
-                </p>
-
-                <p className="flex min-w-0 items-center gap-1 text-sm leading-tight text-slate-700 dark:text-zinc-300">
+                <p className="flex min-w-0 items-center gap-1 text-slate-700 dark:text-zinc-300">
                   <span className="shrink-0 text-slate-500 dark:text-zinc-400">{t("lastUpdated")}:</span>
-                  <span className="font-medium text-slate-900 dark:text-zinc-100">
+                  <span className="font-semibold text-slate-900 dark:text-zinc-100">
                     {track.updatedAt ? dateFormatter.format(new Date(track.updatedAt)) : "-"}
                   </span>
                 </p>
 
-                <p className="flex min-w-0 items-center gap-1 text-sm leading-tight text-slate-700 dark:text-zinc-300">
+                <p className="flex min-w-0 items-center gap-1 text-slate-700 dark:text-zinc-300">
                   <span className="shrink-0 text-slate-500 dark:text-zinc-400">{t("duration")}:</span>
-                  <span className="font-medium text-slate-900 dark:text-zinc-100">{formatMusicDuration(track.audioDuration)}</span>
+                  <span className="font-semibold text-slate-900 dark:text-zinc-100">{formatMusicDuration(track.audioDuration)}</span>
                 </p>
               </div>
 
               {track.tags.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-1.5">
                   {track.tags.map((tag) => (
                     <Link
                       key={tag}
@@ -679,140 +975,155 @@ export default function MusicDetailPage() {
                 </div>
               ) : null}
 
-              <div className="hidden md:block md:space-y-3">
-                {track.description ? (
-                  <p className="pt-1 text-sm leading-7 text-slate-600 dark:text-zinc-300">{track.description}</p>
-                ) : null}
+              {track.introEnabled !== false && track.description ? (
+                <p className="text-sm leading-7 text-slate-600 dark:text-zinc-300">{track.description}</p>
+              ) : null}
+            </div>
 
-                <div className="flex items-center justify-start gap-6 border-y border-slate-100 py-2 text-xs text-slate-500 dark:border-[#2b2b2b] dark:text-zinc-400 sm:gap-8">
-                  <span className="flex flex-col items-center gap-0.5">
-                    <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
-                      <Headphones className="h-3.5 w-3.5" /> {formatCompactCount(track.playCount)}
+            <div className="mt-5">
+              <WaveformTimeline
+                bars={waveformBars}
+                progress={playbackProgress}
+                currentTime={playbackTime}
+                duration={playbackDuration}
+                disabled={!isActive || playbackDuration <= 0 || isTrackLocked}
+                onSeek={handleWaveSeek}
+              />
+            </div>
+
+            <div className="mt-4 flex items-center justify-start gap-6 border-y border-slate-100 py-2 text-xs text-slate-500 dark:border-[#2b2b2b] dark:text-zinc-400 sm:gap-8">
+              <span className="flex flex-col items-center gap-0.5">
+                <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                  <Headphones className="h-3.5 w-3.5" /> {formatCompactCount(track.playCount)}
+                </span>
+                <span className="text-[10px]">{t("plays")}</span>
+              </span>
+              <span className="flex flex-col items-center gap-0.5">
+                <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                  <Heart className="h-3.5 w-3.5" /> {formatCompactCount(track.likeCount)}
+                </span>
+                <span className="text-[10px]">{t("likes")}</span>
+              </span>
+              <span className="flex flex-col items-center gap-0.5">
+                <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
+                  <MessageCircle className="h-3.5 w-3.5" /> {formatCompactCount(track.commentCount)}
+                </span>
+                <span className="text-[10px]">{t("comments")}</span>
+              </span>
+            </div>
+
+            {accessState.accessType === "vip" && accessState.unlockPrice > 0 ? (
+              <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50/80 p-3.5 dark:border-orange-900/40 dark:bg-orange-950/20">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black text-orange-700 dark:text-orange-300">
+                      {isTrackLocked
+                        ? (currentLang === "en" ? "This track is VIP-locked" : "Bài này đang khóa VIP")
+                        : (currentLang === "en" ? "This track is unlocked" : "Bài này đã được mở khóa")}
+                    </p>
+                    <p className="text-xs font-medium text-orange-600/90 dark:text-orange-200/90">
+                      {isTrackLocked
+                        ? (currentLang === "en"
+                          ? `Unlock price: ${accessState.unlockPrice} credits.`
+                          : `Giá mở khóa: ${accessState.unlockPrice} credits.`)
+                        : (currentLang === "en"
+                          ? `Unlocked via ${accessState.unlockSource || "track"}.`
+                          : `Nguồn mở khóa: ${accessState.unlockSource || "track"}.`)}
+                    </p>
+                  </div>
+
+                  {isTrackLocked ? (
+                    <button
+                      onClick={() => {
+                        if (!accessToken) {
+                          setAccessNotice({
+                            tone: "info",
+                            text: currentLang === "en"
+                              ? "Please log in to unlock this track."
+                              : "Vui lòng đăng nhập để mở khóa bài này.",
+                          });
+                          redirectToLogin();
+                          return;
+                        }
+
+                        void handleUnlockCurrentTrack();
+                      }}
+                      disabled={isUnlocking || isCheckingAccess}
+                      className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-orange-600 disabled:opacity-60"
+                    >
+                      {isUnlocking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                      {accessToken
+                        ? (currentLang === "en" ? `Unlock (${accessState.unlockPrice}cr)` : `Mở khóa (${accessState.unlockPrice}cr)`)
+                        : (currentLang === "en" ? "Login to unlock" : "Đăng nhập để mở khóa")}
+                    </button>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      {currentLang === "en" ? "Unlocked" : "Đã mở khóa"}
                     </span>
-                    <span className="text-[10px]">{t("plays")}</span>
-                  </span>
-                  <span className="flex flex-col items-center gap-0.5">
-                    <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
-                      <Heart className="h-3.5 w-3.5" /> {formatCompactCount(track.likeCount)}
-                    </span>
-                    <span className="text-[10px]">{t("likes")}</span>
-                  </span>
-                  <span className="flex flex-col items-center gap-0.5">
-                    <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
-                      <MessageCircle className="h-3.5 w-3.5" /> {formatCompactCount(track.commentCount)}
-                    </span>
-                    <span className="text-[10px]">{t("comments")}</span>
-                  </span>
-                </div>
-
-                <div className="mt-2 flex flex-wrap items-center justify-start gap-2 sm:gap-3">
-                  <button
-                    onClick={() => handlePlayTrack(track)}
-                    className="inline-flex items-center gap-2 rounded-full bg-pink-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-pink-600"
-                  >
-                    {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                    {playing ? t("pauseNow") : t("playNow")}
-                  </button>
-
-                  <MusicLikeButton
-                    musicId={track.id}
-                    initialLiked={isLiked}
-                    likeCount={track.likeCount}
-                    showCount={false}
-                    label={t("like")}
-                    className="h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
-                    onLikeChanged={(liked, newCount) => {
-                      setIsLiked(liked);
-                      setTrack((prev) => (prev ? { ...prev, likeCount: newCount } : prev));
-                    }}
-                  />
-
-                  <ShareActionButton
-                    title={track.title}
-                    text={`${track.title} - ${track.artist}`}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
-                    iconClassName="h-3.5 w-3.5"
-                    label={t("share")}
-                  />
-
-                  {track.contentType === "single" ? (
-                    <AddToPlaylistButton
-                      musicId={track.id}
-                      musicTitle={track.title}
-                      label={t("addToPlaylist")}
-                    />
-                  ) : null}
+                  )}
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 space-y-3 md:hidden">
-          {track.description ? (
-            <div className="mx-auto max-w-3xl text-center">
-              <p className="text-sm leading-7 text-slate-600 dark:text-zinc-300">{track.description}</p>
-            </div>
-          ) : null}
-
-          <div className="mx-auto flex max-w-3xl items-center justify-center gap-6 border-y border-slate-100 py-2 text-xs text-slate-500 dark:border-[#2b2b2b] dark:text-zinc-400 sm:gap-8">
-            <span className="flex flex-col items-center gap-0.5">
-              <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
-                <Headphones className="h-3.5 w-3.5" /> {formatCompactCount(track.playCount)}
-              </span>
-              <span className="text-[10px]">{t("plays")}</span>
-            </span>
-            <span className="flex flex-col items-center gap-0.5">
-              <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
-                <Heart className="h-3.5 w-3.5" /> {formatCompactCount(track.likeCount)}
-              </span>
-              <span className="text-[10px]">{t("likes")}</span>
-            </span>
-            <span className="flex flex-col items-center gap-0.5">
-              <span className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-zinc-100">
-                <MessageCircle className="h-3.5 w-3.5" /> {formatCompactCount(track.commentCount)}
-              </span>
-              <span className="text-[10px]">{t("comments")}</span>
-            </span>
-          </div>
-
-          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-2 sm:gap-3">
-            <button
-              onClick={() => handlePlayTrack(track)}
-              className="inline-flex items-center gap-2 rounded-full bg-pink-500 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-pink-600"
-            >
-              {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {playing ? t("pauseNow") : t("playNow")}
-            </button>
-
-            <MusicLikeButton
-              musicId={track.id}
-              initialLiked={isLiked}
-              likeCount={track.likeCount}
-              compact
-              showCount={false}
-              className="h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
-              onLikeChanged={(liked, newCount) => {
-                setIsLiked(liked);
-                setTrack((prev) => (prev ? { ...prev, likeCount: newCount } : prev));
-              }}
-            />
-
-            <ShareActionButton
-              title={track.title}
-              text={`${track.title} - ${track.artist}`}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
-              iconClassName="h-3.5 w-3.5"
-              ariaLabel={t("share")}
-            />
-
-            {track.contentType === "single" ? (
-              <AddToPlaylistButton
-                musicId={track.id}
-                musicTitle={track.title}
-                compact
-              />
             ) : null}
+
+            {accessNotice ? (
+              <div
+                className={`mt-3 rounded-xl px-3 py-2 text-xs font-semibold ${
+                  accessNotice.tone === "success"
+                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300"
+                    : accessNotice.tone === "error"
+                      ? "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300"
+                      : "border border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/20 dark:text-zinc-300"
+                }`}
+              >
+                {accessNotice.text}
+              </div>
+            ) : null}
+
+            <div className="mt-auto pt-5">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <button
+                  onClick={() => handlePlayTrack(track)}
+                  disabled={isCheckingAccess || isUnlocking}
+                  className="inline-flex items-center gap-2 rounded-full bg-pink-500 px-5 py-2.5 text-sm font-black text-white transition hover:bg-pink-600 disabled:opacity-60"
+                >
+                  {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                  {isTrackLocked
+                    ? (currentLang === "en" ? "Locked" : "Đang khóa")
+                    : playing
+                      ? t("pauseNow")
+                      : t("playNow")}
+                </button>
+
+                <MusicLikeButton
+                  musicId={track.id}
+                  initialLiked={isLiked}
+                  likeCount={track.likeCount}
+                  showCount={false}
+                  label={t("like")}
+                  className="h-10 items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
+                  onLikeChanged={(liked, newCount) => {
+                    setIsLiked(liked);
+                    setTrack((prev) => (prev ? { ...prev, likeCount: newCount } : prev));
+                  }}
+                />
+
+                <ShareActionButton
+                  title={track.title}
+                  text={`${track.title} - ${track.artist}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-[#3a3a3a] dark:bg-[#242526] dark:text-zinc-200 dark:hover:bg-[#303133]"
+                  iconClassName="h-3.5 w-3.5"
+                  label={t("share")}
+                />
+
+                {track.contentType !== "playlist" ? (
+                  <AddToPlaylistButton
+                    musicId={track.id}
+                    musicTitle={track.title}
+                    label={t("addToPlaylist")}
+                  />
+                ) : null}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -980,9 +1291,14 @@ export default function MusicDetailPage() {
         <aside className="space-y-4">
           <article className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-[#2c2c2c] dark:bg-[#171717]">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-black text-slate-500 dark:text-zinc-400">
-                {t("relatedTitle")}
-              </h3>
+              <div>
+                <h3 className="text-sm font-black text-slate-500 dark:text-zinc-400">
+                  {t("relatedTitle")}
+                </h3>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-zinc-500">
+                  {currentLang === "en" ? "Same author or matching tags" : "Cùng tác giả hoặc cùng tag"}
+                </p>
+              </div>
               <Link href="/music" className="text-[11px] font-bold text-pink-500 hover:underline">
                 {t("viewAll")}
               </Link>
@@ -1036,7 +1352,7 @@ export default function MusicDetailPage() {
                             resolveTracks={item.contentType === "playlist" ? () => resolvePlaylistQueue(item) : undefined}
                             compact
                           />
-                          {item.contentType === "single" ? (
+                          {item.contentType !== "playlist" ? (
                             <AddToPlaylistButton musicId={item.id} musicTitle={item.title} compact />
                           ) : null}
                         </div>

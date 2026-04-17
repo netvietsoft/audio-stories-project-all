@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ChapterAccessType } from '@prisma/client';
 
@@ -50,6 +50,11 @@ export class UpdateChapterDto {
     @IsEnum(ChapterAccessType)
     @IsOptional()
     accessType?: ChapterAccessType;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    unlockPrice?: number;
 
     @IsOptional()
     @IsBoolean()

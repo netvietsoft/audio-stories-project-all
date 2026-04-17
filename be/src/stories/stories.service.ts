@@ -748,6 +748,7 @@ export class StoriesService {
             thumbnailUrl: true,
             r2AudioUrl: true,
             accessType: true,
+            unlockPrice: true,
             unlocksAt: true,
             isInteractive: true,
             variants: {

@@ -72,8 +72,24 @@ export class CreateMusicDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['single', 'playlist'])
-  contentType?: 'single' | 'playlist';
+  @IsIn(['single', 'podcast', 'playlist'])
+  contentType?: 'single' | 'podcast' | 'playlist';
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['free', 'vip'])
+  accessType?: 'free' | 'vip';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  unlockPrice?: number;
+
+  @IsOptional()
+  @Transform(toBoolean)
+  @IsBoolean()
+  introEnabled?: boolean;
 
   @IsOptional()
   @Transform(toStringArray)

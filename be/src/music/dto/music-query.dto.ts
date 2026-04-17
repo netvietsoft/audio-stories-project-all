@@ -24,6 +24,6 @@ export class MusicQueryDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['single', 'playlist'])
-  contentType?: 'single' | 'playlist';
+  @IsIn(['single', 'podcast', 'playlist'])
+  contentType?: 'single' | 'podcast' | 'playlist';
 }

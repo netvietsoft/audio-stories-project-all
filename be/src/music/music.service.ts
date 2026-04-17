@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { MusicContentType, Prisma } from '@prisma/client';
+import { MusicAccessType, MusicContentType, Prisma } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
 import { AudioUploadService } from '@/upload/audio-upload.service';
@@ -36,6 +36,9 @@ type SerializableMusicRow = {
   audioUrl: string;
   audioDuration: number | null;
   contentType: MusicContentType;
+  accessType: MusicAccessType;
+  unlockPrice: number;
+  introEnabled: boolean;
   playlistTrackIds: Prisma.JsonValue | null;
   playCount: number;
   likeCount: number;
@@ -76,6 +79,71 @@ export class MusicService {
 
     return {
       data: serialized,
+    };
+  }
+
+  async findRelatedPublic(slug: string, limit = 8) {
+    const safeLimit = Math.min(Math.max(limit || 8, 1), 20);
+
+    const source = await this.prisma.music.findFirst({
+      where: {
+        slug,
+        isPublic: true,
+      },
+    });
+
+    if (!source) {
+      throw new NotFoundException('Music not found.');
+    }
+
+    const sourceArtist = source.artist.trim().toLowerCase();
+    const sourceTags = new Set(this.parseTags(source.tags).map((tag) => tag.toLowerCase()));
+
+    const candidates = await this.prisma.music.findMany({
+      where: {
+        isPublic: true,
+        id: { not: source.id },
+      },
+      orderBy: [{ playCount: 'desc' }, { createdAt: 'desc' }],
+      take: 120,
+    });
+
+    const sameArtist: SerializableMusicRow[] = [];
+    const sameTag: SerializableMusicRow[] = [];
+    const fallback: SerializableMusicRow[] = [];
+
+    candidates.forEach((row) => {
+      const rowArtist = row.artist.trim().toLowerCase();
+      const tags = this.parseTags(row.tags).map((tag) => tag.toLowerCase());
+      const hasSameArtist = Boolean(sourceArtist) && rowArtist === sourceArtist;
+      const hasSameTag = tags.some((tag) => sourceTags.has(tag));
+
+      if (hasSameArtist) {
+        sameArtist.push(row);
+        return;
+      }
+
+      if (hasSameTag) {
+        sameTag.push(row);
+        return;
+      }
+
+      fallback.push(row);
+    });
+
+    const deduped: SerializableMusicRow[] = [];
+    const seen = new Set<string>();
+
+    [...sameArtist, ...sameTag, ...fallback].forEach((row) => {
+      if (seen.has(row.id)) return;
+      seen.add(row.id);
+      deduped.push(row);
+    });
+
+    const enrichedRows = await this.enrichPlaylistTracks(deduped.slice(0, safeLimit));
+
+    return {
+      data: enrichedRows,
     };
   }
 
@@ -134,7 +202,7 @@ export class MusicService {
       const childTrackIds = await this.listPlaylistChildTrackIds();
 
       if (childTrackIds.length && normalizedContentType !== MusicContentType.playlist) {
-        if (normalizedContentType === MusicContentType.single) {
+        if (normalizedContentType === MusicContentType.single || normalizedContentType === MusicContentType.podcast) {
           whereClauses.push({ id: { notIn: childTrackIds } });
         } else {
           whereClauses.push({
@@ -142,7 +210,7 @@ export class MusicService {
               { contentType: MusicContentType.playlist },
               {
                 AND: [
-                  { contentType: MusicContentType.single },
+                  { contentType: { in: [MusicContentType.single, MusicContentType.podcast] } },
                   { id: { notIn: childTrackIds } },
                 ],
               },
@@ -204,6 +272,8 @@ export class MusicService {
     const slug = await this.generateUniqueSlug(title, dto.slug);
     const artist = this.normalizeRequiredText(dto.artist, 'artist');
     const contentType = this.normalizeContentType(dto.contentType);
+    const accessType = this.normalizeAccessType(dto.accessType);
+    const unlockPrice = this.normalizeUnlockPrice(dto.unlockPrice, accessType);
     const playlistTrackIds = this.normalizeMusicIdArray(dto.playlistTrackIds);
 
     const audioFile = files.audioFile?.[0];
@@ -256,6 +326,9 @@ export class MusicService {
         thumbnailUrl,
         audioDuration,
         contentType,
+        accessType,
+        unlockPrice,
+        introEnabled: dto.introEnabled ?? true,
         playlistTrackIds: contentType === MusicContentType.playlist ? playlistTrackIds : [],
         isPublic: dto.isPublic ?? true,
       },
@@ -279,6 +352,14 @@ export class MusicService {
     const nextContentType = dto.contentType
       ? this.normalizeContentType(dto.contentType)
       : existing.contentType;
+
+    const nextAccessType = dto.accessType
+      ? this.normalizeAccessType(dto.accessType)
+      : existing.accessType;
+
+    const nextUnlockPrice = dto.unlockPrice !== undefined
+      ? this.normalizeUnlockPrice(dto.unlockPrice, nextAccessType)
+      : (dto.accessType !== undefined && nextAccessType === MusicAccessType.free ? 0 : existing.unlockPrice);
 
     const nextPlaylistTrackIds = dto.playlistTrackIds === undefined
       ? this.parsePlaylistTrackIds(existing.playlistTrackIds)
@@ -336,6 +417,10 @@ export class MusicService {
       throw new BadRequestException('audioFile or audioUrl is required.');
     }
 
+    if (nextContentType === MusicContentType.podcast && !nextAudioUrl && !existing.audioUrl) {
+      throw new BadRequestException('audioFile or audioUrl is required.');
+    }
+
     let nextThumbnailUrl: string | null | undefined = uploadedThumbnailUrl ?? thumbnailUrlFromBody;
 
     if (nextContentType === MusicContentType.playlist && nextThumbnailUrl === undefined) {
@@ -352,6 +437,9 @@ export class MusicService {
       ...(dto.tags !== undefined ? { tags: this.normalizeTagsInput(dto.tags) } : {}),
       ...(nextDuration !== undefined ? { audioDuration: nextDuration } : {}),
       ...(dto.contentType !== undefined ? { contentType: nextContentType } : {}),
+      ...(dto.accessType !== undefined ? { accessType: nextAccessType } : {}),
+      ...(nextUnlockPrice !== undefined ? { unlockPrice: nextUnlockPrice } : {}),
+      ...(dto.introEnabled !== undefined ? { introEnabled: dto.introEnabled } : {}),
       ...(dto.playlistTrackIds !== undefined || nextContentType === MusicContentType.playlist || existing.contentType === MusicContentType.playlist
         ? { playlistTrackIds: nextContentType === MusicContentType.playlist ? nextPlaylistTrackIds : [] }
         : {}),
@@ -407,7 +495,7 @@ export class MusicService {
       ? await this.prisma.music.findMany({
           where: {
             id: { in: ids },
-            contentType: MusicContentType.single,
+            contentType: { in: [MusicContentType.single, MusicContentType.podcast] },
           },
           select: {
             id: true,
@@ -494,7 +582,28 @@ export class MusicService {
   }
 
   private normalizeContentType(value: string | undefined): MusicContentType {
-    return value === 'playlist' ? MusicContentType.playlist : MusicContentType.single;
+    if (value === 'playlist') return MusicContentType.playlist;
+    if (value === 'podcast') return MusicContentType.podcast;
+    return MusicContentType.single;
+  }
+
+  private normalizeAccessType(value: string | undefined): MusicAccessType {
+    return value === 'vip' ? MusicAccessType.vip : MusicAccessType.free;
+  }
+
+  private normalizeUnlockPrice(value: number | undefined, accessType: MusicAccessType): number {
+    if (accessType === MusicAccessType.free) return 0;
+
+    const next = typeof value === 'number' ? Math.floor(value) : 0;
+    if (!Number.isFinite(next) || next < 0) {
+      throw new BadRequestException('unlockPrice must be a non-negative number.');
+    }
+
+    if (next <= 0) {
+      throw new BadRequestException('unlockPrice is required when accessType is vip.');
+    }
+
+    return next;
   }
 
   private toSlug(value: string): string {
@@ -559,7 +668,7 @@ export class MusicService {
     const rows = await this.prisma.music.findMany({
       where: {
         id: { in: normalizedIds },
-        contentType: MusicContentType.single,
+        contentType: { in: [MusicContentType.single, MusicContentType.podcast] },
       },
       select: {
         id: true,
@@ -576,7 +685,7 @@ export class MusicService {
     });
 
     if (rows.length !== normalizedIds.length) {
-      throw new BadRequestException('playlistTrackIds contains invalid or non-single-track IDs.');
+      throw new BadRequestException('playlistTrackIds contains invalid or unsupported track IDs.');
     }
 
     const map = new Map(rows.map((item) => [item.id, item]));

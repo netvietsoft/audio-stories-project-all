@@ -19,9 +19,10 @@ export default function AdminLayout({
 }) {
     const pathname = usePathname();
     const router = useRouter();
+    const isLoginPage = pathname?.includes('/admin/login');
+    const { isAdmin, isLoading } = useRequireAdmin(!isLoginPage);
+
     const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const [hasAccess, setHasAccess] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -32,38 +33,6 @@ export default function AdminLayout({
             document.body.classList.remove('admin-shell');
         };
     }, []);
-
-    useEffect(() => {
-        // Check if current path is login page (with or without locale)
-        const isLoginPage = pathname?.includes('/admin/login');
-
-        if (isLoginPage) {
-            setIsLoading(false);
-            setHasAccess(true);
-            return;
-        }
-
-        const checkAdminAccess = () => {
-            const user = useAdminStore.getState().user;
-            const hasAdminRole = !!(user?.roles?.includes('ADMIN') || user?.roles?.includes('admin'));
-
-            if (typeof window !== 'undefined') {
-                const adminLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
-                return adminLoggedIn && hasAdminRole;
-            }
-            return hasAdminRole;
-        };
-
-        const access = checkAdminAccess();
-        setHasAccess(access);
-        setIsLoading(false);
-
-        if (!access) {
-            // Extract locale from pathname (e.g., /vi/admin or /en/admin)
-            const locale = pathname?.split('/')[1] || 'vi';
-            router.push(`/${locale}/admin/login`);
-        }
-    }, [router, pathname]);
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
@@ -99,6 +68,11 @@ export default function AdminLayout({
         }
     };
 
+    // Skip layout for login page
+    if (isLoginPage) {
+        return <ThemeProvider forcedTheme="light" attribute="class">{children}</ThemeProvider>;
+    }
+
     if (isLoading) {
         return (
             <ThemeProvider forcedTheme="light" attribute="class">
@@ -109,22 +83,8 @@ export default function AdminLayout({
         );
     }
 
-    // Skip layout for login page
-    const isLoginPage = pathname?.includes('/admin/login');
-
-    // Use centralized hook to determine admin auth state.
-    const { isAdmin } = useRequireAdmin(false);
-
-    if (!isLoginPage && !isAdmin) {
+    if (!isAdmin) {
         return <AdminRequireLogin />;
-    }
-
-    if (isLoginPage) {
-        return <ThemeProvider forcedTheme="light" attribute="class">{children}</ThemeProvider>;
-    }
-
-    if (!hasAccess) {
-        return null;
     }
 
     const navItems = [

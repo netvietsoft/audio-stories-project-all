@@ -58,6 +58,12 @@ export class MusicController {
     return this.musicService.findAllAdmin(query);
   }
 
+  @Get(':slug/related')
+  findRelatedPublic(@Param('slug') slug: string, @Query('limit') limit?: string) {
+    const parsedLimit = Number(limit);
+    return this.musicService.findRelatedPublic(slug, Number.isFinite(parsedLimit) ? parsedLimit : 8);
+  }
+
   @Post()
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')

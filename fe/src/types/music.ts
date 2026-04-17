@@ -1,4 +1,5 @@
-export type MusicContentType = "single" | "playlist";
+export type MusicContentType = "single" | "podcast" | "playlist";
+export type MusicAccessType = "free" | "vip";
 
 export type MusicPlaylistTrackSummary = {
   id: string;
@@ -24,6 +25,9 @@ export type MusicTrack = {
   audioUrl: string;
   audioDuration: number | null;
   contentType: MusicContentType;
+  accessType: MusicAccessType;
+  unlockPrice: number;
+  introEnabled: boolean;
   playlistTrackIds: string[];
   playlistTracks: MusicPlaylistTrackSummary[];
   playCount: number;

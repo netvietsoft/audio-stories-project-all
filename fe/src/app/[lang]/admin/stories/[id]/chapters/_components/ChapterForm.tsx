@@ -52,6 +52,10 @@ const chapterSchema = z.object({
         z.number().min(0, 'Thời lượng không hợp lệ').optional(),
     ),
     accessType: z.enum(['free', 'timed', 'vip']),
+    unlockPrice: z.preprocess(
+        (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : Number(value)),
+        z.number().min(0, 'Credits mở khóa không hợp lệ').optional(),
+    ),
     language: z.string().min(1, 'Vui lòng chọn ngôn ngữ'),
     storyId: z.preprocess(
         (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : value),
@@ -74,6 +78,7 @@ export type ChapterFormValues = {
     youtubeVideoId?: string;
     audioDuration?: number;
     accessType: 'free' | 'timed' | 'vip';
+    unlockPrice?: number;
     language: string;
     unlocksAt?: string;
     storyId?: string;
@@ -89,6 +94,7 @@ export type ChapterSubmitPayload = {
     youtubeVideoId?: string | null;
     audioDuration?: number;
     accessType: 'free' | 'timed' | 'vip';
+    unlockPrice?: number;
     storyId?: string;
     language?: string;
 };
@@ -246,6 +252,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             youtubeVideoId: safeString(initialData?.youtubeVideoId),
             audioDuration: safeNumber(initialData?.audioDuration, 0),
             accessType: safeAccessType(initialData?.accessType),
+            unlockPrice: safeNumber((initialData as { unlockPrice?: unknown } | undefined)?.unlockPrice, 0),
             language: safeString((initialData as { language?: unknown } | undefined)?.language, selectedLocale),
             storyId: safeString(initialData?.storyId),
             unlocksAt: safeString(initialData?.unlocksAt),
@@ -648,6 +655,11 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                     ? values.audioDuration
                     : undefined,
             accessType: values.accessType,
+            unlockPrice: values.accessType === 'free'
+                ? 0
+                : (typeof values.unlockPrice === 'number' && Number.isFinite(values.unlockPrice)
+                    ? Math.max(0, Math.floor(values.unlockPrice))
+                    : 0),
             storyId: cleanText(values.storyId),
             language: selectedLanguage,
         };
@@ -1093,6 +1105,22 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                         {...register('unlocksAt')}
                                         className={`admin-input ${errors.unlocksAt ? 'admin-input-error' : ''}`}
                                     />
+                                </div>
+                            )}
+
+                            {watch('accessType') !== 'free' && (
+                                <div className="flex flex-col space-y-1.5">
+                                    <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Credits mở khóa</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        step={1}
+                                        {...register('unlockPrice', { valueAsNumber: true })}
+                                        className={`admin-input ${errors.unlockPrice ? 'admin-input-error' : ''}`}
+                                        placeholder="Ví dụ: 20"
+                                    />
+                                    <p className="text-xs text-slate-500">Giá credits cần để mở khóa chương này.</p>
+                                    {errors.unlockPrice && <p className="text-red-500 text-xs mt-1">{errors.unlockPrice.message}</p>}
                                 </div>
                             )}
 

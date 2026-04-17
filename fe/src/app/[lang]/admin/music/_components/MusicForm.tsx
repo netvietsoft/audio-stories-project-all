@@ -14,8 +14,19 @@ const schema = z.object({
   description: z.string().max(5000, "Mô tả tối đa 5000 ký tự").optional(),
   tagsInput: z.string().optional(),
   isPublic: z.enum(["true", "false"]),
-  contentType: z.enum(["single", "playlist"]),
+  contentType: z.enum(["single", "podcast", "playlist"]),
+  accessType: z.enum(["free", "vip"]),
+  unlockPrice: z.number().min(0, "Giá mở khóa không hợp lệ").optional(),
+  introEnabled: z.enum(["true", "false"]),
   audioDuration: z.number().min(0, "Thời lượng không hợp lệ").optional(),
+}).superRefine((values, context) => {
+  if (values.accessType === "vip" && (!values.unlockPrice || values.unlockPrice <= 0)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["unlockPrice"],
+      message: "Vui lòng nhập giá mở khóa lớn hơn 0 cho nội dung VIP.",
+    });
+  }
 });
 
 type MusicFormValues = z.infer<typeof schema>;
@@ -39,7 +50,10 @@ export type MusicFormInitialData = {
   audioUrl?: string;
   audioDuration?: number | null;
   isPublic?: boolean;
-  contentType?: "single" | "playlist";
+  contentType?: "single" | "podcast" | "playlist";
+  accessType?: "free" | "vip";
+  unlockPrice?: number;
+  introEnabled?: boolean;
   playlistTrackIds?: string[];
 };
 
@@ -50,7 +64,10 @@ export type MusicFormSubmitPayload = {
   description: string;
   tags: string[];
   isPublic: boolean;
-  contentType: "single" | "playlist";
+  contentType: "single" | "podcast" | "playlist";
+  accessType: "free" | "vip";
+  unlockPrice: number;
+  introEnabled: boolean;
   playlistTrackIds: string[];
   audioDuration: number | null;
   audioFile?: File;
@@ -117,6 +134,8 @@ export default function MusicForm({
     register,
     handleSubmit,
     setValue,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm<MusicFormValues>({
     resolver: zodResolver(schema),
@@ -128,11 +147,15 @@ export default function MusicForm({
       tagsInput: Array.isArray(initialData?.tags) ? initialData.tags.join(", ") : "",
       isPublic: initialData?.isPublic === false ? "false" : "true",
       contentType: initialData?.contentType || "single",
+      accessType: initialData?.accessType || "free",
+      unlockPrice: typeof initialData?.unlockPrice === "number" ? initialData.unlockPrice : 0,
+      introEnabled: initialData?.introEnabled === false ? "false" : "true",
       audioDuration: typeof initialData?.audioDuration === "number" ? initialData.audioDuration : 0,
     },
   });
 
   const contentType = useWatch({ control, name: "contentType" });
+  const accessType = useWatch({ control, name: "accessType" });
   const title = useWatch({ control, name: "title" });
   const slug = useWatch({ control, name: "slug" });
   const watchedDuration = useWatch({ control, name: "audioDuration" });
@@ -182,6 +205,12 @@ export default function MusicForm({
     const totalDuration = selectedTracks.reduce((sum, item) => sum + (item.audioDuration || 0), 0);
     setValue("audioDuration", totalDuration, { shouldDirty: true, shouldValidate: true });
   }, [contentType, selectedTracks, setValue]);
+
+  useEffect(() => {
+    if (accessType === "vip") return;
+    setValue("unlockPrice", 0, { shouldDirty: true, shouldValidate: true });
+    clearErrors("unlockPrice");
+  }, [accessType, clearErrors, setValue]);
 
   const handleThumbnailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -259,6 +288,14 @@ export default function MusicForm({
       return;
     }
 
+    if (values.accessType === "vip" && (!values.unlockPrice || values.unlockPrice <= 0)) {
+      setError("unlockPrice", {
+        type: "manual",
+        message: "Vui lòng nhập giá mở khóa lớn hơn 0 cho nội dung VIP.",
+      });
+      return;
+    }
+
     const tags = Array.from(
       new Set(
         (values.tagsInput || "")
@@ -276,9 +313,12 @@ export default function MusicForm({
       tags,
       isPublic: values.isPublic === "true",
       contentType: values.contentType,
+      accessType: values.accessType,
+      unlockPrice: values.accessType === "vip" ? Math.max(0, Math.floor(values.unlockPrice || 0)) : 0,
+      introEnabled: values.introEnabled === "true",
       playlistTrackIds: values.contentType === "playlist" ? selectedTrackIds : [],
       audioDuration: typeof values.audioDuration === "number" ? values.audioDuration : null,
-      audioFile: values.contentType === "single" ? audioFile : undefined,
+      audioFile: values.contentType !== "playlist" ? audioFile : undefined,
       thumbnailFile,
       clearThumbnail,
     });
@@ -304,7 +344,44 @@ export default function MusicForm({
             <label className="text-sm font-black uppercase tracking-wider text-slate-700">Loại nội dung</label>
             <select {...register("contentType")} className="admin-input w-full appearance-none bg-white">
               <option value="single">Bài lẻ</option>
+              <option value="podcast">Podcast</option>
               <option value="playlist">Playlist hệ thống</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <label className="text-sm font-black uppercase tracking-wider text-slate-700">Quyền truy cập</label>
+              <select {...register("accessType")} className="admin-input w-full appearance-none bg-white">
+                <option value="free">Miễn phí</option>
+                <option value="vip">Khóa VIP</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-black uppercase tracking-wider text-slate-700">Giá mở khóa (credits)</label>
+              <input
+                {...register("unlockPrice", { valueAsNumber: true })}
+                type="number"
+                min={0}
+                step={1}
+                disabled={accessType !== "vip"}
+                className={`admin-input w-full bg-white ${errors.unlockPrice ? "admin-input-error" : ""}`}
+              />
+              <p className="text-xs font-medium text-slate-500">
+                {accessType === "vip"
+                  ? "Áp dụng cho bài lẻ/podcast, hoặc mở khóa toàn bộ playlist nếu là playlist."
+                  : "Miễn phí: giá tự động về 0."}
+              </p>
+              {errors.unlockPrice ? <p className="text-xs text-red-500">{errors.unlockPrice.message}</p> : null}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-black uppercase tracking-wider text-slate-700">Hiển thị phần giới thiệu</label>
+            <select {...register("introEnabled")} className="admin-input w-full appearance-none bg-white">
+              <option value="true">Bật</option>
+              <option value="false">Tắt</option>
             </select>
           </div>
 
@@ -422,7 +499,7 @@ export default function MusicForm({
             )}
           </div>
 
-          {contentType === "single" ? (
+          {contentType !== "playlist" ? (
             <div className="space-y-2">
               <label className="text-sm font-black uppercase tracking-wider text-slate-700">Audio</label>
               <input

@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { MusicAccessType, MusicContentType, Prisma } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
 import { ListMusicFavoritesDto } from './dto/list-music-favorites.dto';
@@ -12,6 +12,14 @@ export class MusicInteractionService {
   private normalizeProgressSeconds(value: number) {
     if (!Number.isFinite(value)) return 0;
     return Math.max(0, Math.floor(value));
+  }
+
+  private parsePlaylistTrackIds(value: Prisma.JsonValue | null): string[] {
+    if (!Array.isArray(value)) return [];
+
+    return value
+      .map((item) => (typeof item === 'string' ? item.trim() : ''))
+      .filter(Boolean);
   }
 
   private parseTags(value: Prisma.JsonValue | null): string[] {
@@ -32,7 +40,10 @@ export class MusicInteractionService {
     thumbnailUrl: string | null;
     audioUrl: string;
     audioDuration: number | null;
-    contentType: string;
+    contentType: MusicContentType;
+    accessType: MusicAccessType;
+    unlockPrice: number;
+    introEnabled: boolean;
     playlistTrackIds: Prisma.JsonValue | null;
     playCount: number;
     likeCount: number;
@@ -44,11 +55,7 @@ export class MusicInteractionService {
     return {
       ...row,
       tags: this.parseTags(row.tags),
-      playlistTrackIds: Array.isArray(row.playlistTrackIds)
-        ? row.playlistTrackIds
-            .map((item) => (typeof item === 'string' ? item.trim() : ''))
-            .filter(Boolean)
-        : [],
+      playlistTrackIds: this.parsePlaylistTrackIds(row.playlistTrackIds),
     };
   }
 
@@ -61,6 +68,237 @@ export class MusicInteractionService {
     if (!music) {
       throw new NotFoundException('Music not found.');
     }
+  }
+
+  private async getPlayableState(userId: string, musicId: string) {
+    const music = await this.prisma.music.findUnique({
+      where: { id: musicId },
+      select: {
+        id: true,
+        title: true,
+        contentType: true,
+        accessType: true,
+        unlockPrice: true,
+        playlistTrackIds: true,
+        isPublic: true,
+      },
+    });
+
+    if (!music || !music.isPublic) {
+      throw new NotFoundException('Music not found.');
+    }
+
+    if (music.accessType === MusicAccessType.free || music.unlockPrice <= 0) {
+      return {
+        music,
+        unlocked: true,
+        unlockSource: 'free' as const,
+      };
+    }
+
+    const directUnlock = await this.prisma.musicUnlock.findUnique({
+      where: {
+        userId_musicId: {
+          userId,
+          musicId: music.id,
+        },
+      },
+      select: {
+        id: true,
+        sourceType: true,
+      },
+    });
+
+    if (directUnlock) {
+      return {
+        music,
+        unlocked: true,
+        unlockSource: directUnlock.sourceType,
+      };
+    }
+
+    if (music.contentType !== MusicContentType.playlist) {
+      return {
+        music,
+        unlocked: false,
+        unlockSource: null,
+      };
+    }
+
+    const playlistTrackIds = this.parsePlaylistTrackIds(music.playlistTrackIds);
+    if (!playlistTrackIds.length) {
+      return {
+        music,
+        unlocked: true,
+        unlockSource: 'playlist' as const,
+      };
+    }
+
+    const [tracks, unlocks] = await Promise.all([
+      this.prisma.music.findMany({
+        where: {
+          id: { in: playlistTrackIds },
+          isPublic: true,
+          contentType: { in: [MusicContentType.single, MusicContentType.podcast] },
+        },
+        select: {
+          id: true,
+          accessType: true,
+          unlockPrice: true,
+        },
+      }),
+      this.prisma.musicUnlock.findMany({
+        where: {
+          userId,
+          musicId: { in: playlistTrackIds },
+        },
+        select: { musicId: true },
+      }),
+    ]);
+
+    const unlockedTrackIds = new Set(unlocks.map((item) => item.musicId));
+    const allTracksUnlocked = tracks.every((track) => {
+      if (track.accessType === MusicAccessType.free || track.unlockPrice <= 0) {
+        return true;
+      }
+
+      return unlockedTrackIds.has(track.id);
+    });
+
+    return {
+      music,
+      unlocked: allTracksUnlocked,
+      unlockSource: allTracksUnlocked ? ('playlist' as const) : null,
+    };
+  }
+
+  async getAccessStatus(userId: string, musicId: string) {
+    const state = await this.getPlayableState(userId, musicId);
+
+    return {
+      data: {
+        musicId: state.music.id,
+        contentType: state.music.contentType,
+        accessType: state.music.accessType,
+        unlockPrice: state.music.unlockPrice,
+        unlocked: state.unlocked,
+        canPlay: state.unlocked,
+        unlockSource: state.unlockSource,
+      },
+    };
+  }
+
+  async unlockMusic(userId: string, musicId: string) {
+    const state = await this.getPlayableState(userId, musicId);
+
+    if (state.unlocked) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { credits: true },
+      });
+
+      return {
+        data: {
+          musicId: state.music.id,
+          contentType: state.music.contentType,
+          unlocked: true,
+          unlockPrice: state.music.unlockPrice,
+          chargedCredits: 0,
+          balance: user?.credits ?? 0,
+          unlockSource: state.unlockSource,
+        },
+      };
+    }
+
+    if (state.music.accessType !== MusicAccessType.vip || state.music.unlockPrice <= 0) {
+      throw new BadRequestException('This track does not require paid unlock.');
+    }
+
+    const chargedCredits = state.music.unlockPrice;
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { id: true, credits: true },
+      });
+
+      if (!user) {
+        throw new NotFoundException('User not found.');
+      }
+
+      if (user.credits < chargedCredits) {
+        throw new BadRequestException('Insufficient credits.');
+      }
+
+      const targetTrackIds = state.music.contentType === MusicContentType.playlist
+        ? this.parsePlaylistTrackIds(state.music.playlistTrackIds)
+        : [];
+
+      const unlockTargetIds = Array.from(new Set([state.music.id, ...targetTrackIds]));
+
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: {
+          credits: { decrement: chargedCredits },
+        },
+        select: { credits: true },
+      });
+
+      await Promise.all(
+        unlockTargetIds.map((targetId) =>
+          tx.musicUnlock.upsert({
+            where: {
+              userId_musicId: {
+                userId,
+                musicId: targetId,
+              },
+            },
+            update: {
+              sourceType: state.music.contentType === MusicContentType.playlist ? 'playlist' : 'track',
+              sourcePlaylistId: state.music.contentType === MusicContentType.playlist ? state.music.id : null,
+            },
+            create: {
+              userId,
+              musicId: targetId,
+              sourceType: state.music.contentType === MusicContentType.playlist ? 'playlist' : 'track',
+              sourcePlaylistId: state.music.contentType === MusicContentType.playlist ? state.music.id : null,
+              creditsSpent: targetId === state.music.id ? chargedCredits : 0,
+            },
+          }),
+        ),
+      );
+
+      await tx.creditTransaction.create({
+        data: {
+          userId,
+          type: 'spend',
+          amount: -chargedCredits,
+          balanceBefore: user.credits,
+          balanceAfter: updatedUser.credits,
+          referenceId: state.music.id,
+          description: state.music.contentType === MusicContentType.playlist
+            ? `Mở khóa playlist nhạc: ${state.music.title}`
+            : `Mở khóa bài nhạc: ${state.music.title}`,
+        },
+      });
+
+      return {
+        balance: updatedUser.credits,
+        unlockTargetCount: unlockTargetIds.length,
+      };
+    });
+
+    return {
+      data: {
+        musicId: state.music.id,
+        contentType: state.music.contentType,
+        unlocked: true,
+        unlockPrice: state.music.unlockPrice,
+        chargedCredits,
+        balance: result.balance,
+        unlockTargetCount: result.unlockTargetCount,
+      },
+    };
   }
 
   async getLikeStatus(userId: string, musicId: string) {

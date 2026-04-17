@@ -26,7 +26,7 @@ export const toMusicQueue = (tracks: MusicTrack[]): AudioTrack[] =>
 export const isMusicTrackActive = (track: MusicTrack, currentTrack: AudioTrack | null): boolean => {
   if (!currentTrack) return false;
 
-  if (track.contentType === "single") {
+  if (track.contentType !== "playlist") {
     return currentTrack.id === track.id;
   }
 

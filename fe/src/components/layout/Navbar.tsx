@@ -165,13 +165,13 @@ export default function Navbar() {
   const currentLanguage = availableLanguages.find((item) => item.key === currentLang);
   const currentLanguageLabel = currentLanguage?.name || currentLang.toUpperCase();
   const musicMenuLabels = {
-    home: currentLang === "en" ? "Music Home" : "Trang nhac",
-    usUk: currentLang === "en" ? "US-UK" : "Nhac US-UK",
-    kpop: "K-Pop",
-    vpop: "V-Pop",
-    hiphop: "Hip Hop",
-    trending: currentLang === "en" ? "Trending Music" : "Nhac thinh hanh",
-    latest: currentLang === "en" ? "New Uploads" : "Nhac moi dang",
+    home: t("musicHome"),
+    usUk: t("musicUsUk"),
+    kpop: t("musicKpop"),
+    vpop: t("musicVpop"),
+    hiphop: t("musicHiphop"),
+    trending: t("musicTrending"),
+    latest: t("musicLatest"),
   };
 
   // Debug log

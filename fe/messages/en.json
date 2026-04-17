@@ -38,7 +38,26 @@
     "darkMode": "Dark mode",
     "lightMode": "Light mode",
     "account": "Account",
+    "musicHome": "Music Home",
+    "musicUsUk": "US-UK",
+    "musicKpop": "K-Pop",
+    "musicVpop": "V-Pop",
+    "musicHiphop": "Hip Hop",
+    "musicTrending": "Trending Music",
+    "musicLatest": "New Uploads",
     "dateFormat": "en-US"
+  },
+  "LandingChoicePage": {
+    "eyebrow": "Choose your listening space",
+    "title": "One platform, two worlds",
+    "subtitle": "Go to Story for serial audio narratives, or Music for playlists and tracks.",
+    "storyTitle": "Story",
+    "storyDesc": "Trending stories, interactive branches, category hubs, and chapter journeys.",
+    "storyCta": "Go to Story",
+    "musicTitle": "Music",
+    "musicDesc": "US-UK, K-Pop, V-Pop, Hip Hop, trending tracks and freshly uploaded releases.",
+    "musicCta": "Go to Music",
+    "switchHint": "You can switch between Story and Music any time from the navbar."
   },
   "Footer": {
     "description": "Your destination for premium audio stories. Listen anytime, anywhere with thousands of captivating stories.",

@@ -38,7 +38,26 @@
     "darkMode": "Chế độ tối",
     "lightMode": "Chế độ sáng",
     "account": "Tài khoản",
+    "musicHome": "Trang nhạc",
+    "musicUsUk": "Nhạc US-UK",
+    "musicKpop": "K-Pop",
+    "musicVpop": "V-Pop",
+    "musicHiphop": "Hip Hop",
+    "musicTrending": "Nhạc thịnh hành",
+    "musicLatest": "Nhạc mới đăng",
     "dateFormat": "vi-VN"
+  },
+  "LandingChoicePage": {
+    "eyebrow": "Chọn không gian thưởng thức",
+    "title": "Một nền tảng, hai thế giới",
+    "subtitle": "Vào Đọc truyện để nghe truyện, hoặc vào Nghe nhạc để khám phá bài hát và playlist.",
+    "storyTitle": "Truyện Audio",
+    "storyDesc": "Truyện trending, truyện tương tác, theo thể loại và hành trình theo từng chương.",
+    "storyCta": "Vào Đọc truyện",
+    "musicTitle": "Nhạc",
+    "musicDesc": "US-UK, K-Pop, V-Pop, Hip Hop, nhạc thịnh hành và các bài mới đăng.",
+    "musicCta": "Vào Nghe nhạc",
+    "switchHint": "Bạn có thể chuyển đổi giữa Đọc truyện và Nghe nhạc bất kỳ lúc nào."
   },
   "Footer": {
     "description": "Điểm đến của những câu chuyện audio chất lượng. Nghe mọi lúc, mọi nơi với hàng ngàn truyện hấp dẫn.",

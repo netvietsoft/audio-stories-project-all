@@ -24,6 +24,8 @@ type PlaylistTrackSummary = {
   title: string;
   artist: string;
   accessType: MusicAccessType;
+  originalUnlockPrice: number | null;
+  discountPercent: number;
   unlockPrice: number;
   thumbnailUrl: string | null;
   audioUrl: string;
@@ -45,6 +47,8 @@ type SerializableMusicRow = {
   audioDuration: number | null;
   contentType: MusicContentType;
   accessType: MusicAccessType;
+  originalUnlockPrice: number | null;
+  discountPercent: number;
   unlockPrice: number;
   introEnabled: boolean;
   playlistTrackIds: Prisma.JsonValue | null;
@@ -281,7 +285,11 @@ export class MusicService {
     const artist = this.normalizeRequiredText(dto.artist, 'artist');
     const contentType = this.normalizeContentType(dto.contentType);
     const accessType = this.normalizeAccessType(dto.accessType);
-    const unlockPrice = this.normalizeUnlockPrice(dto.unlockPrice, accessType);
+    const pricing = this.resolveMusicPricing(accessType, {
+      unlockPrice: dto.unlockPrice,
+      originalUnlockPrice: dto.originalUnlockPrice,
+      discountPercent: dto.discountPercent,
+    });
     const playlistTrackIds = this.normalizeMusicIdArray(dto.playlistTrackIds);
     const playlistTrackAccess = this.normalizePlaylistTrackAccessInput(dto.playlistTrackAccess, playlistTrackIds);
 
@@ -341,7 +349,9 @@ export class MusicService {
           audioDuration,
           contentType,
           accessType,
-          unlockPrice,
+          originalUnlockPrice: pricing.originalUnlockPrice,
+          discountPercent: pricing.discountPercent,
+          unlockPrice: pricing.unlockPrice,
           introEnabled: dto.introEnabled ?? true,
           playlistTrackIds: contentType === MusicContentType.playlist ? playlistTrackIds : [],
           isPublic: dto.isPublic ?? true,
@@ -372,9 +382,15 @@ export class MusicService {
       ? this.normalizeAccessType(dto.accessType)
       : existing.accessType;
 
-    const nextUnlockPrice = dto.unlockPrice !== undefined
-      ? this.normalizeUnlockPrice(dto.unlockPrice, nextAccessType)
-      : (dto.accessType !== undefined && nextAccessType === MusicAccessType.free ? 0 : existing.unlockPrice);
+    const nextPricing = this.resolveMusicPricing(nextAccessType, {
+      unlockPrice: dto.unlockPrice,
+      originalUnlockPrice: dto.originalUnlockPrice,
+      discountPercent: dto.discountPercent,
+    }, {
+      originalUnlockPrice: existing.originalUnlockPrice,
+      discountPercent: existing.discountPercent,
+      unlockPrice: existing.unlockPrice,
+    });
 
     const nextPlaylistTrackIds = dto.playlistTrackIds === undefined
       ? this.parsePlaylistTrackIds(existing.playlistTrackIds)
@@ -455,7 +471,13 @@ export class MusicService {
       ...(nextDuration !== undefined ? { audioDuration: nextDuration } : {}),
       ...(dto.contentType !== undefined ? { contentType: nextContentType } : {}),
       ...(dto.accessType !== undefined ? { accessType: nextAccessType } : {}),
-      ...(nextUnlockPrice !== undefined ? { unlockPrice: nextUnlockPrice } : {}),
+      ...(dto.accessType !== undefined || dto.unlockPrice !== undefined || dto.originalUnlockPrice !== undefined || dto.discountPercent !== undefined
+        ? {
+          originalUnlockPrice: nextPricing.originalUnlockPrice,
+          discountPercent: nextPricing.discountPercent,
+          unlockPrice: nextPricing.unlockPrice,
+        }
+        : {}),
       ...(dto.introEnabled !== undefined ? { introEnabled: dto.introEnabled } : {}),
       ...(dto.playlistTrackIds !== undefined || nextContentType === MusicContentType.playlist || existing.contentType === MusicContentType.playlist
         ? { playlistTrackIds: nextContentType === MusicContentType.playlist ? nextPlaylistTrackIds : [] }
@@ -526,6 +548,8 @@ export class MusicService {
             title: true,
             artist: true,
             accessType: true,
+            originalUnlockPrice: true,
+            discountPercent: true,
             unlockPrice: true,
             thumbnailUrl: true,
             audioUrl: true,
@@ -553,6 +577,8 @@ export class MusicService {
           title: item.title,
           artist: item.artist,
           accessType: item.accessType,
+          originalUnlockPrice: item.originalUnlockPrice,
+          discountPercent: item.discountPercent,
           unlockPrice: item.unlockPrice,
           thumbnailUrl: item.thumbnailUrl,
           audioUrl: item.audioUrl,
@@ -657,7 +683,12 @@ export class MusicService {
         const config = accessConfig.get(track.id);
         if (!config) return null;
 
-        if (track.accessType === config.accessType && track.unlockPrice === config.unlockPrice) {
+        if (
+          track.accessType === config.accessType
+          && track.unlockPrice === config.unlockPrice
+          && (track.originalUnlockPrice ?? config.unlockPrice) === config.unlockPrice
+          && track.discountPercent === 0
+        ) {
           return null;
         }
 
@@ -665,6 +696,8 @@ export class MusicService {
           where: { id: track.id },
           data: {
             accessType: config.accessType,
+            originalUnlockPrice: config.accessType === MusicAccessType.vip ? config.unlockPrice : null,
+            discountPercent: 0,
             unlockPrice: config.unlockPrice,
           },
         });
@@ -698,6 +731,69 @@ export class MusicService {
     }
 
     return next;
+  }
+
+  private normalizeDiscountPercent(value: number | undefined): number {
+    const next = typeof value === 'number' ? Math.floor(value) : 0;
+
+    if (!Number.isFinite(next) || next < 0 || next > 99) {
+      throw new BadRequestException('discountPercent must be an integer between 0 and 99.');
+    }
+
+    return next;
+  }
+
+  private computeDiscountedPrice(originalUnlockPrice: number, discountPercent: number): number {
+    if (discountPercent <= 0) return originalUnlockPrice;
+
+    const discounted = Math.floor((originalUnlockPrice * (100 - discountPercent)) / 100);
+    return Math.max(1, discounted);
+  }
+
+  private resolveMusicPricing(
+    accessType: MusicAccessType,
+    input: {
+      unlockPrice?: number;
+      originalUnlockPrice?: number;
+      discountPercent?: number;
+    },
+    fallback?: {
+      originalUnlockPrice: number | null;
+      discountPercent: number;
+      unlockPrice: number;
+    },
+  ): {
+    originalUnlockPrice: number | null;
+    discountPercent: number;
+    unlockPrice: number;
+  } {
+    if (accessType === MusicAccessType.free) {
+      return {
+        originalUnlockPrice: null,
+        discountPercent: 0,
+        unlockPrice: 0,
+      };
+    }
+
+    const fallbackOriginal = typeof fallback?.originalUnlockPrice === 'number'
+      ? fallback.originalUnlockPrice
+      : (typeof fallback?.unlockPrice === 'number' ? fallback.unlockPrice : 0);
+
+    const originalSource = input.originalUnlockPrice !== undefined
+      ? input.originalUnlockPrice
+      : (input.unlockPrice !== undefined ? input.unlockPrice : fallbackOriginal);
+
+    const originalUnlockPrice = this.normalizeUnlockPrice(originalSource, MusicAccessType.vip);
+
+    const discountPercent = input.discountPercent !== undefined
+      ? this.normalizeDiscountPercent(input.discountPercent)
+      : this.normalizeDiscountPercent(fallback?.discountPercent);
+
+    return {
+      originalUnlockPrice,
+      discountPercent,
+      unlockPrice: this.computeDiscountedPrice(originalUnlockPrice, discountPercent),
+    };
   }
 
   private toSlug(value: string): string {
@@ -770,6 +866,8 @@ export class MusicService {
         title: true,
         artist: true,
         accessType: true,
+        originalUnlockPrice: true,
+        discountPercent: true,
         unlockPrice: true,
         thumbnailUrl: true,
         audioUrl: true,
@@ -798,6 +896,8 @@ export class MusicService {
         title: item.title,
         artist: item.artist,
         accessType: item.accessType,
+        originalUnlockPrice: item.originalUnlockPrice,
+        discountPercent: item.discountPercent,
         unlockPrice: item.unlockPrice,
         thumbnailUrl: item.thumbnailUrl,
         audioUrl: item.audioUrl,

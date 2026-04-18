@@ -91,6 +91,7 @@ export class MusicInteractionService {
     if (music.accessType === MusicAccessType.free || music.unlockPrice <= 0) {
       return {
         music,
+        unlockPrice: 0,
         unlocked: true,
         unlockSource: 'free' as const,
       };
@@ -112,6 +113,7 @@ export class MusicInteractionService {
     if (directUnlock) {
       return {
         music,
+        unlockPrice: music.unlockPrice,
         unlocked: true,
         unlockSource: directUnlock.sourceType,
       };
@@ -123,6 +125,7 @@ export class MusicInteractionService {
       if (playlistUnlock) {
         return {
           music,
+          unlockPrice: music.unlockPrice,
           unlocked: true,
           unlockSource: 'playlist' as const,
         };
@@ -130,8 +133,20 @@ export class MusicInteractionService {
 
       return {
         music,
+        unlockPrice: music.unlockPrice,
         unlocked: false,
         unlockSource: null,
+      };
+    }
+
+    const discountedPlaylistPrice = await this.calculateDiscountedPlaylistUnlockPrice(userId, music.id, music.unlockPrice);
+
+    if (discountedPlaylistPrice <= 0) {
+      return {
+        music,
+        unlockPrice: 0,
+        unlocked: true,
+        unlockSource: 'track' as const,
       };
     }
 
@@ -139,6 +154,7 @@ export class MusicInteractionService {
     // Track-level unlocks are evaluated when playing each child track.
     return {
       music,
+      unlockPrice: discountedPlaylistPrice,
       unlocked: false,
       unlockSource: null,
     };
@@ -152,12 +168,66 @@ export class MusicInteractionService {
         musicId: state.music.id,
         contentType: state.music.contentType,
         accessType: state.music.accessType,
-        unlockPrice: state.music.unlockPrice,
+        unlockPrice: state.unlockPrice,
         unlocked: state.unlocked,
         canPlay: state.unlocked,
         unlockSource: state.unlockSource,
       },
     };
+  }
+
+  private async calculateDiscountedPlaylistUnlockPrice(userId: string, playlistId: string, playlistPrice: number) {
+    const playlist = await this.prisma.music.findUnique({
+      where: { id: playlistId },
+      select: {
+        playlistTrackIds: true,
+      },
+    });
+
+    const trackIds = this.parsePlaylistTrackIds(playlist?.playlistTrackIds ?? null);
+    if (!trackIds.length) {
+      return Math.max(0, playlistPrice);
+    }
+
+    const tracks = await this.prisma.music.findMany({
+      where: {
+        id: { in: trackIds },
+        accessType: MusicAccessType.vip,
+        unlockPrice: { gt: 0 },
+      },
+      select: {
+        id: true,
+        unlockPrice: true,
+      },
+    });
+
+    if (!tracks.length) {
+      return Math.max(0, playlistPrice);
+    }
+
+    const unlockedRows = await this.prisma.musicUnlock.findMany({
+      where: {
+        userId,
+        musicId: {
+          in: tracks.map((track) => track.id),
+        },
+      },
+      select: {
+        musicId: true,
+      },
+    });
+
+    if (!unlockedRows.length) {
+      return Math.max(0, playlistPrice);
+    }
+
+    const unlockedTrackIds = new Set(unlockedRows.map((row) => row.musicId));
+    const totalDiscount = tracks.reduce((sum, track) => {
+      if (!unlockedTrackIds.has(track.id)) return sum;
+      return sum + Math.max(0, Math.floor(track.unlockPrice || 0));
+    }, 0);
+
+    return Math.max(0, Math.floor(playlistPrice) - totalDiscount);
   }
 
   private async findPlaylistUnlockForTrack(userId: string, musicId: string) {
@@ -207,7 +277,7 @@ export class MusicInteractionService {
           musicId: state.music.id,
           contentType: state.music.contentType,
           unlocked: true,
-          unlockPrice: state.music.unlockPrice,
+          unlockPrice: state.unlockPrice,
           chargedCredits: 0,
           balance: user?.credits ?? 0,
           unlockSource: state.unlockSource,
@@ -215,11 +285,11 @@ export class MusicInteractionService {
       };
     }
 
-    if (state.music.accessType !== MusicAccessType.vip || state.music.unlockPrice <= 0) {
+    if (state.music.accessType !== MusicAccessType.vip || state.unlockPrice <= 0) {
       throw new BadRequestException('This track does not require paid unlock.');
     }
 
-    const chargedCredits = state.music.unlockPrice;
+    const chargedCredits = state.unlockPrice;
 
     const result = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({
@@ -298,7 +368,7 @@ export class MusicInteractionService {
         musicId: state.music.id,
         contentType: state.music.contentType,
         unlocked: true,
-        unlockPrice: state.music.unlockPrice,
+        unlockPrice: state.unlockPrice,
         chargedCredits,
         balance: result.balance,
         unlockSource: state.music.contentType === MusicContentType.playlist ? 'playlist' : 'track',

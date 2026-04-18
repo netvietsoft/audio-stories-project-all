@@ -135,6 +135,18 @@ export class UpdateMusicDto {
   unlockPrice?: number;
 
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  originalUnlockPrice?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  discountPercent?: number;
+
+  @IsOptional()
   @Transform(toBoolean)
   @IsBoolean()
   introEnabled?: boolean;

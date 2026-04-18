@@ -23,6 +23,8 @@ type MusicItem = {
   audioDuration: number | null;
   contentType: "single" | "podcast" | "playlist";
   accessType: "free" | "vip";
+  originalUnlockPrice?: number | null;
+  discountPercent?: number;
   unlockPrice: number;
   introEnabled: boolean;
   playlistTrackIds: string[];
@@ -178,6 +180,8 @@ export default function AdminMusicPage() {
         slug: typeof row.slug === "string" && row.slug.trim() ? row.slug.trim() : row.id,
         contentType: (row.contentType === "playlist" ? "playlist" : row.contentType === "podcast" ? "podcast" : "single") as MusicItem["contentType"],
         accessType: row.accessType === "vip" ? "vip" : "free",
+        originalUnlockPrice: typeof row.originalUnlockPrice === "number" ? row.originalUnlockPrice : null,
+        discountPercent: typeof row.discountPercent === "number" ? row.discountPercent : 0,
         unlockPrice: typeof row.unlockPrice === "number" ? row.unlockPrice : 0,
         introEnabled: typeof row.introEnabled === "boolean" ? row.introEnabled : true,
         playlistTrackIds: Array.isArray(row.playlistTrackIds) ? row.playlistTrackIds : [],
@@ -272,6 +276,8 @@ export default function AdminMusicPage() {
       isPublic: payload.isPublic,
       contentType: payload.contentType,
       accessType: payload.accessType,
+      originalUnlockPrice: payload.originalUnlockPrice,
+      discountPercent: payload.discountPercent,
       unlockPrice: payload.unlockPrice,
       introEnabled: payload.introEnabled,
       playlistTrackIds: payload.playlistTrackIds,
@@ -291,6 +297,8 @@ export default function AdminMusicPage() {
     formData.append("isPublic", String(payload.isPublic));
     formData.append("contentType", payload.contentType);
     formData.append("accessType", payload.accessType);
+    formData.append("originalUnlockPrice", String(payload.originalUnlockPrice ?? 0));
+    formData.append("discountPercent", String(payload.discountPercent || 0));
     formData.append("unlockPrice", String(payload.unlockPrice));
     formData.append("introEnabled", String(payload.introEnabled));
 
@@ -401,6 +409,8 @@ export default function AdminMusicPage() {
         isPublic: editingMusic.isPublic,
         contentType: editingMusic.contentType,
         accessType: editingMusic.accessType,
+        originalUnlockPrice: editingMusic.originalUnlockPrice,
+        discountPercent: typeof editingMusic.discountPercent === "number" ? editingMusic.discountPercent : 0,
         unlockPrice: editingMusic.unlockPrice,
         introEnabled: editingMusic.introEnabled,
         playlistTrackIds: editingMusic.playlistTrackIds,

@@ -7,6 +7,8 @@ export type MusicPlaylistTrackSummary = {
   title: string;
   artist: string;
   accessType: MusicAccessType;
+  originalUnlockPrice?: number | null;
+  discountPercent?: number;
   unlockPrice: number;
   thumbnailUrl: string | null;
   audioUrl: string;
@@ -28,6 +30,8 @@ export type MusicTrack = {
   audioDuration: number | null;
   contentType: MusicContentType;
   accessType: MusicAccessType;
+  originalUnlockPrice?: number | null;
+  discountPercent?: number;
   unlockPrice: number;
   introEnabled: boolean;
   playlistTrackIds: string[];

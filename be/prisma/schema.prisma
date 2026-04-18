@@ -311,6 +311,8 @@ model Music {
   audioDuration Int?     @map("audio_duration") @db.UnsignedInt
   contentType   MusicContentType @default(single) @map("content_type")
   accessType    MusicAccessType @default(free) @map("access_type")
+  originalUnlockPrice Int?   @map("original_unlock_price") @db.UnsignedInt
+  discountPercent Int   @default(0) @map("discount_percent") @db.UnsignedInt
   unlockPrice   Int      @default(0) @map("unlock_price") @db.UnsignedInt
   introEnabled  Boolean  @default(true) @map("intro_enabled")
   playlistTrackIds Json? @map("playlist_track_ids")

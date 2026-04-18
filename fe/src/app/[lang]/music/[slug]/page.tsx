@@ -1005,6 +1005,10 @@ export default function MusicDetailPage() {
   }, []);
 
   const waveformBars = useMemo(() => createWaveformBars(track?.id || "music-wave"), [track?.id]);
+  const baseOriginalUnlockPrice = typeof track?.originalUnlockPrice === "number"
+    ? Math.max(0, Math.floor(track.originalUnlockPrice))
+    : 0;
+  const hasBaseDiscount = Boolean(track && track.accessType === "vip" && baseOriginalUnlockPrice > track.unlockPrice);
   const isActive = track ? isMusicTrackActive(track, currentTrack) : false;
   const playing = isActive && isPlaying;
   const playbackDuration = track
@@ -1247,9 +1251,12 @@ export default function MusicDetailPage() {
                       : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
                   }`}
                 >
-                  {track.accessType === "vip"
-                    ? `${currentLang === "en" ? "VIP Unlock" : "VIP mở khóa"} ${track.unlockPrice} credits`
-                    : (currentLang === "en" ? "Free" : "Miễn phí")}
+                  {track.accessType === "vip" ? (
+                    <span className="flex flex-col leading-tight">
+                      {hasBaseDiscount ? <span className="text-[9px] opacity-80 line-through">{baseOriginalUnlockPrice} credits</span> : null}
+                      <span>{`${currentLang === "en" ? "VIP Unlock" : "VIP mở khóa"} ${track.unlockPrice} credits`}</span>
+                    </span>
+                  ) : (currentLang === "en" ? "Free" : "Miễn phí")}
                 </span>
               </div>
 
@@ -1460,6 +1467,10 @@ export default function MusicDetailPage() {
               const isChildLocked = childAccessState.accessType === "vip"
                 && childAccessState.unlockPrice > 0
                 && !childAccessState.unlocked;
+              const childOriginalUnlockPrice = typeof child.originalUnlockPrice === "number"
+                ? Math.max(0, Math.floor(child.originalUnlockPrice))
+                : 0;
+              const childHasDiscount = childOriginalUnlockPrice > childAccessState.unlockPrice;
               const isChildUnlockedVip = childAccessState.accessType === "vip"
                 && childAccessState.unlockPrice > 0
                 && childAccessState.unlocked;
@@ -1468,7 +1479,11 @@ export default function MusicDetailPage() {
                 <div key={`${track.id}-${child.id}-${index}`} className="relative rounded-lg border border-slate-100 p-3 transition hover:border-pink-300 dark:border-[#2f2f2f] dark:hover:border-pink-800/50">
                   {isChildLocked ? (
                     <span className="pointer-events-none absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-white backdrop-blur">
-                      <Lock className="h-3 w-3" /> {childAccessState.unlockPrice} cr
+                      <Lock className="h-3 w-3" />
+                      <span className="flex flex-col leading-tight">
+                        {childHasDiscount ? <span className="text-[9px] opacity-80 line-through">{childOriginalUnlockPrice} cr</span> : null}
+                        <span>{childAccessState.unlockPrice} cr</span>
+                      </span>
                     </span>
                   ) : isChildUnlockedVip ? (
                     <span className="pointer-events-none absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/95 text-white shadow-sm">
@@ -1662,6 +1677,10 @@ export default function MusicDetailPage() {
                   const isRelatedLocked = relatedAccessState.accessType === "vip"
                     && relatedAccessState.unlockPrice > 0
                     && !relatedAccessState.unlocked;
+                  const relatedOriginalUnlockPrice = typeof item.originalUnlockPrice === "number"
+                    ? Math.max(0, Math.floor(item.originalUnlockPrice))
+                    : 0;
+                  const relatedHasDiscount = relatedOriginalUnlockPrice > relatedAccessState.unlockPrice;
                   const isRelatedUnlockedVip = relatedAccessState.accessType === "vip"
                     && relatedAccessState.unlockPrice > 0
                     && relatedAccessState.unlocked;
@@ -1670,7 +1689,11 @@ export default function MusicDetailPage() {
                     <div key={item.id} className="group relative rounded-2xl border border-slate-200 p-2.5 transition hover:border-pink-300 dark:border-[#2f2f2f] dark:hover:border-pink-800/50">
                       {isRelatedLocked ? (
                         <span className="pointer-events-none absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-white backdrop-blur">
-                          <Lock className="h-3 w-3" /> {relatedAccessState.unlockPrice} cr
+                          <Lock className="h-3 w-3" />
+                          <span className="flex flex-col leading-tight">
+                            {relatedHasDiscount ? <span className="text-[9px] opacity-80 line-through">{relatedOriginalUnlockPrice} cr</span> : null}
+                            <span>{relatedAccessState.unlockPrice} cr</span>
+                          </span>
                         </span>
                       ) : isRelatedUnlockedVip ? (
                         <span className="pointer-events-none absolute right-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/95 text-white shadow-sm">

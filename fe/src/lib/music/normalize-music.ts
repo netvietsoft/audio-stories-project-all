@@ -46,40 +46,61 @@ const normalizePlaylistTrackIds = (value: unknown): string[] => {
 const normalizePlaylistTracks = (value: unknown): MusicPlaylistTrackSummary[] => {
   if (!Array.isArray(value)) return [];
 
-  return value
-    .map((item) => {
-      if (!item || typeof item !== "object") return null;
-      const row = item as Partial<MusicPlaylistTrackSummary>;
-      if (!row.id || !row.audioUrl) return null;
+  const normalized: MusicPlaylistTrackSummary[] = [];
 
-      const accessType = row.accessType === "vip" ? "vip" : "free";
-      const unlockPriceRaw = row.unlockPrice;
-      const unlockPrice = typeof unlockPriceRaw === "number" && Number.isFinite(unlockPriceRaw)
-        ? Math.max(0, Math.floor(unlockPriceRaw))
-        : 0;
+  value.forEach((item) => {
+    if (!item || typeof item !== "object") return;
 
-      return {
-        id: row.id,
-        slug: typeof row.slug === "string" && row.slug.trim() ? row.slug.trim() : row.id,
-        title: (row.title || "").trim() || "Untitled",
-        artist: (row.artist || "").trim() || "Unknown artist",
-        accessType,
-        unlockPrice,
-        thumbnailUrl: row.thumbnailUrl || null,
-        audioUrl: row.audioUrl,
-        audioDuration: typeof row.audioDuration === "number" ? row.audioDuration : null,
-        playCount: typeof row.playCount === "number" ? row.playCount : 0,
-        likeCount: typeof row.likeCount === "number" ? row.likeCount : 0,
-        commentCount: typeof row.commentCount === "number" ? row.commentCount : 0,
-      };
-    })
-    .filter((item): item is MusicPlaylistTrackSummary => Boolean(item));
+    const row = item as Partial<MusicPlaylistTrackSummary>;
+    if (!row.id || !row.audioUrl) return;
+
+    const accessType: MusicAccessType = row.accessType === "vip" ? "vip" : "free";
+    const originalUnlockPriceRaw = row.originalUnlockPrice;
+    const originalUnlockPrice = typeof originalUnlockPriceRaw === "number" && Number.isFinite(originalUnlockPriceRaw)
+      ? Math.max(0, Math.floor(originalUnlockPriceRaw))
+      : null;
+    const discountPercentRaw = row.discountPercent;
+    const discountPercent = typeof discountPercentRaw === "number" && Number.isFinite(discountPercentRaw)
+      ? Math.max(0, Math.min(99, Math.floor(discountPercentRaw)))
+      : 0;
+    const unlockPriceRaw = row.unlockPrice;
+    const unlockPrice = typeof unlockPriceRaw === "number" && Number.isFinite(unlockPriceRaw)
+      ? Math.max(0, Math.floor(unlockPriceRaw))
+      : 0;
+
+    normalized.push({
+      id: row.id,
+      slug: typeof row.slug === "string" && row.slug.trim() ? row.slug.trim() : row.id,
+      title: (row.title || "").trim() || "Untitled",
+      artist: (row.artist || "").trim() || "Unknown artist",
+      accessType,
+      originalUnlockPrice,
+      discountPercent,
+      unlockPrice,
+      thumbnailUrl: row.thumbnailUrl || null,
+      audioUrl: row.audioUrl,
+      audioDuration: typeof row.audioDuration === "number" ? row.audioDuration : null,
+      playCount: typeof row.playCount === "number" ? row.playCount : 0,
+      likeCount: typeof row.likeCount === "number" ? row.likeCount : 0,
+      commentCount: typeof row.commentCount === "number" ? row.commentCount : 0,
+    });
+  });
+
+  return normalized;
 };
 
 export const normalizeMusicItem = (item: MusicApiItem, fallbackIndex?: number): MusicTrack => {
   const playlistTracks = normalizePlaylistTracks(item.playlistTracks);
   const contentType = normalizeContentType(item.contentType);
   const accessType = normalizeAccessType((item as Record<string, unknown>).accessType);
+  const originalUnlockPriceRaw = (item as Record<string, unknown>).originalUnlockPrice;
+  const originalUnlockPrice = typeof originalUnlockPriceRaw === "number" && Number.isFinite(originalUnlockPriceRaw)
+    ? Math.max(0, Math.floor(originalUnlockPriceRaw))
+    : null;
+  const discountPercentRaw = (item as Record<string, unknown>).discountPercent;
+  const discountPercent = typeof discountPercentRaw === "number" && Number.isFinite(discountPercentRaw)
+    ? Math.max(0, Math.min(99, Math.floor(discountPercentRaw)))
+    : 0;
   const unlockPriceRaw = (item as Record<string, unknown>).unlockPrice;
   const unlockPrice = typeof unlockPriceRaw === "number" && Number.isFinite(unlockPriceRaw) ? Math.max(0, Math.floor(unlockPriceRaw)) : 0;
   const introEnabledRaw = (item as Record<string, unknown>).introEnabled;
@@ -94,6 +115,8 @@ export const normalizeMusicItem = (item: MusicApiItem, fallbackIndex?: number): 
     tags: normalizeTags(item.tags),
     contentType,
     accessType,
+    originalUnlockPrice,
+    discountPercent,
     unlockPrice,
     introEnabled,
     playlistTrackIds: normalizePlaylistTrackIds(item.playlistTrackIds),

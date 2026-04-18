@@ -382,6 +382,10 @@ export default function MusicPage() {
     if (track.accessType !== "vip" || track.unlockPrice <= 0) return null;
 
     const isUnlocked = Boolean(trackAccessStates[track.id]?.unlocked);
+    const originalUnlockPrice = typeof track.originalUnlockPrice === "number"
+      ? Math.max(0, Math.floor(track.originalUnlockPrice))
+      : 0;
+    const hasDiscount = originalUnlockPrice > track.unlockPrice;
 
     if (isUnlocked) {
       return (
@@ -394,7 +398,10 @@ export default function MusicPage() {
     return (
       <div className="pointer-events-none absolute right-2 top-2 z-20 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white backdrop-blur">
         <Lock className="h-3 w-3" />
-        <span>{track.unlockPrice} cr</span>
+        <span className="flex flex-col leading-tight">
+          {hasDiscount ? <span className="text-[9px] opacity-80 line-through">{originalUnlockPrice} cr</span> : null}
+          <span>{track.unlockPrice} cr</span>
+        </span>
       </div>
     );
   };
@@ -638,6 +645,10 @@ export default function MusicPage() {
             const childActive = currentTrack?.id?.includes(child.id);
             const childPlaying = childActive && isPlaying;
             const childLocked = child.accessType === "vip" && child.unlockPrice > 0;
+            const childOriginalUnlockPrice = typeof child.originalUnlockPrice === "number"
+              ? Math.max(0, Math.floor(child.originalUnlockPrice))
+              : 0;
+            const childHasDiscount = childOriginalUnlockPrice > child.unlockPrice;
 
             return (
               <div
@@ -668,7 +679,11 @@ export default function MusicPage() {
                     {child.artist}
                     {childLocked ? (
                       <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] text-slate-700 dark:bg-[#343434] dark:text-zinc-200">
-                        <Lock className="h-3 w-3" /> {child.unlockPrice}cr
+                        <Lock className="h-3 w-3" />
+                        <span className="flex flex-col leading-tight">
+                          {childHasDiscount ? <span className="text-[9px] opacity-80 line-through">{childOriginalUnlockPrice}cr</span> : null}
+                          <span>{child.unlockPrice}cr</span>
+                        </span>
                       </span>
                     ) : null}
                   </p>

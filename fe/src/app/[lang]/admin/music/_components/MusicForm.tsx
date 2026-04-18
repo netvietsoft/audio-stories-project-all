@@ -16,15 +16,25 @@ const schema = z.object({
   isPublic: z.enum(["true", "false"]),
   contentType: z.enum(["single", "podcast", "playlist"]),
   accessType: z.enum(["free", "vip"]),
+  originalUnlockPrice: z.number().min(0, "Giá gốc không hợp lệ").optional(),
+  discountPercent: z.number().min(0, "Mức giảm không hợp lệ").max(99, "Mức giảm tối đa là 99%").optional(),
   unlockPrice: z.number().min(0, "Giá mở khóa không hợp lệ").optional(),
   introEnabled: z.enum(["true", "false"]),
   audioDuration: z.number().min(0, "Thời lượng không hợp lệ").optional(),
 }).superRefine((values, context) => {
-  if (values.accessType === "vip" && (!values.unlockPrice || values.unlockPrice <= 0)) {
+  if (values.accessType === "vip" && (!values.originalUnlockPrice || values.originalUnlockPrice <= 0)) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      path: ["unlockPrice"],
-      message: "Vui lòng nhập giá mở khóa lớn hơn 0 cho nội dung VIP.",
+      path: ["originalUnlockPrice"],
+      message: "Vui lòng nhập giá gốc lớn hơn 0 cho nội dung VIP.",
+    });
+  }
+
+  if (values.accessType === "vip" && (values.discountPercent || 0) >= 100) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["discountPercent"],
+      message: "Mức giảm giá phải nhỏ hơn 100%.",
     });
   }
 });
@@ -60,6 +70,8 @@ export type MusicFormInitialData = {
   isPublic?: boolean;
   contentType?: "single" | "podcast" | "playlist";
   accessType?: "free" | "vip";
+  originalUnlockPrice?: number | null;
+  discountPercent?: number;
   unlockPrice?: number;
   introEnabled?: boolean;
   playlistTrackIds?: string[];
@@ -75,6 +87,8 @@ export type MusicFormSubmitPayload = {
   isPublic: boolean;
   contentType: "single" | "podcast" | "playlist";
   accessType: "free" | "vip";
+  originalUnlockPrice: number | null;
+  discountPercent: number;
   unlockPrice: number;
   introEnabled: boolean;
   playlistTrackIds: string[];
@@ -170,6 +184,10 @@ export default function MusicForm({
       isPublic: initialData?.isPublic === false ? "false" : "true",
       contentType: initialData?.contentType || "single",
       accessType: initialData?.accessType || "free",
+      originalUnlockPrice: typeof initialData?.originalUnlockPrice === "number"
+        ? initialData.originalUnlockPrice
+        : (typeof initialData?.unlockPrice === "number" ? initialData.unlockPrice : 0),
+      discountPercent: typeof initialData?.discountPercent === "number" ? initialData.discountPercent : 0,
       unlockPrice: typeof initialData?.unlockPrice === "number" ? initialData.unlockPrice : 0,
       introEnabled: initialData?.introEnabled === false ? "false" : "true",
       audioDuration: typeof initialData?.audioDuration === "number" ? initialData.audioDuration : 0,
@@ -186,9 +204,22 @@ export default function MusicForm({
     name: "accessType",
     defaultValue: initialData?.accessType || "free",
   });
+  const originalUnlockPrice = useWatch({
+    control,
+    name: "originalUnlockPrice",
+    defaultValue: typeof initialData?.originalUnlockPrice === "number"
+      ? initialData.originalUnlockPrice
+      : (typeof initialData?.unlockPrice === "number" ? initialData.unlockPrice : 0),
+  });
+  const discountPercent = useWatch({
+    control,
+    name: "discountPercent",
+    defaultValue: typeof initialData?.discountPercent === "number" ? initialData.discountPercent : 0,
+  });
   const title = useWatch({ control, name: "title" });
   const slug = useWatch({ control, name: "slug" });
   const watchedDuration = useWatch({ control, name: "audioDuration" });
+  const watchedUnlockPrice = useWatch({ control, name: "unlockPrice" });
 
   useEffect(() => {
     const nextAutoSlug = toSlug(title || "");
@@ -294,9 +325,23 @@ export default function MusicForm({
 
   useEffect(() => {
     if (accessType === "vip") return;
+    setValue("originalUnlockPrice", 0, { shouldDirty: true, shouldValidate: true });
+    setValue("discountPercent", 0, { shouldDirty: true, shouldValidate: true });
     setValue("unlockPrice", 0, { shouldDirty: true, shouldValidate: true });
+    clearErrors("originalUnlockPrice");
+    clearErrors("discountPercent");
     clearErrors("unlockPrice");
   }, [accessType, clearErrors, setValue]);
+
+  useEffect(() => {
+    if (accessType !== "vip") return;
+
+    const basePrice = Math.max(0, Math.floor(Number.isFinite(originalUnlockPrice) ? (originalUnlockPrice as number) : 0));
+    const discount = Math.max(0, Math.min(99, Math.floor(Number.isFinite(discountPercent) ? (discountPercent as number) : 0)));
+    const discounted = basePrice > 0 ? Math.max(1, Math.floor((basePrice * (100 - discount)) / 100)) : 0;
+
+    setValue("unlockPrice", discounted, { shouldDirty: true, shouldValidate: true });
+  }, [accessType, discountPercent, originalUnlockPrice, setValue]);
 
   const handleThumbnailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -419,13 +464,23 @@ export default function MusicForm({
       }
     }
 
-    if (values.accessType === "vip" && (!values.unlockPrice || values.unlockPrice <= 0)) {
-      setError("unlockPrice", {
+    if (values.accessType === "vip" && (!values.originalUnlockPrice || values.originalUnlockPrice <= 0)) {
+      setError("originalUnlockPrice", {
         type: "manual",
-        message: "Vui lòng nhập giá mở khóa lớn hơn 0 cho nội dung VIP.",
+        message: "Vui lòng nhập giá gốc lớn hơn 0 cho nội dung VIP.",
       });
       return;
     }
+
+    const normalizedOriginalUnlockPrice = values.accessType === "vip"
+      ? Math.max(0, Math.floor(values.originalUnlockPrice || 0))
+      : 0;
+    const normalizedDiscountPercent = values.accessType === "vip"
+      ? Math.max(0, Math.min(99, Math.floor(values.discountPercent || 0)))
+      : 0;
+    const computedUnlockPrice = values.accessType === "vip"
+      ? Math.max(1, Math.floor((normalizedOriginalUnlockPrice * (100 - normalizedDiscountPercent)) / 100))
+      : 0;
 
     const tags = Array.from(
       new Set(
@@ -445,7 +500,9 @@ export default function MusicForm({
       isPublic: values.isPublic === "true",
       contentType: values.contentType,
       accessType: values.accessType,
-      unlockPrice: values.accessType === "vip" ? Math.max(0, Math.floor(values.unlockPrice || 0)) : 0,
+      originalUnlockPrice: values.accessType === "vip" ? normalizedOriginalUnlockPrice : null,
+      discountPercent: values.accessType === "vip" ? normalizedDiscountPercent : 0,
+      unlockPrice: computedUnlockPrice,
       introEnabled: values.introEnabled === "true",
       playlistTrackIds: values.contentType === "playlist" ? selectedTrackIds : [],
       playlistTrackAccess: values.contentType === "playlist"
@@ -505,21 +562,48 @@ export default function MusicForm({
               </select>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <label className="text-sm font-black uppercase tracking-wider text-slate-700">Giá mở khóa (credits)</label>
-              <input
-                {...register("unlockPrice", { valueAsNumber: true })}
-                type="number"
-                min={0}
-                step={1}
-                disabled={accessType !== "vip"}
-                className={`admin-input w-full bg-white ${errors.unlockPrice ? "admin-input-error" : ""}`}
-              />
-              <p className="text-xs font-medium text-slate-500">
-                {accessType === "vip"
-                  ? "Áp dụng cho bài lẻ/podcast, hoặc mở khóa toàn bộ playlist nếu là playlist."
-                  : "Miễn phí: giá tự động về 0."}
-              </p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr]">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600">Giá gốc</label>
+                  <input
+                    {...register("originalUnlockPrice", { valueAsNumber: true })}
+                    type="number"
+                    min={0}
+                    step={1}
+                    disabled={accessType !== "vip"}
+                    className={`admin-input w-full bg-white ${errors.originalUnlockPrice ? "admin-input-error" : ""}`}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600">Giảm giá (%)</label>
+                  <input
+                    {...register("discountPercent", { valueAsNumber: true })}
+                    type="number"
+                    min={0}
+                    max={99}
+                    step={1}
+                    disabled={accessType !== "vip"}
+                    className={`admin-input w-full bg-white ${errors.discountPercent ? "admin-input-error" : ""}`}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Giá sau giảm</p>
+                <p className="text-sm font-black text-slate-800">
+                  {accessType === "vip" ? Math.max(0, Math.floor(watchedUnlockPrice || 0)) : 0} credits
+                </p>
+                <p className="text-xs font-medium text-slate-500">
+                  {accessType === "vip"
+                    ? "Giá này sẽ dùng khi mở khóa từ client."
+                    : "Miễn phí: giá tự động về 0."}
+                </p>
+              </div>
+
+              {errors.originalUnlockPrice ? <p className="text-xs text-red-500">{errors.originalUnlockPrice.message}</p> : null}
+              {errors.discountPercent ? <p className="text-xs text-red-500">{errors.discountPercent.message}</p> : null}
               {errors.unlockPrice ? <p className="text-xs text-red-500">{errors.unlockPrice.message}</p> : null}
             </div>
           </div>

@@ -30,6 +30,8 @@ type MusicItem = {
     id: string;
     title: string;
     artist: string;
+    accessType: "free" | "vip";
+    unlockPrice: number;
     thumbnailUrl: string | null;
     audioDuration: number | null;
   }>;
@@ -41,6 +43,8 @@ type MusicTrackOption = {
   id: string;
   title: string;
   artist: string;
+  accessType: "free" | "vip";
+  unlockPrice: number;
   thumbnailUrl: string | null;
   audioDuration: number | null;
 };
@@ -216,11 +220,13 @@ export default function AdminMusicPage() {
           rows
             .filter((item) => item.contentType !== "playlist")
             .map((item) => ({
-            id: item.id,
-            title: item.title,
-            artist: item.artist,
-            thumbnailUrl: item.thumbnailUrl,
-            audioDuration: item.audioDuration,
+              id: item.id,
+              title: item.title,
+              artist: item.artist,
+              accessType: item.accessType === "vip" ? "vip" : "free",
+              unlockPrice: typeof item.unlockPrice === "number" ? item.unlockPrice : 0,
+              thumbnailUrl: item.thumbnailUrl,
+              audioDuration: item.audioDuration,
             })),
         );
       } catch {
@@ -257,6 +263,25 @@ export default function AdminMusicPage() {
     setIsSubmitting(true);
     setSubmitError(null);
 
+    const payloadBody = {
+      title: payload.title,
+      slug: payload.slug,
+      artist: payload.artist,
+      description: payload.description,
+      tags: payload.tags,
+      isPublic: payload.isPublic,
+      contentType: payload.contentType,
+      accessType: payload.accessType,
+      unlockPrice: payload.unlockPrice,
+      introEnabled: payload.introEnabled,
+      playlistTrackIds: payload.playlistTrackIds,
+      playlistTrackAccess: payload.playlistTrackAccess,
+      audioDuration: payload.audioDuration,
+      ...(payload.clearThumbnail ? { thumbnailUrl: "" } : {}),
+    };
+
+    const hasBinaryFiles = Boolean(payload.audioFile || payload.thumbnailFile);
+
     const formData = new FormData();
     formData.append("title", payload.title);
     formData.append("slug", payload.slug);
@@ -271,6 +296,10 @@ export default function AdminMusicPage() {
 
     if (payload.playlistTrackIds.length) {
       formData.append("playlistTrackIds", payload.playlistTrackIds.join(","));
+    }
+
+    if (payload.contentType === "playlist" && payload.playlistTrackAccess.length) {
+      formData.append("playlistTrackAccess", JSON.stringify(payload.playlistTrackAccess));
     }
 
     if (typeof payload.audioDuration === "number") {
@@ -291,38 +320,46 @@ export default function AdminMusicPage() {
 
     try {
       if (editingMusic) {
-        await apiClient.patch(`/music/${editingMusic.id}`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        if (hasBinaryFiles) {
+          await apiClient.patch(`/music/${editingMusic.id}`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+        } else {
+          await apiClient.patch(`/music/${editingMusic.id}`, payloadBody);
+        }
       } else {
-        await apiClient.post("/music", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
+        if (hasBinaryFiles) {
+          await apiClient.post("/music", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+        } else {
+          await apiClient.post("/music", payloadBody);
+        }
       }
 
       closeModal();
       await loadData();
-      if (!editingMusic) {
-        const nextResponse = await apiClient.get<MusicResponse>("/music/admin", {
-          params: {
-            page: 1,
-            limit: 300,
-          },
-        });
+      const nextResponse = await apiClient.get<MusicResponse>("/music/admin", {
+        params: {
+          page: 1,
+          limit: 300,
+        },
+      });
 
-        const rows = Array.isArray(nextResponse.data?.data) ? nextResponse.data.data : [];
-        setTrackOptions(
-          rows
-            .filter((item) => item.contentType !== "playlist")
-            .map((item) => ({
+      const rows = Array.isArray(nextResponse.data?.data) ? nextResponse.data.data : [];
+      setTrackOptions(
+        rows
+          .filter((item) => item.contentType !== "playlist")
+          .map((item) => ({
             id: item.id,
             title: item.title,
             artist: item.artist,
+            accessType: item.accessType === "vip" ? "vip" : "free",
+            unlockPrice: typeof item.unlockPrice === "number" ? item.unlockPrice : 0,
             thumbnailUrl: item.thumbnailUrl,
             audioDuration: item.audioDuration,
-            })),
-        );
-      }
+          })),
+      );
     } catch (error) {
       console.error("Failed to save music:", error);
       setSubmitError(extractApiErrorMessage(error));
@@ -367,6 +404,14 @@ export default function AdminMusicPage() {
         unlockPrice: editingMusic.unlockPrice,
         introEnabled: editingMusic.introEnabled,
         playlistTrackIds: editingMusic.playlistTrackIds,
+        playlistTrackAccess: editingMusic.playlistTrackIds.map((trackId) => {
+          const source = editingMusic.playlistTracks?.find((item) => item.id === trackId);
+          return {
+            trackId,
+            accessType: source?.accessType === "vip" ? "vip" : "free",
+            unlockPrice: Math.max(0, Math.floor(source?.unlockPrice || 0)),
+          };
+        }),
       }
     : undefined;
 

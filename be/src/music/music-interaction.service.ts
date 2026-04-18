@@ -118,6 +118,16 @@ export class MusicInteractionService {
     }
 
     if (music.contentType !== MusicContentType.playlist) {
+      const playlistUnlock = await this.findPlaylistUnlockForTrack(userId, music.id);
+
+      if (playlistUnlock) {
+        return {
+          music,
+          unlocked: true,
+          unlockSource: 'playlist' as const,
+        };
+      }
+
       return {
         music,
         unlocked: false,
@@ -148,6 +158,39 @@ export class MusicInteractionService {
         unlockSource: state.unlockSource,
       },
     };
+  }
+
+  private async findPlaylistUnlockForTrack(userId: string, musicId: string) {
+    const parentPlaylists = await this.prisma.music.findMany({
+      where: {
+        contentType: MusicContentType.playlist,
+      },
+      select: {
+        id: true,
+        playlistTrackIds: true,
+      },
+    });
+
+    const matchingPlaylistIds = parentPlaylists
+      .filter((playlist) => this.parsePlaylistTrackIds(playlist.playlistTrackIds).includes(musicId))
+      .map((playlist) => playlist.id);
+
+    if (!matchingPlaylistIds.length) {
+      return null;
+    }
+
+    return this.prisma.musicUnlock.findFirst({
+      where: {
+        userId,
+        sourceType: 'playlist',
+        sourcePlaylistId: {
+          in: matchingPlaylistIds,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
   }
 
   async unlockMusic(userId: string, musicId: string) {

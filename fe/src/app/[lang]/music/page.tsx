@@ -67,7 +67,7 @@ type ListTrackAccessState = {
 };
 
 const PAGE_SIZE = 10;
-const PLAYLIST_PREVIEW_COUNT = 5;
+const PLAYLIST_PREVIEW_COUNT = 6;
 const PLAYLIST_MAX_VISIBLE = 10;
 
 export default function MusicPage() {
@@ -170,51 +170,78 @@ export default function MusicPage() {
 
   useEffect(() => {
     if (!accessToken) {
-      setTrackAccessStates({});
+      setTrackAccessStates((prev) => (Object.keys(prev).length ? {} : prev));
       return;
     }
 
-    const vipTrackIds = tracks
-      .filter((item) => item.accessType === "vip" && item.unlockPrice > 0)
-      .map((item) => item.id);
-
-    if (!vipTrackIds.length) return;
-
-    const unresolvedIds = vipTrackIds.filter((id) => !trackAccessStates[id]);
-    if (!unresolvedIds.length) return;
-
     let active = true;
 
-    void Promise.allSettled(unresolvedIds.map((id) => fetchMusicAccessStatus(id)))
-      .then((results) => {
+    const syncAccessStates = async () => {
+      const vipTrackIds = tracks
+        .filter((item) => item.accessType === "vip" && item.unlockPrice > 0)
+        .map((item) => item.id);
+
+      if (!vipTrackIds.length) {
+        if (!active) return;
+        setTrackAccessStates((prev) => (Object.keys(prev).length ? {} : prev));
+        return;
+      }
+
+      try {
+        const results = await Promise.allSettled(vipTrackIds.map((id) => fetchMusicAccessStatus(id)));
         if (!active) return;
 
         setTrackAccessStates((prev) => {
-          const next = { ...prev };
+          const next: Record<string, ListTrackAccessState> = {};
 
           results.forEach((result, index) => {
-            if (result.status !== "fulfilled" || !result.value) return;
-
-            const targetId = unresolvedIds[index];
+            const targetId = vipTrackIds[index];
             if (!targetId) return;
 
-            next[targetId] = {
-              unlocked: Boolean(result.value.unlocked),
-              unlockSource: result.value.unlockSource || null,
-            };
+            if (result.status === "fulfilled" && result.value) {
+              next[targetId] = {
+                unlocked: Boolean(result.value.unlocked),
+                unlockSource: result.value.unlockSource || null,
+              };
+              return;
+            }
+
+            if (prev[targetId]) {
+              next[targetId] = prev[targetId];
+            }
           });
 
-          return next;
+          const prevKeys = Object.keys(prev);
+          const nextKeys = Object.keys(next);
+          if (prevKeys.length !== nextKeys.length) {
+            return next;
+          }
+
+          const changed = nextKeys.some((key) => {
+            const prevItem = prev[key];
+            const nextItem = next[key];
+            return !prevItem || !nextItem
+              || prevItem.unlocked !== nextItem.unlocked
+              || prevItem.unlockSource !== nextItem.unlockSource;
+          });
+
+          return changed ? next : prev;
         });
-      })
-      .catch(() => {
-        // Keep feed usable even if access checks fail.
-      });
+      } catch {
+        // Keep feed usable even when access checks fail.
+      }
+    };
+
+    void syncAccessStates();
+    const intervalId = window.setInterval(() => {
+      void syncAccessStates();
+    }, 15000);
 
     return () => {
       active = false;
+      window.clearInterval(intervalId);
     };
-  }, [accessToken, trackAccessStates, tracks]);
+  }, [accessToken, tracks]);
 
   useEffect(() => {
     const target = sentinelRef.current;
@@ -610,6 +637,7 @@ export default function MusicPage() {
             {visibleTracks.map((child, index) => {
             const childActive = currentTrack?.id?.includes(child.id);
             const childPlaying = childActive && isPlaying;
+            const childLocked = child.accessType === "vip" && child.unlockPrice > 0;
 
             return (
               <div
@@ -636,7 +664,14 @@ export default function MusicPage() {
                   >
                     {child.title}
                   </Link>
-                  <p className="truncate text-[11px] text-slate-500 dark:text-zinc-400">{child.artist}</p>
+                  <p className="truncate text-[11px] text-slate-500 dark:text-zinc-400">
+                    {child.artist}
+                    {childLocked ? (
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] font-black uppercase tracking-[0.08em] text-slate-700 dark:bg-[#343434] dark:text-zinc-200">
+                        <Lock className="h-3 w-3" /> {child.unlockPrice}cr
+                      </span>
+                    ) : null}
+                  </p>
                 </div>
 
                 <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">

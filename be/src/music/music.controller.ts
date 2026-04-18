@@ -68,18 +68,18 @@ export class MusicController {
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')
   @UseInterceptors(MUSIC_INTERCEPTOR)
-  create(@Body() dto: CreateMusicDto, @UploadedFiles() files: UploadFiles) {
+  create(@Body() dto: CreateMusicDto, @UploadedFiles() files?: UploadFiles) {
     this.validateUploadFiles(files);
-    return this.musicService.create(dto, files);
+    return this.musicService.create(dto, files || {});
   }
 
   @Patch(':id')
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')
   @UseInterceptors(MUSIC_INTERCEPTOR)
-  update(@Param('id') id: string, @Body() dto: UpdateMusicDto, @UploadedFiles() files: UploadFiles) {
+  update(@Param('id') id: string, @Body() dto: UpdateMusicDto, @UploadedFiles() files?: UploadFiles) {
     this.validateUploadFiles(files);
-    return this.musicService.update(id, dto, files);
+    return this.musicService.update(id, dto, files || {});
   }
 
   @Delete(':id')
@@ -99,9 +99,9 @@ export class MusicController {
     return this.musicService.incrementPlayCount(id);
   }
 
-  private validateUploadFiles(files: UploadFiles) {
-    const audio = files.audioFile?.[0];
-    const thumbnail = files.thumbnailFile?.[0];
+  private validateUploadFiles(files?: UploadFiles) {
+    const audio = files?.audioFile?.[0];
+    const thumbnail = files?.thumbnailFile?.[0];
 
     if (audio && !audio.mimetype.startsWith('audio/')) {
       throw new BadRequestException('audioFile must be an audio file.');

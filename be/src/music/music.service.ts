@@ -12,6 +12,12 @@ type UploadFiles = {
   thumbnailFile?: Express.Multer.File[];
 };
 
+type PlaylistTrackAccessInput = {
+  trackId: string;
+  accessType?: string;
+  unlockPrice?: number;
+};
+
 type PlaylistTrackSummary = {
   id: string;
   slug: string;
@@ -277,6 +283,7 @@ export class MusicService {
     const accessType = this.normalizeAccessType(dto.accessType);
     const unlockPrice = this.normalizeUnlockPrice(dto.unlockPrice, accessType);
     const playlistTrackIds = this.normalizeMusicIdArray(dto.playlistTrackIds);
+    const playlistTrackAccess = this.normalizePlaylistTrackAccessInput(dto.playlistTrackAccess, playlistTrackIds);
 
     const audioFile = files.audioFile?.[0];
     const thumbnailFile = files.thumbnailFile?.[0];
@@ -317,23 +324,29 @@ export class MusicService {
     const thumbnailUrl = uploadedThumbnailUrl
       ?? (contentType === MusicContentType.playlist ? resolvedPlaylistTracks[0]?.thumbnailUrl || null : null);
 
-    const created = await this.prisma.music.create({
-      data: {
-        title,
-        slug,
-        artist,
-        description: this.normalizeNullableText(dto.description),
-        tags: this.normalizeTagsInput(dto.tags),
-        audioUrl,
-        thumbnailUrl,
-        audioDuration,
-        contentType,
-        accessType,
-        unlockPrice,
-        introEnabled: dto.introEnabled ?? true,
-        playlistTrackIds: contentType === MusicContentType.playlist ? playlistTrackIds : [],
-        isPublic: dto.isPublic ?? true,
-      },
+    const created = await this.prisma.$transaction(async (tx) => {
+      if (contentType === MusicContentType.playlist && playlistTrackAccess.size) {
+        await this.applyPlaylistTrackAccessConfig(tx, resolvedPlaylistTracks, playlistTrackAccess);
+      }
+
+      return tx.music.create({
+        data: {
+          title,
+          slug,
+          artist,
+          description: this.normalizeNullableText(dto.description),
+          tags: this.normalizeTagsInput(dto.tags),
+          audioUrl,
+          thumbnailUrl,
+          audioDuration,
+          contentType,
+          accessType,
+          unlockPrice,
+          introEnabled: dto.introEnabled ?? true,
+          playlistTrackIds: contentType === MusicContentType.playlist ? playlistTrackIds : [],
+          isPublic: dto.isPublic ?? true,
+        },
+      });
     });
 
     const [serialized] = await this.enrichPlaylistTracks([created]);
@@ -366,6 +379,8 @@ export class MusicService {
     const nextPlaylistTrackIds = dto.playlistTrackIds === undefined
       ? this.parsePlaylistTrackIds(existing.playlistTrackIds)
       : this.normalizeMusicIdArray(dto.playlistTrackIds);
+
+    const playlistTrackAccess = this.normalizePlaylistTrackAccessInput(dto.playlistTrackAccess, nextPlaylistTrackIds);
 
     const nextTitle = dto.title === undefined ? undefined : this.normalizeRequiredText(dto.title, 'title');
     const titleForSlug = nextTitle ?? existing.title;
@@ -448,9 +463,15 @@ export class MusicService {
       ...(dto.isPublic !== undefined ? { isPublic: dto.isPublic } : {}),
     };
 
-    const updated = await this.prisma.music.update({
-      where: { id },
-      data,
+    const updated = await this.prisma.$transaction(async (tx) => {
+      if (nextContentType === MusicContentType.playlist && playlistTrackAccess.size) {
+        await this.applyPlaylistTrackAccessConfig(tx, resolvedPlaylistTracks, playlistTrackAccess);
+      }
+
+      return tx.music.update({
+        where: { id },
+        data,
+      });
     });
 
     const [serialized] = await this.enrichPlaylistTracks([updated]);
@@ -585,6 +606,73 @@ export class MusicService {
           .filter(Boolean),
       ),
     );
+  }
+
+  private normalizePlaylistTrackAccessInput(
+    value: PlaylistTrackAccessInput[] | undefined,
+    playlistTrackIds: string[],
+  ): Map<string, { accessType: MusicAccessType; unlockPrice: number }> {
+    const normalizedIds = this.normalizeMusicIdArray(playlistTrackIds);
+    const allowedIds = new Set(normalizedIds);
+
+    if (!value?.length || !allowedIds.size) {
+      return new Map();
+    }
+
+    const result = new Map<string, { accessType: MusicAccessType; unlockPrice: number }>();
+
+    value.forEach((item, index) => {
+      const trackId = typeof item.trackId === 'string' ? item.trackId.trim() : '';
+      if (!trackId) {
+        throw new BadRequestException(`playlistTrackAccess[${index}].trackId is required.`);
+      }
+
+      if (!allowedIds.has(trackId)) {
+        throw new BadRequestException(`playlistTrackAccess contains trackId not included in playlistTrackIds: ${trackId}`);
+      }
+
+      const accessType = this.normalizeAccessType(item.accessType);
+      const unlockPrice = accessType === MusicAccessType.free
+        ? 0
+        : this.normalizeUnlockPrice(item.unlockPrice, accessType);
+
+      result.set(trackId, {
+        accessType,
+        unlockPrice,
+      });
+    });
+
+    return result;
+  }
+
+  private async applyPlaylistTrackAccessConfig(
+    tx: Prisma.TransactionClient,
+    resolvedPlaylistTracks: PlaylistTrackSummary[],
+    accessConfig: Map<string, { accessType: MusicAccessType; unlockPrice: number }>,
+  ) {
+    if (!accessConfig.size || !resolvedPlaylistTracks.length) return;
+
+    const updates = resolvedPlaylistTracks
+      .map((track) => {
+        const config = accessConfig.get(track.id);
+        if (!config) return null;
+
+        if (track.accessType === config.accessType && track.unlockPrice === config.unlockPrice) {
+          return null;
+        }
+
+        return tx.music.update({
+          where: { id: track.id },
+          data: {
+            accessType: config.accessType,
+            unlockPrice: config.unlockPrice,
+          },
+        });
+      })
+      .filter((item): item is ReturnType<typeof tx.music.update> => Boolean(item));
+
+    if (!updates.length) return;
+    await Promise.all(updates);
   }
 
   private normalizeContentType(value: string | undefined): MusicContentType {

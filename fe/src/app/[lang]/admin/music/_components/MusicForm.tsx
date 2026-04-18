@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Image as ImageIcon, Loader2, Music2, Save, UploadCloud, X } from "lucide-react";
+import { Image as ImageIcon, Loader2, Lock, Music2, Save, UploadCloud, X } from "lucide-react";
 
 const schema = z.object({
   title: z.string().trim().min(1, "Vui lòng nhập tiêu đề"),
@@ -35,8 +35,16 @@ type MusicTrackOption = {
   id: string;
   title: string;
   artist: string;
+  accessType: "free" | "vip";
+  unlockPrice: number;
   thumbnailUrl?: string | null;
   audioDuration?: number | null;
+};
+
+type PlaylistTrackAccessConfig = {
+  trackId: string;
+  accessType: "free" | "vip";
+  unlockPrice: number;
 };
 
 export type MusicFormInitialData = {
@@ -55,6 +63,7 @@ export type MusicFormInitialData = {
   unlockPrice?: number;
   introEnabled?: boolean;
   playlistTrackIds?: string[];
+  playlistTrackAccess?: PlaylistTrackAccessConfig[];
 };
 
 export type MusicFormSubmitPayload = {
@@ -69,6 +78,7 @@ export type MusicFormSubmitPayload = {
   unlockPrice: number;
   introEnabled: boolean;
   playlistTrackIds: string[];
+  playlistTrackAccess: PlaylistTrackAccessConfig[];
   audioDuration: number | null;
   audioFile?: File;
   thumbnailFile?: File;
@@ -128,6 +138,18 @@ export default function MusicForm({
   const [selectedTrackIds, setSelectedTrackIds] = useState<string[]>(
     Array.isArray(initialData?.playlistTrackIds) ? initialData.playlistTrackIds : [],
   );
+  const [trackAccessConfig, setTrackAccessConfig] = useState<Record<string, { accessType: "free" | "vip"; unlockPrice: number }>>(() => {
+    const source = Array.isArray(initialData?.playlistTrackAccess) ? initialData.playlistTrackAccess : [];
+    const entries = source.map((item) => [
+      item.trackId,
+      {
+        accessType: item.accessType === "vip" ? "vip" : "free",
+        unlockPrice: Math.max(0, Math.floor(item.unlockPrice || 0)),
+      },
+    ] as const);
+
+    return Object.fromEntries(entries);
+  });
 
   const {
     control,
@@ -207,12 +229,68 @@ export default function MusicForm({
     });
   }, [playlistQuery, selectableTracks]);
 
+  const selectedTracksWithAccess = useMemo(
+    () =>
+      selectedTracks.map((track) => {
+        const currentConfig = trackAccessConfig[track.id];
+        const defaultAccessType = track.accessType === "vip" ? "vip" : "free";
+        const defaultUnlockPrice = defaultAccessType === "vip"
+          ? Math.max(1, Math.floor(track.unlockPrice || 0) || 1)
+          : 0;
+
+        const accessType = currentConfig?.accessType || defaultAccessType;
+        const unlockPrice = accessType === "vip"
+          ? Math.max(1, Math.floor(currentConfig?.unlockPrice ?? defaultUnlockPrice))
+          : 0;
+
+        return {
+          ...track,
+          accessType,
+          unlockPrice,
+        };
+      }),
+    [selectedTracks, trackAccessConfig],
+  );
+
   useEffect(() => {
     if (contentType !== "playlist") return;
 
     const totalDuration = selectedTracks.reduce((sum, item) => sum + (item.audioDuration || 0), 0);
     setValue("audioDuration", totalDuration, { shouldDirty: true, shouldValidate: true });
   }, [contentType, selectedTracks, setValue]);
+
+  useEffect(() => {
+    if (contentType !== "playlist") return;
+
+    setTrackAccessConfig((prev) => {
+      const next: Record<string, { accessType: "free" | "vip"; unlockPrice: number }> = { ...prev };
+      let changed = false;
+
+      selectedTrackIds.forEach((trackId) => {
+        if (next[trackId]) return;
+
+        const sourceTrack = selectableTracks.find((item) => item.id === trackId);
+        const accessType = sourceTrack?.accessType === "vip" ? "vip" : "free";
+        const unlockPrice = accessType === "vip"
+          ? Math.max(1, Math.floor(sourceTrack?.unlockPrice || 0) || 1)
+          : 0;
+
+        next[trackId] = {
+          accessType,
+          unlockPrice,
+        };
+        changed = true;
+      });
+
+      Object.keys(next).forEach((trackId) => {
+        if (selectedTrackIds.includes(trackId)) return;
+        delete next[trackId];
+        changed = true;
+      });
+
+      return changed ? next : prev;
+    });
+  }, [contentType, selectableTracks, selectedTrackIds]);
 
   useEffect(() => {
     if (accessType === "vip") return;
@@ -283,6 +361,39 @@ export default function MusicForm({
     });
   };
 
+  const updateTrackAccessType = (trackId: string, accessType: "free" | "vip") => {
+    setTrackAccessConfig((prev) => {
+      const current = prev[trackId];
+      const sourceTrack = selectableTracks.find((item) => item.id === trackId);
+      const fallbackUnlockPrice = Math.max(1, Math.floor(sourceTrack?.unlockPrice || 0) || 1);
+
+      return {
+        ...prev,
+        [trackId]: {
+          accessType,
+          unlockPrice: accessType === "vip"
+            ? Math.max(1, Math.floor(current?.unlockPrice || fallbackUnlockPrice))
+            : 0,
+        },
+      };
+    });
+  };
+
+  const updateTrackUnlockPrice = (trackId: string, value: number) => {
+    setTrackAccessConfig((prev) => {
+      const current = prev[trackId];
+      if (!current) return prev;
+
+      return {
+        ...prev,
+        [trackId]: {
+          ...current,
+          unlockPrice: Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0,
+        },
+      };
+    });
+  };
+
   const submitForm = async (values: MusicFormValues) => {
     const isPlaylist = values.contentType === "playlist";
 
@@ -294,6 +405,18 @@ export default function MusicForm({
     if (isPlaylist && selectedTrackIds.length === 0) {
       setPlaylistError("Vui lòng chọn ít nhất 1 track để tạo playlist.");
       return;
+    }
+
+    if (isPlaylist) {
+      const invalidLockedTrack = selectedTrackIds.find((trackId) => {
+        const config = trackAccessConfig[trackId];
+        return config?.accessType === "vip" && config.unlockPrice <= 0;
+      });
+
+      if (invalidLockedTrack) {
+        setPlaylistError("Track bị khóa phải có giá mở khóa lớn hơn 0.");
+        return;
+      }
     }
 
     if (values.accessType === "vip" && (!values.unlockPrice || values.unlockPrice <= 0)) {
@@ -325,6 +448,22 @@ export default function MusicForm({
       unlockPrice: values.accessType === "vip" ? Math.max(0, Math.floor(values.unlockPrice || 0)) : 0,
       introEnabled: values.introEnabled === "true",
       playlistTrackIds: values.contentType === "playlist" ? selectedTrackIds : [],
+      playlistTrackAccess: values.contentType === "playlist"
+        ? selectedTrackIds.map((trackId) => {
+          const sourceTrack = selectableTracks.find((item) => item.id === trackId);
+          const config = trackAccessConfig[trackId];
+          const accessType = config?.accessType === "vip" ? "vip" : "free";
+          const fallbackPrice = Math.max(1, Math.floor(sourceTrack?.unlockPrice || 0) || 1);
+
+          return {
+            trackId,
+            accessType,
+            unlockPrice: accessType === "vip"
+              ? Math.max(1, Math.floor(config?.unlockPrice || fallbackPrice))
+              : 0,
+          };
+        })
+        : [],
       audioDuration: typeof values.audioDuration === "number" ? values.audioDuration : null,
       audioFile: values.contentType !== "playlist" ? audioFile : undefined,
       thumbnailFile,
@@ -539,6 +678,10 @@ export default function MusicForm({
                 {filteredTracks.length ? (
                   filteredTracks.map((track) => {
                     const isSelected = selectedTrackIds.includes(track.id);
+                    const selectedConfig = trackAccessConfig[track.id];
+                    const effectiveAccessType = selectedConfig?.accessType || (track.accessType === "vip" ? "vip" : "free");
+                    const isLocked = effectiveAccessType === "vip";
+
                     return (
                       <button
                         key={track.id}
@@ -554,7 +697,10 @@ export default function MusicForm({
                           <span className="block truncate font-semibold">{track.title}</span>
                           <span className="block truncate text-xs opacity-75">{track.artist}</span>
                         </span>
-                        <span className="ml-3 shrink-0 text-[11px] font-black">{formatSeconds(track.audioDuration)}</span>
+                        <span className="ml-3 shrink-0 text-[11px] font-black">
+                          {isLocked ? <Lock className="mr-1 inline h-3.5 w-3.5 text-rose-500" /> : null}
+                          {formatSeconds(track.audioDuration)}
+                        </span>
                       </button>
                     );
                   })
@@ -565,15 +711,41 @@ export default function MusicForm({
 
               <div className="rounded-xl border border-dashed border-slate-300 bg-white p-3 text-xs text-slate-600">
                 Đã chọn <span className="font-black text-slate-800">{selectedTracks.length}</span> track
-                {selectedTracks.length > 0 ? (
-                  <ul className="mt-2 space-y-1">
-                    {selectedTracks.slice(0, 10).map((item, index) => (
-                      <li key={item.id} className="truncate">
-                        {index + 1}. {item.title}
-                      </li>
-                    ))}
-                    {selectedTracks.length > 10 ? <li>... và {selectedTracks.length - 10} track khác</li> : null}
-                  </ul>
+                {selectedTracksWithAccess.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {selectedTracksWithAccess.map((item, index) => {
+                      const locked = item.accessType === "vip";
+
+                      return (
+                        <div key={item.id} className="rounded-lg border border-slate-200 bg-slate-50 p-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] font-black text-slate-500">#{index + 1}</span>
+                            <span className="min-w-0 flex-1 truncate font-semibold text-slate-800">{item.title}</span>
+                            {locked ? <Lock className="h-3.5 w-3.5 text-rose-500" /> : null}
+                          </div>
+                          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_140px]">
+                            <select
+                              value={item.accessType}
+                              onChange={(event) => updateTrackAccessType(item.id, event.target.value === "vip" ? "vip" : "free")}
+                              className="admin-input w-full bg-white"
+                            >
+                              <option value="free">Miễn phí</option>
+                              <option value="vip">Khóa VIP</option>
+                            </select>
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              value={item.accessType === "vip" ? item.unlockPrice : 0}
+                              disabled={item.accessType !== "vip"}
+                              onChange={(event) => updateTrackUnlockPrice(item.id, Number(event.target.value))}
+                              className="admin-input w-full bg-white disabled:bg-slate-100"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : null}
               </div>
 

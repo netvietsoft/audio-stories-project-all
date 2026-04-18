@@ -75,6 +75,14 @@ type DetailAccessState = {
   unlockSource: "free" | "track" | "playlist" | null;
 };
 
+type PlaylistChildUnlockTarget = {
+  id: string;
+  title: string;
+  unlockPrice: number;
+};
+
+type PlaylistUnlockMode = "track" | "playlist";
+
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   const maybeMessage = (error as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
   if (Array.isArray(maybeMessage) && maybeMessage.length) return maybeMessage[0] || fallback;
@@ -203,6 +211,10 @@ export default function MusicDetailPage() {
   });
   const [accessNotice, setAccessNotice] = useState<{ tone: "error" | "success" | "info"; text: string } | null>(null);
   const [showUnlockConfirmModal, setShowUnlockConfirmModal] = useState(false);
+  const [showPlaylistUnlockChoiceModal, setShowPlaylistUnlockChoiceModal] = useState(false);
+  const [showPlaylistUnlockPaymentConfirmModal, setShowPlaylistUnlockPaymentConfirmModal] = useState(false);
+  const [selectedPlaylistUnlockMode, setSelectedPlaylistUnlockMode] = useState<PlaylistUnlockMode>("track");
+  const [playlistUnlockTarget, setPlaylistUnlockTarget] = useState<PlaylistChildUnlockTarget | null>(null);
   const [playlistTrackAccess, setPlaylistTrackAccess] = useState<Record<string, DetailAccessState>>({});
   const [relatedTrackAccess, setRelatedTrackAccess] = useState<Record<string, DetailAccessState>>({});
 
@@ -302,6 +314,10 @@ export default function MusicDetailPage() {
   useEffect(() => {
     setAccessNotice(null);
     setShowUnlockConfirmModal(false);
+    setShowPlaylistUnlockChoiceModal(false);
+    setShowPlaylistUnlockPaymentConfirmModal(false);
+    setSelectedPlaylistUnlockMode("track");
+    setPlaylistUnlockTarget(null);
   }, [trackId]);
 
   useEffect(() => {
@@ -505,12 +521,16 @@ export default function MusicDetailPage() {
   const promptLogin = useCallback(() => {
     setAccessNotice({
       tone: "info",
-      text: currentLang === "en"
-        ? "Please log in to unlock this track."
-        : "Vui lòng đăng nhập để mở khóa bài này.",
+      text: t("loginToUnlockTrack"),
     });
     openLogin();
-  }, [currentLang, openLogin]);
+  }, [openLogin, t]);
+
+  const formatUnlockSource = useCallback((source: DetailAccessState["unlockSource"]) => {
+    if (source === "playlist") return t("unlockSourcePlaylist");
+    if (source === "free") return t("unlockSourceFree");
+    return t("unlockSourceTrack");
+  }, [t]);
 
   const isTrackLocked = accessState.accessType === "vip" && accessState.unlockPrice > 0 && !accessState.unlocked;
 
@@ -524,12 +544,10 @@ export default function MusicDetailPage() {
 
     setAccessNotice({
       tone: "error",
-      text: currentLang === "en"
-        ? "This track is locked. Please unlock before playing."
-        : "Bài này đang bị khóa. Hãy mở khóa trước khi phát.",
+      text: t("unlockBeforePlay"),
     });
     return false;
-  }, [accessToken, currentLang, isTrackLocked, promptLogin, track]);
+  }, [accessToken, isTrackLocked, promptLogin, t, track]);
 
   const handleUnlockCurrentTrack = async (): Promise<boolean> => {
     if (!track) return false;
@@ -580,9 +598,10 @@ export default function MusicDetailPage() {
       const chargedCredits = typeof result?.chargedCredits === "number" ? Math.max(0, result.chargedCredits) : 0;
       setAccessNotice({
         tone: "success",
-        text: currentLang === "en"
-          ? `Unlocked successfully${chargedCredits > 0 ? ` (-${chargedCredits} credits)` : ""}.`
-          : `Mở khóa thành công${chargedCredits > 0 ? ` (-${chargedCredits} credits)` : ""}.`,
+        text: t("unlockSuccess", {
+          chargedCredits,
+          suffix: chargedCredits > 0 ? ` (-${chargedCredits} credits)` : "",
+        }),
       });
       return true;
     } catch (error) {
@@ -590,7 +609,7 @@ export default function MusicDetailPage() {
         tone: "error",
         text: getApiErrorMessage(
           error,
-          currentLang === "en" ? "Unable to unlock this track." : "Không thể mở khóa bài này.",
+          t("unlockFailed"),
         ),
       });
       return false;
@@ -603,6 +622,118 @@ export default function MusicDetailPage() {
     const success = await handleUnlockCurrentTrack();
     if (success) {
       setShowUnlockConfirmModal(false);
+    }
+  };
+
+  const openPlaylistUnlockChoice = (target: PlaylistChildUnlockTarget) => {
+    if (!accessToken) {
+      setAccessNotice({
+        tone: "info",
+        text: t("loginToUnlockTrack"),
+      });
+      promptLogin();
+      return;
+    }
+
+    setPlaylistUnlockTarget(target);
+    setSelectedPlaylistUnlockMode("track");
+    setShowPlaylistUnlockPaymentConfirmModal(false);
+    setShowPlaylistUnlockChoiceModal(true);
+  };
+
+  const closePlaylistUnlockFlow = () => {
+    setShowPlaylistUnlockChoiceModal(false);
+    setShowPlaylistUnlockPaymentConfirmModal(false);
+    setSelectedPlaylistUnlockMode("track");
+    setPlaylistUnlockTarget(null);
+  };
+
+  const moveToPlaylistUnlockPaymentConfirm = () => {
+    if (!playlistUnlockTarget) return;
+    if (selectedPlaylistUnlockMode === "playlist" && !(accessState.accessType === "vip" && accessState.unlockPrice > 0)) {
+      return;
+    }
+
+    setShowPlaylistUnlockChoiceModal(false);
+    setShowPlaylistUnlockPaymentConfirmModal(true);
+  };
+
+  const handleUnlockPlaylistChild = async (mode: PlaylistUnlockMode) => {
+    if (!track || !playlistUnlockTarget) return;
+    if (!accessToken) {
+      promptLogin();
+      return;
+    }
+
+    setIsUnlocking(true);
+    setAccessNotice(null);
+
+    const targetId = mode === "playlist" ? track.id : playlistUnlockTarget.id;
+
+    try {
+      const result = await unlockMusicItem(targetId);
+
+      if (mode === "playlist") {
+        setAccessState((prev) => ({
+          ...prev,
+          unlockPrice: typeof result?.unlockPrice === "number" ? Math.max(0, Math.floor(result.unlockPrice)) : prev.unlockPrice,
+          unlocked: true,
+          unlockSource: "playlist",
+        }));
+
+        setPlaylistTrackAccess((prev) => {
+          const next = { ...prev };
+
+          track.playlistTracks.forEach((child) => {
+            const previous = next[child.id];
+            const accessType = previous?.accessType || (child.accessType === "vip" ? "vip" : "free");
+            const unlockPrice = previous?.unlockPrice ?? Math.max(0, Math.floor(child.unlockPrice || 0));
+
+            next[child.id] = {
+              accessType,
+              unlockPrice,
+              unlocked: true,
+              unlockSource: "playlist",
+            };
+          });
+
+          return next;
+        });
+      } else {
+        setPlaylistTrackAccess((prev) => ({
+          ...prev,
+          [playlistUnlockTarget.id]: {
+            accessType: "vip",
+            unlockPrice: Math.max(0, Math.floor(playlistUnlockTarget.unlockPrice || 0)),
+            unlocked: true,
+            unlockSource: result?.unlockSource || "track",
+          },
+        }));
+      }
+
+      if (user && typeof result?.balance === "number") {
+        setUser({ ...user, credits: result.balance });
+      }
+
+      const chargedCredits = typeof result?.chargedCredits === "number" ? Math.max(0, result.chargedCredits) : 0;
+      setAccessNotice({
+        tone: "success",
+        text: t("unlockSuccess", {
+          chargedCredits,
+          suffix: chargedCredits > 0 ? ` (-${chargedCredits} credits)` : "",
+        }),
+      });
+      closePlaylistUnlockFlow();
+    } catch (error) {
+      setAccessNotice({
+        tone: "error",
+        text: getApiErrorMessage(
+          error,
+          t("unlockFailed"),
+        ),
+      });
+    } finally {
+      setIsUnlocking(false);
     }
   };
 
@@ -834,16 +965,13 @@ export default function MusicDetailPage() {
     );
 
     if (isChildLocked) {
-      if (!accessToken) {
-        promptLogin();
-        return;
-      }
+      const target = parent.playlistTracks[index];
+      if (!target) return;
 
-      setAccessNotice({
-        tone: "error",
-        text: currentLang === "en"
-          ? `This track is locked (${childAccessState?.unlockPrice || 0} credits).`
-          : `Bài này đang bị khóa (${childAccessState?.unlockPrice || 0} credits).`,
+      openPlaylistUnlockChoice({
+        id: target.id,
+        title: target.title,
+        unlockPrice: Math.max(0, Math.floor(childAccessState?.unlockPrice || target.unlockPrice || 0)),
       });
       return;
     }
@@ -1203,17 +1331,13 @@ export default function MusicDetailPage() {
                   <div>
                     <p className="text-sm font-black text-orange-700 dark:text-orange-300">
                       {isTrackLocked
-                        ? (currentLang === "en" ? "This track is VIP-locked" : "Bài này đang khóa VIP")
-                        : (currentLang === "en" ? "This track is unlocked" : "Bài này đã được mở khóa")}
+                        ? t("vipLocked")
+                        : t("vipUnlocked")}
                     </p>
                     <p className="text-xs font-medium text-orange-600/90 dark:text-orange-200/90">
                       {isTrackLocked
-                        ? (currentLang === "en"
-                          ? `Unlock price: ${accessState.unlockPrice} credits.`
-                          : `Giá mở khóa: ${accessState.unlockPrice} credits.`)
-                        : (currentLang === "en"
-                          ? `Unlocked via ${accessState.unlockSource || "track"}.`
-                          : `Nguồn mở khóa: ${accessState.unlockSource || "track"}.`)}
+                        ? t("unlockPriceLabel", { credits: accessState.unlockPrice })
+                        : t("unlockSourceLabel", { source: formatUnlockSource(accessState.unlockSource) })}
                     </p>
                   </div>
 
@@ -1223,9 +1347,7 @@ export default function MusicDetailPage() {
                         if (!accessToken) {
                           setAccessNotice({
                             tone: "info",
-                            text: currentLang === "en"
-                              ? "Please log in to unlock this track."
-                              : "Vui lòng đăng nhập để mở khóa bài này.",
+                            text: t("loginToUnlockTrack"),
                           });
                           promptLogin();
                           return;
@@ -1238,13 +1360,13 @@ export default function MusicDetailPage() {
                     >
                       {isUnlocking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
                       {accessToken
-                        ? (currentLang === "en" ? `Unlock (${accessState.unlockPrice}cr)` : `Mở khóa (${accessState.unlockPrice}cr)`)
-                        : (currentLang === "en" ? "Login to unlock" : "Đăng nhập để mở khóa")}
+                        ? t("unlockCtaWithPrice", { credits: accessState.unlockPrice })
+                        : t("loginToUnlockCta")}
                     </button>
                   ) : (
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
                       <LockOpen className="h-3 w-3" />
-                      {currentLang === "en" ? "Unlocked" : "Đã mở khóa"}
+                      {t("unlocked")}
                     </span>
                   )}
                 </div>
@@ -1318,7 +1440,7 @@ export default function MusicDetailPage() {
         <section className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-[#2c2c2c] dark:bg-[#171717]">
           <div className="border-b border-slate-100 px-6 py-4 dark:border-[#2b2b2b]">
             <h2 className="text-sm font-black text-slate-500 dark:text-zinc-400">
-              Danh sách bài hát
+              {t("playlistTracksTitle")}
             </h2>
           </div>
           <div className="grid gap-3 p-4 sm:p-6 md:grid-cols-2">
@@ -1514,7 +1636,7 @@ export default function MusicDetailPage() {
                   {t("relatedTitle")}
                 </h3>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:text-zinc-500">
-                  {currentLang === "en" ? "Same author or matching tags" : "Cùng tác giả hoặc cùng tag"}
+                  {t("relatedSubtitle")}
                 </p>
               </div>
               <Link href="/music" className="text-[11px] font-bold text-pink-500 hover:underline">
@@ -1614,7 +1736,7 @@ export default function MusicDetailPage() {
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
           <button
             type="button"
-            aria-label={currentLang === "en" ? "Close unlock confirmation" : "Đóng xác nhận mở khóa"}
+            aria-label={t("closeUnlockConfirmAria")}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => {
               if (isUnlocking) return;
@@ -1631,25 +1753,24 @@ export default function MusicDetailPage() {
               }}
               className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-60 dark:text-zinc-400 dark:hover:bg-[#2b2b2b]"
               disabled={isUnlocking}
-              aria-label={currentLang === "en" ? "Close" : "Đóng"}
+              aria-label={t("close")}
             >
               <X className="h-4 w-4" />
             </button>
 
             <div className="pr-8">
               <p className="text-lg font-black text-slate-900 dark:text-zinc-100">
-                {currentLang === "en" ? "Confirm unlock" : "Xác nhận mở khóa"}
+                {t("confirmUnlockTitle")}
               </p>
               <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">
-                {currentLang === "en"
-                  ? `You are about to spend ${accessState.unlockPrice} credits to unlock \"${track.title}\".`
-                  : `Bạn sắp dùng ${accessState.unlockPrice} credits để mở khóa \"${track.title}\".`}
+                {t("confirmUnlockBody", {
+                  credits: accessState.unlockPrice,
+                  title: track.title,
+                })}
               </p>
               {track.contentType === "playlist" ? (
                 <p className="mt-2 text-xs font-semibold text-orange-600 dark:text-orange-300">
-                  {currentLang === "en"
-                    ? "This will unlock the current playlist and all tracks inside it."
-                    : "Thao tác này sẽ mở khóa playlist hiện tại và toàn bộ bài trong playlist này."}
+                  {t("confirmUnlockPlaylistHint")}
                 </p>
               ) : null}
             </div>
@@ -1661,7 +1782,7 @@ export default function MusicDetailPage() {
                 className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 dark:border-[#414141] dark:text-zinc-200 dark:hover:bg-[#282828]"
                 disabled={isUnlocking}
               >
-                {currentLang === "en" ? "Cancel" : "Hủy"}
+                {t("cancel")}
               </button>
               <button
                 type="button"
@@ -1670,7 +1791,177 @@ export default function MusicDetailPage() {
                 disabled={isUnlocking || isCheckingAccess}
               >
                 {isUnlocking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
-                {currentLang === "en" ? "Confirm payment" : "Xác nhận thanh toán"}
+                {t("confirmPayment")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showPlaylistUnlockChoiceModal && playlistUnlockTarget && track.contentType === "playlist" ? (
+        <div className="fixed inset-0 z-[121] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label={t("closeUnlockOptionsAria")}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              if (isUnlocking) return;
+              closePlaylistUnlockFlow();
+            }}
+          />
+
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-[#353535] dark:bg-[#1b1b1b]">
+            <button
+              type="button"
+              onClick={() => {
+                if (isUnlocking) return;
+                closePlaylistUnlockFlow();
+              }}
+              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-60 dark:text-zinc-400 dark:hover:bg-[#2b2b2b]"
+              disabled={isUnlocking}
+              aria-label={t("close")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="pr-8">
+              <p className="text-lg font-black text-slate-900 dark:text-zinc-100">
+                {t("chooseUnlockOptionTitle")}
+              </p>
+              <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">
+                {t("chooseUnlockOptionDescription", { title: playlistUnlockTarget.title })}
+              </p>
+            </div>
+
+            <div className="mt-5 space-y-2.5">
+              <button
+                type="button"
+                onClick={() => setSelectedPlaylistUnlockMode("track")}
+                className={`w-full rounded-2xl border px-4 py-3 text-left transition dark:border-[#414141] ${
+                  selectedPlaylistUnlockMode === "track"
+                    ? "border-orange-400 bg-orange-50 dark:border-orange-700/70 dark:bg-orange-950/20"
+                    : "border-slate-300 hover:border-orange-300 hover:bg-orange-50 dark:hover:border-orange-700/50 dark:hover:bg-orange-950/20"
+                }`}
+                disabled={isUnlocking || isCheckingAccess}
+              >
+                <p className="text-sm font-black text-slate-900 dark:text-zinc-100">
+                  {t("unlockThisTrackOptionTitle")}
+                </p>
+                <p className="mt-1 text-xs text-slate-600 dark:text-zinc-300">
+                  {t("unlockThisTrackOptionBody", { credits: playlistUnlockTarget.unlockPrice })}
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedPlaylistUnlockMode("playlist")}
+                className={`w-full rounded-2xl border px-4 py-3 text-left transition dark:border-[#414141] ${
+                  selectedPlaylistUnlockMode === "playlist"
+                    ? "border-pink-400 bg-pink-50 dark:border-pink-700/70 dark:bg-pink-950/20"
+                    : "border-slate-300 hover:border-pink-300 hover:bg-pink-50 dark:hover:border-pink-700/50 dark:hover:bg-pink-950/20"
+                }`}
+                disabled={isUnlocking || isCheckingAccess || !(accessState.accessType === "vip" && accessState.unlockPrice > 0)}
+              >
+                <p className="text-sm font-black text-slate-900 dark:text-zinc-100">
+                  {t("unlockWholePlaylistOptionTitle")}
+                </p>
+                <p className="mt-1 text-xs text-slate-600 dark:text-zinc-300">
+                  {accessState.accessType === "vip" && accessState.unlockPrice > 0
+                    ? t("unlockWholePlaylistOptionBody", { credits: accessState.unlockPrice })
+                    : t("playlistUnlockUnavailable")}
+                </p>
+              </button>
+
+              <div className="mt-1 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => closePlaylistUnlockFlow()}
+                  className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 dark:border-[#414141] dark:text-zinc-200 dark:hover:bg-[#282828]"
+                  disabled={isUnlocking}
+                >
+                  {t("cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={moveToPlaylistUnlockPaymentConfirm}
+                  className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-orange-600 disabled:opacity-60"
+                  disabled={isUnlocking || isCheckingAccess || (selectedPlaylistUnlockMode === "playlist" && !(accessState.accessType === "vip" && accessState.unlockPrice > 0))}
+                >
+                  {t("continueToPayment")}
+                </button>
+              </div>
+            </div>
+
+            {isUnlocking ? (
+              <div className="mt-4 inline-flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-zinc-400">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                {t("processingUnlock")}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {showPlaylistUnlockPaymentConfirmModal && playlistUnlockTarget && track.contentType === "playlist" ? (
+        <div className="fixed inset-0 z-[122] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label={t("closeUnlockConfirmAria")}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              if (isUnlocking) return;
+              closePlaylistUnlockFlow();
+            }}
+          />
+
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-[#353535] dark:bg-[#1b1b1b]">
+            <button
+              type="button"
+              onClick={() => {
+                if (isUnlocking) return;
+                closePlaylistUnlockFlow();
+              }}
+              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-60 dark:text-zinc-400 dark:hover:bg-[#2b2b2b]"
+              disabled={isUnlocking}
+              aria-label={t("close")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="pr-8">
+              <p className="text-lg font-black text-slate-900 dark:text-zinc-100">
+                {t("confirmPaymentTitle")}
+              </p>
+              <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">
+                {selectedPlaylistUnlockMode === "playlist"
+                  ? t("confirmPaymentPlaylistBody", {
+                    credits: accessState.unlockPrice,
+                    title: track.title,
+                  })
+                  : t("confirmPaymentTrackBody", {
+                    credits: playlistUnlockTarget.unlockPrice,
+                    title: playlistUnlockTarget.title,
+                  })}
+              </p>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => closePlaylistUnlockFlow()}
+                className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 dark:border-[#414141] dark:text-zinc-200 dark:hover:bg-[#282828]"
+                disabled={isUnlocking}
+              >
+                {t("cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleUnlockPlaylistChild(selectedPlaylistUnlockMode)}
+                className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-orange-600 disabled:opacity-60"
+                disabled={isUnlocking || isCheckingAccess}
+              >
+                {isUnlocking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+                {t("confirmPayment")}
               </button>
             </div>
           </div>

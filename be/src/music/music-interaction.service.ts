@@ -125,50 +125,12 @@ export class MusicInteractionService {
       };
     }
 
-    const playlistTrackIds = this.parsePlaylistTrackIds(music.playlistTrackIds);
-    if (!playlistTrackIds.length) {
-      return {
-        music,
-        unlocked: true,
-        unlockSource: 'playlist' as const,
-      };
-    }
-
-    const [tracks, unlocks] = await Promise.all([
-      this.prisma.music.findMany({
-        where: {
-          id: { in: playlistTrackIds },
-          isPublic: true,
-          contentType: { in: [MusicContentType.single, MusicContentType.podcast] },
-        },
-        select: {
-          id: true,
-          accessType: true,
-          unlockPrice: true,
-        },
-      }),
-      this.prisma.musicUnlock.findMany({
-        where: {
-          userId,
-          musicId: { in: playlistTrackIds },
-        },
-        select: { musicId: true },
-      }),
-    ]);
-
-    const unlockedTrackIds = new Set(unlocks.map((item) => item.musicId));
-    const allTracksUnlocked = tracks.every((track) => {
-      if (track.accessType === MusicAccessType.free || track.unlockPrice <= 0) {
-        return true;
-      }
-
-      return unlockedTrackIds.has(track.id);
-    });
-
+    // Playlist access must come from direct playlist unlock.
+    // Track-level unlocks are evaluated when playing each child track.
     return {
       music,
-      unlocked: allTracksUnlocked,
-      unlockSource: allTracksUnlocked ? ('playlist' as const) : null,
+      unlocked: false,
+      unlockSource: null,
     };
   }
 
@@ -296,6 +258,7 @@ export class MusicInteractionService {
         unlockPrice: state.music.unlockPrice,
         chargedCredits,
         balance: result.balance,
+        unlockSource: state.music.contentType === MusicContentType.playlist ? 'playlist' : 'track',
         unlockTargetCount: result.unlockTargetCount,
       },
     };

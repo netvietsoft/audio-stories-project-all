@@ -6,6 +6,8 @@ export type MusicPlaylistTrackSummary = {
   slug: string;
   title: string;
   artist: string;
+  accessType: MusicAccessType;
+  unlockPrice: number;
   thumbnailUrl: string | null;
   audioUrl: string;
   audioDuration: number | null;

@@ -10,6 +10,8 @@ import {
   Flame,
   Heart,
   Headphones,
+  Lock,
+  LockOpen,
   ListMusic,
   Loader2,
   MessageCircle,
@@ -29,7 +31,7 @@ import { interleaveAds } from "@/lib/ads/interleave-ads";
 import { useActiveAdvertisements } from "@/hooks/use-active-advertisements";
 import { useDebounce } from "@/hooks/useDebounce";
 import { apiClient } from "@/lib/api/api-client";
-import { registerMusicPlayback } from "@/lib/music/music-interactions";
+import { fetchMusicAccessStatus, registerMusicPlayback } from "@/lib/music/music-interactions";
 import {
   formatCompactCount,
   formatMusicDuration,
@@ -59,6 +61,11 @@ type MusicDetailResponse = {
   data: MusicApiItem;
 };
 
+type ListTrackAccessState = {
+  unlocked: boolean;
+  unlockSource: "free" | "track" | "playlist" | null;
+};
+
 const PAGE_SIZE = 10;
 const PLAYLIST_PREVIEW_COUNT = 5;
 const PLAYLIST_MAX_VISIBLE = 10;
@@ -76,6 +83,7 @@ export default function MusicPage() {
   const [lastPage, setLastPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [expandedPlaylists, setExpandedPlaylists] = useState<Record<string, boolean>>({});
+  const [trackAccessStates, setTrackAccessStates] = useState<Record<string, ListTrackAccessState>>({});
 
   const debouncedSearchTerm = useDebounce(searchTerm, 350);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -159,6 +167,54 @@ export default function MusicPage() {
     setExpandedPlaylists({});
     void fetchTracks(1, false);
   }, [fetchTracks]);
+
+  useEffect(() => {
+    if (!accessToken) {
+      setTrackAccessStates({});
+      return;
+    }
+
+    const vipTrackIds = tracks
+      .filter((item) => item.accessType === "vip" && item.unlockPrice > 0)
+      .map((item) => item.id);
+
+    if (!vipTrackIds.length) return;
+
+    const unresolvedIds = vipTrackIds.filter((id) => !trackAccessStates[id]);
+    if (!unresolvedIds.length) return;
+
+    let active = true;
+
+    void Promise.allSettled(unresolvedIds.map((id) => fetchMusicAccessStatus(id)))
+      .then((results) => {
+        if (!active) return;
+
+        setTrackAccessStates((prev) => {
+          const next = { ...prev };
+
+          results.forEach((result, index) => {
+            if (result.status !== "fulfilled" || !result.value) return;
+
+            const targetId = unresolvedIds[index];
+            if (!targetId) return;
+
+            next[targetId] = {
+              unlocked: Boolean(result.value.unlocked),
+              unlockSource: result.value.unlockSource || null,
+            };
+          });
+
+          return next;
+        });
+      })
+      .catch(() => {
+        // Keep feed usable even if access checks fail.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken, trackAccessStates, tracks]);
 
   useEffect(() => {
     const target = sentinelRef.current;
@@ -295,6 +351,27 @@ export default function MusicPage() {
 
   // ─── Render helpers ───────────────────────────
 
+  const renderLockBadge = (track: MusicTrack) => {
+    if (track.accessType !== "vip" || track.unlockPrice <= 0) return null;
+
+    const isUnlocked = Boolean(trackAccessStates[track.id]?.unlocked);
+
+    if (isUnlocked) {
+      return (
+        <div className="pointer-events-none absolute right-2 top-2 z-20 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/95 text-white shadow-sm">
+          <LockOpen className="h-3.5 w-3.5" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="pointer-events-none absolute right-2 top-2 z-20 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-white backdrop-blur">
+        <Lock className="h-3 w-3" />
+        <span>{track.unlockPrice} cr</span>
+      </div>
+    );
+  };
+
   const renderSingleCard = (track: MusicTrack) => {
     const active = isMusicTrackActive(track, currentTrack);
     const playing = active && isPlaying;
@@ -309,6 +386,8 @@ export default function MusicPage() {
             : "border-slate-200 dark:border-[#2d2d2d]"
         }`}
       >
+        {renderLockBadge(track)}
+
         <div className="flex min-h-[8rem] items-stretch gap-4 sm:min-h-[9rem] sm:gap-5 lg:min-h-[10rem]">
           <div className="relative w-24 shrink-0 self-stretch overflow-hidden rounded-xl bg-slate-100 sm:w-28 lg:w-32 dark:bg-[#242424]">
             <Image
@@ -435,6 +514,8 @@ export default function MusicPage() {
             : "border-slate-200 dark:border-[#2d2d2d]"
         }`}
       >
+        {renderLockBadge(track)}
+
         <div className="flex min-h-[8rem] items-stretch gap-4 p-4 sm:min-h-[9rem] sm:gap-5 lg:min-h-[10rem]">
           <div className="relative w-24 shrink-0 self-stretch overflow-hidden rounded-xl bg-slate-100 sm:w-28 lg:w-32 dark:bg-[#242424]">
             <Image

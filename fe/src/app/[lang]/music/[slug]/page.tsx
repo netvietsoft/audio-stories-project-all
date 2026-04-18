@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   ArrowDown,
@@ -16,6 +16,8 @@ import {
   Home,
   ListMusic,
   Loader2,
+  Lock,
+  LockOpen,
   MessageCircle,
   Pause,
   Pencil,
@@ -54,6 +56,7 @@ import {
   toSingleQueueTrack,
 } from "@/lib/music/music-queue";
 import { useAudioStore } from "@/stores/audio-store";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
 import { useUserStore } from "@/stores/user-store";
 import type { MusicApiItem, MusicTrack } from "@/types/music";
 
@@ -167,12 +170,12 @@ function WaveformTimeline({
 }
 
 export default function MusicDetailPage() {
-  const router = useRouter();
   const params = useParams<{ lang?: string; slug?: string }>();
   const musicSlug = Array.isArray(params?.slug) ? params?.slug[0] : params?.slug;
   const currentLang = Array.isArray(params?.lang) ? params?.lang[0] : params?.lang;
   const t = useTranslations("MusicDetailPage");
 
+  const openLogin = useAuthModalStore((state) => state.openLogin);
   const user = useUserStore((state) => state.user);
   const setUser = useUserStore((state) => state.setUser);
   const accessToken = useUserStore((state) => state.accessToken);
@@ -199,6 +202,9 @@ export default function MusicDetailPage() {
     unlockSource: null,
   });
   const [accessNotice, setAccessNotice] = useState<{ tone: "error" | "success" | "info"; text: string } | null>(null);
+  const [showUnlockConfirmModal, setShowUnlockConfirmModal] = useState(false);
+  const [playlistTrackAccess, setPlaylistTrackAccess] = useState<Record<string, DetailAccessState>>({});
+  const [relatedTrackAccess, setRelatedTrackAccess] = useState<Record<string, DetailAccessState>>({});
 
   const trackId = track?.id;
   const trackAccessType = track?.accessType;
@@ -295,6 +301,7 @@ export default function MusicDetailPage() {
 
   useEffect(() => {
     setAccessNotice(null);
+    setShowUnlockConfirmModal(false);
   }, [trackId]);
 
   useEffect(() => {
@@ -356,12 +363,154 @@ export default function MusicDetailPage() {
     };
   }, [accessToken, trackAccessType, trackId, trackUnlockPrice]);
 
-  const redirectToLogin = useCallback(() => {
-    const locale = currentLang || "vi";
-    const fallbackPath = `/${locale}/music/${musicSlug || ""}`;
-    const currentPath = typeof window !== "undefined" ? window.location.pathname : fallbackPath;
-    router.push(`/${locale}/login?next=${encodeURIComponent(currentPath)}`);
-  }, [currentLang, musicSlug, router]);
+  useEffect(() => {
+    if (!track || track.contentType !== "playlist") {
+      setPlaylistTrackAccess({});
+      return;
+    }
+
+    const baseAccessState: Record<string, DetailAccessState> = {};
+
+    track.playlistTracks.forEach((child) => {
+      const childAccessType = child.accessType === "vip" ? "vip" : "free";
+      const childUnlockPrice = Math.max(0, Math.floor(child.unlockPrice || 0));
+      const childLocked = childAccessType === "vip" && childUnlockPrice > 0;
+
+      baseAccessState[child.id] = {
+        accessType: childAccessType,
+        unlockPrice: childUnlockPrice,
+        unlocked: !childLocked,
+        unlockSource: childLocked ? null : "free",
+      };
+    });
+
+    if (!accessToken) {
+      setPlaylistTrackAccess(baseAccessState);
+      return;
+    }
+
+    const lockedChildIds = track.playlistTracks
+      .filter((child) => child.accessType === "vip" && Math.max(0, Math.floor(child.unlockPrice || 0)) > 0)
+      .map((child) => child.id);
+
+    if (!lockedChildIds.length) {
+      setPlaylistTrackAccess(baseAccessState);
+      return;
+    }
+
+    let active = true;
+
+    void Promise.allSettled(lockedChildIds.map((id) => fetchMusicAccessStatus(id)))
+      .then((results) => {
+        if (!active) return;
+
+        const nextState = { ...baseAccessState };
+
+        results.forEach((result, index) => {
+          const childId = lockedChildIds[index];
+
+          if (result.status !== "fulfilled" || !result.value || !childId) return;
+
+          const status = result.value;
+          nextState[childId] = {
+            accessType: status.accessType === "vip" ? "vip" : "free",
+            unlockPrice: Math.max(0, Math.floor(status.unlockPrice || 0)),
+            unlocked: Boolean(status.unlocked),
+            unlockSource: status.unlockSource || null,
+          };
+        });
+
+        setPlaylistTrackAccess(nextState);
+      })
+      .catch(() => {
+        if (active) {
+          setPlaylistTrackAccess(baseAccessState);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken, track]);
+
+  useEffect(() => {
+    if (!relatedTracks.length) {
+      setRelatedTrackAccess({});
+      return;
+    }
+
+    const baseAccessState: Record<string, DetailAccessState> = {};
+
+    relatedTracks.forEach((item) => {
+      const accessType = item.accessType === "vip" ? "vip" : "free";
+      const unlockPrice = Math.max(0, Math.floor(item.unlockPrice || 0));
+      const locked = accessType === "vip" && unlockPrice > 0;
+
+      baseAccessState[item.id] = {
+        accessType,
+        unlockPrice,
+        unlocked: !locked,
+        unlockSource: locked ? null : "free",
+      };
+    });
+
+    if (!accessToken) {
+      setRelatedTrackAccess(baseAccessState);
+      return;
+    }
+
+    const lockedIds = relatedTracks
+      .filter((item) => item.accessType === "vip" && Math.max(0, Math.floor(item.unlockPrice || 0)) > 0)
+      .map((item) => item.id);
+
+    if (!lockedIds.length) {
+      setRelatedTrackAccess(baseAccessState);
+      return;
+    }
+
+    let active = true;
+
+    void Promise.allSettled(lockedIds.map((id) => fetchMusicAccessStatus(id)))
+      .then((results) => {
+        if (!active) return;
+
+        const nextState = { ...baseAccessState };
+
+        results.forEach((result, index) => {
+          const targetId = lockedIds[index];
+          if (result.status !== "fulfilled" || !result.value || !targetId) return;
+
+          const status = result.value;
+          nextState[targetId] = {
+            accessType: status.accessType === "vip" ? "vip" : "free",
+            unlockPrice: Math.max(0, Math.floor(status.unlockPrice || 0)),
+            unlocked: Boolean(status.unlocked),
+            unlockSource: status.unlockSource || null,
+          };
+        });
+
+        setRelatedTrackAccess(nextState);
+      })
+      .catch(() => {
+        if (active) {
+          setRelatedTrackAccess(baseAccessState);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken, relatedTracks]);
+
+  const promptLogin = useCallback(() => {
+    setAccessNotice({
+      tone: "info",
+      text: currentLang === "en"
+        ? "Please log in to unlock this track."
+        : "Vui lòng đăng nhập để mở khóa bài này.",
+    });
+    openLogin();
+  }, [currentLang, openLogin]);
 
   const isTrackLocked = accessState.accessType === "vip" && accessState.unlockPrice > 0 && !accessState.unlocked;
 
@@ -369,13 +518,7 @@ export default function MusicDetailPage() {
     if (!track || !isTrackLocked) return true;
 
     if (!accessToken) {
-      setAccessNotice({
-        tone: "info",
-        text: currentLang === "en"
-          ? "Please log in to unlock this track."
-          : "Vui lòng đăng nhập để mở khóa bài này.",
-      });
-      redirectToLogin();
+      promptLogin();
       return false;
     }
 
@@ -386,20 +529,14 @@ export default function MusicDetailPage() {
         : "Bài này đang bị khóa. Hãy mở khóa trước khi phát.",
     });
     return false;
-  }, [accessToken, currentLang, isTrackLocked, redirectToLogin, track]);
+  }, [accessToken, currentLang, isTrackLocked, promptLogin, track]);
 
-  const handleUnlockCurrentTrack = async () => {
-    if (!track) return;
+  const handleUnlockCurrentTrack = async (): Promise<boolean> => {
+    if (!track) return false;
 
     if (!accessToken) {
-      setAccessNotice({
-        tone: "info",
-        text: currentLang === "en"
-          ? "Please log in to unlock this track."
-          : "Vui lòng đăng nhập để mở khóa bài này.",
-      });
-      redirectToLogin();
-      return;
+      promptLogin();
+      return false;
     }
 
     setIsUnlocking(true);
@@ -415,6 +552,27 @@ export default function MusicDetailPage() {
         unlockSource: result?.unlockSource || "track",
       }));
 
+      if (track.contentType === "playlist") {
+        setPlaylistTrackAccess((prev) => {
+          const next = { ...prev };
+
+          track.playlistTracks.forEach((child) => {
+            const previous = next[child.id];
+            const accessType = previous?.accessType || (child.accessType === "vip" ? "vip" : "free");
+            const unlockPrice = previous?.unlockPrice ?? Math.max(0, Math.floor(child.unlockPrice || 0));
+
+            next[child.id] = {
+              accessType,
+              unlockPrice,
+              unlocked: true,
+              unlockSource: "playlist",
+            };
+          });
+
+          return next;
+        });
+      }
+
       if (user && typeof result?.balance === "number") {
         setUser({ ...user, credits: result.balance });
       }
@@ -426,6 +584,7 @@ export default function MusicDetailPage() {
           ? `Unlocked successfully${chargedCredits > 0 ? ` (-${chargedCredits} credits)` : ""}.`
           : `Mở khóa thành công${chargedCredits > 0 ? ` (-${chargedCredits} credits)` : ""}.`,
       });
+      return true;
     } catch (error) {
       setAccessNotice({
         tone: "error",
@@ -434,8 +593,16 @@ export default function MusicDetailPage() {
           currentLang === "en" ? "Unable to unlock this track." : "Không thể mở khóa bài này.",
         ),
       });
+      return false;
     } finally {
       setIsUnlocking(false);
+    }
+  };
+
+  const handleConfirmUnlock = async () => {
+    const success = await handleUnlockCurrentTrack();
+    if (success) {
+      setShowUnlockConfirmModal(false);
     }
   };
 
@@ -658,8 +825,26 @@ export default function MusicDetailPage() {
     playTrack(toSingleQueueTrack(item), [toSingleQueueTrack(item)]);
   };
 
-  const handlePlayPlaylistChild = (parent: MusicTrack, index: number) => {
-    if (parent.id === track?.id && !ensureCurrentTrackPlayable()) {
+  const handlePlayPlaylistChild = (parent: MusicTrack, index: number, childAccessState?: DetailAccessState) => {
+    const isChildLocked = Boolean(
+      childAccessState
+      && childAccessState.accessType === "vip"
+      && childAccessState.unlockPrice > 0
+      && !childAccessState.unlocked,
+    );
+
+    if (isChildLocked) {
+      if (!accessToken) {
+        promptLogin();
+        return;
+      }
+
+      setAccessNotice({
+        tone: "error",
+        text: currentLang === "en"
+          ? `This track is locked (${childAccessState?.unlockPrice || 0} credits).`
+          : `Bài này đang bị khóa (${childAccessState?.unlockPrice || 0} credits).`,
+      });
       return;
     }
 
@@ -713,7 +898,7 @@ export default function MusicDetailPage() {
     return (
       <div className="mx-auto max-w-[1280px] space-y-6 pb-40">
         <div className="h-64 animate-pulse rounded-3xl bg-slate-100 dark:bg-[#1e1e1e]" />
-        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
           <div className="h-96 animate-pulse rounded-3xl bg-slate-100 dark:bg-[#1e1e1e]" />
           <div className="h-96 animate-pulse rounded-3xl bg-slate-100 dark:bg-[#1e1e1e]" />
         </div>
@@ -1042,11 +1227,11 @@ export default function MusicDetailPage() {
                               ? "Please log in to unlock this track."
                               : "Vui lòng đăng nhập để mở khóa bài này.",
                           });
-                          redirectToLogin();
+                          promptLogin();
                           return;
                         }
 
-                        void handleUnlockCurrentTrack();
+                        setShowUnlockConfirmModal(true);
                       }}
                       disabled={isUnlocking || isCheckingAccess}
                       className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-orange-600 disabled:opacity-60"
@@ -1057,7 +1242,8 @@ export default function MusicDetailPage() {
                         : (currentLang === "en" ? "Login to unlock" : "Đăng nhập để mở khóa")}
                     </button>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      <LockOpen className="h-3 w-3" />
                       {currentLang === "en" ? "Unlocked" : "Đã mở khóa"}
                     </span>
                   )}
@@ -1141,9 +1327,33 @@ export default function MusicDetailPage() {
               const target = queue[index];
               const isCurrent = target ? currentTrack?.id === target.id : false;
               const isChildPlaying = isCurrent && isPlaying;
+              const fallbackChildAccessType = child.accessType === "vip" ? "vip" : "free";
+              const fallbackChildUnlockPrice = Math.max(0, Math.floor(child.unlockPrice || 0));
+              const childAccessState = playlistTrackAccess[child.id] || {
+                accessType: fallbackChildAccessType,
+                unlockPrice: fallbackChildUnlockPrice,
+                unlocked: !(fallbackChildAccessType === "vip" && fallbackChildUnlockPrice > 0),
+                unlockSource: fallbackChildAccessType === "vip" && fallbackChildUnlockPrice > 0 ? null : "free",
+              };
+              const isChildLocked = childAccessState.accessType === "vip"
+                && childAccessState.unlockPrice > 0
+                && !childAccessState.unlocked;
+              const isChildUnlockedVip = childAccessState.accessType === "vip"
+                && childAccessState.unlockPrice > 0
+                && childAccessState.unlocked;
 
               return (
-                <div key={`${track.id}-${child.id}-${index}`} className="rounded-lg border border-slate-100 p-3 transition hover:border-pink-300 dark:border-[#2f2f2f] dark:hover:border-pink-800/50">
+                <div key={`${track.id}-${child.id}-${index}`} className="relative rounded-lg border border-slate-100 p-3 transition hover:border-pink-300 dark:border-[#2f2f2f] dark:hover:border-pink-800/50">
+                  {isChildLocked ? (
+                    <span className="pointer-events-none absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-white backdrop-blur">
+                      <Lock className="h-3 w-3" /> {childAccessState.unlockPrice} cr
+                    </span>
+                  ) : isChildUnlockedVip ? (
+                    <span className="pointer-events-none absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/95 text-white shadow-sm">
+                      <LockOpen className="h-3.5 w-3.5" />
+                    </span>
+                  ) : null}
+
                   <div className="flex items-start gap-3 sm:gap-4">
                     <span className="mt-1 shrink-0 text-xs font-bold text-slate-400 dark:text-zinc-500">{index + 1}</span>
                     <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-slate-100 dark:bg-[#252525]">
@@ -1180,10 +1390,18 @@ export default function MusicDetailPage() {
                     </div>
 
                     <button
-                      onClick={() => handlePlayPlaylistChild(track, index)}
-                      className="mt-1 shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-pink-500 text-white transition hover:bg-pink-600"
+                      onClick={() => handlePlayPlaylistChild(track, index, childAccessState)}
+                      className={`mt-1 shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full transition ${
+                        isChildLocked
+                          ? "bg-slate-200 text-slate-500 dark:bg-[#2a2a2a] dark:text-zinc-500"
+                          : "bg-pink-500 text-white hover:bg-pink-600"
+                      }`}
                     >
-                      {isChildPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
+                      {isChildLocked
+                        ? <Lock className="h-3.5 w-3.5" />
+                        : isChildPlaying
+                          ? <Pause className="h-3.5 w-3.5" />
+                          : <Play className="ml-0.5 h-3.5 w-3.5" />}
                     </button>
                   </div>
                 </div>
@@ -1194,7 +1412,7 @@ export default function MusicDetailPage() {
       ) : null}
 
       {/* Comments + Related */}
-      <section className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_400px]">
         {/* Comments */}
         <article className="space-y-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 dark:border-[#2c2c2c] dark:bg-[#171717]">
           <div className="flex items-center justify-between">
@@ -1311,9 +1529,33 @@ export default function MusicDetailPage() {
                   const isRelPlaying = isRelActive && isPlaying;
                   const targetTracks = item.contentType === "playlist" ? toPlaylistQueue(item) : [toSingleQueueTrack(item)];
                   const targetId = item.contentType === "playlist" ? `playlist:${item.id}` : item.id;
+                  const fallbackRelatedAccessType = item.accessType === "vip" ? "vip" : "free";
+                  const fallbackRelatedUnlockPrice = Math.max(0, Math.floor(item.unlockPrice || 0));
+                  const relatedAccessState = relatedTrackAccess[item.id] || {
+                    accessType: fallbackRelatedAccessType,
+                    unlockPrice: fallbackRelatedUnlockPrice,
+                    unlocked: !(fallbackRelatedAccessType === "vip" && fallbackRelatedUnlockPrice > 0),
+                    unlockSource: fallbackRelatedAccessType === "vip" && fallbackRelatedUnlockPrice > 0 ? null : "free",
+                  };
+                  const isRelatedLocked = relatedAccessState.accessType === "vip"
+                    && relatedAccessState.unlockPrice > 0
+                    && !relatedAccessState.unlocked;
+                  const isRelatedUnlockedVip = relatedAccessState.accessType === "vip"
+                    && relatedAccessState.unlockPrice > 0
+                    && relatedAccessState.unlocked;
 
                   return (
-                    <div key={item.id} className="group rounded-2xl border border-slate-200 p-2.5 transition hover:border-pink-300 dark:border-[#2f2f2f] dark:hover:border-pink-800/50">
+                    <div key={item.id} className="group relative rounded-2xl border border-slate-200 p-2.5 transition hover:border-pink-300 dark:border-[#2f2f2f] dark:hover:border-pink-800/50">
+                      {isRelatedLocked ? (
+                        <span className="pointer-events-none absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-white backdrop-blur">
+                          <Lock className="h-3 w-3" /> {relatedAccessState.unlockPrice} cr
+                        </span>
+                      ) : isRelatedUnlockedVip ? (
+                        <span className="pointer-events-none absolute right-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/95 text-white shadow-sm">
+                          <LockOpen className="h-3.5 w-3.5" />
+                        </span>
+                      ) : null}
+
                       <div className="flex items-center gap-3">
                         <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-slate-100 dark:bg-[#242424]">
                           <Image
@@ -1333,18 +1575,18 @@ export default function MusicDetailPage() {
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <Link href={`/music/${item.slug}`} className="block truncate text-sm font-bold text-slate-800 hover:text-pink-600 dark:text-zinc-100">
+                          <Link href={`/music/${item.slug}`} className="block line-clamp-2 text-sm font-bold leading-snug text-slate-800 hover:text-pink-600 dark:text-zinc-100">
                             {item.title}
                           </Link>
-                          <p className="truncate text-xs text-slate-500 dark:text-zinc-400">{item.artist}</p>
-                          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500 dark:text-zinc-400">
+                          <p className="mt-0.5 line-clamp-1 text-xs text-slate-500 dark:text-zinc-400">{item.artist}</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500 dark:text-zinc-400">
                             <span className="inline-flex items-center gap-0.5"><Headphones className="h-3 w-3" /> {formatCompactCount(item.playCount)}</span>
                             <span className="inline-flex items-center gap-0.5"><Heart className="h-3 w-3" /> {formatCompactCount(item.likeCount)}</span>
                             <span className="inline-flex items-center gap-0.5"><MessageCircle className="h-3 w-3" /> {formatCompactCount(item.commentCount)}</span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100">
+                        <div className="flex items-center gap-1 sm:absolute sm:right-2.5 sm:top-1/2 sm:-translate-y-1/2 sm:opacity-0 sm:transition sm:duration-200 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                           <MusicLikeButton musicId={item.id} initialLiked={false} likeCount={item.likeCount} compact />
                           <PlayNextButton
                             targetId={targetId}
@@ -1367,6 +1609,73 @@ export default function MusicDetailPage() {
           </article>
         </aside>
       </section>
+
+      {showUnlockConfirmModal && isTrackLocked ? (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label={currentLang === "en" ? "Close unlock confirmation" : "Đóng xác nhận mở khóa"}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              if (isUnlocking) return;
+              setShowUnlockConfirmModal(false);
+            }}
+          />
+
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-[#353535] dark:bg-[#1b1b1b]">
+            <button
+              type="button"
+              onClick={() => {
+                if (isUnlocking) return;
+                setShowUnlockConfirmModal(false);
+              }}
+              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-60 dark:text-zinc-400 dark:hover:bg-[#2b2b2b]"
+              disabled={isUnlocking}
+              aria-label={currentLang === "en" ? "Close" : "Đóng"}
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="pr-8">
+              <p className="text-lg font-black text-slate-900 dark:text-zinc-100">
+                {currentLang === "en" ? "Confirm unlock" : "Xác nhận mở khóa"}
+              </p>
+              <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">
+                {currentLang === "en"
+                  ? `You are about to spend ${accessState.unlockPrice} credits to unlock \"${track.title}\".`
+                  : `Bạn sắp dùng ${accessState.unlockPrice} credits để mở khóa \"${track.title}\".`}
+              </p>
+              {track.contentType === "playlist" ? (
+                <p className="mt-2 text-xs font-semibold text-orange-600 dark:text-orange-300">
+                  {currentLang === "en"
+                    ? "This will unlock the current playlist and all tracks inside it."
+                    : "Thao tác này sẽ mở khóa playlist hiện tại và toàn bộ bài trong playlist này."}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowUnlockConfirmModal(false)}
+                className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-700 transition hover:bg-slate-100 disabled:opacity-60 dark:border-[#414141] dark:text-zinc-200 dark:hover:bg-[#282828]"
+                disabled={isUnlocking}
+              >
+                {currentLang === "en" ? "Cancel" : "Hủy"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmUnlock()}
+                className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-orange-600 disabled:opacity-60"
+                disabled={isUnlocking || isCheckingAccess}
+              >
+                {isUnlocking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+                {currentLang === "en" ? "Confirm payment" : "Xác nhận thanh toán"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

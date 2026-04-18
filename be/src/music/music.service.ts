@@ -17,6 +17,8 @@ type PlaylistTrackSummary = {
   slug: string;
   title: string;
   artist: string;
+  accessType: MusicAccessType;
+  unlockPrice: number;
   thumbnailUrl: string | null;
   audioUrl: string;
   audioDuration: number | null;
@@ -502,6 +504,8 @@ export class MusicService {
             slug: true,
             title: true,
             artist: true,
+            accessType: true,
+            unlockPrice: true,
             thumbnailUrl: true,
             audioUrl: true,
             audioDuration: true,
@@ -527,6 +531,8 @@ export class MusicService {
           slug: item.slug,
           title: item.title,
           artist: item.artist,
+          accessType: item.accessType,
+          unlockPrice: item.unlockPrice,
           thumbnailUrl: item.thumbnailUrl,
           audioUrl: item.audioUrl,
           audioDuration: item.audioDuration,
@@ -675,6 +681,8 @@ export class MusicService {
         slug: true,
         title: true,
         artist: true,
+        accessType: true,
+        unlockPrice: true,
         thumbnailUrl: true,
         audioUrl: true,
         audioDuration: true,
@@ -701,6 +709,8 @@ export class MusicService {
         slug: item.slug,
         title: item.title,
         artist: item.artist,
+        accessType: item.accessType,
+        unlockPrice: item.unlockPrice,
         thumbnailUrl: item.thumbnailUrl,
         audioUrl: item.audioUrl,
         audioDuration: item.audioDuration,

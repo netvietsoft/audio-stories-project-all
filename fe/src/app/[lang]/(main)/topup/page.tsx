@@ -14,6 +14,7 @@ import {
     Zap,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api/api-client';
+import { useAuth } from '@/auth/auth-provider';
 import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector';
 import type { PaymentMethod } from '@/components/payment/PaymentMethodSelector';
 import VietQRPayment from '@/components/payment/VietQRPayment';
@@ -59,6 +60,7 @@ export default function TopupPage() {
     
     const user = useUserStore((state) => state.user);
     const openLogin = useAuthModalStore((state) => state.openLogin);
+    const { refreshProfile } = useAuth();
 
     useEffect(() => {
         fetchPackages();
@@ -574,7 +576,15 @@ export default function TopupPage() {
                                 expiresAt={vietqrData.expires_at}
                                 onSuccess={() => {
                                     setShowPaymentModal(false);
-                                    window.location.href = `/${locale}/topup/success`;
+                                    (async () => {
+                                        try {
+                                            await refreshProfile();
+                                        } catch (e) {
+                                            // ignore
+                                        } finally {
+                                            window.location.href = `/${locale}/topup/success`;
+                                        }
+                                    })();
                                 }}
                                 onCancel={() => {
                                     setShowPaymentModal(false);

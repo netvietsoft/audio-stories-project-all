@@ -52,11 +52,19 @@ const normalizePlaylistTracks = (value: unknown): MusicPlaylistTrackSummary[] =>
       const row = item as Partial<MusicPlaylistTrackSummary>;
       if (!row.id || !row.audioUrl) return null;
 
+      const accessType = row.accessType === "vip" ? "vip" : "free";
+      const unlockPriceRaw = row.unlockPrice;
+      const unlockPrice = typeof unlockPriceRaw === "number" && Number.isFinite(unlockPriceRaw)
+        ? Math.max(0, Math.floor(unlockPriceRaw))
+        : 0;
+
       return {
         id: row.id,
         slug: typeof row.slug === "string" && row.slug.trim() ? row.slug.trim() : row.id,
         title: (row.title || "").trim() || "Untitled",
         artist: (row.artist || "").trim() || "Unknown artist",
+        accessType,
+        unlockPrice,
         thumbnailUrl: row.thumbnailUrl || null,
         audioUrl: row.audioUrl,
         audioDuration: typeof row.audioDuration === "number" ? row.audioDuration : null,

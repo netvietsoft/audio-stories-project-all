@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Settings2, Timer, Volume2, VolumeX } from "lucide-react";
+import { Timer, Volume2, VolumeX } from "lucide-react";
 
 import type { RepeatMode } from "@/lib/player/playback-modes";
 import ShuffleRepeatControls from "@/components/player/ShuffleRepeatControls";
@@ -159,6 +159,33 @@ export default function StoryAudioPlayerPanel({
               onForward10={onForward10}
               onNext={onNext}
             />
+          </div>
+
+          <div className="mt-1 flex w-full min-w-0 items-center justify-center gap-1.5 sm:gap-2">
+            <div className="hidden min-w-0 items-center gap-1.5 sm:flex">
+              <button onClick={onToggleMute} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white shadow-sm transition hover:bg-pink-600 dark:bg-pink-500 dark:text-white dark:hover:bg-pink-400">{isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}</button>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={volume}
+                onChange={(event) => onVolumeChange(Number(event.target.value))}
+                className="volume-slider h-1.5 min-w-0 max-w-24 flex-1 sm:max-w-28 md:max-w-32 accent-pink-600"
+                style={{
+                  WebkitAppearance: "none",
+                  appearance: "none",
+                  background:
+                    "linear-gradient(to right, rgb(236 72 153) 0%, rgb(236 72 153) " +
+                    volume * 100 +
+                    "%, rgb(209 213 219) " +
+                    volume * 100 +
+                    "%, rgb(209 213 219) 100%)",
+                  borderRadius: "9999px",
+                  outline: "none",
+                }}
+              />
+            </div>
 
             <button
               onClick={onCyclePlaybackRate}
@@ -167,31 +194,6 @@ export default function StoryAudioPlayerPanel({
             >
               {playbackRate}x
             </button>
-          </div>
-
-          <div className="mt-1 flex w-full min-w-0 items-center justify-center gap-1.5 sm:gap-2">
-            <button onClick={onToggleMute} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white shadow-sm transition hover:bg-pink-600 dark:bg-pink-500 dark:text-white dark:hover:bg-pink-400">{isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}</button>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={volume}
-              onChange={(event) => onVolumeChange(Number(event.target.value))}
-              className="volume-slider h-1.5 min-w-0 max-w-24 flex-1 sm:max-w-28 md:max-w-32 accent-pink-600"
-              style={{
-                WebkitAppearance: "none",
-                appearance: "none",
-                background:
-                  "linear-gradient(to right, rgb(236 72 153) 0%, rgb(236 72 153) " +
-                  volume * 100 +
-                  "%, rgb(209 213 219) " +
-                  volume * 100 +
-                  "%, rgb(209 213 219) 100%)",
-                borderRadius: "9999px",
-                outline: "none",
-              }}
-            />
 
             <ShuffleRepeatControls
               isShuffle={isShuffle}
@@ -204,7 +206,7 @@ export default function StoryAudioPlayerPanel({
               onClick={onToggleSettings}
               className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-300 bg-gray-100 text-gray-600 shadow-sm transition hover:bg-gray-200 dark:border-[#303133] dark:bg-[#3a3b3c] dark:text-gray-300 dark:hover:bg-[#464749]"
             >
-              <Settings2 className="h-4 w-4" />
+              <Timer className="h-4 w-4" />
             </button>
           </div>
         </div>

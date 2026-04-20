@@ -564,16 +564,18 @@ export default function GlobalPlayer() {
         </div>
 
         <div className={`${isExpandedMobile ? "flex" : "hidden"} items-center justify-center gap-2 md:flex md:mx-auto md:w-[82%] md:justify-center lg:w-[68%]`}>
-          <VolumeControl
-            volume={volume}
-            isMuted={isMuted}
-            disabled={!hasTrack}
-            accentRgb={accentRgb}
-            onVolumeChange={(v) => setVolume(clampVolume(v))}
-            onToggleMute={() => toggleMute()}
-            buttonClassName={`rounded-full p-2 transition ${ghostControlClass}`}
-            thumbClassName={thumbClassName}
-          />
+          <div className="hidden md:flex md:items-center md:gap-2">
+            <VolumeControl
+              volume={volume}
+              isMuted={isMuted}
+              disabled={!hasTrack}
+              accentRgb={accentRgb}
+              onVolumeChange={(v) => setVolume(clampVolume(v))}
+              onToggleMute={() => toggleMute()}
+              buttonClassName={`rounded-full p-2 transition ${ghostControlClass}`}
+              thumbClassName={thumbClassName}
+            />
+          </div>
 
           <SleepTimerControl
             disabled={!hasTrack}

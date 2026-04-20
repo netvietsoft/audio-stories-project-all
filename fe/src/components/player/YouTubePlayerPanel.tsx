@@ -354,7 +354,7 @@ export default function YouTubePlayerPanel({
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:justify-between">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:flex-nowrap sm:justify-between">
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
@@ -387,7 +387,7 @@ export default function YouTubePlayerPanel({
                 </button>
               </div>
 
-              <div className="flex min-w-0 items-center gap-2">
+              <div className="hidden min-w-0 items-center gap-2 sm:flex">
                 <button
                   type="button"
                   onClick={toggleMute}
@@ -409,25 +409,25 @@ export default function YouTubePlayerPanel({
                   thumbClassName="[&::-webkit-slider-thumb]:bg-pink-500 [&::-moz-range-thumb]:bg-pink-500"
                   accentRgb="236 72 153"
                 />
+              </div>
 
-                <div className="flex items-center gap-1.5">
-                  <SpeedControl
-                    playbackRate={playbackRate}
-                    disabled={!canInteract}
-                    onCycleSpeed={cyclePlaybackRate}
-                    label={labels.playbackSpeed}
-                  />
-                  <SleepTimerControl
-                    disabled={!canInteract}
-                    onSleepTriggered={() => {
-                      const player = playerRef.current;
-                      if (!player) return;
-                      player.pauseVideo();
-                      setIsPlaying(false);
-                    }}
-                    label={labels.sleepTimer}
-                  />
-                </div>
+              <div className="flex items-center gap-1.5">
+                <SpeedControl
+                  playbackRate={playbackRate}
+                  disabled={!canInteract}
+                  onCycleSpeed={cyclePlaybackRate}
+                  label={labels.playbackSpeed}
+                />
+                <SleepTimerControl
+                  disabled={!canInteract}
+                  onSleepTriggered={() => {
+                    const player = playerRef.current;
+                    if (!player) return;
+                    player.pauseVideo();
+                    setIsPlaying(false);
+                  }}
+                  label={labels.sleepTimer}
+                />
               </div>
             </div>
           </div>

@@ -103,10 +103,10 @@ export default function StoryAudioPlayerPanel({
   const progressPercent = Math.min((currentTime / (duration || 1)) * 100, 100);
 
   return (
-    <section className="rounded-[5px] border border-gray-300 bg-white p-2 sm:p-3 md:p-4 dark:border-[#303133] dark:bg-[#242526]">
+    <section className="rounded-[5px] border border-gray-300 bg-white p-2 sm:p-2.5 md:p-3 dark:border-[#303133] dark:bg-[#242526]">
       <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{heading}</h2>
 
-      <div className="mt-4 grid grid-cols-[88px_minmax(0,1fr)] gap-2 sm:grid-cols-[104px_minmax(0,1fr)] lg:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
+      <div className="mt-3 grid grid-cols-[88px_minmax(0,1fr)] gap-2 sm:grid-cols-[104px_minmax(0,1fr)] lg:grid-cols-[128px_minmax(0,1fr)] xl:grid-cols-[148px_minmax(0,1fr)]">
         <div className="flex min-w-0 shrink-0 flex-col items-center justify-center gap-2">
           <div
             className={`relative h-16 w-16 overflow-hidden rounded-full border-4 border-pink-200 dark:border-pink-900 sm:h-20 sm:w-20 lg:h-28 lg:w-28 ${
@@ -210,9 +210,9 @@ export default function StoryAudioPlayerPanel({
         </div>
       </div>
 
-      <div className="mt-3 space-y-3">
+      <div className="mt-2.5 space-y-2.5">
         {showSettings ? (
-          <div className="rounded-xl bg-white p-3 shadow-sm dark:bg-[#242526]">
+          <div className="rounded-xl bg-white p-2.5 shadow-sm dark:bg-[#242526]">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{labels.sleepTimer}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {[15, 30, 60].map((minute) => (

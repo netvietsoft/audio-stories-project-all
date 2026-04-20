@@ -41,6 +41,7 @@ import { useShareAction } from "@/hooks/use-share-action";
 import { cycleRepeatMode } from "@/lib/player/playback-modes";
 import { resolveNextPlaybackRate } from "@/lib/player/control-helpers";
 import StoryAudioPlayerPanel from "@/components/player/StoryAudioPlayerPanel";
+import YouTubePlayerPanel from "@/components/player/YouTubePlayerPanel";
 import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscriptionButton";
 
 const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
@@ -1629,7 +1630,7 @@ export default function StoryChapterClient() {
                       placeholder={t("searchChapterPlaceholder")}
                       className="mb-2 w-full rounded-md bg-white px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-pink-500 dark:bg-[#3a3b3c] dark:text-white"
                     />
-                    <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
+                    <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
                       {/* Branch navigation option */}
                       {selectedVariant?.nextChapterId && (() => {
                         const targetChapter = story.chapters.find((c) => c.id === selectedVariant.nextChapterId);
@@ -1750,34 +1751,26 @@ export default function StoryChapterClient() {
 
           {/* Side Panel 3: YouTube Player */}
           {selectedChapter.youtubeVideoId ? (
-            <section className="rounded-2xl bg-white p-3 sm:p-4 md:p-6 dark:bg-[#242526]">
-              <h2 className="mb-3 text-base font-semibold text-gray-900 dark:text-gray-100">{t("youtubePlayer")}</h2>
-              {chapterIsLocked ? (
-                <div className="rounded-xl bg-amber-50/70 p-4 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-                  <p className="inline-flex items-center gap-1 font-semibold"><Lock className="h-4 w-4" /> {t("chapterLocked")}</p>
-                  <p className="mt-1">{lockReasonLabel}</p>
-                  <button
-                    onClick={openUnlockModal}
-                    className="mt-3 rounded-md bg-pink-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-pink-700"
-                  >
-                    {t("unlockYoutube")}
-                  </button>
-                </div>
-              ) : (
-                <div className="overflow-hidden rounded-xl bg-white dark:bg-[#242526]">
-                  <iframe
-                    title="YouTube audio"
-                    className="aspect-video w-full"
-                    src={`https://www.youtube.com/embed/${selectedChapter.youtubeVideoId}`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-              )}
+            <div className="space-y-3">
+              <YouTubePlayerPanel
+                videoId={selectedChapter.youtubeVideoId}
+                title={t("youtubePlayer")}
+                locked={chapterIsLocked}
+                lockReasonLabel={lockReasonLabel}
+                unlockLabel={t("unlockYoutube")}
+                onUnlockRequest={openUnlockModal}
+                labels={{
+                  playbackSpeed: t("playbackSpeed"),
+                  sleepTimer: t("sleepTimer"),
+                  cancelSleepTimer: t("cancelSleepTimer"),
+                  customMinutesPlaceholder: t("customMinutesPlaceholder"),
+                  setTimer: t("setTimer"),
+                }}
+              />
 
               {/* Social Links */}
               <SocialLinks />
-            </section>
+            </div>
           ) : null}
 
         </div>{/* END RIGHT STICKY SIDEBAR */}

@@ -28,6 +28,7 @@ import { ForgotDto } from './dto/forgot.dto';
 import { ResetDto } from './dto/reset.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { CheckPremiumDto } from './dto/check-premium.dto';
+import { SetUserCreditsDto } from './dto/set-user-credits.dto';
 import { GoogleUser, JwtPayload } from './types';
 import {
   parseOAuthState,
@@ -244,5 +245,12 @@ export class AuthController {
   @Roles('ADMIN')
   async findOneUser(@Param('id') id: string) {
     return this.auth.findOneUser(id);
+  }
+
+  @Patch('users/:id/credits')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  async setUserCredits(@Param('id') id: string, @Body() dto: SetUserCreditsDto) {
+    return this.auth.setUserCredits(id, dto.credits);
   }
 }

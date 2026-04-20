@@ -125,6 +125,12 @@ export default function Navbar() {
   const [notifs, setNotifs] = useState<NotificationItem[]>([]);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [topCategories, setTopCategories] = useState<TopCategoryItem[]>([]);
+  const userCredits = typeof user?.credits === "number" && Number.isFinite(user.credits)
+    ? Math.max(0, Math.floor(user.credits))
+    : 0;
+  const topUpButtonLabel = userCredits > 0
+    ? `${userCredits.toLocaleString(locale === "en" ? "en-US" : "vi-VN")} credits`
+    : t("topUp");
   
   const searchPlaceholder = t("searchPlaceholder");
   const normalizedPathname = (pathname || "").replace(/^\/(vi|en)(?=\/|$)/, "") || "/";
@@ -799,7 +805,7 @@ export default function Navbar() {
                   }}
                   className="hidden xl:flex items-center gap-1.5 whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 md:px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors"
                 >
-                  <Coins className="h-4 w-4" /> <span className="hidden xl:inline">{t("topUp")}</span>
+                  <Coins className="h-4 w-4" /> <span className="hidden xl:inline">{topUpButtonLabel}</span>
                 </button>
 
                 {/* Chuông thông báo */}
@@ -1227,7 +1233,7 @@ export default function Navbar() {
                       className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors w-full text-left"
                     >
                       <Coins className="w-5 h-5" />
-                      <span className="text-sm font-semibold">{t("topUp")}</span>
+                      <span className="text-sm font-semibold">{topUpButtonLabel}</span>
                     </button>
 
                     <Link 

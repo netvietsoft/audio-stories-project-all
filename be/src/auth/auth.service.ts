@@ -456,4 +456,36 @@ export class AuthService {
     if (!user) throw new BadRequestException('User not found');
     return user;
   }
+
+  async setUserCredits(userId: string, credits: number) {
+    const normalizedCredits = Number.isFinite(credits) ? Math.max(0, Math.floor(credits)) : 0;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, credits: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { credits: normalizedCredits },
+      select: {
+        id: true,
+        credits: true,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'User credits updated',
+      data: {
+        userId: updatedUser.id,
+        previousCredits: user.credits,
+        credits: updatedUser.credits,
+      },
+    };
+  }
 }

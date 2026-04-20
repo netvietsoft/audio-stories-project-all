@@ -123,6 +123,9 @@ export default function UserDetailsPage() {
     const [user, setUser] = useState<UserDetail | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
+    const [creditsInput, setCreditsInput] = useState('0');
+    const [isUpdatingCredits, setIsUpdatingCredits] = useState(false);
+    const [creditsMessage, setCreditsMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const tChapter = useTranslations("StoryChapterClient");
 
     useEffect(() => {
@@ -134,10 +137,43 @@ export default function UserDetailsPage() {
         try {
             const res = await adminApiClient.get(`/auth/users/${id}`);
             setUser(res.data);
+            setCreditsInput(String(Math.max(0, Math.floor(res.data?.credits || 0))));
         } catch (error) {
             console.error('Failed to fetch user:', error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleSetCredits = async () => {
+        if (!user?.id || isUpdatingCredits) return;
+
+        const parsedCredits = Number(creditsInput);
+        if (!Number.isFinite(parsedCredits) || parsedCredits < 0) {
+            setCreditsMessage({ type: 'error', text: 'Credits phải là số không âm.' });
+            return;
+        }
+
+        const normalizedCredits = Math.floor(parsedCredits);
+
+        setIsUpdatingCredits(true);
+        setCreditsMessage(null);
+
+        try {
+            const res = await adminApiClient.patch(`/auth/users/${user.id}/credits`, {
+                credits: normalizedCredits,
+            });
+
+            const nextCredits = Number(res.data?.data?.credits ?? normalizedCredits);
+
+            setUser((prev) => (prev ? { ...prev, credits: nextCredits } : prev));
+            setCreditsInput(String(nextCredits));
+            setCreditsMessage({ type: 'success', text: 'Cập nhật credits thành công.' });
+        } catch (error) {
+            console.error('Failed to update user credits:', error);
+            setCreditsMessage({ type: 'error', text: 'Không thể cập nhật credits. Vui lòng thử lại.' });
+        } finally {
+            setIsUpdatingCredits(false);
         }
     };
 
@@ -356,6 +392,64 @@ export default function UserDetailsPage() {
 
                         {/* Sidebar info */}
                         <div className="space-y-8">
+                            <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
+                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Set credits</h3>
+
+                                <div className="space-y-3">
+                                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Credits hiện tại</p>
+                                        <p className="mt-1 text-2xl font-black text-slate-900">{user.credits.toLocaleString()}</p>
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="user-credits-input" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
+                                            Credits mới
+                                        </label>
+                                        <input
+                                            id="user-credits-input"
+                                            type="number"
+                                            min={0}
+                                            step={1}
+                                            value={creditsInput}
+                                            onChange={(e) => setCreditsInput(e.target.value)}
+                                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                                            placeholder="Nhập credits"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleSetCredits}
+                                        disabled={isUpdatingCredits}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-2.5 text-sm font-black text-white transition hover:bg-indigo-700 disabled:opacity-60"
+                                    >
+                                        {isUpdatingCredits ? (
+                                            <>
+                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                                                Đang cập nhật...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Wallet className="w-4 h-4" />
+                                                Lưu credits
+                                            </>
+                                        )}
+                                    </button>
+
+                                    {creditsMessage ? (
+                                        <p
+                                            className={`rounded-xl px-3 py-2 text-xs font-bold ${
+                                                creditsMessage.type === 'success'
+                                                    ? 'border border-emerald-100 bg-emerald-50 text-emerald-700'
+                                                    : 'border border-rose-100 bg-rose-50 text-rose-700'
+                                            }`}
+                                        >
+                                            {creditsMessage.text}
+                                        </p>
+                                    ) : null}
+                                </div>
+                            </div>
+
                             {/* Favorites Circle */}
                             <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm text-center">
                                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Yêu thích</h3>

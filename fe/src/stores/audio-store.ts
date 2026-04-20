@@ -232,21 +232,42 @@ export const useAudioStore = create<AudioState>()(
       playNext: () => {
         const { queue, currentTrack } = get();
         if (!queue.length || !currentTrack) {
-          set({ isPlaying: false });
+          set({
+            isPlaying: false,
+            currentTime: 0,
+            seekTarget: 0,
+          });
           return;
         }
 
         const currentIndex = queue.findIndex((track) => track.id === currentTrack.id);
+        if (currentIndex < 0) {
+          set({
+            isPlaying: false,
+            currentTime: 0,
+            seekTarget: 0,
+          });
+          return;
+        }
+
         const nextIndex = resolveNextTrackIndex(queue.length, currentIndex, get().repeatMode, get().isShuffle);
 
         if (nextIndex < 0 || nextIndex >= queue.length) {
-          set({ isPlaying: false });
+          set({
+            isPlaying: false,
+            currentTime: 0,
+            seekTarget: 0,
+          });
           return;
         }
 
         const nextTrack = queue[nextIndex];
         if (!nextTrack) {
-          set({ isPlaying: false });
+          set({
+            isPlaying: false,
+            currentTime: 0,
+            seekTarget: 0,
+          });
           return;
         }
 

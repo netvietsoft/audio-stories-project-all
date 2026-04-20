@@ -159,6 +159,7 @@ function WaveformTimeline({
   progress,
   currentTime,
   duration,
+  isAnimating,
   disabled,
   onSeek,
 }: {
@@ -166,6 +167,7 @@ function WaveformTimeline({
   progress: number;
   currentTime: number;
   duration: number;
+  isAnimating: boolean;
   disabled: boolean;
   onSeek: (event: MouseEvent<HTMLDivElement>) => void;
 }) {
@@ -192,7 +194,7 @@ function WaveformTimeline({
             height: `${height}%`,
             animationDelay: `${(index % 9) * 0.08}s`,
             animationDuration: `${0.9 + (index % 6) * 0.14}s`,
-            animationName: "waveBarBounce",
+            animationName: isAnimating ? "waveBarBounce" : "none",
             animationTimingFunction: "ease-in-out",
             animationIterationCount: "infinite",
           };
@@ -1507,6 +1509,7 @@ export default function MusicDetailPage() {
                 progress={playbackProgress}
                 currentTime={playbackTime}
                 duration={playbackDuration}
+                isAnimating={playing}
                 disabled={!isActive || playbackDuration <= 0 || isTrackLocked}
                 onSeek={handleWaveSeek}
               />

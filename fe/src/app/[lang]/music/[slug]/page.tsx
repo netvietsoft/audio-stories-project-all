@@ -191,16 +191,19 @@ function WaveformTimeline({
           const style: CSSProperties = {
             height: `${height}%`,
             animationDelay: `${(index % 9) * 0.08}s`,
-            animationDuration: `${1.1 + (index % 5) * 0.16}s`,
+            animationDuration: `${0.9 + (index % 6) * 0.14}s`,
+            animationName: "waveBarBounce",
+            animationTimingFunction: "ease-in-out",
+            animationIterationCount: "infinite",
           };
 
           return (
             <span
               key={`wave-${index}`}
               className={`flex-1 rounded-full transition-colors duration-200 ${
-                played ? "bg-gradient-to-t from-pink-500 to-pink-400 animate-pulse" : "bg-slate-300"
+                played ? "bg-gradient-to-t from-pink-500 to-pink-400" : "bg-slate-300"
               }`}
-              style={style}
+              style={{ ...style, transformOrigin: "bottom center", willChange: "transform" }}
             />
           );
         })}
@@ -210,6 +213,18 @@ function WaveformTimeline({
           style={{ width: `${safeProgress}%` }}
         />
       </div>
+
+      <style jsx global>{`
+        @keyframes waveBarBounce {
+          0%,
+          100% {
+            transform: scaleY(0.45);
+          }
+          50% {
+            transform: scaleY(1);
+          }
+        }
+      `}</style>
 
       <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
         <span>{formatTimelineTime(currentTime)}</span>

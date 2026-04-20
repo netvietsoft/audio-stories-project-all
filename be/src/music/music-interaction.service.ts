@@ -606,6 +606,49 @@ export class MusicInteractionService {
     };
   }
 
+  async listUnlocked(userId: string, query: ListMusicHistoryDto) {
+    const page = Math.max(1, query.page ?? 1);
+    const limit = Math.min(Math.max(1, query.limit ?? 20), 100);
+
+    const where: Prisma.MusicUnlockWhereInput = { userId };
+
+    const [total, rows] = await Promise.all([
+      this.prisma.musicUnlock.count({ where }),
+      this.prisma.musicUnlock.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          music: true,
+          sourcePlaylist: {
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        unlockedAt: row.createdAt,
+        sourceType: row.sourceType,
+        creditsSpent: row.creditsSpent,
+        music: this.serializeMusic(row.music),
+        sourcePlaylist: row.sourcePlaylist,
+      })),
+      meta: {
+        total,
+        page,
+        lastPage: Math.max(1, Math.ceil(total / limit)),
+      },
+    };
+  }
+
   async deleteHistoryEntry(userId: string, entryId: string) {
     const entry = await this.prisma.musicHistory.findUnique({
       where: { id: entryId },

@@ -182,7 +182,7 @@ function WaveformTimeline({
         aria-valuemax={Math.max(Math.round(duration), 0)}
         aria-valuenow={Math.max(Math.round(currentTime), 0)}
         aria-disabled={disabled}
-        className={`group relative flex h-14 items-end gap-1 overflow-hidden rounded-2xl border border-pink-100 bg-gradient-to-r from-rose-50 via-white to-slate-50 px-2 py-2 ${
+        className={`group relative flex h-14 items-end gap-1 overflow-hidden rounded-2xl border border-pink-100 bg-gradient-to-r from-rose-50 via-white to-slate-50 px-2 py-2 dark:border-[#343943] dark:from-[#1e232b] dark:via-[#1a1f26] dark:to-[#202632] ${
           disabled ? "cursor-default" : "cursor-pointer"
         }`}
         onClick={onSeek}
@@ -203,7 +203,9 @@ function WaveformTimeline({
             <span
               key={`wave-${index}`}
               className={`flex-1 rounded-full transition-colors duration-200 ${
-                played ? "bg-gradient-to-t from-pink-500 to-pink-400" : "bg-slate-300"
+                played
+                  ? "bg-gradient-to-t from-pink-500 to-pink-400 dark:from-pink-400 dark:to-rose-300"
+                  : "bg-slate-300 dark:bg-slate-600/70"
               }`}
               style={{ ...style, transformOrigin: "bottom center", willChange: "transform" }}
             />
@@ -211,7 +213,7 @@ function WaveformTimeline({
         })}
 
         <span
-          className="pointer-events-none absolute inset-y-0 left-0 bg-gradient-to-r from-pink-300/25 via-pink-200/20 to-transparent"
+          className="pointer-events-none absolute inset-y-0 left-0 bg-gradient-to-r from-pink-300/25 via-pink-200/20 to-transparent dark:from-pink-500/20 dark:via-pink-400/12"
           style={{ width: `${safeProgress}%` }}
         />
       </div>
@@ -228,7 +230,7 @@ function WaveformTimeline({
         }
       `}</style>
 
-      <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+      <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
         <span>{formatTimelineTime(currentTime)}</span>
         <span>{formatTimelineTime(duration)}</span>
       </div>

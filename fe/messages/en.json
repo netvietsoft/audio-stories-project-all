@@ -633,6 +633,8 @@
     "transactionHistory": "Transaction history",
     "listeningHistory": "Listening history",
     "musicHistory": "Music history",
+    "unlockedStories": "Unlocked stories",
+    "unlockedMusic": "Unlocked music",
     "myPlaylists": "My Playlists",
     "recentActivity": "Account information",
     "clearAll": "Clear all",
@@ -669,6 +671,23 @@
     "updatedAt": "Updated: {time}",
     "resume": "Resume",
     "delete": "Delete"
+  },
+  "ProfileUnlockedStoriesPage": {
+    "title": "Unlocked Stories",
+    "empty": "You have not unlocked any stories yet.",
+    "unlocked": "Unlocked",
+    "variantLabel": "Variant: {title}",
+    "creditsSpent": "{credits} credits",
+    "unlockedAt": "Unlocked at: {time}"
+  },
+  "ProfileUnlockedMusicPage": {
+    "title": "Unlocked Music",
+    "empty": "You have not unlocked any tracks or playlists yet.",
+    "sourceTrack": "Single unlock",
+    "sourcePlaylist": "Playlist unlock",
+    "sourcePlaylistWithName": "Playlist: {playlist}",
+    "creditsSpent": "{credits} credits",
+    "unlockedAt": "Unlocked at: {time}"
   },
   "ProfilePlaylistsPage": {
     "title": "My Playlists",

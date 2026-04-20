@@ -60,6 +60,11 @@ export class MusicInteractionController {
     return this.interactionService.listHistory(this.userIdFromAccount(account), query);
   }
 
+  @Get('unlocked')
+  listUnlocked(@Account() account: any, @Query() query: ListMusicHistoryDto) {
+    return this.interactionService.listUnlocked(this.userIdFromAccount(account), query);
+  }
+
   @Delete('history/:id')
   deleteHistoryEntry(@Param('id') id: string, @Account() account: any) {
     return this.interactionService.deleteHistoryEntry(this.userIdFromAccount(account), id);

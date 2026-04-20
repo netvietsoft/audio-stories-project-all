@@ -719,6 +719,76 @@ export class UserFeaturesService {
     };
   }
 
+  async getUnlockedStories(userId: string, query: HistoryQueryDto) {
+    const page = query.page ?? 1;
+    const limit = Math.min(Math.max(1, query.limit ?? 20), 100);
+
+    const where: Prisma.UserUnlockedVariantWhereInput = {
+      userId,
+      variant: {
+        deletedAt: null,
+      },
+    };
+
+    const [total, rows] = await Promise.all([
+      this.prisma.userUnlockedVariant.count({ where }),
+      this.prisma.userUnlockedVariant.findMany({
+        where,
+        orderBy: { unlockedAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          variant: {
+            select: {
+              id: true,
+              title: true,
+              chapterId: true,
+              unlockPrice: true,
+              chapter: {
+                select: {
+                  id: true,
+                  chapterNumber: true,
+                  title: true,
+                  story: {
+                    select: {
+                      id: true,
+                      slug: true,
+                      title: true,
+                      thumbnailUrl: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: rows.map((row) => ({
+        id: `${row.userId}:${row.variantId}`,
+        unlockedAt: row.unlockedAt,
+        variant: {
+          id: row.variant.id,
+          title: row.variant.title,
+          unlockPrice: row.variant.unlockPrice,
+        },
+        chapter: {
+          id: row.variant.chapter.id,
+          chapterNumber: row.variant.chapter.chapterNumber,
+          title: row.variant.chapter.title,
+        },
+        story: row.variant.chapter.story,
+      })),
+      meta: {
+        total,
+        page,
+        lastPage: Math.max(1, Math.ceil(total / limit)),
+      },
+    };
+  }
+
   async deleteHistoryItem(userId: string, historyId: string) {
     const existing = await this.prisma.listeningHistory.findUnique({
       where: { id: historyId },

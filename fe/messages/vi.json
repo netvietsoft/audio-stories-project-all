@@ -632,6 +632,8 @@
     "transactionHistory": "Lịch sử giao dịch",
     "listeningHistory": "Lịch sử nghe",
     "musicHistory": "Nhạc đã nghe",
+    "unlockedStories": "Truyện đã mở khóa",
+    "unlockedMusic": "Nhạc đã mở khóa",
     "myPlaylists": "My Playlists",
     "recentActivity": "Thông tin tài khoản",
     "clearAll": "Xóa toàn bộ",
@@ -668,6 +670,23 @@
     "updatedAt": "Cập nhật: {time}",
     "resume": "Nghe tiếp",
     "delete": "Xóa"
+  },
+  "ProfileUnlockedStoriesPage": {
+    "title": "Truyện đã mở khóa",
+    "empty": "Bạn chưa mở khóa truyện nào.",
+    "unlocked": "Đã mở khóa",
+    "variantLabel": "Biến thể: {title}",
+    "creditsSpent": "{credits} credits",
+    "unlockedAt": "Mở khóa lúc: {time}"
+  },
+  "ProfileUnlockedMusicPage": {
+    "title": "Nhạc đã mở khóa",
+    "empty": "Bạn chưa mở khóa bài nhạc hoặc playlist nào.",
+    "sourceTrack": "Mở lẻ",
+    "sourcePlaylist": "Mở theo playlist",
+    "sourcePlaylistWithName": "Playlist: {playlist}",
+    "creditsSpent": "{credits} credits",
+    "unlockedAt": "Mở khóa lúc: {time}"
   },
   "ProfilePlaylistsPage": {
     "title": "My Playlists",

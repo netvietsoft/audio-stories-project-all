@@ -47,6 +47,11 @@ export class UserFeaturesController {
     return this.userFeaturesService.getHistory(this.userIdFromAccount(account), query);
   }
 
+  @Get('unlocked-stories')
+  getUnlockedStories(@Account() account: any, @Query() query: HistoryQueryDto) {
+    return this.userFeaturesService.getUnlockedStories(this.userIdFromAccount(account), query);
+  }
+
   @Delete('history/:id')
   deleteHistoryItem(@Account() account: any, @Param('id') id: string) {
     return this.userFeaturesService.deleteHistoryItem(this.userIdFromAccount(account), id);

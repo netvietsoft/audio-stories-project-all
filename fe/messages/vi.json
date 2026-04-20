@@ -448,7 +448,15 @@
     "processingUnlock": "Đang xử lý mở khóa...",
     "confirmPaymentTitle": "Xác nhận thanh toán",
     "confirmPaymentTrackBody": "Bạn sắp dùng {credits} credits để mở khóa bài \"{title}\".",
-    "confirmPaymentPlaylistBody": "Bạn sắp dùng {credits} credits để mở khóa toàn bộ playlist \"{title}\"."
+    "confirmPaymentPlaylistBody": "Bạn sắp dùng {credits} credits để mở khóa toàn bộ playlist \"{title}\".",
+    "insufficientCreditsTitle": "Không đủ credits",
+    "insufficientCreditsBody": "Bạn cần thêm credits để hoàn tất thanh toán mở khóa ({credits} credits).",
+    "currentCreditsLine": "Số dư hiện tại của bạn: {credits} credits.",
+    "insufficientCreditsHint": "Nạp thêm credits để mở khóa ngay bài nhạc hoặc playlist này.",
+    "recommendedPackagesTitle": "Gói nạp phù hợp",
+    "loadingRecommendedPackages": "Đang tải gói nạp phù hợp...",
+    "recommendedPackagesEmpty": "Chưa có gói nạp phù hợp lúc này.",
+    "goToTopup": "Đi đến trang nạp credits"
   },
   "Common": {
     "loading": "Đang tải...",

@@ -449,7 +449,15 @@
     "processingUnlock": "Processing unlock...",
     "confirmPaymentTitle": "Confirm payment",
     "confirmPaymentTrackBody": "You are about to spend {credits} credits to unlock track \"{title}\".",
-    "confirmPaymentPlaylistBody": "You are about to spend {credits} credits to unlock the entire playlist \"{title}\"."
+    "confirmPaymentPlaylistBody": "You are about to spend {credits} credits to unlock the entire playlist \"{title}\".",
+    "insufficientCreditsTitle": "Insufficient credits",
+    "insufficientCreditsBody": "You need more credits to complete this unlock payment ({credits} credits).",
+    "currentCreditsLine": "Your current balance: {credits} credits.",
+    "insufficientCreditsHint": "Top up credits now to unlock this track or playlist instantly.",
+    "recommendedPackagesTitle": "Recommended top-up packages",
+    "loadingRecommendedPackages": "Loading matching packages...",
+    "recommendedPackagesEmpty": "No matching top-up packages available right now.",
+    "goToTopup": "Go to top-up page"
   },
   "Common": {
     "loading": "Loading...",

@@ -83,11 +83,53 @@ type PlaylistChildUnlockTarget = {
 
 type PlaylistUnlockMode = "track" | "playlist";
 
+type TopupPackage = {
+  code: string;
+  name?: string;
+  nameVi?: string;
+  nameEn?: string;
+  title?: string;
+  titleVi?: string;
+  titleEn?: string;
+  credits: number;
+  priceVnd?: number;
+  price?: number;
+  currency?: string;
+  lang?: string;
+  isActive?: boolean;
+  displayOrder?: number;
+};
+
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   const maybeMessage = (error as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
   if (Array.isArray(maybeMessage) && maybeMessage.length) return maybeMessage[0] || fallback;
   if (typeof maybeMessage === "string" && maybeMessage.trim()) return maybeMessage;
   return fallback;
+};
+
+const normalizeErrorText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+const isInsufficientCreditsText = (message: string) => {
+  const normalized = normalizeErrorText(message);
+  return normalized.includes("insufficient credits") || (normalized.includes("khong du") && normalized.includes("credit"));
+};
+
+const isInsufficientCreditsError = (error: unknown) => {
+  const maybeMessage = (error as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+  if (Array.isArray(maybeMessage)) {
+    return maybeMessage.some((item) => typeof item === "string" && isInsufficientCreditsText(item));
+  }
+
+  if (typeof maybeMessage === "string") {
+    return isInsufficientCreditsText(maybeMessage);
+  }
+
+  return false;
 };
 
 const WAVEFORM_BAR_COUNT = 72;
@@ -213,10 +255,17 @@ export default function MusicDetailPage() {
   const [showUnlockConfirmModal, setShowUnlockConfirmModal] = useState(false);
   const [showPlaylistUnlockChoiceModal, setShowPlaylistUnlockChoiceModal] = useState(false);
   const [showPlaylistUnlockPaymentConfirmModal, setShowPlaylistUnlockPaymentConfirmModal] = useState(false);
+  const [showInsufficientCreditsModal, setShowInsufficientCreditsModal] = useState(false);
   const [selectedPlaylistUnlockMode, setSelectedPlaylistUnlockMode] = useState<PlaylistUnlockMode>("track");
   const [playlistUnlockTarget, setPlaylistUnlockTarget] = useState<PlaylistChildUnlockTarget | null>(null);
+  const [requiredCreditsForTopup, setRequiredCreditsForTopup] = useState(0);
+  const [recommendedTopupPackages, setRecommendedTopupPackages] = useState<TopupPackage[]>([]);
+  const [isLoadingTopupPackages, setIsLoadingTopupPackages] = useState(false);
   const [playlistTrackAccess, setPlaylistTrackAccess] = useState<Record<string, DetailAccessState>>({});
   const [relatedTrackAccess, setRelatedTrackAccess] = useState<Record<string, DetailAccessState>>({});
+  const currentUserCredits = typeof user?.credits === "number" && Number.isFinite(user.credits)
+    ? Math.max(0, Math.floor(user.credits))
+    : 0;
 
   const trackId = track?.id;
   const trackAccessType = track?.accessType;
@@ -316,9 +365,129 @@ export default function MusicDetailPage() {
     setShowUnlockConfirmModal(false);
     setShowPlaylistUnlockChoiceModal(false);
     setShowPlaylistUnlockPaymentConfirmModal(false);
+    setShowInsufficientCreditsModal(false);
     setSelectedPlaylistUnlockMode("track");
     setPlaylistUnlockTarget(null);
+    setRequiredCreditsForTopup(0);
+    setRecommendedTopupPackages([]);
   }, [trackId]);
+
+  const formatTopupCurrency = useCallback((amount: number, currency: string) => {
+    const resolvedCurrency = currency.toUpperCase() === "USD" ? "USD" : "VND";
+    const locale = currentLang === "en" ? "en-US" : "vi-VN";
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: resolvedCurrency,
+      maximumFractionDigits: resolvedCurrency === "USD" ? 2 : 0,
+    }).format(amount);
+  }, [currentLang]);
+
+  const getTopupPackageLabel = useCallback((pkg: TopupPackage) => {
+    if (currentLang === "en") {
+      return pkg.titleEn || pkg.nameEn || pkg.title || pkg.name || pkg.code;
+    }
+    return pkg.titleVi || pkg.nameVi || pkg.title || pkg.name || pkg.code;
+  }, [currentLang]);
+
+  const getTopupPackagePrice = useCallback((pkg: TopupPackage) => {
+    const currency = typeof pkg.currency === "string" && pkg.currency.trim() ? pkg.currency : "VND";
+
+    if (currency.toUpperCase() === "USD") {
+      const usdAmount = typeof pkg.price === "number" && Number.isFinite(pkg.price) ? pkg.price : 0;
+      return formatTopupCurrency(Math.max(0, usdAmount), "USD");
+    }
+
+    const vndAmount = typeof pkg.priceVnd === "number" && Number.isFinite(pkg.priceVnd)
+      ? pkg.priceVnd
+      : typeof pkg.price === "number" && Number.isFinite(pkg.price)
+        ? pkg.price
+        : 0;
+
+    return formatTopupCurrency(Math.max(0, vndAmount), "VND");
+  }, [formatTopupCurrency]);
+
+  const loadRecommendedTopupPackages = useCallback(async (requiredCredits: number) => {
+    setIsLoadingTopupPackages(true);
+
+    try {
+      const response = await apiClient.get("/packages");
+      const responseData = response.data as unknown;
+
+      const rawPackages: TopupPackage[] = Array.isArray(responseData)
+        ? responseData as TopupPackage[]
+        : Array.isArray((responseData as { data?: unknown[] })?.data)
+          ? ((responseData as { data: unknown[] }).data as TopupPackage[])
+          : [];
+
+      const filteredPackages = rawPackages
+        .filter((pkg) => (pkg.isActive ?? true) && typeof pkg.credits === "number" && Number.isFinite(pkg.credits) && pkg.credits > 0)
+        .filter((pkg) => {
+          if (!pkg.lang || !pkg.lang.trim()) return true;
+          return pkg.lang === (currentLang === "en" ? "en" : "vi");
+        });
+
+      const lowerCandidates = filteredPackages
+        .filter((pkg) => pkg.credits < requiredCredits)
+        .sort((a, b) => {
+          const diffA = requiredCredits - a.credits;
+          const diffB = requiredCredits - b.credits;
+          if (diffA !== diffB) return diffA - diffB;
+          return b.credits - a.credits;
+        });
+
+      const greaterOrEqualCandidates = filteredPackages
+        .filter((pkg) => pkg.credits >= requiredCredits)
+        .sort((a, b) => {
+          const diffA = a.credits - requiredCredits;
+          const diffB = b.credits - requiredCredits;
+          if (diffA !== diffB) return diffA - diffB;
+          return a.credits - b.credits;
+        });
+
+      const selected: TopupPackage[] = [];
+      const selectedCodes = new Set<string>();
+
+      const pushIfNeeded = (pkg?: TopupPackage) => {
+        if (!pkg || selectedCodes.has(pkg.code) || selected.length >= 3) return;
+        selected.push(pkg);
+        selectedCodes.add(pkg.code);
+      };
+
+      pushIfNeeded(lowerCandidates[0]);
+      pushIfNeeded(greaterOrEqualCandidates[0]);
+      pushIfNeeded(greaterOrEqualCandidates[1]);
+
+      if (selected.length < 3) {
+        const fallbackSorted = filteredPackages
+          .slice()
+          .sort((a, b) => {
+            const diffA = Math.abs(a.credits - requiredCredits);
+            const diffB = Math.abs(b.credits - requiredCredits);
+            if (diffA !== diffB) return diffA - diffB;
+            return a.credits - b.credits;
+          });
+
+        fallbackSorted.forEach((pkg) => {
+          pushIfNeeded(pkg);
+        });
+      }
+
+      const nextPackages = selected;
+
+      setRecommendedTopupPackages(nextPackages);
+    } catch {
+      setRecommendedTopupPackages([]);
+    } finally {
+      setIsLoadingTopupPackages(false);
+    }
+  }, [currentLang]);
+
+  const openInsufficientCreditsModal = useCallback((requiredCredits: number) => {
+    const normalizedRequiredCredits = Math.max(1, Math.floor(requiredCredits || 0));
+    setRequiredCreditsForTopup(normalizedRequiredCredits);
+    setShowInsufficientCreditsModal(true);
+    void loadRecommendedTopupPackages(normalizedRequiredCredits);
+  }, [loadRecommendedTopupPackages]);
 
   useEffect(() => {
     if (!trackId) return;
@@ -605,6 +774,13 @@ export default function MusicDetailPage() {
       });
       return true;
     } catch (error) {
+      if (isInsufficientCreditsError(error)) {
+        setShowUnlockConfirmModal(false);
+        setAccessNotice(null);
+        openInsufficientCreditsModal(accessState.unlockPrice);
+        return false;
+      }
+
       setAccessNotice({
         tone: "error",
         text: getApiErrorMessage(
@@ -725,6 +901,16 @@ export default function MusicDetailPage() {
       });
       closePlaylistUnlockFlow();
     } catch (error) {
+      if (isInsufficientCreditsError(error)) {
+        closePlaylistUnlockFlow();
+        setAccessNotice(null);
+        const requiredCredits = mode === "playlist"
+          ? Math.max(0, Math.floor(accessState.unlockPrice || 0))
+          : Math.max(0, Math.floor(playlistUnlockTarget.unlockPrice || 0));
+        openInsufficientCreditsModal(requiredCredits);
+        return;
+      }
+
       setAccessNotice({
         tone: "error",
         text: getApiErrorMessage(
@@ -1986,6 +2172,97 @@ export default function MusicDetailPage() {
                 {isUnlocking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
                 {t("confirmPayment")}
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showInsufficientCreditsModal ? (
+        <div className="fixed inset-0 z-[123] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label={t("close")}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              if (isUnlocking) return;
+              setShowInsufficientCreditsModal(false);
+            }}
+          />
+
+          <div className="relative w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-[#353535] dark:bg-[#1b1b1b]">
+            <button
+              type="button"
+              onClick={() => {
+                if (isUnlocking) return;
+                setShowInsufficientCreditsModal(false);
+              }}
+              className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-zinc-400 dark:hover:bg-[#2b2b2b]"
+              aria-label={t("close")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="pr-8">
+              <p className="text-lg font-black text-slate-900 dark:text-zinc-100">
+                {t("insufficientCreditsTitle")}
+              </p>
+              <p className="mt-2 text-sm text-slate-600 dark:text-zinc-300">
+                {t("insufficientCreditsBody", { credits: requiredCreditsForTopup })}
+              </p>
+              <p className="mt-1 text-xs font-semibold text-slate-500 dark:text-zinc-400">
+                {t("currentCreditsLine", { credits: currentUserCredits })}
+              </p>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 dark:border-orange-900/40 dark:bg-orange-950/20 dark:text-orange-300">
+              {t("insufficientCreditsHint")}
+            </div>
+
+            <div className="mt-4">
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-slate-500 dark:text-zinc-400">
+                {t("recommendedPackagesTitle")}
+              </p>
+
+              {isLoadingTopupPackages ? (
+                <div className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-zinc-400">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {t("loadingRecommendedPackages")}
+                </div>
+              ) : recommendedTopupPackages.length > 0 ? (
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {recommendedTopupPackages.map((pkg) => (
+                    <div
+                      key={pkg.code}
+                      className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-[#3a3a3a] dark:bg-[#222]"
+                    >
+                      <p className="text-xs font-bold text-slate-800 dark:text-zinc-100">{getTopupPackageLabel(pkg)}</p>
+                      <p className="mt-0.5 text-xs font-semibold text-pink-600 dark:text-pink-300">{pkg.credits} credits</p>
+                      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-zinc-400">{getTopupPackagePrice(pkg)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-slate-500 dark:text-zinc-400">
+                  {t("recommendedPackagesEmpty")}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowInsufficientCreditsModal(false)}
+                className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-700 transition hover:bg-slate-100 dark:border-[#414141] dark:text-zinc-200 dark:hover:bg-[#282828]"
+              >
+                {t("cancel")}
+              </button>
+              <Link
+                href="/topup"
+                className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-xs font-black uppercase tracking-[0.12em] text-white transition hover:bg-orange-600"
+                onClick={() => setShowInsufficientCreditsModal(false)}
+              >
+                {t("goToTopup")}
+              </Link>
             </div>
           </div>
         </div>

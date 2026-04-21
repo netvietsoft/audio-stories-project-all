@@ -1,7 +1,6 @@
 -- AlterTable
-ALTER TABLE `music_tracks`
-  ADD COLUMN `original_unlock_price` INTEGER UNSIGNED NULL AFTER `access_type`,
-  ADD COLUMN `discount_percent` INTEGER UNSIGNED NOT NULL DEFAULT 0 AFTER `original_unlock_price`;
+ALTER TABLE `music_tracks` ADD COLUMN `discount_percent` INTEGER UNSIGNED NOT NULL DEFAULT 0,
+    ADD COLUMN `original_unlock_price` INTEGER UNSIGNED NULL;
 
 -- Backfill existing VIP rows so old data keeps consistent display
 UPDATE `music_tracks`

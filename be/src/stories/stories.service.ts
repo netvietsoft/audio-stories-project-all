@@ -746,7 +746,6 @@ export class StoriesService {
             chapterNumber: true,
             description: true,
             thumbnailUrl: true,
-            r2AudioUrl: true,
             accessType: true,
             unlockPrice: true,
             unlocksAt: true,

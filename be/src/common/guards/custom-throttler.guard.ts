@@ -18,8 +18,8 @@ export class CustomThrottlerGuard extends ThrottlerGuard {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Allow explicit opt-out via env var (useful in dev/staging/CI).
-    // Do NOT set this in production.
-    if (process.env.THROTTLE_DISABLED === 'true') {
+    // In production, this bypass is ignored for safety.
+    if (process.env.THROTTLE_DISABLED === 'true' && process.env.NODE_ENV !== 'production') {
       return true;
     }
 

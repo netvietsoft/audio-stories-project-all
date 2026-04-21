@@ -58,8 +58,7 @@ export class AuthController {
       const { access, refresh } = await this.auth.issueTokens(user.id);
 
       // We ALWAYS want to go back to the default callback page on the frontend (e.g. /auth/google/callback)
-      // because that page is responsible for handling query params (access_token, refresh_token) 
-      // and saving them to the user's state.
+      // because that page is responsible for handling access_token and redirect state.
       const redirectUri = getDefaultRedirectUri();
       let returnTo: string | undefined;
 
@@ -72,8 +71,8 @@ export class AuthController {
       }
 
       const redirectUrl = new URL(redirectUri);
+      this.setRefreshCookie(res, refresh);
       redirectUrl.searchParams.set('access_token', access);
-      redirectUrl.searchParams.set('refresh_token', refresh);
       redirectUrl.searchParams.set('verified', 'true');
       
       // If we have a returnTo target, pass it as 'redirect'
@@ -180,8 +179,8 @@ export class AuthController {
     const { access, refresh } = await this.auth.verifyEmail(token, clientIp);
     let finalRedirectUrl = redirectUri && isAllowedRedirectUri(redirectUri) ? redirectUri : getDefaultClientUrl();
     const redirectUrl = new URL(finalRedirectUrl);
+    this.setRefreshCookie(res, refresh);
     redirectUrl.searchParams.set('access_token', access);
-    redirectUrl.searchParams.set('refresh_token', refresh);
     redirectUrl.searchParams.set('verified', 'true');
     return res.redirect(redirectUrl.toString());
   }

@@ -3,18 +3,82 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { CreateChapterVariantDto } from '../dto/create-chapter-variant.dto';
 import { UpdateChapterVariantDto } from '../dto/update-chapter-variant.dto';
 
+type VariantViewerContext = {
+    userId?: string;
+    isAdmin?: boolean;
+};
+
 @Injectable()
 export class ChapterVariantsService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async findAllByChapter(chapterId: string, parentId?: string | null) {
+    async findAllByChapter(
+        chapterId: string,
+        parentId?: string | null,
+        viewer?: VariantViewerContext,
+    ) {
         const where: any = { chapterId, deletedAt: null };
         if (parentId !== undefined) {
             where.parentId = parentId;
         }
-        return this.prisma.chapterVariant.findMany({
+
+        const variants: any[] = await this.prisma.chapterVariant.findMany({
             where,
             orderBy: { orderIndex: 'asc' },
+        });
+
+        if (viewer?.isAdmin) {
+            return variants;
+        }
+
+        const paidVariantIds = variants
+            .filter((variant) => (variant.unlockPrice ?? 0) > 0)
+            .map((variant) => variant.id);
+
+        let isVip = false;
+        let unlockedVariantIds = new Set<string>();
+
+        if (viewer?.userId) {
+            const [user, unlocks] = await Promise.all([
+                this.prisma.user.findUnique({
+                    where: { id: viewer.userId },
+                    select: { vipTier: true, vipExpirationDate: true },
+                }),
+                paidVariantIds.length > 0
+                    ? this.prisma.userUnlockedVariant.findMany({
+                        where: {
+                            userId: viewer.userId,
+                            variantId: { in: paidVariantIds },
+                        },
+                        select: { variantId: true },
+                    })
+                    : Promise.resolve([] as Array<{ variantId: string }>),
+            ]);
+
+            isVip =
+                !!user &&
+                (user.vipTier ?? 0) > 0 &&
+                (!user.vipExpirationDate || user.vipExpirationDate > new Date());
+
+            unlockedVariantIds = new Set(unlocks.map((row) => row.variantId));
+        }
+
+        return variants.map((variant: any) => {
+            const hasAccess =
+                (variant.unlockPrice ?? 0) <= 0 ||
+                isVip ||
+                unlockedVariantIds.has(variant.id);
+
+            if (hasAccess) {
+                return variant;
+            }
+
+            return {
+                ...variant,
+                content: null,
+                audioUrl: null,
+                r2AudioUrl: null,
+            };
         });
     }
 

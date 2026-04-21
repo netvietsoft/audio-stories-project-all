@@ -242,6 +242,7 @@ export class ChaptersService {
     async getAudioUrl(
         id: string,
         userId?: string,
+        variantId?: string,
     ): Promise<{ url: string }> {
         const chapter = await this.prisma.chapter.findUnique({
             where: { id },
@@ -259,7 +260,38 @@ export class ChaptersService {
             throw new NotFoundException(`Chapter with ID ${id} not found`);
         }
 
-        const url = chapter.r2AudioUrl || chapter.audioUrl;
+        let variantUnlockPrice = 0;
+        let unlockedVariantId: string | undefined;
+
+        const variant = variantId
+            ? await this.prisma.chapterVariant.findFirst({
+                where: {
+                    id: variantId,
+                    chapterId: id,
+                    deletedAt: null,
+                },
+                select: {
+                    id: true,
+                    audioUrl: true,
+                    r2AudioUrl: true,
+                    unlockPrice: true,
+                },
+            })
+            : null;
+
+        if (variantId && !variant) {
+            throw new NotFoundException('Variant not found for this chapter');
+        }
+
+        if (variant) {
+            variantUnlockPrice = variant.unlockPrice || 0;
+            unlockedVariantId = variant.id;
+        }
+
+        const url =
+            (variant?.r2AudioUrl || variant?.audioUrl) ||
+            chapter.r2AudioUrl ||
+            chapter.audioUrl;
         if (!url) {
             throw new NotFoundException('No audio available for this chapter');
         }
@@ -300,10 +332,20 @@ export class ChaptersService {
         }
 
         // Chapter with unlock price: check if user has unlocked it
-        if (unlockPrice > 0) {
-            const unlocked = await this.prisma.userUnlockedVariant.findFirst({
-                where: { userId, variant: { chapterId: id } },
-            });
+        const requiredUnlockPrice = Math.max(unlockPrice || 0, variantUnlockPrice || 0);
+        if (requiredUnlockPrice > 0) {
+            const unlocked = unlockedVariantId
+                ? await this.prisma.userUnlockedVariant.findUnique({
+                    where: {
+                        userId_variantId: {
+                            userId,
+                            variantId: unlockedVariantId,
+                        },
+                    },
+                })
+                : await this.prisma.userUnlockedVariant.findFirst({
+                    where: { userId, variant: { chapterId: id } },
+                });
             if (!unlocked && !isVip) {
                 throw new ForbiddenException('This chapter must be unlocked before listening');
             }

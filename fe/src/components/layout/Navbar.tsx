@@ -13,7 +13,7 @@ import {
   UserCircle, History, Heart,
   Home, LayoutGrid, Zap, Flame, Trophy, Sparkles, Music2, ArrowRight
 } from "lucide-react";
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/auth";
+import { ACCESS_TOKEN_KEY } from "@/constants/auth";
 import { clearAuthCookies } from "@/lib/auth/cookies";
 import { apiClient } from "@/lib/api/api-client";
 import { useUserStore } from "@/stores/user-store";
@@ -434,7 +434,6 @@ export default function Navbar() {
     clearAuthCookies();
     if (typeof window !== "undefined") {
       localStorage.removeItem(ACCESS_TOKEN_KEY);
-      localStorage.removeItem(REFRESH_TOKEN_KEY);
     }
     closeMobileMenu();
     router.push(`/${currentLang}`);

@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "@/constants/auth";
+import { ACCESS_TOKEN_KEY } from "@/constants/auth";
 
 export type AuthUser = {
   id: string;
@@ -15,7 +15,7 @@ export type AuthUser = {
 type AuthState = {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
+  setAuth: (user: AuthUser, accessToken: string) => void;
   logout: () => void;
 };
 
@@ -28,9 +28,8 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user: null,
       isAuthenticated: false,
-      setAuth: (user, accessToken, refreshToken) => {
+      setAuth: (user, accessToken) => {
         localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
 
         set({
           user,
@@ -39,7 +38,6 @@ export const useAuthStore = create<AuthState>()(
       },
       logout: () => {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
 
         set({
           user: null,
@@ -61,5 +59,3 @@ export const useAuthStore = create<AuthState>()(
 );
 
 export const getAccessToken = () => localStorage.getItem(ACCESS_TOKEN_KEY);
-
-export const getRefreshToken = () => localStorage.getItem(REFRESH_TOKEN_KEY);

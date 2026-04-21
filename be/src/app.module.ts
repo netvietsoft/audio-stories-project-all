@@ -96,9 +96,9 @@ import { PersonalPlaylistModule } from './personal-playlist/personal-playlist.mo
     PersonalPlaylistModule,
   ],
   controllers: [AppController],
-    providers: [
+  providers: [
     AppService,
-    // Apply CustomThrottlerGuard globally (bypasses in non-production)
+    // Apply CustomThrottlerGuard globally (can be disabled via THROTTLE_DISABLED in non-production)
     {
       provide: APP_GUARD,
       useClass: CustomThrottlerGuard,

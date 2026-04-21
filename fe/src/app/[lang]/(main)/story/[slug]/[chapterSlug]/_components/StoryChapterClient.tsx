@@ -370,9 +370,15 @@ export default function StoryChapterClient() {
         !variant.audioUrlVi && !variant.audioUrlEn ? (variant.audioUrl || variant.r2AudioUrl || "") : "",
       ).trim();
 
-      const proxyUrl = accessToken
-         ? `${process.env.NEXT_PUBLIC_API_URL}/chapters/${variant.chapterId || variant.id}/audio?token=${accessToken}`
-         : `${process.env.NEXT_PUBLIC_API_URL}/chapters/${variant.chapterId || variant.id}/audio`;
+      const baseProxyUrl = `${process.env.NEXT_PUBLIC_API_URL}/chapters/${variant.chapterId || variant.id}/audio`;
+      const query = new URLSearchParams();
+      if (accessToken) {
+        query.set("token", accessToken);
+      }
+      if (variant.id) {
+        query.set("variantId", variant.id);
+      }
+      const proxyUrl = query.toString() ? `${baseProxyUrl}?${query.toString()}` : baseProxyUrl;
 
       return {
         ...variant,

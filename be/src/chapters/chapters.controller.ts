@@ -90,11 +90,12 @@ export class ChaptersController {
     @HttpCode(302)
     async getAudio(
         @Param('id') id: string,
+        @Query('variantId') variantId: string | undefined,
         @Req() req: Request,
         @Res() res: Response,
     ) {
         const userId = (req.user as any)?.id;
-        const { url } = await this.chaptersService.getAudioUrl(id, userId);
+        const { url } = await this.chaptersService.getAudioUrl(id, userId, variantId);
         // 302 redirect — audio player follows automatically, no buffering in NestJS
         return res.redirect(302, url);
     }

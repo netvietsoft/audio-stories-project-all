@@ -114,20 +114,37 @@ export class AuthController {
     return await this.auth.updateMe(user.id, dto);
   }
 
+  /** Set refresh token in a Secure HttpOnly cookie (not visible to JS). */
+  private setRefreshCookie(res: Response, token: string) {
+    res.cookie('refresh_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      // Scope cookie to refresh endpoint only — limits exposure surface
+      path: '/auth/refresh',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in ms
+    });
+  }
+
   @Post('refresh')
   @HttpCode(200)
   @UseGuards(JwtRefreshGuard)
-  async refresh(@Req() req: Request) {
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    // Read from HttpOnly cookie first, fall back to header for backwards compat
     const oldToken = (req.cookies?.refresh_token as string) || (req.headers['x-refresh-token'] as string);
     const { access, refresh: newRefresh } = await this.auth.rotateRefresh(oldToken);
-    return { ok: true, access_token: access, refresh_token: newRefresh };
+    // Set new refresh token in HttpOnly cookie — do NOT expose in body
+    this.setRefreshCookie(res, newRefresh);
+    return { ok: true, access_token: access };
   }
 
   @Post('logout')
   @HttpCode(200)
   @UseGuards(JwtAccessGuard)
-  async logout(@Account() user: JwtPayload) {
+  async logout(@Account() user: JwtPayload, @Res({ passthrough: true }) res: Response) {
     await this.auth.revokeAll(user.sub);
+    // Clear refresh token cookie
+    res.clearCookie('refresh_token', { path: '/auth/refresh' });
     return { ok: true };
   }
 
@@ -144,13 +161,14 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
-  async login(@Body() dto: LoginDto, @Req() req: Request) {
-    // Get IP address
+  async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
     const clientIp = ip ? ip.split(',')[0].trim() : undefined;
 
     const { access, refresh } = await this.auth.loginLocal(dto.email, dto.password, clientIp);
-    return { ok: true, access_token: access, refresh_token: refresh };
+    // Set refresh token in HttpOnly cookie — not exposed to JS
+    this.setRefreshCookie(res, refresh);
+    return { ok: true, access_token: access };
   }
 
   @Get('verify-email')
@@ -170,13 +188,13 @@ export class AuthController {
 
   @Post('verify-email')
   @HttpCode(200)
-  async verifyEmailPost(@Body() dto: VerifyEmailDto, @Req() req: Request) {
-    // Get IP address
+  async verifyEmailPost(@Body() dto: VerifyEmailDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
     const clientIp = ip ? ip.split(',')[0].trim() : undefined;
 
     const { access, refresh } = await this.auth.verifyEmail(dto.token, clientIp);
-    return { ok: true, access_token: access, refresh_token: refresh };
+    this.setRefreshCookie(res, refresh);
+    return { ok: true, access_token: access };
   }
 
   @Post('resend-verify')
@@ -187,13 +205,13 @@ export class AuthController {
 
   @Post('verify-code')
   @HttpCode(200)
-  async verifyCode(@Body() dto: VerifyCodeDto, @Req() req: Request) {
-    // Get IP address
+  async verifyCode(@Body() dto: VerifyCodeDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
     const clientIp = ip ? ip.split(',')[0].trim() : undefined;
 
     const { access, refresh } = await this.auth.verifyCode(dto.email, dto.code, clientIp);
-    return { ok: true, message: 'Email verified successfully', access_token: access, refresh_token: refresh };
+    this.setRefreshCookie(res, refresh);
+    return { ok: true, message: 'Email verified successfully', access_token: access };
   }
 
   @Post('resend-code')

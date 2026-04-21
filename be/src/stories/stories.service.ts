@@ -757,7 +757,6 @@ export class StoriesService {
               select: {
                 id: true,
                 title: true,
-                audioUrl: true,
                 audioDuration: true,
                 unlockPrice: true,
                 nextChapterId: true,

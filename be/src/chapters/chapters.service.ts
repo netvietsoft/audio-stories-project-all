@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { UserFeaturesService } from '@/user-features/user-features.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
@@ -32,8 +32,7 @@ export class ChaptersService {
                 title: true,
                 description: true,
                 thumbnailUrl: true,
-                audioUrl: true,
-                r2AudioUrl: true,
+                // audioUrl and r2AudioUrl intentionally omitted — use /chapters/:id/audio proxy
                 youtubeVideoId: true,
                 audioDuration: true,
                 accessType: true,
@@ -53,6 +52,7 @@ export class ChaptersService {
         });
     }
 
+
     async findLatest(limit = 10, lang?: string) {
         return this.prisma.chapter.findMany({
             where: { 
@@ -68,7 +68,7 @@ export class ChaptersService {
                 title: true,
                 thumbnailUrl: true,
                 audioDuration: true,
-                r2AudioUrl: true,
+                // r2AudioUrl intentionally omitted — clients use /chapters/:id/audio proxy
                 createdAt: true,
                 language: {
                     select: { key: true },
@@ -89,6 +89,7 @@ export class ChaptersService {
             },
         });
     }
+
 
     async findAllGlobal(query: ChapterQueryDto) {
         const { page = 1, limit = 20, search, accessType, storyId, lang } = query;
@@ -186,8 +187,8 @@ export class ChaptersService {
                 description: true,
                 content: true,
                 thumbnailUrl: true,
-                audioUrl: true,
-                r2AudioUrl: true,
+                // audioUrl and r2AudioUrl intentionally omitted from public detail.
+                // Clients must use GET /chapters/:id/audio (entitlement-checked proxy).
                 youtubeVideoId: true,
                 audioDuration: true,
                 accessType: true,
@@ -208,8 +209,7 @@ export class ChaptersService {
                         title: true,
                         description: true,
                         content: true,
-                        audioUrl: true,
-                        r2AudioUrl: true,
+                        // audioUrl and r2AudioUrl omitted — clients call /chapters/:id/audio?variantId=...
                         audioDuration: true,
                         unlockPrice: true,
                         orderIndex: true,
@@ -227,6 +227,91 @@ export class ChaptersService {
 
         return chapter;
     }
+
+    /**
+     * Resolve the playback URL for a chapter (or variant), enforcing entitlement.
+     *
+     * Access rules:
+     *   - accessType === 'free'  → any caller (anonymous or authenticated)
+     *   - accessType === 'timed' → free if unlocksAt has passed, else requires VIP
+     *   - accessType === 'vip'   → requires vipTier > 0 (non-expired)
+     * Additionally, if unlockPrice > 0, user must have a UserUnlockedVariant record.
+     *
+     * Returns the best available URL (r2AudioUrl preferred over audioUrl).
+     */
+    async getAudioUrl(
+        id: string,
+        userId?: string,
+    ): Promise<{ url: string }> {
+        const chapter = await this.prisma.chapter.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                audioUrl: true,
+                r2AudioUrl: true,
+                accessType: true,
+                unlockPrice: true,
+                unlocksAt: true,
+            },
+        });
+
+        if (!chapter) {
+            throw new NotFoundException(`Chapter with ID ${id} not found`);
+        }
+
+        const url = chapter.r2AudioUrl || chapter.audioUrl;
+        if (!url) {
+            throw new NotFoundException('No audio available for this chapter');
+        }
+
+        // --- Entitlement check ---
+        const { accessType, unlockPrice, unlocksAt } = chapter;
+
+        // Free chapter: always accessible
+        if (accessType === 'free') {
+            return { url };
+        }
+
+        // Timed chapter: free once unlocksAt has passed
+        if (accessType === 'timed' && unlocksAt && unlocksAt <= new Date()) {
+            return { url };
+        }
+
+        // All other cases require an authenticated user
+        if (!userId) {
+            throw new ForbiddenException('Authentication required to access this chapter');
+        }
+
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { vipTier: true, vipExpirationDate: true, credits: true },
+        });
+
+        const isVip =
+            user &&
+            (user.vipTier ?? 0) > 0 &&
+            (!user.vipExpirationDate || user.vipExpirationDate > new Date());
+
+        if (accessType === 'vip' || accessType === 'timed') {
+            if (!isVip) {
+                throw new ForbiddenException('VIP membership required to access this chapter');
+            }
+            return { url };
+        }
+
+        // Chapter with unlock price: check if user has unlocked it
+        if (unlockPrice > 0) {
+            const unlocked = await this.prisma.userUnlockedVariant.findFirst({
+                where: { userId, variant: { chapterId: id } },
+            });
+            if (!unlocked && !isVip) {
+                throw new ForbiddenException('This chapter must be unlocked before listening');
+            }
+        }
+
+        return { url };
+    }
+
 
     async create(storyId: string, data: CreateChapterDto) {
         // Check if story exists

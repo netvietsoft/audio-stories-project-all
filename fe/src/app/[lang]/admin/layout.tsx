@@ -7,7 +7,7 @@ import { Bell, Shield, LogOut, Loader2, Newspaper, Home, Users, Settings, Chevro
 import { ThemeProvider } from 'next-themes';
 
 import { useState, useEffect } from 'react';
-import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY } from '@/lib/api/admin-api-client';
 import AdminRequireLogin from '@/components/admin/AdminRequireLogin';
 import useRequireAdmin from '@/hooks/useRequireAdmin';
 import { useAdminStore } from '@/stores/admin-store';
@@ -41,7 +41,6 @@ export default function AdminLayout({
                 localStorage.removeItem('adminLoggedIn');
                 localStorage.removeItem('userEmail');
                 localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY);
-                localStorage.removeItem(ADMIN_REFRESH_TOKEN_KEY);
             }
 
             // 1. Call backend logout

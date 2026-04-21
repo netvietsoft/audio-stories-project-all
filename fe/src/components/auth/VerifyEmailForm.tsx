@@ -20,7 +20,6 @@ type VerifyEmailValues = z.infer<typeof verifyEmailSchema>;
 type VerifyCodeResponse = {
   ok: boolean;
   access_token: string;
-  refresh_token: string;
 };
 
 type BackendMeResponse = {
@@ -95,7 +94,7 @@ export default function VerifyEmailForm({ token, email: emailProp, onSuccess }: 
         code: data.code,
       });
 
-      const { access_token, refresh_token } = verifyResponse.data;
+      const { access_token } = verifyResponse.data;
       const profileResponse = await apiClient.get<BackendMeResponse>("/auth/me", {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -105,9 +104,8 @@ export default function VerifyEmailForm({ token, email: emailProp, onSuccess }: 
       setAuth({
         user: normalizeUserProfile(profileResponse.data),
         accessToken: access_token,
-        refreshToken: refresh_token,
       });
-      setAuthCookies(access_token, refresh_token);
+      setAuthCookies(access_token);
 
       setSubmitSuccess(t("success"));
       

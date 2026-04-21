@@ -19,7 +19,6 @@ type LoginFormValues = z.infer<typeof loginSchenma>;
 
 type LoginResponse = {
     access_token: string;
-    refresh_token: string;
 };
 
 type MeResponse = {
@@ -80,7 +79,7 @@ export default function LoginForm({
                 password: data.password,
             });
 
-            const { access_token, refresh_token } = loginRes.data;
+            const { access_token } = loginRes.data;
 
             const meRes = await apiClient.get<MeResponse>("/auth/me", {
                 headers: {
@@ -100,10 +99,9 @@ export default function LoginForm({
                     credits: meRes.data.credits ?? 0,
                 },
                 accessToken: access_token,
-                refreshToken: refresh_token,
             });
 
-            setAuthCookies(access_token, refresh_token);
+            setAuthCookies(access_token);
 
             if (onSuccess) {
                 onSuccess();

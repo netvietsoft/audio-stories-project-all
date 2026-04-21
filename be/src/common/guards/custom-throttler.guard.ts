@@ -1,33 +1,36 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { ExecutionContext, Injectable, Logger } from '@nestjs/common';
+import { ThrottlerException, ThrottlerGuard } from '@nestjs/throttler';
 
 @Injectable()
 export class CustomThrottlerGuard extends ThrottlerGuard {
+  private readonly logger = new Logger(CustomThrottlerGuard.name);
+
   protected async getTracker(context: ExecutionContext): Promise<string> {
     try {
-      // Try to get HTTP request
       const req = context.switchToHttp().getRequest() as any;
       // Prefer first IP from ips (when behind proxy), fallback to req.ip
       const ip = Array.isArray(req?.ips) && req.ips.length ? req.ips[0] : req?.ip;
-      return ip || (req?.headers?.['x-forwarded-for'] || '').split(',')[0] || '';
-    } catch (error) {
-      // If switchToHttp fails, return a fallback tracker
+      return ip || (req?.headers?.['x-forwarded-for'] || '').split(',')[0] || 'unknown';
+    } catch {
       return 'non-http-context';
     }
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    // Bypass throttling when not in production
-    if (process.env.NODE_ENV !== 'production') {
+    // Allow explicit opt-out via env var (useful in dev/staging/CI).
+    // Do NOT set this in production.
+    if (process.env.THROTTLE_DISABLED === 'true') {
       return true;
     }
 
     try {
-      // Otherwise use default throttler logic
-      return super.canActivate(context);
+      return await super.canActivate(context);
     } catch (error) {
-      // If throttler fails, allow the request
-      return true;
+      // Fail-closed: if throttler storage is unavailable, deny rather than allow.
+      // This prevents an outage of Redis/storage from silently disabling rate-limiting.
+      this.logger.error('Throttler error — failing closed (denying request)', error);
+      throw new ThrottlerException();
     }
   }
 }
+

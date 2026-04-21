@@ -8,13 +8,18 @@ import {
     Delete,
     UseGuards,
     Query,
+    Req,
+    Res,
+    HttpCode,
 } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { ChaptersService } from './chapters.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { CreateStandaloneChapterDto } from './dto/create-standalone-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ChapterQueryDto } from './dto/chapter-query.dto';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
+import { OptionalJwtGuard } from '@/auth/guards/optional-jwt.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { Public } from '@/auth/decorators/public.decorator';
@@ -53,7 +58,8 @@ export class ChaptersController {
         @Query('limit') limit?: string,
         @Query('lang') lang?: string,
     ) {
-        return this.chaptersService.findLatest(Number(limit) || 12, lang);
+        const safeLimit = Math.min(Number(limit) || 12, 50); // Clamp max to 50
+        return this.chaptersService.findLatest(safeLimit, lang);
     }
 
     @Get('chapters')
@@ -67,6 +73,30 @@ export class ChaptersController {
     @Get('chapters/:id/public')
     findPublicDetail(@Param('id') id: string) {
         return this.chaptersService.findPublicDetail(id);
+    }
+
+    /**
+     * Audio proxy endpoint — resolves the CDN/R2 URL after entitlement check.
+     *
+     * - Free chapters: accessible to everyone (anonymous or logged-in)
+     * - VIP/timed chapters: requires valid VIP membership
+     * - Unlockable chapters: requires UserUnlockedVariant record or VIP
+     *
+     * Returns HTTP 302 redirect to the real audio URL.
+     * The client (audio player) follows the redirect transparently.
+     */
+    @UseGuards(OptionalJwtGuard)
+    @Get('chapters/:id/audio')
+    @HttpCode(302)
+    async getAudio(
+        @Param('id') id: string,
+        @Req() req: Request,
+        @Res() res: Response,
+    ) {
+        const userId = (req.user as any)?.id;
+        const { url } = await this.chaptersService.getAudioUrl(id, userId);
+        // 302 redirect — audio player follows automatically, no buffering in NestJS
+        return res.redirect(302, url);
     }
 
     @Get('chapters/:id')

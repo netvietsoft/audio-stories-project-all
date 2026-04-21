@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Shield, Lock, Mail, Loader2, AlertCircle } from 'lucide-react';
-import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY } from '@/lib/api/admin-api-client';
 import { useAdminStore } from '@/stores/admin-store';
 
 function LoginForm() {
@@ -34,7 +34,7 @@ function LoginForm() {
             const loginRes = await adminApiClient.post('/auth/login', { email, password });
 
             if (loginRes.data.ok) {
-                const { access_token, refresh_token } = loginRes.data;
+                const { access_token } = loginRes.data;
 
                 // 2. Fetch user info to verify role
                 const meRes = await adminApiClient.get('/auth/me', {
@@ -47,7 +47,6 @@ function LoginForm() {
                 if (userData.role === 'ADMIN' || userData.roles?.includes('ADMIN')) {
                     if (typeof window !== 'undefined') {
                         localStorage.setItem(ADMIN_ACCESS_TOKEN_KEY, access_token);
-                        localStorage.setItem(ADMIN_REFRESH_TOKEN_KEY, refresh_token);
                         localStorage.setItem('adminLoggedIn', 'true');
                         localStorage.setItem('userEmail', email);
                     }
@@ -65,7 +64,6 @@ function LoginForm() {
                             vipExpirationDate: userData.premium_expires_at,
                         },
                         accessToken: access_token,
-                        refreshToken: refresh_token,
                     });
 
                     router.push('/admin');

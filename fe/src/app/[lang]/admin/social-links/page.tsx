@@ -6,7 +6,7 @@ import { Loader2, Share2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from '@/components/shared/LocalizedLink';
 
-import { adminApiClient as apiClient, ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { adminApiClient as apiClient, ADMIN_ACCESS_TOKEN_KEY } from '@/lib/api/admin-api-client';
 import { useAdminStore } from '@/stores/admin-store';
 
 type SocialLinkItem = {
@@ -58,7 +58,6 @@ export default function SocialLinksPage() {
       localStorage.removeItem('adminLoggedIn');
       localStorage.removeItem('userEmail');
       localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY);
-      localStorage.removeItem(ADMIN_REFRESH_TOKEN_KEY);
     }
     const lang = params?.lang === 'en' ? 'en' : 'vi';
     router.push(`/${lang}/admin/login`);

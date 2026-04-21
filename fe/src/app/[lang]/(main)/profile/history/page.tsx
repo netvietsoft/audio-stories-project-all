@@ -93,23 +93,25 @@ export default function ProfileHistoryPage() {
     const localizedStoryTitle = getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title);
     const localizedChapterTitle = getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title);
 
-    if (item.chapter.r2AudioUrl) {
-      playTrack(
-        {
-          id: item.chapter.id,
-          chapterId: item.chapter.id,
-          storyId: item.story.id,
-          storySlug: item.story.slug,
-          chapterNumber: item.chapter.chapterNumber,
-          title: formatChapterTitle(tChapter("chapterKeyword"), item.chapter.chapterNumber, localizedChapterTitle),
-          author: item.story.author?.name,
-          audioUrl: item.chapter.r2AudioUrl,
-          coverUrl: item.story.thumbnailUrl || undefined,
-        },
-        item.progressSeconds || 0,
-        [],
-      );
-    }
+    const proxyUrl = accessToken
+      ? `${process.env.NEXT_PUBLIC_API_URL}/chapters/${item.chapter.id}/audio?token=${accessToken}`
+      : `${process.env.NEXT_PUBLIC_API_URL}/chapters/${item.chapter.id}/audio`;
+
+    playTrack(
+      {
+        id: item.chapter.id,
+        chapterId: item.chapter.id,
+        storyId: item.story.id,
+        storySlug: item.story.slug,
+        chapterNumber: item.chapter.chapterNumber,
+        title: formatChapterTitle(tChapter("chapterKeyword"), item.chapter.chapterNumber, localizedChapterTitle),
+        author: item.story.author?.name,
+        audioUrl: proxyUrl,
+        coverUrl: item.story.thumbnailUrl || undefined,
+      },
+      item.progressSeconds || 0,
+      [],
+    );
 
     router.push(href);
   };

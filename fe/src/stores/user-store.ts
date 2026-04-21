@@ -34,13 +34,13 @@ export type UserProfile = {
 type UserState = {
   user: UserProfile | null;
   accessToken: string | null;
-  refreshToken: string | null;
+  // refreshToken removed — it's now an HttpOnly cookie managed by the browser.
+  // JS code must never read or write the refresh token.
   isHydrated: boolean;
   setHydrated: (isHydrated: boolean) => void;
   setAuth: (payload: {
     user: UserProfile;
     accessToken: string;
-    refreshToken: string;
   }) => void;
   updateAccessToken: (accessToken: string) => void;
   setUser: (user: UserProfile | null) => void;
@@ -50,7 +50,6 @@ type UserState = {
 const initialState = {
   user: null,
   accessToken: null,
-  refreshToken: null,
   isHydrated: false,
 };
 
@@ -59,10 +58,10 @@ export const useUserStore = create<UserState>()(
     (set) => ({
       ...initialState,
       setHydrated: (isHydrated) => set({ isHydrated }),
-      setAuth: ({ user, accessToken, refreshToken }) => set({ user, accessToken, refreshToken, isHydrated: true }),
+      setAuth: ({ user, accessToken }) => set({ user, accessToken, isHydrated: true }),
       updateAccessToken: (accessToken) => set({ accessToken, isHydrated: true }),
       setUser: (user) => set({ user, isHydrated: true }),
-      clearAuth: () => set({ user: null, accessToken: null, refreshToken: null, isHydrated: true }),
+      clearAuth: () => set({ user: null, accessToken: null, isHydrated: true }),
     }),
     {
       name: USER_STORAGE_KEY,
@@ -73,7 +72,7 @@ export const useUserStore = create<UserState>()(
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
+        // Do NOT persist refreshToken — it's an HttpOnly cookie, not a JS concern
       }),
     },
   ),

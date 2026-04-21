@@ -262,6 +262,7 @@ export default function StoryChapterClient() {
   const chapterSlug = params?.chapterSlug;
   const sleepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shareAction = useShareAction();
+  const accessToken = useUserStore((state) => state.accessToken);
 
   const [story, setStory] = useState<StoryDetail | null>(null);
   const [recommendedStories, setRecommendedStories] = useState<StoryListItem[]>([]);
@@ -358,37 +359,55 @@ export default function StoryChapterClient() {
   );
 
   const normalizeVariant = useCallback(
-    (variant: any): ChapterVariant => ({
-      ...variant,
-      title: getLocalizedValue(locale, variant.titleVi, variant.titleEn, variant.title),
-      content: getLocalizedValue(locale, variant.contentVi, variant.contentEn, variant.content || ""),
-      audioUrl: getLocalizedValue(
+    (variant: any): ChapterVariant => {
+      // For variants, we currently don't have a dedicated API proxy yet.
+      // But if we did, it would be identical to chapters.
+      // In this setup, we fall back to the old string if present, or construct proxy.
+      const rawAudioUrl = getLocalizedValue(
         locale,
         variant.audioUrlVi,
         variant.audioUrlEn,
         !variant.audioUrlVi && !variant.audioUrlEn ? (variant.audioUrl || variant.r2AudioUrl || "") : "",
-      ).trim(),
-    }),
-    [locale],
+      ).trim();
+
+      const proxyUrl = accessToken
+         ? `${process.env.NEXT_PUBLIC_API_URL}/chapters/${variant.chapterId || variant.id}/audio?token=${accessToken}`
+         : `${process.env.NEXT_PUBLIC_API_URL}/chapters/${variant.chapterId || variant.id}/audio`;
+
+      return {
+        ...variant,
+        title: getLocalizedValue(locale, variant.titleVi, variant.titleEn, variant.title),
+        content: getLocalizedValue(locale, variant.contentVi, variant.contentEn, variant.content || ""),
+        audioUrl: rawAudioUrl || proxyUrl,
+      };
+    },
+    [locale, accessToken],
   );
 
   const normalizeChapter = useCallback(
-    (chapter: any): ChapterItem => ({
-      ...chapter,
-      isInteractive: chapter.isInteractive,
-      variants: (chapter.variants || []).map((variant: any) => normalizeVariant(variant)),
-      title: getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title),
-      description: getLocalizedValue(locale, chapter.descriptionVi, chapter.descriptionEn, chapter.description || ""),
-      content: getLocalizedValue(locale, chapter.contentVi, chapter.contentEn, chapter.content || ""),
-      r2AudioUrl:
-        getLocalizedValue(
-          locale,
-          chapter.audioUrlVi,
-          chapter.audioUrlEn,
-          !chapter.audioUrlVi && !chapter.audioUrlEn ? (chapter.r2AudioUrl || chapter.audioUrl || "") : "",
-        ) || null,
-    }),
-    [locale, normalizeVariant],
+    (chapter: any): ChapterItem => {
+      const rawAudioUrl = getLocalizedValue(
+        locale,
+        chapter.audioUrlVi,
+        chapter.audioUrlEn,
+        !chapter.audioUrlVi && !chapter.audioUrlEn ? (chapter.r2AudioUrl || chapter.audioUrl || "") : "",
+      );
+
+      const proxyUrl = accessToken
+        ? `${process.env.NEXT_PUBLIC_API_URL}/chapters/${chapter.id}/audio?token=${accessToken}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/chapters/${chapter.id}/audio`;
+
+      return {
+        ...chapter,
+        isInteractive: chapter.isInteractive,
+        variants: (chapter.variants || []).map((variant: any) => normalizeVariant(variant)),
+        title: getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title),
+        description: getLocalizedValue(locale, chapter.descriptionVi, chapter.descriptionEn, chapter.description || ""),
+        content: getLocalizedValue(locale, chapter.contentVi, chapter.contentEn, chapter.content || ""),
+        r2AudioUrl: rawAudioUrl || proxyUrl,
+      };
+    },
+    [locale, normalizeVariant, accessToken],
   );
 
   // Initialize mounted flag for portal rendering
@@ -484,7 +503,7 @@ export default function StoryChapterClient() {
     };
 
     fetchDetail();
-  }, [chapterSlug, locale, normalizeChapter, router, slug]);
+  }, [chapterSlug, locale, normalizeChapter, router, slug, accessToken]);
 
   useEffect(() => {
     if (!story || !selectedChapterId) return;

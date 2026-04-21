@@ -21,7 +21,6 @@ type LoginPayload = {
 
 type LoginResponse = {
   access_token: string;
-  refresh_token: string;
 };
 
 type BackendMeResponse = {
@@ -84,7 +83,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const login = useCallback(
     async (payload: LoginPayload) => {
       const response = await apiClient.post<LoginResponse>("/auth/login", payload);
-      const { access_token, refresh_token } = response.data;
+      const { access_token } = response.data;
       const profile = await apiClient.get<BackendMeResponse>("/auth/me", {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -94,10 +93,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
       setAuth({
         accessToken: access_token,
-        refreshToken: refresh_token,
         user: nextUser,
       });
-      setAuthCookies(access_token, refresh_token);
+      setAuthCookies(access_token);
     },
     [setAuth],
   );

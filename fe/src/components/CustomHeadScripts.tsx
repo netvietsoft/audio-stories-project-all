@@ -1,52 +1,13 @@
-'use client';
-
-import { useEffect } from 'react';
-
+/**
+ * CustomHeadScripts — SECURITY DISABLED
+ *
+ * Injecting arbitrary <script> tags from database content is a Stored XSS vector.
+ * This component has been intentionally disabled until a safe implementation
+ * using server-side Next.js <Script> with strict CSP nonces is in place.
+ *
+ * DO NOT re-enable innerHTML / document.createElement('script') injection.
+ */
 export default function CustomHeadScripts() {
-  useEffect(() => {
-    const fetchAndInjectScripts = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/settings/site`);
-        const data = await response.json();
-        
-        if (data.custom_head_scripts && typeof data.custom_head_scripts === 'string') {
-          // Create a temporary div to parse the HTML
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = data.custom_head_scripts;
-          
-          // Extract and inject scripts
-          const scripts = tempDiv.querySelectorAll('script');
-          scripts.forEach((script) => {
-            const newScript = document.createElement('script');
-            
-            // Copy attributes
-            Array.from(script.attributes).forEach((attr) => {
-              newScript.setAttribute(attr.name, attr.value);
-            });
-            
-            // Copy inline script content
-            if (script.innerHTML) {
-              newScript.innerHTML = script.innerHTML;
-            }
-            
-            // Append to head
-            document.head.appendChild(newScript);
-          });
-          
-          // Extract and inject other elements (like meta tags, link tags)
-          const otherElements = tempDiv.querySelectorAll('meta, link, style');
-          otherElements.forEach((element) => {
-            const clonedElement = element.cloneNode(true);
-            document.head.appendChild(clonedElement);
-          });
-        }
-      } catch (error) {
-        console.error('Failed to load custom head scripts:', error);
-      }
-    };
-
-    fetchAndInjectScripts();
-  }, []);
-
+  // Disabled: no scripts are injected from the backend.
   return null;
 }

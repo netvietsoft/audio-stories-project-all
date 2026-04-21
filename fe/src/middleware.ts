@@ -35,7 +35,7 @@ const detectLocaleFromHeaders = (request: NextRequest): "vi" | "en" => {
     return "vi";
 };
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // Skip locale/auth middleware for static files in /public and framework assets.
@@ -76,6 +76,20 @@ export function proxy(request: NextRequest) {
         normalizedPathname.startsWith(prefix),
     );
     const isAuthRoute = authRoutes.some((route) => normalizedPathname.startsWith(route));
+    
+    const isAdminRoute = normalizedPathname.startsWith("/admin");
+    const hasRefreshToken = Boolean(request.cookies.get("refresh_token")?.value);
+
+    // Bắt toàn bộ các request đi vào /admin và các route con của nó, ngoại trừ /admin/login
+    if (isAdminRoute && !normalizedPathname.startsWith("/admin/login")) {
+        if (!hasRefreshToken) {
+            const loginUrl = new URL(`/${locale}/admin/login`, request.url);
+            loginUrl.searchParams.set("reason", "unauthorized");
+            const response = NextResponse.redirect(loginUrl);
+            response.cookies.set(localeCookieName, locale, { path: "/" });
+            return response;
+        }
+    }
 
     if (isProtectedRoute && !hasAccessToken) {
         const loginUrl = new URL(`/${locale}${AUTH_LOGIN_PATH}`, request.url);

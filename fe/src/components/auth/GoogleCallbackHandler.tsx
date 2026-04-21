@@ -32,9 +32,8 @@ export default function GoogleCallbackHandler() {
     const processCallback = async () => {
       try {
         const accessToken = searchParams.get("access_token");
-        const refreshToken = searchParams.get("refresh_token");
 
-        if (!accessToken || !refreshToken) {
+        if (!accessToken) {
           setError(locale === "en" ? "Missing Google login token. Please try again." : "Thiếu token đăng nhập Google. Vui lòng thử lại.");
           return;
         }
@@ -57,10 +56,9 @@ export default function GoogleCallbackHandler() {
             credits: meRes.data.credits ?? 0,
           },
           accessToken,
-          refreshToken,
         });
 
-        setAuthCookies(accessToken, refreshToken);
+        setAuthCookies(accessToken);
 
         const redirectPath = searchParams.get("redirect") || "/";
 

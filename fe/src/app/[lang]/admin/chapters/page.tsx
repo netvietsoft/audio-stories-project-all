@@ -15,8 +15,7 @@ import {
     Filter,
     Check,
 } from 'lucide-react';
-import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
-import { ADMIN_ACCESS_TOKEN_KEY, ADMIN_REFRESH_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { adminApiClient as apiClient, ADMIN_ACCESS_TOKEN_KEY } from '@/lib/api/admin-api-client';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import { useParams, useRouter } from 'next/navigation';
@@ -51,7 +50,6 @@ export default function ChaptersGlobalPage() {
             localStorage.removeItem('adminLoggedIn');
             localStorage.removeItem('userEmail');
             localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY);
-            localStorage.removeItem(ADMIN_REFRESH_TOKEN_KEY);
         }
         clearAdminAuth();
 

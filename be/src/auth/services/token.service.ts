@@ -1,7 +1,6 @@
 import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'crypto';
-import * as argon2 from 'argon2';
 import { PrismaService } from '@/prisma/prisma.service';
 import { UserClaimsService } from './user-claims.service';
 
@@ -37,10 +36,12 @@ export class TokenService {
       } as any,
     );
 
+    // Store jti (UUID) directly — JWT signature already guarantees integrity.
+    // O(1) lookup via unique jti index, no argon2 hash needed.
     await this.prisma.refreshToken.create({
       data: {
-        userId: userId,
-        token: await argon2.hash(refresh),
+        userId,
+        jti: refreshJti,
         expiresAt: new Date(Date.now() + this.parseTTL(process.env.JWT_REFRESH_TTL || '30d')),
       },
     });
@@ -49,32 +50,49 @@ export class TokenService {
   }
 
   async rotateRefresh(oldToken: string): Promise<TokenPair> {
-    const payload = await this.jwt.verifyAsync<{ sub: string; jti: string }>(oldToken, {
-      secret: process.env.JWT_REFRESH_SECRET ?? '',
-    });
-
-    const tokens = await this.prisma.refreshToken.findMany({
-      where: { userId: payload.sub },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    let validTokenId: string | null = null;
-    for (const t of tokens) {
-      if (await argon2.verify(t.token, oldToken)) {
-        validTokenId = t.id;
-        break;
-      }
+    // Step 1: Verify JWT signature — rejects tampered/expired tokens
+    let payload: { sub: string; jti: string };
+    try {
+      payload = await this.jwt.verifyAsync<{ sub: string; jti: string }>(oldToken, {
+        secret: process.env.JWT_REFRESH_SECRET ?? '',
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid or expired refresh token');
     }
 
-    if (!validTokenId) throw new UnauthorizedException('Invalid refresh token');
+    if (!payload.jti) {
+      throw new UnauthorizedException('Malformed refresh token: missing jti');
+    }
 
-    // Use deleteMany to avoid error when record doesn't exist (race condition)
-    await this.prisma.refreshToken.deleteMany({ where: { id: validTokenId } });
+    // Step 2: O(1) DB lookup — single indexed query instead of full table scan + argon2.verify loop
+    const record = await this.prisma.refreshToken.findUnique({
+      where: { jti: payload.jti },
+    });
+
+    if (!record) {
+      // Token already rotated or revoked — possible token replay attack
+      this.logger.warn(`Refresh token not found for jti=${payload.jti} userId=${payload.sub}`);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (record.userId !== payload.sub) {
+      // jti belongs to a different user — something is very wrong
+      this.logger.warn(`jti userId mismatch: record.userId=${record.userId} payload.sub=${payload.sub}`);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (record.expiresAt < new Date()) {
+      await this.prisma.refreshToken.delete({ where: { jti: payload.jti } });
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    // Step 3: Rotate — delete old record then issue new pair atomically
+    await this.prisma.refreshToken.delete({ where: { jti: payload.jti } });
     return this.issueTokens(payload.sub);
   }
 
   async revokeAll(userId: string): Promise<void> {
-    await this.prisma.refreshToken.deleteMany({ where: { userId: userId } });
+    await this.prisma.refreshToken.deleteMany({ where: { userId } });
   }
 
   parseTTL(ttl: string): number {

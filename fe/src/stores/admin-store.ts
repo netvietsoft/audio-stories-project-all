@@ -15,12 +15,12 @@ export interface AdminUser {
 interface AdminAuthState {
   user: AdminUser | null;
   accessToken: string | null;
-  refreshToken: string | null;
+  // refreshToken removed — it's now an HttpOnly cookie managed by the browser.
   isAuthenticated: boolean;
 }
 
 interface AdminAuthActions {
-  setAuth: (auth: { user: AdminUser; accessToken: string; refreshToken: string }) => void;
+  setAuth: (auth: { user: AdminUser; accessToken: string }) => void;
   updateAccessToken: (accessToken: string) => void;
   clearAuth: () => void;
 }
@@ -32,14 +32,12 @@ export const useAdminStore = create<AdminStore>()(
     (set) => ({
       user: null,
       accessToken: null,
-      refreshToken: null,
       isAuthenticated: false,
 
-      setAuth: ({ user, accessToken, refreshToken }) =>
+      setAuth: ({ user, accessToken }) =>
         set({
           user,
           accessToken,
-          refreshToken,
           isAuthenticated: true,
         }),
 
@@ -53,7 +51,6 @@ export const useAdminStore = create<AdminStore>()(
         set({
           user: null,
           accessToken: null,
-          refreshToken: null,
           isAuthenticated: false,
         }),
     }),

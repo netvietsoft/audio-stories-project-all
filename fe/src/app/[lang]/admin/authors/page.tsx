@@ -91,8 +91,10 @@ export default function AuthorsPage() {
                 setAuthors([...authors, res.data].sort((a, b) => a.name.localeCompare(b.name)));
             }
             setIsModalOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to save author:', error);
+            const errorMessage = error?.response?.data?.message || error?.message || 'Không thể lưu tác giả. Vui lòng thử lại.';
+            alert(errorMessage);
         } finally {
             setIsSubmitting(false);
         }

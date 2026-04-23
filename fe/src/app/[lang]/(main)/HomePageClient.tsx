@@ -453,212 +453,211 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
     },
   ].filter((tab) => tab.stories.length > 0);
 
-  return (
-    <div className="space-y-10 md:space-y-8">
-
-      {/* ─── Hero Banner ─────────────────────────────────────────── */}
-      <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-[#161616] text-white -mt-8">
-        {activeHero ? (
-          <div className="absolute inset-y-0 left-1/2 w-2/3 -translate-x-1/2">
-            <Image
-              src={activeHero.imageUrl || "https://placehold.co/1600x500?text=Hot+Story"}
-              alt={activeHero.title}
-              fill
-              sizes="100vw"
-              priority
-              className="object-cover object-center"
-            />
-          </div>
-        ) : null}
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#161616] via-[#161616]/90 to-transparent" />
-          <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-[#161616] via-[#161616]/90 to-transparent" />
+  const heroSection = (
+    <section key="hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden bg-[#161616] text-white -mt-8">
+      {activeHero ? (
+        <div className="absolute inset-y-0 left-1/2 w-2/3 -translate-x-1/2">
+          <Image
+            src={activeHero.imageUrl || "https://placehold.co/1600x500?text=Hot+Story"}
+            alt={activeHero.title}
+            fill
+            sizes="100vw"
+            priority
+            className="object-cover object-center"
+          />
         </div>
-
-        {heroSlides.length > 1 && (
-          <button
-            onClick={() => setHeroIndex((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1))}
-            className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-[#3a3b3c]/60 p-3 backdrop-blur-sm transition-all hover:bg-[#3a3b3c]/85 hover:scale-110"
-            aria-label="Next slide"
-          >
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        )}
-
-        <div className="relative z-10 mx-auto w-full px-4 pb-8 pt-6 sm:px-6 md:px-8 lg:w-[70vw] lg:px-0 md:pb-12 md:pt-10">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300 sm:text-xs">{t("heroBadge")}</p>
-          <h1 className="mt-2 text-2xl font-black leading-tight sm:text-3xl md:mt-3 md:text-5xl">
-            {t("heroTitleLine1")}
-            <br className="hidden md:block" /> {t("heroTitleLine2")}
-          </h1>
-          <p className="mt-2 max-w-2xl text-xs text-slate-200 sm:text-sm md:mt-3 md:text-base">
-            {activeHero ? (activeHero.subtitle || t("heroFeatured", { title: activeHero.title })) : t("heroFallback")}
-          </p>
-          <div className="mt-5 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
-            {activeHero?.isExternal ? (
-              <a
-                href={activeHero.href}
-                target="_blank"
-                rel="noreferrer"
-                className="whitespace-nowrap rounded-full bg-amber-400 px-3.5 py-2 text-xs font-semibold text-slate-900 transition-colors hover:bg-amber-300 sm:px-5 sm:py-2.5 sm:text-sm"
-              >
-                {t("listenNow")}
-              </a>
-            ) : (
-              <Link href={activeHero ? activeHero.href : "/story/explore"} className="whitespace-nowrap rounded-full bg-amber-400 px-3.5 py-2 text-xs font-semibold text-slate-900 transition-colors hover:bg-amber-300 sm:px-5 sm:py-2.5 sm:text-sm">
-                {t("listenNow")}
-              </Link>
-            )}
-              <Link href="/story/trending" className="whitespace-nowrap rounded-full border border-white/30 px-3.5 py-2 text-xs font-semibold transition-colors hover:bg-white/10 sm:px-5 sm:py-2.5 sm:text-sm">
-              {t("viewTrending")}
-            </Link>
-          </div>
-          <div className="mt-6 flex gap-2">
-            {heroSlides.map((slide, idx) => (
-              <button
-                key={slide.id}
-                onClick={() => setHeroIndex(idx)}
-                className={`h-2.5 rounded-full transition-all ${idx === heroIndex ? "w-10 bg-amber-300" : "w-2.5 bg-white/40"}`}
-                aria-label={`hero-${idx + 1}`}
-              />
-            ))}
-          </div>
-        </div>
-        </section>
-
-      {accessToken ? (
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-[#242526]">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <h2 className="truncate whitespace-nowrap text-lg font-black text-slate-900 sm:text-2xl dark:text-white">{t("continueTitle")}</h2>
-              </div>
-              <Link href="/profile/history" className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm transition-colors hover:bg-rose-300 dark:bg-rose-450 dark:hover:bg-pink-400 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-full sm:border sm:border-slate-200 sm:bg-transparent sm:px-4 sm:py-2 sm:text-sm sm:font-semibold sm:text-pink-600 sm:shadow-none sm:hover:bg-slate-50 dark:sm:border-[#303133] dark:sm:text-pink-400 dark:sm:hover:bg-[#3a3b3c]">
-                <ArrowRight className="h-4 w-4 sm:hidden" />
-                <span className="hidden items-center gap-2 sm:inline-flex">
-                  <Headphones className="h-4 w-4" />
-                  {tNavbar("listeningHistory")}
-                </span>
-              </Link>
-            </div>
-
-            {isPersonalizedLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100 dark:bg-[#3a3b3c]" />
-                ))}
-              </div>
-            ) : historyItems.length > 0 ? (
-              <div className="space-y-3">
-                {historyItems.map((item) => {
-                  const storyTitle = getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title);
-                  const chapterTitle = getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title);
-                  const progressPercent = item.chapter.audioDuration
-                    ? Math.min(100, Math.round((item.progressSeconds / item.chapter.audioDuration) * 100))
-                    : 0;
-
-                  return (
-                    <Link
-                      key={item.id}
-                      href={`/story/${item.story.slug}/chuong-${item.chapter.chapterNumber}`}
-                      className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-[#212121] dark:hover:bg-[#3a3b3c]"
-                    >
-                      <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-[#3a3b3c]">
-                        <Image
-                          src={item.story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
-                          alt={storyTitle}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
-                        <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{tProfile("chapterTitle", { number: item.chapter.chapterNumber, title: chapterTitle })}</p>
-                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-[#3a3b3c]">
-                          <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${progressPercent}%` }} />
-                        </div>
-                        <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{t("continueProgress", { percent: progressPercent })}</p>
-                      </div>
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-sm">
-                        <PlayCircle className="h-5 w-5" />
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-[#212121] dark:text-slate-400">
-                {t("continueEmpty")}
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-[#242526]">
-            <div className="mb-4 flex items-start justify-between gap-4">
-              <div className="min-w-0 flex-1">
-                <h2 className="truncate whitespace-nowrap text-lg font-black text-slate-900 sm:text-2xl dark:text-white">{t("favoritesListTitle")}</h2>
-              </div>
-              <Link href="/profile?panel=favorites" className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm transition-colors hover:bg-rose-300 dark:bg-rose-450 dark:hover:bg-pink-400 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-full sm:border sm:border-slate-200 sm:bg-transparent sm:px-4 sm:py-2 sm:text-sm sm:font-semibold sm:text-pink-600 sm:shadow-none sm:hover:bg-slate-50 dark:sm:border-[#303133] dark:sm:text-pink-400 dark:sm:hover:bg-[#3a3b3c]">
-                <ArrowRight className="h-4 w-4 sm:hidden" />
-                <span className="hidden items-center gap-2 sm:inline-flex">
-                  <Heart className="h-4 w-4" />
-                  {tNavbar("favorites")}
-                </span>
-              </Link>
-            </div>
-
-            {isPersonalizedLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-[#3a3b3c]" />
-                ))}
-              </div>
-            ) : favoriteStories.length > 0 ? (
-              <div className="space-y-3">
-                {favoriteStories.map((story) => {
-                  const storyTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
-                  const categoryName = story.categories?.[0]?.category
-                    ? getLocalizedValue(locale, story.categories[0].category.nameVi, story.categories[0].category.nameEn, story.categories[0].category.name)
-                    : t("uncategorized");
-
-                  return (
-                    <Link
-                      key={story.id}
-                      href={`/story/${story.slug}`}
-                      className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-[#212121] dark:hover:bg-[#3a3b3c]"
-                    >
-                      <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-[#3a3b3c]">
-                        <Image
-                          src={story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
-                          alt={storyTitle}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
-                        <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{categoryName}</p>
-                        <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{story.author?.name || tStoryDetail("authorUpdating")}</p>
-                      </div>
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-sm">
-                        <Heart className="h-5 w-5" />
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-[#212121] dark:text-slate-400">
-                {t("favoritesEmpty")}
-              </div>
-            )}
-          </div>
-        </section>
       ) : null}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#161616] via-[#161616]/90 to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-[#161616] via-[#161616]/90 to-transparent" />
+      </div>
 
-      <div className="space-y-10 md:space-y-8">
+      {heroSlides.length > 1 && (
+        <button
+          onClick={() => setHeroIndex((prev) => (prev === heroSlides.length - 1 ? 0 : prev + 1))}
+          className="absolute right-4 top-1/2 z-20 -translate-y-1/2 rounded-full bg-[#3a3b3c]/60 p-3 backdrop-blur-sm transition-all hover:bg-[#3a3b3c]/85 hover:scale-110"
+          aria-label="Next slide"
+        >
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
+
+      <div className="relative z-10 mx-auto w-full px-4 pb-8 pt-6 sm:px-6 md:px-8 lg:w-[70vw] lg:px-0 md:pb-12 md:pt-10">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-300 sm:text-xs">{t("heroBadge")}</p>
+        <h1 className="mt-2 text-2xl font-black leading-tight sm:text-3xl md:mt-3 md:text-5xl">
+          {t("heroTitleLine1")}
+          <br className="hidden md:block" /> {t("heroTitleLine2")}
+        </h1>
+        <p className="mt-2 max-w-2xl text-xs text-slate-200 sm:text-sm md:mt-3 md:text-base">
+          {activeHero ? (activeHero.subtitle || t("heroFeatured", { title: activeHero.title })) : t("heroFallback")}
+        </p>
+        <div className="mt-5 flex flex-nowrap items-center gap-2 overflow-x-auto pb-1">
+          {activeHero?.isExternal ? (
+            <a
+              href={activeHero.href}
+              target="_blank"
+              rel="noreferrer"
+              className="whitespace-nowrap rounded-full bg-amber-400 px-3.5 py-2 text-xs font-semibold text-slate-900 transition-colors hover:bg-amber-300 sm:px-5 sm:py-2.5 sm:text-sm"
+            >
+              {t("listenNow")}
+            </a>
+          ) : (
+            <Link href={activeHero ? activeHero.href : "/story/explore"} className="whitespace-nowrap rounded-full bg-amber-400 px-3.5 py-2 text-xs font-semibold text-slate-900 transition-colors hover:bg-amber-300 sm:px-5 sm:py-2.5 sm:text-sm">
+              {t("listenNow")}
+            </Link>
+          )}
+            <Link href="/story/trending" className="whitespace-nowrap rounded-full border border-white/30 px-3.5 py-2 text-xs font-semibold transition-colors hover:bg-white/10 sm:px-5 sm:py-2.5 sm:text-sm">
+            {t("viewTrending")}
+          </Link>
+        </div>
+        <div className="mt-6 flex gap-2">
+          {heroSlides.map((slide, idx) => (
+            <button
+              key={slide.id}
+              onClick={() => setHeroIndex(idx)}
+              className={`h-2.5 rounded-full transition-all ${idx === heroIndex ? "w-10 bg-amber-300" : "w-2.5 bg-white/40"}`}
+              aria-label={`hero-${idx + 1}`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  const mainContent = (
+    <div key="main" className="space-y-10 md:space-y-8">
+        {accessToken ? (
+          <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-[#242526]">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <h2 className="truncate whitespace-nowrap text-lg font-black text-slate-900 sm:text-2xl dark:text-white">{t("continueTitle")}</h2>
+                </div>
+                <Link href="/profile/history" className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm transition-colors hover:bg-rose-300 dark:bg-rose-450 dark:hover:bg-pink-400 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-full sm:border sm:border-slate-200 sm:bg-transparent sm:px-4 sm:py-2 sm:text-sm sm:font-semibold sm:text-pink-600 sm:shadow-none sm:hover:bg-slate-50 dark:sm:border-[#303133] dark:sm:text-pink-400 dark:sm:hover:bg-[#3a3b3c]">
+                  <ArrowRight className="h-4 w-4 sm:hidden" />
+                  <span className="hidden items-center gap-2 sm:inline-flex">
+                    <Headphones className="h-4 w-4" />
+                    {tNavbar("listeningHistory")}
+                  </span>
+                </Link>
+              </div>
+
+              {isPersonalizedLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100 dark:bg-[#3a3b3c]" />
+                  ))}
+                </div>
+              ) : historyItems.length > 0 ? (
+                <div className="space-y-3">
+                  {historyItems.map((item) => {
+                    const storyTitle = getLocalizedValue(locale, item.story.titleVi, item.story.titleEn, item.story.title);
+                    const chapterTitle = getLocalizedValue(locale, item.chapter.titleVi, item.chapter.titleEn, item.chapter.title);
+                    const progressPercent = item.chapter.audioDuration
+                      ? Math.min(100, Math.round((item.progressSeconds / item.chapter.audioDuration) * 100))
+                      : 0;
+
+                    return (
+                      <Link
+                        key={item.id}
+                        href={`/story/${item.story.slug}/chuong-${item.chapter.chapterNumber}`}
+                        className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-[#212121] dark:hover:bg-[#3a3b3c]"
+                      >
+                        <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-[#3a3b3c]">
+                          <Image
+                            src={item.story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
+                            alt={storyTitle}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
+                          <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{tProfile("chapterTitle", { number: item.chapter.chapterNumber, title: chapterTitle })}</p>
+                          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-[#3a3b3c]">
+                            <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500" style={{ width: `${progressPercent}%` }} />
+                          </div>
+                          <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{t("continueProgress", { percent: progressPercent })}</p>
+                        </div>
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-sm">
+                          <PlayCircle className="h-5 w-5" />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-[#212121] dark:text-slate-400">
+                  {t("continueEmpty")}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-[#242526]">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <h2 className="truncate whitespace-nowrap text-lg font-black text-slate-900 sm:text-2xl dark:text-white">{t("favoritesListTitle")}</h2>
+                </div>
+                <Link href="/profile?panel=favorites" className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm transition-colors hover:bg-rose-300 dark:bg-rose-450 dark:hover:bg-pink-400 sm:h-auto sm:w-auto sm:gap-2 sm:rounded-full sm:border sm:border-slate-200 sm:bg-transparent sm:px-4 sm:py-2 sm:text-sm sm:font-semibold sm:text-pink-600 sm:shadow-none sm:hover:bg-slate-50 dark:sm:border-[#303133] dark:sm:text-pink-400 dark:sm:hover:bg-[#3a3b3c]">
+                  <ArrowRight className="h-4 w-4 sm:hidden" />
+                  <span className="hidden items-center gap-2 sm:inline-flex">
+                    <Heart className="h-4 w-4" />
+                    {tNavbar("favorites")}
+                  </span>
+                </Link>
+              </div>
+
+              {isPersonalizedLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="h-20 animate-pulse rounded-2xl bg-slate-100 dark:bg-[#3a3b3c]" />
+                  ))}
+                </div>
+              ) : favoriteStories.length > 0 ? (
+                <div className="space-y-3">
+                  {favoriteStories.map((story) => {
+                    const storyTitle = getLocalizedValue(locale, story.titleVi, story.titleEn, story.title);
+                    const categoryName = story.categories?.[0]?.category
+                      ? getLocalizedValue(locale, story.categories[0].category.nameVi, story.categories[0].category.nameEn, story.categories[0].category.name)
+                      : t("uncategorized");
+
+                    return (
+                      <Link
+                        key={story.id}
+                        href={`/story/${story.slug}`}
+                        className="flex items-center gap-4 rounded-2xl bg-white p-3 transition-all hover:-translate-y-0.5 hover:bg-pink-100 dark:bg-[#212121] dark:hover:bg-[#3a3b3c]"
+                      >
+                        <div className="relative h-20 w-14 shrink-0 overflow-hidden rounded-xl bg-slate-200 dark:bg-[#3a3b3c]">
+                          <Image
+                            src={story.thumbnailUrl || "https://placehold.co/120x180?text=No+Cover"}
+                            alt={storyTitle}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{storyTitle}</p>
+                          <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{categoryName}</p>
+                          <p className="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">{story.author?.name || tStoryDetail("authorUpdating")}</p>
+                        </div>
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink-600 text-white shadow-sm">
+                          <Heart className="h-5 w-5" />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-gray-100 p-6 text-sm text-slate-500 dark:bg-[#212121] dark:text-slate-400">
+                  {t("favoritesEmpty")}
+                </div>
+              )}
+            </div>
+          </section>
+        ) : null}
+
         {/* ─── Hashtag / Category Strip ────────────────────────────── */}
         {topCategories.length > 0 && (
           <section className="space-y-3">
@@ -715,7 +714,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
                   >
                     {/* Gradient Background */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${gradient} group-hover:brightness-110 transition-all`} />
-                    
+
                     {/* Category Name */}
                     <div className="relative z-10 flex items-center justify-center w-full h-full">
                       <span className="text-[11px] sm:text-xs md:text-sm font-bold text-center px-1.5 line-clamp-1 w-full text-white drop-shadow-lg">
@@ -758,45 +757,43 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
           </div>
           <InteractiveStoryShelf stories={discoveryFeaturedStories} />
         </section>
-      </div>
 
-      {/* ─── Truyện mới đăng (Stripe layout) ─────────── */}
-      <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-[#242526]">
+        {/* ─── Truyện mới đăng (Stripe layout) ─────────── */}
+        <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-[#242526]">
           <div className={HOME_AXIS_CLASS}>
-          <div className="space-y-4">
-            <div className={`flex items-end justify-between gap-4 ${HOME_SECTION_HEADER_CLASS}`}>
-              <div>
-                <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{t("newestTitle")}</h2>
+            <div className="space-y-4">
+              <div className={`flex items-end justify-between gap-4 ${HOME_SECTION_HEADER_CLASS}`}>
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{t("newestTitle")}</h2>
+                </div>
+                <Link href="/story/new" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
+                  {t("viewAll")}
+                </Link>
               </div>
-              <Link href="/story/new" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
-                {t("viewAll")}
-              </Link>
-            </div>
-            <div className="bg-transparent">
-              <StoryListView chapters={newestChapters} isLoading={isLoading} tone="pink" />
+              <div className="bg-transparent">
+                <StoryListView chapters={newestChapters} isLoading={isLoading} tone="pink" />
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <div className="space-y-10 md:space-y-8">
         <InteractiveStoriesSection />
 
         {/* ─── Truyện hoàn thành (Grid 2 hàng x 4) ─ */}
         {completedStories.length > 0 && (
           <section className="relative left-1/2 w-dvw -translate-x-1/2 bg-pink-50/50 py-12 dark:bg-[#242526]">
             <div className={HOME_AXIS_CLASS}>
-            <div className="space-y-3">
-            <div className={`flex items-end justify-between gap-4 ${HOME_SECTION_HEADER_CLASS}`}>
-              <div>
-                <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{locale === "en" ? "Completed Stories" : "Truyện Hoàn Thành"}</h2>
+              <div className="space-y-3">
+                <div className={`flex items-end justify-between gap-4 ${HOME_SECTION_HEADER_CLASS}`}>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">{locale === "en" ? "Completed Stories" : "Truyện Hoàn Thành"}</h2>
+                  </div>
+                  <Link href="/story/search?status=completed&sort=rating" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
+                    {t("viewAll")}
+                  </Link>
+                </div>
+                <CompletedStoriesGrid stories={completedStories} isLoading={isLoading} tone="pink" />
               </div>
-              <Link href="/story/search?status=completed&sort=rating" className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400">
-                {t("viewAll")}
-              </Link>
-            </div>
-              <CompletedStoriesGrid stories={completedStories} isLoading={isLoading} tone="pink" />
-            </div>
             </div>
           </section>
         )}
@@ -815,37 +812,35 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
           return (
             <section key={category.id} className={categorySectionClassName}>
               <div className={HOME_AXIS_CLASS}>
-            <div className="space-y-3">
-              <div className={`flex items-end justify-between gap-4 ${HOME_SECTION_HEADER_CLASS}`}>
-                <div>
-                  <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">
-                    {locale === "en" ? `${categoryName} Stories` : `Truyện ${categoryName}`}
-                  </h2>
+                <div className="space-y-3">
+                  <div className={`flex items-end justify-between gap-4 ${HOME_SECTION_HEADER_CLASS}`}>
+                    <div>
+                      <h2 className="text-xl font-black text-slate-900 sm:text-2xl dark:text-white">
+                        {locale === "en" ? `${categoryName} Stories` : `Truyện ${categoryName}`}
+                      </h2>
+                    </div>
+                    <Link
+                      href={`/story/explore?categoryId=${category.id}`}
+                      className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400"
+                    >
+                      {t("viewAll")}
+                    </Link>
+                  </div>
+                  <CategoryStoriesGrid stories={stories} isLoading={isLoading} tone={isPinkSection ? "pink" : "default"} />
                 </div>
-                <Link 
-                  href={`/story/explore?categoryId=${category.id}`} 
-                  className="shrink-0 text-sm font-semibold text-pink-600 hover:underline dark:text-pink-400"
-                >
-                  {t("viewAll")}
-                </Link>
-              </div>
-              <CategoryStoriesGrid stories={stories} isLoading={isLoading} tone={isPinkSection ? "pink" : "default"} />
-              </div>
               </div>
             </section>
           );
         })}
-      </div>
 
-      {/* ─── Tabs thể loại (1 carousel duy nhất) ─ */}
-      <section className="relative left-1/2 w-dvw -translate-x-1/2 py-12">
-        <div className={HOME_AXIS_CLASS}>
-          <CategoryTabsSection tabs={categoryTabs} isLoading={isLoading} />
-        </div>
-      </section>
+        {/* ─── Tabs thể loại (1 carousel duy nhất) ─ */}
+        <section className="relative left-1/2 w-dvw -translate-x-1/2 py-12">
+          <div className={HOME_AXIS_CLASS}>
+            <CategoryTabsSection tabs={categoryTabs} isLoading={isLoading} />
+          </div>
+        </section>
 
-      {/* ─── Hall of Fame ─────────────────────────────────────────── */}
-      <div className="space-y-10 md:space-y-8">
+        {/* ─── Hall of Fame ─────────────────────────────────────────── */}
         <section className="space-y-3">
           <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
             <div className="flex-1 min-w-0">
@@ -861,8 +856,8 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
         {/* ─── Trending Keywords ─────────────────────────────────────── */}
         <TrendingKeywords />
       </div>
+    );
 
-    </div>
-  );
+  return [heroSection, mainContent];
 }
 

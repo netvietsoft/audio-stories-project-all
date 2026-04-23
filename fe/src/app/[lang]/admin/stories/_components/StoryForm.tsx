@@ -525,7 +525,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 name="authorId"
                                 type="button"
                                 onClick={() => setIsAuthorOpen(!isAuthorOpen)}
-                                className={`admin-input w-full bg-white border border-slate-200 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 transition-all flex items-center justify-between ${errors.authorId ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm'}`}
+                                className={`admin-input w-full bg-white border border-slate-200 text-left rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 transition-all flex items-center justify-between min-h-[56px] ${errors.authorId ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm'}`}
                             >
                                 <span className={selectedAuthor ? 'text-slate-900' : 'text-slate-400'}>
                                     {selectedAuthor ? selectedAuthor.name : 'Chọn tác giả'}
@@ -579,7 +579,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     </div>
 
                     {/* Hàng 4: Chọn thể loại (Searchable Dropdown) */}
-                    <div className="space-y-4" ref={categoryRef}>
+                    <div className="space-y-2" ref={categoryRef}>
                         <div className="flex items-center justify-between">
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Thể loại</label>
                             <button
@@ -682,9 +682,10 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
 
                     {/* Hàng 5: Quản lý chương */}
                     {!initialData?.id && (
-                        <div className="space-y-4" ref={chapterRef}>
+                        <div className="space-y-2" ref={chapterRef}>
                             <div className="flex items-center justify-between">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Chương</label>
+                                <div className="w-6 h-6"></div>
                             </div>
                             <div className="relative">
                                 <button
@@ -792,7 +793,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     </div>
 
                     {/* Thumbnail: allow URL input OR file select (mutually exclusive) */}
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Ảnh bìa (Thumbnail)</label>
 
                         {/* Preview if either a selected local file or existing URL is present */}

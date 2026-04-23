@@ -73,9 +73,16 @@ export const AuthorForm = ({ initialData, defaultLanguage = 'vi', onSubmit, onCa
     }, [name, setValue, initialData]);
 
     const internalOnSubmit = async (data: AuthorFormValues) => {
+        // Clean up empty optional fields
+        const cleanedData = {
+            ...data,
+            bio: data.bio || undefined,
+            avatarUrl: data.avatarUrl || undefined,
+        };
         try {
-            await onSubmit(data);
+            await onSubmit(cleanedData);
         } catch (err: any) {
+            console.error('Author form submission error:', err);
             const res = err?.response?.data;
             const status = err?.response?.status;
             if (status === 400 || status === 422) {
@@ -90,6 +97,10 @@ export const AuthorForm = ({ initialData, defaultLanguage = 'vi', onSubmit, onCa
                     res.fieldErrors.forEach((fe: any) => {
                         setError(fe.field as any, { type: 'server', message: fe.message });
                     });
+                    return;
+                }
+                if (res?.message) {
+                    alert(res.message);
                     return;
                 }
             }

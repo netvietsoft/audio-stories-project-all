@@ -16,7 +16,7 @@ async function main() {
   // Get Vietnamese stories with high rating (not necessarily newest)
   const viStories = await prisma.story.findMany({
     where: {
-      language: 'vi',
+      language: { key: 'vi' },
       deletedAt: null,
       averageRating: {
         gte: 4.0, // Only stories with rating >= 4.0
@@ -46,7 +46,7 @@ async function main() {
   // Get English stories with high rating (not necessarily newest)
   const enStories = await prisma.story.findMany({
     where: {
-      language: 'en',
+      language: { key: 'en' },
       deletedAt: null,
       averageRating: {
         gte: 4.0, // Only stories with rating >= 4.0
@@ -76,7 +76,7 @@ async function main() {
   // Verify the results
   const viRecommended = await prisma.story.count({
     where: {
-      language: 'vi',
+      language: { key: 'vi' },
       isRecommended: true,
       deletedAt: null,
     },
@@ -84,7 +84,7 @@ async function main() {
 
   const enRecommended = await prisma.story.count({
     where: {
-      language: 'en',
+      language: { key: 'en' },
       isRecommended: true,
       deletedAt: null,
     },

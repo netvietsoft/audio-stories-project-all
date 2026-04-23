@@ -17,7 +17,7 @@ export interface UserInfo {
   roles: string[];
   permissions: string[];
   // Premium & download fields (for FE compatibility)
-  credits: number;
+  pulse_balance: number;
   vip_tier: number;
   premium_expires_at: Date | null;
   allow_email_noti: boolean;
@@ -75,7 +75,7 @@ export class UserClaimsService {
         email: true,
         displayName: true,
         avatarUrl: true,
-        credits: true,
+        pulseBalance: true,
         vipTier: true,
         vipExpirationDate: true,
         allowEmailNoti: true,
@@ -94,7 +94,7 @@ export class UserClaimsService {
       status: 'ACTIVE', // status field removed from schema, defaulting to ACTIVE
       roles: claims.roles,
       permissions: claims.permissions,
-      credits: user.credits,
+      pulse_balance: user.pulseBalance,
       vip_tier: user.vipTier,
       premium_expires_at: user.vipExpirationDate,
       allow_email_noti: user.allowEmailNoti,

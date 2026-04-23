@@ -38,7 +38,8 @@ export interface HallContributor {
   displayName: string | null;
   avatarUrl: string | null;
   vipTier: number;
-  credits: number;
+  pulseBalance?: number;
+  credits?: number;
   totalUnlockedStories: number;
 }
 
@@ -90,7 +91,7 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
           <p className="text-3xl font-bold text-gray-900">{topOne.displayName || "Top Contributor"}</p>
           <p className="text-yellow-600 font-medium text-sm tracking-widest uppercase mt-1">{t("top", { rank: 1 })}</p>
           <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-600 to-yellow-700 mt-4">
-            {Number(topOne.credits || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")} {t("creditsLabel")}
+            {Number(topOne.pulseBalance || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")} {t("creditsLabel")}
           </p>
         </div>
 
@@ -119,7 +120,7 @@ export function TopContributorsLeaderboard({ contributors }: { contributors?: Ha
                 />
                 <div className="flex flex-col flex-1">
                   <p className="text-base font-semibold text-gray-900 dark:text-white">{user.displayName || "Contributor"}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{Number(user.credits || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")} {t("creditsLabel")}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{Number(user.pulseBalance || 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")} {t("creditsLabel")}</p>
                 </div>
               </div>
             );

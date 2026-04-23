@@ -269,7 +269,7 @@ export class MusicInteractionService {
     if (state.unlocked) {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: { credits: true },
+        select: { pulseBalance: true },
       });
 
       return {
@@ -278,8 +278,8 @@ export class MusicInteractionService {
           contentType: state.music.contentType,
           unlocked: true,
           unlockPrice: state.unlockPrice,
-          chargedCredits: 0,
-          balance: user?.credits ?? 0,
+          chargedPulse: 0,
+          pulseBalance: user?.pulseBalance ?? 0,
           unlockSource: state.unlockSource,
         },
       };
@@ -289,20 +289,20 @@ export class MusicInteractionService {
       throw new BadRequestException('This track does not require paid unlock.');
     }
 
-    const chargedCredits = state.unlockPrice;
+    const chargedPulse = state.unlockPrice;
 
     const result = await this.prisma.$transaction(async (tx) => {
       const user = await tx.user.findUnique({
         where: { id: userId },
-        select: { id: true, credits: true },
+        select: { id: true, pulseBalance: true },
       });
 
       if (!user) {
         throw new NotFoundException('User not found.');
       }
 
-      if (user.credits < chargedCredits) {
-        throw new BadRequestException('Insufficient credits.');
+      if (user.pulseBalance < chargedPulse) {
+        throw new BadRequestException('Insufficient Pulse.');
       }
 
       const targetTrackIds = state.music.contentType === MusicContentType.playlist
@@ -314,9 +314,9 @@ export class MusicInteractionService {
       const updatedUser = await tx.user.update({
         where: { id: userId },
         data: {
-          credits: { decrement: chargedCredits },
+          pulseBalance: { decrement: chargedPulse },
         },
-        select: { credits: true },
+        select: { pulseBalance: true },
       });
 
       await Promise.all(
@@ -337,7 +337,7 @@ export class MusicInteractionService {
               musicId: targetId,
               sourceType: state.music.contentType === MusicContentType.playlist ? 'playlist' : 'track',
               sourcePlaylistId: state.music.contentType === MusicContentType.playlist ? state.music.id : null,
-              creditsSpent: targetId === state.music.id ? chargedCredits : 0,
+              pulseSpent: targetId === state.music.id ? chargedPulse : 0,
             },
           }),
         ),
@@ -347,9 +347,9 @@ export class MusicInteractionService {
         data: {
           userId,
           type: 'spend',
-          amount: -chargedCredits,
-          balanceBefore: user.credits,
-          balanceAfter: updatedUser.credits,
+          pulseAmount: -chargedPulse,
+          pulseBalanceBefore: user.pulseBalance,
+          pulseBalanceAfter: updatedUser.pulseBalance,
           referenceId: state.music.id,
           description: state.music.contentType === MusicContentType.playlist
             ? `Mở khóa playlist nhạc: ${state.music.title}`
@@ -358,23 +358,23 @@ export class MusicInteractionService {
       });
 
       return {
-        balance: updatedUser.credits,
+        balance: updatedUser.pulseBalance,
         unlockTargetCount: unlockTargetIds.length,
       };
     });
 
-    return {
-      data: {
-        musicId: state.music.id,
-        contentType: state.music.contentType,
-        unlocked: true,
-        unlockPrice: state.unlockPrice,
-        chargedCredits,
-        balance: result.balance,
-        unlockSource: state.music.contentType === MusicContentType.playlist ? 'playlist' : 'track',
-        unlockTargetCount: result.unlockTargetCount,
-      },
-    };
+      return {
+        data: {
+          musicId: state.music.id,
+          contentType: state.music.contentType,
+          unlocked: true,
+          unlockPrice: state.unlockPrice,
+          chargedPulse,
+          pulseBalance: result.balance,
+          unlockSource: state.music.contentType === MusicContentType.playlist ? 'playlist' : 'track',
+          unlockTargetCount: result.unlockTargetCount,
+        },
+      };
   }
 
   async getLikeStatus(userId: string, musicId: string) {
@@ -637,7 +637,7 @@ export class MusicInteractionService {
         id: row.id,
         unlockedAt: row.createdAt,
         sourceType: row.sourceType,
-        creditsSpent: row.creditsSpent,
+        pulseSpent: row.pulseSpent,
         music: this.serializeMusic(row.music),
         sourcePlaylist: row.sourcePlaylist,
       })),

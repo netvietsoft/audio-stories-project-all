@@ -126,8 +126,8 @@ export class StoriesController {
 
   @Post(':id/gift')
   @UseGuards(JwtAccessGuard)
-  giftCredits(@Param('id') id: string, @Body() dto: { amount: number; message?: string; chapterId?: string }, @Account() user: any) {
-    return this.storiesService.giftCredits(id, user.sub, dto.amount, dto.message, dto.chapterId);
+  giftPulse(@Param('id') id: string, @Body() dto: { amount: number; message?: string; chapterId?: string }, @Account() user: any) {
+    return this.storiesService.giftPulse(id, user.sub, dto.amount, dto.message, dto.chapterId);
   }
 
   // IMPORTANT: This must be LAST because it's a catch-all route

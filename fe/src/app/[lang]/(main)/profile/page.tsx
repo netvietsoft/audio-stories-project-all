@@ -15,7 +15,9 @@ type HistoryResponse = {
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
-import { Award, BookOpen, Calendar, Clock, CreditCard, Heart, Mail, Shield, User } from "lucide-react";
+import { Award, BookOpen, Calendar, Clock, Heart, Mail, Shield, User } from "lucide-react";
+
+import PulseIcon from "@/components/icons/PulseIcon";
 
 import AvatarUpload from "@/components/profile/AvatarUpload";
 import { apiClient } from "@/lib/api/api-client";
@@ -162,11 +164,11 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
-                        <CreditCard className="h-5 w-5 text-amber-500" />
+                        <PulseIcon size={20} className="h-5 w-5 text-amber-500" />
                         <div className="min-w-0 flex-1">
                             <p className="text-xs font-extrabold uppercase tracking-widest text-gray-400">{t("creditsWallet")}</p>
                             <p className="mt-1 text-lg font-extrabold text-green-700 dark:text-green-400">
-                                {Number(user.credits ?? 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
+                                {Number(user.pulseBalance ?? 0).toLocaleString(locale === "en" ? "en-US" : "vi-VN")}
                             </p>
                         </div>
                     </div>

@@ -71,7 +71,7 @@ export class NotificationsService {
   async createPaymentNotification(
     userId: string,
     amount: number,
-    credits: number,
+    pulseAmount: number,
     transactionId: string,
     paymentMethod: string,
   ) {
@@ -85,11 +85,11 @@ export class NotificationsService {
         userId,
         type: 'transaction',
         title: 'Thanh toán thành công',
-        body: `Bạn đã nạp thành công ${formattedAmount} và nhận được ${credits.toLocaleString()} credits qua ${paymentMethod}.`,
+        body: `Bạn đã nạp thành công ${formattedAmount} và nhận được ${pulseAmount.toLocaleString()} Pulse qua ${paymentMethod}.`,
         metadata: {
           transactionId,
           amount,
-          credits,
+          pulseAmount,
           paymentMethod,
         },
       },

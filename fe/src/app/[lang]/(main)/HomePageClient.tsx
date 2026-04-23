@@ -111,7 +111,8 @@ type HallContributor = {
   displayName: string | null;
   avatarUrl: string | null;
   vipTier: number;
-  credits: number;
+  credits?: number;
+  pulseBalance?: number;
   totalUnlockedStories: number;
 };
 

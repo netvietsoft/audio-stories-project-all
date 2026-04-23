@@ -17,6 +17,7 @@ type MeResponse = {
   roles?: string[];
   vip_tier?: number;
   credits?: number;
+  pulse_balance?: number;
   premium_expires_at?: string | null;
 };
 
@@ -53,7 +54,7 @@ export default function GoogleCallbackHandler() {
             roles: meRes.data.roles ?? [],
             vipTier: meRes.data.vip_tier,
             vipExpirationDate: meRes.data.premium_expires_at,
-            credits: meRes.data.credits ?? 0,
+            pulseBalance: meRes.data.pulse_balance ?? meRes.data.credits ?? 0,
           },
           accessToken,
         });

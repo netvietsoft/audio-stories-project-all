@@ -18,7 +18,7 @@ export class TransactionsService {
                 select: {
                     id: true,
                     amountVnd: true,
-                    creditsAdded: true,
+                    pulseAdded: true,
                     status: true,
                     packageCode: true,
                     transactionCode: true,
@@ -33,9 +33,9 @@ export class TransactionsService {
                 select: {
                     id: true,
                     type: true,
-                    amount: true,
-                    balanceBefore: true,
-                    balanceAfter: true,
+                    pulseAmount: true,
+                    pulseBalanceBefore: true,
+                    pulseBalanceAfter: true,
                     description: true,
                     referenceId: true,
                     createdAt: true,
@@ -44,7 +44,7 @@ export class TransactionsService {
         ]);
 
         const merged = [
-            ...payments.map((item) => ({
+                ...payments.map((item) => ({
                 id: `payment:${item.id}`,
                 source: 'payment' as const,
                 createdAt: item.createdAt,
@@ -54,22 +54,22 @@ export class TransactionsService {
                 metadata: {
                     paymentId: item.id,
                     paidAt: item.paidAt,
-                    creditsAdded: item.creditsAdded,
+                        pulseAdded: item.pulseAdded,
                 },
             })),
             ...credits.map((item) => ({
                 id: `credit:${item.id}`,
                 source: 'credit' as const,
                 createdAt: item.createdAt,
-                amount: item.amount,
+                    amount: item.pulseAmount,
                 status: 'SUCCESS',
                 content: item.description || `Giao dich ${item.type}`,
                 metadata: {
                     creditTransactionId: item.id,
                     type: item.type,
                     referenceId: item.referenceId,
-                    balanceBefore: item.balanceBefore,
-                    balanceAfter: item.balanceAfter,
+                        balanceBefore: item.pulseBalanceBefore,
+                        balanceAfter: item.pulseBalanceAfter,
                 },
             })),
         ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -225,38 +225,38 @@ export class TransactionsService {
         return { success: true, message: 'Payment deleted successfully' };
     }
 
-    async donateCredits(userId: string, amount: number, description: string) {
+    async donatePulse(userId: string, amount: number, description: string) {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            select: { credits: true },
+            select: { pulseBalance: true },
         });
 
         if (!user) throw new Error('User not found');
-        if (user.credits < amount) throw new Error('Insufficient credits');
+        if (user.pulseBalance < amount) throw new Error('Insufficient Pulse');
 
         return this.prisma.$transaction(async (tx) => {
             const updatedUser = await tx.user.update({
                 where: { id: userId },
-                data: { credits: { decrement: amount } },
-                select: { credits: true },
+                data: { pulseBalance: { decrement: amount } },
+                select: { pulseBalance: true },
             });
 
             const transaction = await tx.creditTransaction.create({
                 data: {
                     userId,
-                    amount: -amount, // Negative for spending
                     type: 'spend',
-                    balanceBefore: user.credits,
-                    balanceAfter: updatedUser.credits,
+                    pulseAmount: -amount, // Negative for spending
+                    pulseBalanceBefore: user.pulseBalance,
+                    pulseBalanceAfter: updatedUser.pulseBalance,
                     description,
                 },
             });
 
-            return {
-                success: true,
-                newBalance: updatedUser.credits,
-                transactionId: transaction.id,
-            };
+                return {
+                    success: true,
+                    newBalance: updatedUser.pulseBalance,
+                    transactionId: transaction.id,
+                };
         });
     }
 }

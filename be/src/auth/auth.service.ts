@@ -315,7 +315,7 @@ export class AuthService {
             slug: true
           }
         },
-        credits: true,
+        pulseBalance: true,
         vipTier: true,
         vipExpirationDate: true,
         createdAt: true,
@@ -457,12 +457,12 @@ export class AuthService {
     return user;
   }
 
-  async setUserCredits(userId: string, credits: number) {
-    const normalizedCredits = Number.isFinite(credits) ? Math.max(0, Math.floor(credits)) : 0;
+  async setUserPulse(userId: string, pulse: number) {
+    const normalizedPulse = Number.isFinite(pulse) ? Math.max(0, Math.floor(pulse)) : 0;
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, credits: true },
+      select: { id: true, pulseBalance: true },
     });
 
     if (!user) {
@@ -471,20 +471,20 @@ export class AuthService {
 
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
-      data: { credits: normalizedCredits },
+      data: { pulseBalance: normalizedPulse },
       select: {
         id: true,
-        credits: true,
+        pulseBalance: true,
       },
     });
 
     return {
       success: true,
-      message: 'User credits updated',
+      message: 'User Pulse updated',
       data: {
         userId: updatedUser.id,
-        previousCredits: user.credits,
-        credits: updatedUser.credits,
+        previousPulse: user.pulseBalance,
+        pulseBalance: updatedUser.pulseBalance,
       },
     };
   }

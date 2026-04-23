@@ -1253,8 +1253,8 @@ export default function StoryChapterClient() {
       return;
     }
 
-    if ((user.credits ?? 0) < VIP_UNLOCK_COST) {
-      setUnlockError("Credits không đủ để mở VIP. Vui lòng nạp thêm credits.");
+    if ((user.pulseBalance ?? user.credits ?? 0) < VIP_UNLOCK_COST) {
+      setUnlockError("Pulse không đủ để mở VIP. Vui lòng nạp thêm Pulse.");
       setShowTopupAction(true);
       return;
     }
@@ -1264,7 +1264,8 @@ export default function StoryChapterClient() {
 
     setUser({
       ...user,
-      credits: (user.credits ?? 0) - VIP_UNLOCK_COST,
+      credits: (user.pulseBalance ?? user.credits ?? 0) - VIP_UNLOCK_COST,
+      pulseBalance: (user.pulseBalance ?? user.credits ?? 0) - VIP_UNLOCK_COST,
       vipTier: Math.max(1, user.vipTier || 0),
       vipExpirationDate: nextExpiry.toISOString(),
     });
@@ -1287,7 +1288,7 @@ export default function StoryChapterClient() {
       return;
     }
 
-    if ((user.credits ?? 0) < amount) {
+    if ((user.pulseBalance ?? user.credits ?? 0) < amount) {
       setGiftError(t("giftInsufficientCredits"));
       return;
     }

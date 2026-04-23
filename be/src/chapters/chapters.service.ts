@@ -316,7 +316,7 @@ export class ChaptersService {
 
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            select: { vipTier: true, vipExpirationDate: true, credits: true },
+            select: { vipTier: true, vipExpirationDate: true, pulseBalance: true },
         });
 
         const isVip =

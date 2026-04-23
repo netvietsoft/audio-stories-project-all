@@ -4,27 +4,26 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Create a test story with exactly 2 chapters
-  const story = await prisma.story.upsert({
-    where: { 
-      slug_language: {
+  const lang = await prisma.language.findFirst({ where: { key: 'vi' } });
+  const languageId = lang?.id ?? 1;
+
+  let story = await prisma.story.findFirst({ where: { slug: 'test-2-chapters' } });
+  if (!story) {
+    story = await prisma.story.create({
+      data: {
+        title: 'Truyện Test - 2 Chương',
         slug: 'test-2-chapters',
-        language: 'vi',
-      }
-    },
-    update: {},
-    create: {
-      title: 'Truyện Test - 2 Chương',
-      slug: 'test-2-chapters',
-      description: 'Một truyện test với đúng 2 chương để kiểm tra bug',
-      thumbnailUrl: 'https://picsum.photos/seed/test-story/600/600',
-      status: 'ongoing',
-      language: 'vi',
-      totalViews: 0,
-      averageRating: 0,
-      ratingCount: 0,
-      authorId: (await prisma.author.findFirst())?.id || '',
-    },
-  });
+        description: 'Một truyện test với đúng 2 chương để kiểm tra bug',
+        thumbnailUrl: 'https://picsum.photos/seed/test-story/600/600',
+        status: 'ongoing',
+        languageId,
+        totalViews: 0,
+        averageRating: 0,
+        ratingCount: 0,
+        authorId: (await prisma.author.findFirst())?.id || '',
+      },
+    });
+  }
 
   console.log('Created story:', story.title, story.slug);
 
@@ -39,7 +38,7 @@ async function main() {
       storyId: story.id,
       chapterNumber: 1,
       title: 'Tiêu đề Chương 1',
-      language: 'vi',
+      languageId: languageId,
       description: 'Đây là chương 1',
       content: 'Nội dung chương 1. Đây là chương đầu tiên. Khi bạn bấm vào chương 1, bạn phải thấy nội dung này.',
       r2AudioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
@@ -56,7 +55,7 @@ async function main() {
       storyId: story.id,
       chapterNumber: 2,
       title: 'Tiêu đề Chương 2',
-      language: 'vi',
+      languageId: languageId,
       description: 'Đây là chương 2',
       content: 'Nội dung chương 2. Đây là chương thứ hai. Khi bạn bấm vào chương 2, bạn phải thấy nội dung này.',
       r2AudioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',

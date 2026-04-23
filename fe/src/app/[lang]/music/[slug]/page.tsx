@@ -116,7 +116,11 @@ const normalizeErrorText = (value: string) =>
 
 const isInsufficientCreditsText = (message: string) => {
   const normalized = normalizeErrorText(message);
-  return normalized.includes("insufficient credits") || (normalized.includes("khong du") && normalized.includes("credit"));
+    return (
+      normalized.includes("insufficient credits") ||
+      normalized.includes("insufficient pulse") ||
+      (normalized.includes("khong du") && normalized.includes("credit"))
+    );
 };
 
 const isInsufficientCreditsError = (error: unknown) => {
@@ -282,8 +286,8 @@ export default function MusicDetailPage() {
   const [isLoadingTopupPackages, setIsLoadingTopupPackages] = useState(false);
   const [playlistTrackAccess, setPlaylistTrackAccess] = useState<Record<string, DetailAccessState>>({});
   const [relatedTrackAccess, setRelatedTrackAccess] = useState<Record<string, DetailAccessState>>({});
-  const currentUserCredits = typeof user?.credits === "number" && Number.isFinite(user.credits)
-    ? Math.max(0, Math.floor(user.credits))
+  const currentUserCredits = typeof user?.pulseBalance === "number" && Number.isFinite(user.pulseBalance)
+    ? Math.max(0, Math.floor(user.pulseBalance))
     : 0;
 
   const trackId = track?.id;
@@ -781,6 +785,8 @@ export default function MusicDetailPage() {
 
       if (user && typeof result?.balance === "number") {
         setUser({ ...user, credits: result.balance });
+        setUser({ ...user, pulseBalance: result.balance });
+        setUser({ ...user, pulseBalance: result.balance });
       }
 
       const chargedCredits = typeof result?.chargedCredits === "number" ? Math.max(0, result.chargedCredits) : 0;

@@ -26,14 +26,16 @@ async function main() {
 
   console.log('Stories by language:');
   const byLanguage = activeStories.reduce((acc, s) => {
-    acc[s.language] = (acc[s.language] || 0) + 1;
+    const key = typeof s.language === 'string' ? s.language : (s.language as any)?.key ?? 'unknown';
+    acc[key] = (acc[key] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
   console.log(byLanguage);
 
   console.log('\nAll stories:');
   allStories.forEach((s, i) => {
-    console.log(`${i + 1}. ${s.title} (lang: ${s.language}, deleted: ${s.deletedAt ? 'YES' : 'NO'})`);
+    const langDisplay = typeof s.language === 'string' ? s.language : (s.language as any)?.key ?? 'unknown';
+    console.log(`${i + 1}. ${s.title} (lang: ${langDisplay}, deleted: ${s.deletedAt ? 'YES' : 'NO'})`);
   });
 }
 

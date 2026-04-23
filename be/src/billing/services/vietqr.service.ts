@@ -63,12 +63,12 @@ export class VietQRService {
         packageCode: params.packageCode,
         status: 'PENDING',
         amountVnd: amountVnd,
-        creditsAdded: pkg.credits,
         currency: 'VND',
         transactionCode: addInfo,
         qrData: qrData.qr_emv,
         qrImageBase64: qrData.qr_image,
         expiresAt: expiresAt,
+        pulseAdded: pkg.pulseAmount,
       },
     });
 
@@ -76,12 +76,12 @@ export class VietQRService {
       order_id: payment.id,
       transaction_code: payment.transactionCode,
       amount_vnd: payment.amountVnd,
-      credits: payment.creditsAdded,
+      pulse: payment.pulseAdded,
       qr_image: payment.qrImageBase64,
       qr_data: payment.qrData,
       expires_at: payment.expiresAt,
       bank_info: {
-        bank_id: this.bankId,
+        pulse: payment.pulseAdded,
         account_no: process.env.VIETQR_ACCOUNT_NO,
         account_name: process.env.VIETQR_ACCOUNT_NAME,
       },
@@ -161,7 +161,7 @@ export class VietQRService {
     // Get user info for email
     const user = await this.prisma.user.findUnique({
       where: { id: payment.userId },
-      select: { email: true, allowEmailNoti: true },
+      select: { email: true, allowEmailNoti: true, pulseBalance: true },
     });
 
     await this.prisma.$transaction([
@@ -174,23 +174,23 @@ export class VietQRService {
           bankTransactionId: bankTransactionId,
         },
       }),
-      // Add credits to user
+      // Add pulse to user
       this.prisma.user.update({
         where: { id: payment.userId },
         data: {
-          credits: { increment: payment.creditsAdded },
+          pulseBalance: { increment: payment.pulseAdded },
         },
       }),
-      // Create credit transaction
+      // Create credit (pulse) transaction
       this.prisma.creditTransaction.create({
         data: {
           userId: payment.userId,
           type: 'topup',
-          amount: payment.creditsAdded,
-          balanceBefore: 0, // Will be updated by trigger or service
-          balanceAfter: 0,
+          pulseAmount: payment.pulseAdded,
+          pulseBalanceBefore: user?.pulseBalance ?? 0,
+          pulseBalanceAfter: (user?.pulseBalance ?? 0) + payment.pulseAdded,
           referenceId: payment.id,
-          description: `Nạp ${payment.creditsAdded} credits qua VietQR`,
+          description: `Nạp ${payment.pulseAdded} Pulse qua VietQR`,
         },
       }),
     ]);
@@ -199,7 +199,7 @@ export class VietQRService {
     await this.notificationsService.createPaymentNotification(
       payment.userId,
       payment.amountVnd,
-      payment.creditsAdded,
+        payment.pulseAdded,
       bankTransactionId,
       'VietQR',
     );
@@ -209,7 +209,7 @@ export class VietQRService {
       await this.mailService.sendPaymentSuccessEmail(
         user.email,
         payment.amountVnd,
-        payment.creditsAdded,
+          payment.pulseAdded,
         bankTransactionId,
         'VietQR',
       );

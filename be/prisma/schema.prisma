@@ -14,7 +14,7 @@ model User {
   displayName          String    @map("display_name") @db.VarChar(100)
   avatarUrl            String?   @map("avatar_url") @db.Text
   roleId               Int       @default(4) @map("role_id") @db.UnsignedInt
-  credits              Int       @default(0) @db.UnsignedInt
+  pulseBalance         Int       @default(0) @map("credits") @db.UnsignedInt
   googleId             String?   @unique @map("google_id") @db.VarChar(100)
   stripeCustomerId     String?   @unique @map("stripe_customer_id") @db.VarChar(255)
   paypalCustomerId     String?   @unique @map("paypal_customer_id") @db.VarChar(255)
@@ -422,7 +422,7 @@ model MusicUnlock {
   musicId          String                @map("music_id") @db.VarChar(36)
   sourceType       MusicUnlockSourceType @default(track) @map("source_type")
   sourcePlaylistId String?               @map("source_playlist_id") @db.VarChar(36)
-  creditsSpent     Int                   @default(0) @map("credits_spent") @db.UnsignedInt
+  pulseSpent       Int                   @default(0) @map("credits_spent") @db.UnsignedInt
   createdAt        DateTime              @default(now()) @map("created_at")
 
   user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -681,9 +681,9 @@ model CreditTransaction {
   id            String                @id @default(uuid()) @db.VarChar(36)
   userId        String                @map("user_id") @db.VarChar(36)
   type          CreditTransactionType
-  amount        Int
-  balanceBefore Int                   @map("balance_before") @db.UnsignedInt
-  balanceAfter  Int                   @map("balance_after") @db.UnsignedInt
+  pulseAmount   Int                   @map("amount")
+  pulseBalanceBefore Int              @map("balance_before") @db.UnsignedInt
+  pulseBalanceAfter  Int              @map("balance_after") @db.UnsignedInt
   referenceId   String?               @map("reference_id") @db.VarChar(36)
   description   String?               @db.VarChar(255)
   createdAt     DateTime              @default(now()) @map("created_at")
@@ -723,7 +723,7 @@ model Payment {
   packageCode        String          @map("package_code") @db.VarChar(50)
   amountVnd          Int             @map("amount_vnd") @db.UnsignedInt
   amountUsd          Decimal?        @map("amount_usd") @db.Decimal(10, 2)
-  creditsAdded       Int             @map("credits_added") @db.UnsignedInt
+  pulseAdded         Int             @map("credits_added") @db.UnsignedInt
   provider           PaymentProvider @default(VIETQR)
   providerPaymentId  String?         @map("provider_payment_id") @db.VarChar(255)
   providerCustomerId String?         @map("provider_customer_id") @db.VarChar(255)
@@ -785,7 +785,7 @@ model Membership {
   authorId     String?        @map("author_id") @db.VarChar(36)
   startDate    DateTime       @map("start_date")
   endDate      DateTime       @map("end_date")
-  creditsSpent Int            @map("credits_spent") @db.UnsignedInt
+  pulseSpent   Int            @map("credits_spent") @db.UnsignedInt
   createdAt    DateTime       @default(now()) @map("created_at")
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)

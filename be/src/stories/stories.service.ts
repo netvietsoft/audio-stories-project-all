@@ -489,14 +489,14 @@ export class StoriesService {
         deletedAt: null,
         vipTier: { gt: 0 },
       },
-      orderBy: [{ vipTier: 'desc' }, { credits: 'desc' }, { totalUnlockedStories: 'desc' }],
+      orderBy: [{ vipTier: 'desc' }, { pulseBalance: 'desc' }, { totalUnlockedStories: 'desc' }],
       take: safeLimit,
       select: {
         id: true,
         displayName: true,
         avatarUrl: true,
         vipTier: true,
-        credits: true,
+        pulseBalance: true,
         totalUnlockedStories: true,
       },
     });
@@ -907,16 +907,16 @@ export class StoriesService {
     return { message: 'Story deleted successfully' };
   }
 
-  async giftCredits(storyId: string, userId: string, amount: number, message?: string, chapterId?: string) {
+  async giftPulse(storyId: string, userId: string, amount: number, message?: string, chapterId?: string) {
     // Validate amount
     if (amount < 1) {
-      throw new BadRequestException('Minimum gift amount is 1 credit');
+      throw new BadRequestException('Minimum gift amount is 1 Pulse');
     }
 
     // Get user and check balance
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, credits: true },
+      select: { id: true, pulseBalance: true },
     });
 
     if (!user) {
@@ -928,11 +928,11 @@ export class StoriesService {
       throw new BadRequestException('Invalid gift amount');
     }
 
-    if (user.credits < numericAmount) {
-      throw new BadRequestException('Insufficient credits');
+    if (user.pulseBalance < numericAmount) {
+      throw new BadRequestException('Insufficient Pulse');
     }
 
-    console.log(`[GiftCredits] Processing gift: ${numericAmount} from User ${userId} to Story ${storyId}`);
+    console.log(`[GiftPulse] Processing gift: ${numericAmount} from User ${userId} to Story ${storyId}`);
 
     // Get story
     const story = await this.prisma.story.findUnique({
@@ -966,21 +966,21 @@ export class StoriesService {
         where: { id: storyId },
         data: { totalGifts: { increment: numericAmount } },
       }),
-      // Deduct credits from user
+      // Deduct pulse from user
       this.prisma.user.update({
         where: { id: userId },
-        data: { credits: { decrement: numericAmount } },
+        data: { pulseBalance: { decrement: numericAmount } },
       }),
-      // Create credit transaction record
+      // Create pulse transaction record
       this.prisma.creditTransaction.create({
         data: {
           userId,
           type: 'spend',
-          amount: -numericAmount,
-          balanceBefore: user.credits,
-          balanceAfter: user.credits - numericAmount,
+          pulseAmount: -numericAmount,
+          pulseBalanceBefore: user.pulseBalance,
+          pulseBalanceAfter: user.pulseBalance - numericAmount,
           referenceId: chapterId || storyId,
-          description: `Tặng ${numericAmount} credits cho truyện: ${story.title}${chapterInfo}${message ? ` - ${message}` : ''}`,
+          description: `Tặng ${numericAmount} Pulse cho truyện: ${story.title}${chapterInfo}${message ? ` - ${message}` : ''}`,
         },
       }),
     ]);

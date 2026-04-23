@@ -5,7 +5,7 @@ export interface PaymentPackage {
   code: string;
   name: string;
   priceVnd: number;
-  credits: number;
+  pulseAmount: number;
   description?: string;
   isActive: boolean;
   displayOrder: number;

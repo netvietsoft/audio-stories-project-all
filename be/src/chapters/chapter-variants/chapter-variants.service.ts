@@ -133,19 +133,19 @@ export class ChapterVariantsService {
 
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            select: { credits: true },
+            select: { pulseBalance: true },
         });
 
         if (!user) throw new NotFoundException('User not found');
-        if (user.credits < variant.unlockPrice) {
-            throw new BadRequestException('Insufficient credits');
+        if (user.pulseBalance < variant.unlockPrice) {
+            throw new BadRequestException('Insufficient Pulse');
         }
 
         return this.prisma.$transaction(async (tx) => {
-            // Deduct credits
+            // Deduct pulse
             const updatedUser = await tx.user.update({
                 where: { id: userId },
-                data: { credits: { decrement: variant.unlockPrice } },
+                data: { pulseBalance: { decrement: variant.unlockPrice } },
             });
 
             // Create unlock record
@@ -154,19 +154,19 @@ export class ChapterVariantsService {
             });
 
             // Create credit transaction record
-            await tx.creditTransaction.create({
-                data: {
-                    userId,
-                    amount: -variant.unlockPrice,
-                    type: 'spend',
-                    balanceBefore: user.credits,
-                    balanceAfter: updatedUser.credits,
-                    referenceId: variantId,
-                    description: `Mở khóa biến thể: ${variant.title}`,
-                },
-            });
+                await tx.creditTransaction.create({
+                    data: {
+                        userId,
+                        type: 'spend',
+                        pulseAmount: -variant.unlockPrice,
+                        pulseBalanceBefore: user.pulseBalance,
+                        pulseBalanceAfter: updatedUser.pulseBalance,
+                        referenceId: variantId,
+                        description: `Mở khóa biến thể: ${variant.title}`,
+                    },
+                });
 
-            return { success: true, balance: updatedUser.credits };
+                return { success: true, balance: updatedUser.pulseBalance };
         });
     }
 

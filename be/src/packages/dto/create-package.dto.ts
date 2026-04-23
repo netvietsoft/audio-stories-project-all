@@ -42,7 +42,7 @@ export class CreatePackageDto {
 
     @IsInt()
     @Min(0)
-    credits: number;
+    pulseAmount: number;
 
     @IsString()
     @IsOptional()

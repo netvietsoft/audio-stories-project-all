@@ -39,7 +39,7 @@ export class UpdatePackageDto {
     @IsInt()
     @IsPositive()
     @IsOptional()
-    credits?: number;
+    pulseAmount?: number;
 
     @IsString()
     @IsOptional()

@@ -190,7 +190,7 @@ export class MailService {
   async sendPaymentSuccessEmail(
     to: string,
     amount: number,
-    credits: number,
+    pulseAmount: number,
     transactionId: string,
     paymentMethod: string,
   ) {
@@ -217,7 +217,7 @@ export class MailService {
               </div>
 
               <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                <p style="margin: 0; color: #166534; font-weight: bold;">Credits đã được cộng vào tài khoản của bạn</p>
+                <p style="margin: 0; color: #166534; font-weight: bold;">Pulse đã được cộng vào tài khoản của bạn</p>
               </div>
 
               <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -228,8 +228,8 @@ export class MailService {
                     <td style="padding: 10px 0; text-align: right; font-weight: bold; color: #111827; border-bottom: 1px solid #e5e7eb;">${formattedAmount}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Credits nhận được:</td>
-                    <td style="padding: 10px 0; text-align: right; font-weight: bold; color: #10b981; border-bottom: 1px solid #e5e7eb;">+${credits.toLocaleString()} Credits</td>
+                    <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Pulse nhận được:</td>
+                    <td style="padding: 10px 0; text-align: right; font-weight: bold; color: #10b981; border-bottom: 1px solid #e5e7eb;">+${pulseAmount.toLocaleString()} Pulse</td>
                   </tr>
                   <tr>
                     <td style="padding: 10px 0; color: #6b7280; border-bottom: 1px solid #e5e7eb;">Phương thức:</td>

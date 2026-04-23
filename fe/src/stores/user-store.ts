@@ -28,7 +28,8 @@ export type UserProfile = {
   vipExpirationDate?: string | null;
   allowEmailNoti?: boolean;
   allowBellNoti?: boolean;
-  credits: number;
+  pulseBalance: number;
+  credits?: number;
 };
 
 type UserState = {

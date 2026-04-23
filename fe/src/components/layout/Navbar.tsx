@@ -13,6 +13,7 @@ import {
   UserCircle, History, Heart,
   Home, LayoutGrid, Zap, Flame, Trophy, Sparkles, Music2, ArrowRight
 } from "lucide-react";
+import PulseIcon from "@/components/icons/PulseIcon";
 import { ACCESS_TOKEN_KEY } from "@/constants/auth";
 import { clearAuthCookies } from "@/lib/auth/cookies";
 import { apiClient } from "@/lib/api/api-client";
@@ -125,11 +126,11 @@ export default function Navbar() {
   const [notifs, setNotifs] = useState<NotificationItem[]>([]);
   const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [topCategories, setTopCategories] = useState<TopCategoryItem[]>([]);
-  const userCredits = typeof user?.credits === "number" && Number.isFinite(user.credits)
-    ? Math.max(0, Math.floor(user.credits))
+  const userPulse = typeof user?.pulseBalance === "number" && Number.isFinite(user.pulseBalance)
+    ? Math.max(0, Math.floor(user.pulseBalance))
     : 0;
-  const topUpButtonLabel = userCredits > 0
-    ? `${userCredits.toLocaleString(locale === "en" ? "en-US" : "vi-VN")} credits`
+  const topUpButtonLabel = userPulse > 0
+    ? `${userPulse.toLocaleString(locale === "en" ? "en-US" : "vi-VN")} Pulse`
     : t("topUp");
   
   const searchPlaceholder = t("searchPlaceholder");
@@ -804,7 +805,7 @@ export default function Navbar() {
                   }}
                   className="hidden xl:flex items-center gap-1.5 whitespace-nowrap bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 md:px-3 py-1.5 rounded-full text-sm font-medium hover:bg-amber-200 transition-colors"
                 >
-                  <Coins className="h-4 w-4" /> <span className="hidden xl:inline">{topUpButtonLabel}</span>
+                  <PulseIcon size={18} className="h-4 w-4" /> <span className="hidden xl:inline">{topUpButtonLabel}</span>
                 </button>
 
                 {/* Chuông thông báo */}
@@ -1231,7 +1232,7 @@ export default function Navbar() {
                       }}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors w-full text-left"
                     >
-                      <Coins className="w-5 h-5" />
+                      <PulseIcon size={20} className="w-5 h-5" />
                       <span className="text-sm font-semibold">{topUpButtonLabel}</span>
                     </button>
 

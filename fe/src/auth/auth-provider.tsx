@@ -31,6 +31,7 @@ type BackendMeResponse = {
   roles?: string[];
   vip_tier?: number;
   credits?: number;
+  pulse_balance?: number;
   premium_expires_at?: string | null;
   allow_email_noti?: boolean;
   allow_bell_noti?: boolean;
@@ -46,7 +47,7 @@ const normalizeUserProfile = (profile: BackendMeResponse): UserProfile => ({
   vipExpirationDate: profile.premium_expires_at,
   allowEmailNoti: profile.allow_email_noti,
   allowBellNoti: profile.allow_bell_noti,
-  credits: profile.credits ?? 0,
+  pulseBalance: profile.pulse_balance ?? profile.credits ?? 0,
 });
 
 type AuthContextValue = {

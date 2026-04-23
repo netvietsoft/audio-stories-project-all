@@ -27,7 +27,7 @@ export class TransactionsController {
 
     @Post('donate')
     donate(@Account() account: any, @Body() dto: DonateDto) {
-        return this.transactionsService.donateCredits(
+        return this.transactionsService.donatePulse(
             this.userIdFromAccount(account),
             dto.amount,
             dto.description,

@@ -30,6 +30,7 @@ type BackendMeResponse = {
   roles?: string[];
   vip_tier?: number;
   credits?: number;
+  pulse_balance?: number;
   premium_expires_at?: string | null;
 };
 
@@ -41,7 +42,7 @@ const normalizeUserProfile = (profile: BackendMeResponse): UserProfile => ({
   roles: profile.roles ?? [],
   vipTier: profile.vip_tier,
   vipExpirationDate: profile.premium_expires_at,
-  credits: profile.credits ?? 0,
+  pulseBalance: profile.pulse_balance ?? profile.credits ?? 0,
 });
 
 interface VerifyEmailFormProps {

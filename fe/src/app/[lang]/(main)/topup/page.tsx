@@ -13,6 +13,7 @@ import {
     Gift,
     Zap,
 } from 'lucide-react';
+import PulseIcon from '@/components/icons/PulseIcon';
 import { apiClient } from '@/lib/api/api-client';
 import { useAuth } from '@/auth/auth-provider';
 import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector';
@@ -288,7 +289,7 @@ export default function TopupPage() {
                                                 {/* Package Header */}
                                                 <div className="flex items-center gap-3 mb-5 sm:mb-6 mt-2">
                                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${isSelected ? 'bg-violet-100 dark:bg-violet-500/20' : 'bg-gray-100 dark:bg-zinc-800 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/10'}`}>
-                                                        <Coins className={`w-6 h-6 ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-violet-500'}`} />
+                                                        <PulseIcon size={24} className={`w-6 h-6 ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-violet-500'}`} />
                                                     </div>
                                                     <h3 className={`text-xs font-black tracking-tight ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-slate-900 dark:text-white'}`}>
                                                         {packageName}
@@ -326,9 +327,9 @@ export default function TopupPage() {
                                                             <span className={`text-xl sm:text-2xl font-black tracking-tight ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
                                                                 {pkg.credits.toLocaleString()}
                                                             </span>
-                                                            <span className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">
-                                                                CR.
-                                                            </span>
+                                                                <span className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">
+                                                                    Pulse
+                                                                </span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -380,7 +381,7 @@ export default function TopupPage() {
                                     >
                                         <div className="flex items-center gap-3 mb-5 sm:mb-6 mt-2">
                                             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors ${selectedPackage?.code === 'CUSTOM' ? 'bg-violet-100 dark:bg-violet-500/20' : 'bg-gray-100 dark:bg-zinc-800 group-hover:bg-violet-50 dark:group-hover:bg-violet-500/10'}`}>
-                                                <Coins className={`w-6 h-6 ${selectedPackage?.code === 'CUSTOM' ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-violet-500'}`} />
+                                                <PulseIcon size={24} className={`w-6 h-6 ${selectedPackage?.code === 'CUSTOM' ? 'text-violet-600 dark:text-violet-400' : 'text-slate-500 dark:text-slate-400 group-hover:text-violet-500'}`} />
                                             </div>
                                             <h3 className={`text-xs font-black tracking-tight ${selectedPackage?.code === 'CUSTOM' ? 'text-violet-600 dark:text-violet-400' : 'text-slate-900 dark:text-white'}`}>
                                                 {t("customAmount")}
@@ -463,7 +464,7 @@ export default function TopupPage() {
                             ) : (
                                 <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-200 dark:border-zinc-800 p-20 text-center">
                                     <div className="w-20 h-20 bg-gray-50 dark:bg-zinc-950 rounded-full flex items-center justify-center mx-auto mb-5 border border-gray-200 dark:border-zinc-800">
-                                        <Coins className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                                                <PulseIcon size={32} className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                                     </div>
                                     <h3 className="text-xl font-black text-slate-900 dark:text-white">{t("noPackages")}</h3>
                                     <p className="text-slate-500 dark:text-slate-400 mt-2">{t("updateSystem")}</p>
@@ -495,7 +496,7 @@ export default function TopupPage() {
                                         <span className="text-slate-500 dark:text-slate-400 font-medium">{t("creditsReceived")}</span>
                                         <span className="font-black text-lg text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                                             {selectedPackage.credits.toLocaleString()}
-                                            <span className="text-xs font-bold uppercase tracking-wider text-emerald-500/70">CR</span>
+                                            <span className="text-xs font-bold uppercase tracking-wider text-emerald-500/70">Pulse</span>
                                         </span>
                                     </div>
 

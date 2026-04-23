@@ -26,7 +26,7 @@ async function main() {
   console.log('  Role Slug:', user.role?.slug);
   console.log('  Email Verified:', user.emailVerifiedAt ? 'Yes' : 'No');
   console.log('  Active:', user.isActive ? 'Yes' : 'No');
-  console.log('  Credits:', user.credits);
+  console.log('  PulseBalance:', user.pulseBalance);
 
   if (user.role?.name !== 'ADMIN') {
     console.log('\n⚠️  WARNING: User does not have ADMIN role!');

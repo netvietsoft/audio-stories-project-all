@@ -38,6 +38,7 @@ interface UserDetail {
     avatarUrl: string | null;
     country: string | null;
     credits: number;
+    pulseBalance?: number;
     vipTier: number;
     vipExpirationDate: string | null;
     isActive: boolean;
@@ -137,7 +138,7 @@ export default function UserDetailsPage() {
         try {
             const res = await adminApiClient.get(`/auth/users/${id}`);
             setUser(res.data);
-            setCreditsInput(String(Math.max(0, Math.floor(res.data?.credits || 0))));
+            setCreditsInput(String(Math.max(0, Math.floor(res.data?.credits || res.data?.pulseBalance || 0))));
         } catch (error) {
             console.error('Failed to fetch user:', error);
         } finally {
@@ -166,7 +167,7 @@ export default function UserDetailsPage() {
 
             const nextCredits = Number(res.data?.data?.credits ?? normalizedCredits);
 
-            setUser((prev) => (prev ? { ...prev, credits: nextCredits } : prev));
+            setUser((prev) => (prev ? { ...prev, credits: nextCredits, pulseBalance: nextCredits } : prev));
             setCreditsInput(String(nextCredits));
             setCreditsMessage({ type: 'success', text: 'Cập nhật credits thành công.' });
         } catch (error) {
@@ -321,7 +322,7 @@ export default function UserDetailsPage() {
                                         </div>
                                         <div className="text-right">
                                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tín dụng hiện tại</p>
-                                            <h3 className="text-2xl font-black text-slate-900">{user.credits.toLocaleString()}</h3>
+                                            <h3 className="text-2xl font-black text-slate-900">{(user.pulseBalance ?? user.credits).toLocaleString()}</h3>
                                         </div>
                                     </div>
                                     <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -398,7 +399,7 @@ export default function UserDetailsPage() {
                                 <div className="space-y-3">
                                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Credits hiện tại</p>
-                                        <p className="mt-1 text-2xl font-black text-slate-900">{user.credits.toLocaleString()}</p>
+                                        <p className="mt-1 text-2xl font-black text-slate-900">{(user.pulseBalance ?? user.credits).toLocaleString()}</p>
                                     </div>
 
                                     <div>

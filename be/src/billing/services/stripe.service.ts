@@ -101,8 +101,8 @@ export class StripeService {
 
 
     // Get product name and description
-    const productName = pkg.name?.trim() || `${pkg.credits} Credits Package`;
-    const productDescription = pkg.description?.trim() || `${pkg.credits} credits`;
+    const productName = pkg.name?.trim() || `${pkg.pulseAmount} Pulse Package`;
+    const productDescription = pkg.description?.trim() || `${pkg.pulseAmount} Pulse`;
 
     this.logger.log(`Creating Stripe session with product: ${productName}, price: ${amountUsd} cents`);
 
@@ -224,7 +224,7 @@ export class StripeService {
       // Get user info for email
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: { email: true, allowEmailNoti: true, credits: true },
+        select: { email: true, allowEmailNoti: true, pulseBalance: true },
       });
 
       if (!user) {
@@ -235,7 +235,7 @@ export class StripeService {
       const exchangeRate = parseFloat(process.env.USD_TO_VND_RATE || '25000');
       const amountUsd = session.amount_total ? session.amount_total / 100 : pkg.priceVnd / exchangeRate;
 
-      this.logger.log(`Processing payment: ${pkg.credits} credits for user ${userId}`);
+      this.logger.log(`Processing payment: ${pkg.pulseAmount} Pulse for user ${userId}`);
 
       // Process the payment
       await this.prisma.$transaction([
@@ -249,7 +249,7 @@ export class StripeService {
             currency: session.currency?.toUpperCase() || 'USD',
             amountVnd: pkg.priceVnd,
             amountUsd: amountUsd,
-            creditsAdded: pkg.credits,
+            pulseAdded: pkg.pulseAmount,
             paidAt: now,
             expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000),
           },
@@ -257,18 +257,18 @@ export class StripeService {
         this.prisma.user.update({
           where: { id: userId },
           data: {
-            credits: { increment: pkg.credits },
+            pulseBalance: { increment: pkg.pulseAmount },
           },
         }),
         this.prisma.creditTransaction.create({
           data: {
             userId: userId,
             type: 'topup',
-            amount: pkg.credits,
-            balanceBefore: user.credits,
-            balanceAfter: user.credits + pkg.credits,
+            pulseAmount: pkg.pulseAmount,
+            pulseBalanceBefore: user.pulseBalance,
+            pulseBalanceAfter: user.pulseBalance + pkg.pulseAmount,
             referenceId: session.payment_intent as string || session.id,
-            description: `Nạp ${pkg.credits} credits qua Stripe`,
+            description: `Nạp ${pkg.pulseAmount} Pulse qua Stripe`,
           },
         }),
       ]);
@@ -280,7 +280,7 @@ export class StripeService {
         await this.notificationsService.createPaymentNotification(
           userId,
           pkg.priceVnd,
-          pkg.credits,
+          pkg.pulseAmount,
           session.payment_intent as string || session.id,
           'Stripe',
         );
@@ -290,12 +290,12 @@ export class StripeService {
       }
 
       // Send email if user allows
-      if (user.allowEmailNoti) {
+        if (user.allowEmailNoti) {
         try {
           await this.mailService.sendPaymentSuccessEmail(
             user.email,
             pkg.priceVnd,
-            pkg.credits,
+              pkg.pulseAmount,
             session.payment_intent as string || session.id,
             'Stripe',
           );
@@ -308,8 +308,8 @@ export class StripeService {
       return {
         success: true,
         message: 'Payment processed successfully',
-        creditsAdded: pkg.credits,
-        newBalance: user.credits + pkg.credits,
+        pulseAdded: pkg.pulseAmount,
+        newBalance: user.pulseBalance + pkg.pulseAmount,
       };
     } catch (error) {
       this.logger.error(`Failed to verify payment:`, error);

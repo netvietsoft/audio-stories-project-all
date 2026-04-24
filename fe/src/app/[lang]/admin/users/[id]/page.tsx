@@ -151,28 +151,28 @@ export default function UserDetailsPage() {
 
         const parsedCredits = Number(creditsInput);
         if (!Number.isFinite(parsedCredits) || parsedCredits < 0) {
-            setCreditsMessage({ type: 'error', text: 'Credits phải là số không âm.' });
+            setCreditsMessage({ type: 'error', text: 'Pulse phải là số không âm.' });
             return;
         }
 
-        const normalizedCredits = Math.floor(parsedCredits);
+        const normalizedPulse = Math.floor(parsedCredits);
 
         setIsUpdatingCredits(true);
         setCreditsMessage(null);
 
         try {
-            const res = await adminApiClient.patch(`/auth/users/${user.id}/credits`, {
-                credits: normalizedCredits,
+            const res = await adminApiClient.patch(`/auth/users/${user.id}/pulse`, {
+                pulseBalance: normalizedPulse,
             });
 
-            const nextCredits = Number(res.data?.data?.credits ?? normalizedCredits);
+            const nextPulse = Number(res.data?.data?.pulseBalance ?? normalizedPulse);
 
-            setUser((prev) => (prev ? { ...prev, credits: nextCredits, pulseBalance: nextCredits } : prev));
-            setCreditsInput(String(nextCredits));
-            setCreditsMessage({ type: 'success', text: 'Cập nhật credits thành công.' });
+            setUser((prev) => (prev ? { ...prev, credits: nextPulse, pulseBalance: nextPulse } : prev));
+            setCreditsInput(String(nextPulse));
+            setCreditsMessage({ type: 'success', text: 'Cập nhật pulse thành công.' });
         } catch (error) {
-            console.error('Failed to update user credits:', error);
-            setCreditsMessage({ type: 'error', text: 'Không thể cập nhật credits. Vui lòng thử lại.' });
+            console.error('Failed to update user pulse:', error);
+            setCreditsMessage({ type: 'error', text: 'Không thể cập nhật pulse. Vui lòng thử lại.' });
         } finally {
             setIsUpdatingCredits(false);
         }
@@ -394,17 +394,17 @@ export default function UserDetailsPage() {
                         {/* Sidebar info */}
                         <div className="space-y-8">
                             <div className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm">
-                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Set credits</h3>
+                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Set Pulse</h3>
 
                                 <div className="space-y-3">
                                     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Credits hiện tại</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Pulse hiện tại</p>
                                         <p className="mt-1 text-2xl font-black text-slate-900">{(user.pulseBalance ?? user.credits).toLocaleString()}</p>
                                     </div>
 
                                     <div>
                                         <label htmlFor="user-credits-input" className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">
-                                            Credits mới
+                                            Pulse mới
                                         </label>
                                         <input
                                             id="user-credits-input"
@@ -414,7 +414,7 @@ export default function UserDetailsPage() {
                                             value={creditsInput}
                                             onChange={(e) => setCreditsInput(e.target.value)}
                                             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
-                                            placeholder="Nhập credits"
+                                            placeholder="Nhập pulse"
                                         />
                                     </div>
 
@@ -432,7 +432,7 @@ export default function UserDetailsPage() {
                                         ) : (
                                             <>
                                                 <Wallet className="w-4 h-4" />
-                                                Lưu credits
+                                                Lưu pulse
                                             </>
                                         )}
                                     </button>

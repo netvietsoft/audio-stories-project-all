@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Nạp Credits",
-    description: "Nạp credits để mở khóa nội dung VIP và thưởng thức toàn bộ truyện audio trên Netviet Audio. Nhiều gói credits phù hợp với mọi nhu cầu.",
+    title: "Nạp Pulse",
+    description: "Nạp pulse để mở khóa nội dung VIP và thưởng thức toàn bộ truyện audio trên Netviet Audio. Nhiều gói pulse phù hợp với mọi nhu cầu.",
     openGraph: {
-        title: "Nạp Credits | Netviet Audio",
-        description: "Nạp credits để trải nghiệm truyện audio VIP chất lượng cao trên Netviet Audio.",
+        title: "Nạp Pulse | Netviet Audio",
+        description: "Nạp pulse để trải nghiệm truyện audio VIP chất lượng cao trên Netviet Audio.",
         type: "website",
     },
     robots: {

@@ -34,7 +34,8 @@ interface PaymentPackage {
     price?: number;
     currency?: string;
     lang?: string;
-    credits: number;
+    pulseAmount?: number;
+    credits?: number; // Legacy field for backward compatibility
     description?: string;
     descriptionVi?: string;
     descriptionEn?: string;
@@ -303,7 +304,7 @@ export default function TopupPage() {
                                                     </p>
                                                 )}
 
-                                                {/* Price & Credits */}
+                                                {/* Price & Pulse */}
                                                 <div className={`mb-6 p-4 rounded-2xl border transition-colors ${isSelected ? 'bg-violet-50/50 dark:bg-violet-500/5 border-violet-100 dark:border-violet-500/20' : 'bg-gray-50 dark:bg-zinc-900/50 border-gray-200 dark:border-zinc-800'}`}>
                                                     {/* Price on top */}
                                                     <div className="mb-3 text-left">
@@ -318,14 +319,14 @@ export default function TopupPage() {
                                                     {/* Divider */}
                                                     <div className={`border-t my-3 border-dashed ${isSelected ? 'border-violet-200 dark:border-violet-500/30' : 'border-gray-200 dark:border-zinc-800'}`}></div>
 
-                                                    {/* Credits on bottom */}
+                                                    {/* Pulse on bottom */}
                                                     <div className="text-left">
                                                         <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">
                                                             {t("receive")}
                                                         </div>
                                                         <div className="flex items-center justify-center gap-1.5">
                                                             <span className={`text-xl sm:text-2xl font-black tracking-tight ${isSelected ? 'text-violet-600 dark:text-violet-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
-                                                                {pkg.credits.toLocaleString()}
+                                                                {(pkg.pulseAmount ?? pkg.credits ?? 0).toLocaleString()}
                                                             </span>
                                                                 <span className="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">
                                                                     Pulse
@@ -374,7 +375,7 @@ export default function TopupPage() {
                                             name: t('customAmount'),
                                             priceVnd: customAmount || 0,
                                             currency: 'VND',
-                                            credits: customAmount || 0,
+                                            pulseAmount: customAmount || 0,
                                             isActive: true,
                                             displayOrder: 999,
                                         })}
@@ -407,7 +408,7 @@ export default function TopupPage() {
                                                             name: t('customAmount'),
                                                             priceVnd: newVal,
                                                             currency: 'VND',
-                                                            credits: newVal, // Giả sử quy đổi 1:1
+                                                            pulseAmount: newVal, // Giả sử quy đổi 1:1
                                                             isActive: true,
                                                             displayOrder: 999,
                                                         });
@@ -450,7 +451,7 @@ export default function TopupPage() {
                                                 priceVnd: customAmount || 0,
                                                 price: customAmount || 0,
                                                 currency: 'VND', // Always VND for custom amount to support VietQR
-                                                credits: customAmount || 0,
+                                                pulseAmount: customAmount || 0,
                                                 isActive: true,
                                                 displayOrder: 999,
                                             })}
@@ -495,7 +496,7 @@ export default function TopupPage() {
                                     <div className="flex justify-between items-center py-4 border-b border-dashed border-gray-200 dark:border-zinc-800">
                                         <span className="text-slate-500 dark:text-slate-400 font-medium">{t("creditsReceived")}</span>
                                         <span className="font-black text-lg text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                                            {selectedPackage.credits.toLocaleString()}
+                                            {(selectedPackage.pulseAmount ?? selectedPackage.credits ?? 0).toLocaleString()}
                                             <span className="text-xs font-bold uppercase tracking-wider text-emerald-500/70">Pulse</span>
                                         </span>
                                     </div>

@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsOptional, IsPositive, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class UpdatePackageDto {
     @IsString()
@@ -17,12 +17,12 @@ export class UpdatePackageDto {
     nameEn?: string;
 
     @IsInt()
-    @IsPositive()
+    @Min(0)
     @IsOptional()
     priceVnd?: number;
 
     @IsInt()
-    @IsPositive()
+    @Min(0)
     @IsOptional()
     price?: number;
 
@@ -37,7 +37,7 @@ export class UpdatePackageDto {
     lang?: string;
 
     @IsInt()
-    @IsPositive()
+    @Min(0)
     @IsOptional()
     pulseAmount?: number;
 

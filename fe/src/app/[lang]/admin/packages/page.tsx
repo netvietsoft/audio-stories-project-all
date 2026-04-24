@@ -24,7 +24,8 @@ interface PaymentPackage {
     name: string;
     priceVnd: number;
     lang?: string;
-    credits: number;
+    pulseAmount?: number;
+    credits?: number; // Legacy field for backward compatibility
     description?: string;
     isActive: boolean;
     isPopular?: boolean;
@@ -48,7 +49,7 @@ export default function PackagesPage() {
         code: '',
         name: '',
         priceVnd: 0,
-        credits: 0,
+        pulseAmount: 0,
         description: '',
         isActive: true,
         isPopular: false,
@@ -89,7 +90,7 @@ export default function PackagesPage() {
                 code: '',
                 name: '',
                 priceVnd: 0,
-                credits: 0,
+                pulseAmount: 0,
                 description: '',
                 isActive: true,
                 isPopular: false,
@@ -119,8 +120,8 @@ export default function PackagesPage() {
             return;
         }
         
-        if (formData.priceVnd === undefined || formData.credits === undefined) {
-            alert('Vui lòng điền giá và số credits!');
+        if (formData.priceVnd === undefined || formData.pulseAmount === undefined) {
+            alert('Vui lòng điền giá và số pulse!');
             return;
         }
         
@@ -133,7 +134,7 @@ export default function PackagesPage() {
                 const updateData = {
                     name: formData.name,
                     priceVnd: formData.priceVnd,
-                    credits: formData.credits,
+                    pulseAmount: formData.pulseAmount,
                     description: formData.description,
                     isActive: formData.isActive,
                     isPopular: formData.isPopular,
@@ -151,7 +152,7 @@ export default function PackagesPage() {
                     code: formData.code,
                     name: formData.name,
                     priceVnd: formData.priceVnd,
-                    credits: formData.credits,
+                    pulseAmount: formData.pulseAmount,
                     description: formData.description,
                     isActive: formData.isActive,
                     isPopular: formData.isPopular,
@@ -219,7 +220,7 @@ export default function PackagesPage() {
                         Quản lý Gói Thanh toán
                     </h1>
                     <p className="text-slate-500 mt-2 font-medium">
-                        Cấu hình các gói credits và giá bán
+                        Cấu hình các gói pulse và giá bán
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -286,15 +287,15 @@ export default function PackagesPage() {
                                 </p>
                             </div>
 
-                            {/* Price & Credits */}
+                            {/* Price & Pulse */}
                             <div className="space-y-3 mb-6">
                                 <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl">
                                     <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Giá bán</span>
                                     <span className="text-lg font-black text-emerald-900">{formatCurrency(pkg.priceVnd)}</span>
                                 </div>
                                 <div className="flex items-center justify-between p-3 bg-amber-50 rounded-xl">
-                                    <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Credits</span>
-                                    <span className="text-lg font-black text-amber-900">{pkg.credits.toLocaleString()}</span>
+                                    <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Pulse</span>
+                                    <span className="text-lg font-black text-amber-900">{(pkg.pulseAmount ?? pkg.credits ?? 0).toLocaleString()}</span>
                                 </div>
                             </div>
 
@@ -401,7 +402,7 @@ export default function PackagesPage() {
                                     type="text"
                                     value={formData.name || ''}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="vd: Gói 100 Credits"
+                                    placeholder="vd: Gói 100 Pulse"
                                     required
                                     className="w-full bg-slate-50 border-none rounded-2xl py-3 px-4 text-sm font-medium focus:ring-2 focus:ring-emerald-500/20 transition-all"
                                 />
@@ -425,12 +426,12 @@ export default function PackagesPage() {
 
                                 <div className="space-y-2">
                                     <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
-                                        Credits *
+                                        Pulse *
                                     </label>
                                     <input
                                         type="number"
-                                        value={formData.credits ?? 0}
-                                        onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 0 })}
+                                        value={formData.pulseAmount ?? 0}
+                                        onChange={(e) => setFormData({ ...formData, pulseAmount: parseInt(e.target.value) || 0 })}
                                         placeholder="100"
                                         required
                                         min="0"

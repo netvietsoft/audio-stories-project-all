@@ -31,7 +31,7 @@ export default function TopupSuccessPage() {
         try {
             const res = await apiClient.get('/auth/me');
             setUserData(res.data);
-            // Update global user store with latest credits
+            // Update global user store with latest pulse
             void refreshProfile();
         } catch (error) {
             console.error('Failed to fetch user data:', error);
@@ -66,7 +66,7 @@ export default function TopupSuccessPage() {
                         {t("paymentSuccessDesc")}
                     </p>
 
-                    {/* Credits Display */}
+                    {/* Pulse Display */}
                     <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-3xl p-6 sm:p-8 mb-8 border-2 border-emerald-100 dark:border-emerald-900/30">
                         <div className="flex items-center justify-center gap-3 mb-2">
                             <Coins className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
@@ -75,10 +75,10 @@ export default function TopupSuccessPage() {
                             </span>
                         </div>
                         <div className="text-5xl sm:text-6xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-                            {userData?.credits?.toLocaleString() || '0'}
+                            {(userData?.pulseBalance ?? userData?.credits ?? 0).toLocaleString()}
                         </div>
                         <div className="text-sm font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mt-2">
-                            {t("credits")}
+                            {t("pulse")}
                         </div>
                     </div>
 

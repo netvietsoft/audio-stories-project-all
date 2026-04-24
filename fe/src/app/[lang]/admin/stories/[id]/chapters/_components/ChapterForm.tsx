@@ -274,6 +274,9 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             shouldDirty: true,
             shouldValidate: true,
         });
+        if (field === 'title') {
+            userChangedTitle.current = true;
+        }
     };
 
     const extractFileKey = (url: string): string | null => {
@@ -411,6 +414,58 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         console.log('Selected story:', selectedStory);
         console.log('Available stories:', stories.length);
     }, [selectedStoryId, selectedStory, stories]);
+
+    // Track whether user manually edited chapterNumber or title to avoid overwriting
+    const userChangedChapterNumber = useRef(false);
+    const userChangedTitle = useRef(false);
+
+    // When the selected story changes, auto-compute next chapter number and
+    // prefill a simple title prefix if the user hasn't typed one yet.
+    useEffect(() => {
+        if (!selectedStoryId) return;
+
+        // Respect explicit initialData values when editing
+        if (initialData?.storyId && initialData?.storyId === selectedStoryId && initialData?.chapterNumber) {
+            return;
+        }
+
+        if (userChangedChapterNumber.current) return;
+
+        const setNextNumber = (next: number) => {
+            if (!userChangedChapterNumber.current) {
+                setValue('chapterNumber', next, { shouldDirty: true, shouldValidate: true });
+            }
+
+            // Prefill titles if empty and user hasn't edited them
+            const viTitle = watch('titleVi') || '';
+            const enTitle = watch('titleEn') || '';
+            if (!userChangedTitle.current) {
+                if (!viTitle) setValue('titleVi', `Chương ${next}`, { shouldDirty: true });
+                if (!enTitle) setValue('titleEn', `Chapter ${next}`, { shouldDirty: true });
+            }
+        };
+
+        (async () => {
+            try {
+                const count = (selectedStory as any)?._count?.chapters;
+                if (typeof count === 'number') {
+                    setNextNumber(count + 1);
+                    return;
+                }
+
+                // Fallback: fetch chapters to compute max chapterNumber
+                const res = await adminApiClient.get(`/chapters`, { params: { storyId: selectedStoryId, limit: 100 } });
+                const chaptersRaw = res.data.data || res.data || [];
+                const maxChapter = chaptersRaw.reduce((m: number, ch: any) => {
+                    const num = Number(ch?.chapterNumber ?? 0);
+                    return Number.isFinite(num) ? Math.max(m, num) : m;
+                }, 0);
+                setNextNumber(maxChapter + 1);
+            } catch (err) {
+                console.warn('Could not auto-compute next chapter number:', err);
+            }
+        })();
+    }, [selectedStoryId]);
 
     const filteredStories = stories.filter((s) =>
         getLocalizedText(s.title, selectedLanguage).toLowerCase().includes(storySearch.toLowerCase()),
@@ -818,6 +873,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             type="number"
                             step="0.1"
                             {...register('chapterNumber', { valueAsNumber: true })}
+                            onInput={() => { userChangedChapterNumber.current = true; }}
                             className={`admin-input ${errors.chapterNumber ? 'admin-input-error' : ''}`}
                         />
                         {errors.chapterNumber && <p className="text-red-500 text-xs mt-1">{errors.chapterNumber.message}</p>}

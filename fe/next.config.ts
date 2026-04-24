@@ -54,6 +54,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.r2.dev" },
         { protocol: "https", hostname: "khoinguonsangtao.vn" },
       { protocol: "https", hostname: "picsum.photos" },
+      { protocol: "https", hostname: "th.bing.com" },
       ...envImagePatterns,
     ],
   },

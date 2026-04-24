@@ -119,8 +119,8 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      // Scope cookie to refresh endpoint only — limits exposure surface
-      path: '/auth/refresh',
+      // Scope cookie to root so server-side middleware can read it
+      path: '/',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in ms
     });
   }

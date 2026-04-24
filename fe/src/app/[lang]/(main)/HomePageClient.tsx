@@ -527,7 +527,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
   );
 
   const mainContent = (
-    <div key="main" className="space-y-10 md:space-y-8">
+    <div key="main" className="space-y-10 md:space-y-8 mt-6 md:mt-8">
         {accessToken ? (
           <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="rounded-3xl bg-white p-5 shadow-sm dark:bg-[#242526]">

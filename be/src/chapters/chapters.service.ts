@@ -328,6 +328,17 @@ export class ChaptersService {
             if (!isVip) {
                 throw new ForbiddenException('VIP membership required to access this chapter');
             }
+            // Fire-and-forget: ghi nhận lượt mở (pulseAmount = 0 vì VIP không tốn Pulse)
+            setImmediate(() => {
+                const unlockType = accessType === 'vip' ? 'VIP' : 'TIMED';
+                this.prisma.userChapterUnlock
+                    .upsert({
+                        where: { userId_chapterId: { userId, chapterId: id } },
+                        create: { userId, chapterId: id, pulseAmount: 0, unlockType },
+                        update: {},
+                    })
+                    .catch(() => { /* silent — tracking failure must never break playback */ });
+            });
             return { url };
         }
 
@@ -349,6 +360,17 @@ export class ChaptersService {
             if (!unlocked && !isVip) {
                 throw new ForbiddenException('This chapter must be unlocked before listening');
             }
+            // Fire-and-forget: ghi nhận lượt mở bằng Pulse (pulseAmount = 0 nếu là VIP)
+            setImmediate(() => {
+                const spentPulse = isVip ? 0 : requiredUnlockPrice;
+                this.prisma.userChapterUnlock
+                    .upsert({
+                        where: { userId_chapterId: { userId, chapterId: id } },
+                        create: { userId, chapterId: id, pulseAmount: spentPulse, unlockType: 'PULSE' },
+                        update: {},
+                    })
+                    .catch(() => { /* silent */ });
+            });
         }
 
         return { url };

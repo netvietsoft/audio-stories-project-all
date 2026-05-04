@@ -60,6 +60,7 @@ model User {
   commentReactions       CommentReaction[]
   commentReports         CommentReport[]
   userUnlockedVariants   UserUnlockedVariant[]
+  chapterUnlocks         UserChapterUnlock[]
 
   @@index([roleId])
   @@index([isActive])
@@ -488,6 +489,12 @@ enum ChapterAccessType {
   vip
 }
 
+enum ChapterUnlockType {
+  VIP
+  TIMED
+  PULSE
+}
+
 model Chapter {
   id             String            @id @default(uuid()) @db.VarChar(36)
   storyId        String?           @map("story_id") @db.VarChar(36)
@@ -518,6 +525,8 @@ model Chapter {
   chapterComments  ChapterComment[]
   variants         ChapterVariant[]   @relation("ChapterVariants")
   incomingVariants ChapterVariant[]   @relation("VariantNextChapter")
+
+  chapterUnlocks   UserChapterUnlock[]
 
   @@unique([storyId, chapterNumber])
   @@index([accessType])
@@ -1071,6 +1080,25 @@ model UserUnlockedVariant {
   @@index([userId])
   @@index([variantId])
   @@map("user_unlocked_variants")
+}
+
+model UserChapterUnlock {
+  id          String            @id @default(uuid()) @db.VarChar(36)
+  userId      String            @map("user_id") @db.VarChar(36)
+  chapterId   String            @map("chapter_id") @db.VarChar(36)
+  pulseAmount Int               @default(0) @map("pulse_amount") @db.UnsignedInt
+  unlockType  ChapterUnlockType @map("unlock_type")
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterId])
+  @@index([chapterId])
+  @@index([userId])
+  @@index([unlockType])
+  @@index([createdAt])
+  @@map("user_chapter_unlocks")
 }
 
 enum SocialPlatform {

@@ -105,6 +105,7 @@ export default function AdminLayout({
         { href: '/admin/comment-reports', label: 'Báo cáo Bình luận', icon: Bell },
         { href: '/admin/gifts', label: 'Lịch sử Tặng quà', icon: Gift },
         { href: '/admin/transactions', label: 'Quản lý Giao dịch', icon: DollarSign },
+        { href: '/admin/vip-stories', label: 'Thống kê Truyện VIP', icon: Crown },
         { href: '/admin/settings', label: 'Cài đặt', icon: Settings },
     ];
 

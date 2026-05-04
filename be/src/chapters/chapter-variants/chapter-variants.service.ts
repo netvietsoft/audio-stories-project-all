@@ -148,25 +148,39 @@ export class ChapterVariantsService {
                 data: { pulseBalance: { decrement: variant.unlockPrice } },
             });
 
-            // Create unlock record
+            // Create variant unlock record
             await tx.userUnlockedVariant.create({
                 data: { userId, variantId },
             });
 
-            // Create credit transaction record
-                await tx.creditTransaction.create({
-                    data: {
-                        userId,
-                        type: 'spend',
-                        pulseAmount: -variant.unlockPrice,
-                        pulseBalanceBefore: user.pulseBalance,
-                        pulseBalanceAfter: updatedUser.pulseBalance,
-                        referenceId: variantId,
-                        description: `Mở khóa biến thể: ${variant.title}`,
-                    },
-                });
+            // Create credit transaction record (sổ cái giao dịch)
+            await tx.creditTransaction.create({
+                data: {
+                    userId,
+                    type: 'spend',
+                    pulseAmount: -variant.unlockPrice,
+                    pulseBalanceBefore: user.pulseBalance,
+                    pulseBalanceAfter: updatedUser.pulseBalance,
+                    referenceId: variantId,
+                    description: `Mở khóa biến thể: ${variant.title}`,
+                },
+            });
 
-                return { success: true, balance: updatedUser.pulseBalance };
+            // Ghi nhận vào sổ cái UserChapterUnlock (ATOMIC - cùng transaction)
+            await tx.userChapterUnlock.upsert({
+                where: {
+                    userId_chapterId: { userId, chapterId: variant.chapterId },
+                },
+                create: {
+                    userId,
+                    chapterId: variant.chapterId,
+                    pulseAmount: variant.unlockPrice,
+                    unlockType: 'PULSE',
+                },
+                update: {},
+            });
+
+            return { success: true, balance: updatedUser.pulseBalance };
         });
     }
 

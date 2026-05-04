@@ -167,6 +167,29 @@ async function seedTestData(prisma: PrismaClient) {
     },
   });
 
+  // ── VIP user (vipTier > 0, có pulse) ───────────────────────────────────
+  const vipUser = await prisma.user.upsert({
+    where: { email: 'e2e-vip@test.local' },
+    update: {
+      passwordHash: userPasswordHash,
+      emailVerifiedAt: new Date(),
+      roleId: userRole.id,
+      pulseBalance: 5000,
+      vipTier: 1,
+      vipExpirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+    },
+    create: {
+      email: 'e2e-vip@test.local',
+      displayName: 'E2E VIP User',
+      passwordHash: userPasswordHash,
+      emailVerifiedAt: new Date(),
+      roleId: userRole.id,
+      pulseBalance: 5000,
+      vipTier: 1,
+      vipExpirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    },
+  });
+
   // ── Author (cần languageId) ────────────────────────────────────────────────
   const author = await prisma.author.upsert({
     where: { slug: 'e2e-test-author' },
@@ -205,7 +228,98 @@ async function seedTestData(prisma: PrismaClient) {
         chapterNumber: 1,
         title: 'Chapter 1 - E2E Test',
         languageId: language.id,
-        accessType: 'free', // ChapterAccessType enum: free | timed | vip
+        accessType: 'free',
+      },
+    });
+  }
+
+  // ── VIP Chapter (accessType = 'vip') ────────────────────────────────────────────
+  let vipChapter = await prisma.chapter.findUnique({
+    where: { storyId_chapterNumber: { storyId: story.id, chapterNumber: 2 } },
+  });
+  if (!vipChapter) {
+    vipChapter = await prisma.chapter.create({
+      data: {
+        id: 'e2e-vip-chapter-id-000002',
+        storyId: story.id,
+        chapterNumber: 2,
+        title: 'Chapter 2 - VIP E2E Test',
+        languageId: language.id,
+        accessType: 'vip',
+        unlockPrice: 0,
+        audioUrl: 'https://example.com/vip-chapter-audio.mp3',
+        r2AudioUrl: 'https://r2.example.com/vip-chapter-audio.mp3',
+      },
+    });
+  } else {
+    await prisma.chapter.update({
+      where: { id: vipChapter.id },
+      data: {
+        accessType: 'vip',
+        audioUrl: 'https://example.com/vip-chapter-audio.mp3',
+        r2AudioUrl: 'https://r2.example.com/vip-chapter-audio.mp3',
+      },
+    });
+  }
+
+  // ── TIMED Chapter (accessType = 'timed', unlocksAt đã qua) ──────────────────────
+  let timedChapter = await prisma.chapter.findUnique({
+    where: { storyId_chapterNumber: { storyId: story.id, chapterNumber: 3 } },
+  });
+  if (!timedChapter) {
+    timedChapter = await prisma.chapter.create({
+      data: {
+        id: 'e2e-timed-chapter-id-000003',
+        storyId: story.id,
+        chapterNumber: 3,
+        title: 'Chapter 3 - TIMED E2E Test (Past)',
+        languageId: language.id,
+        accessType: 'timed',
+        unlockPrice: 0,
+        unlocksAt: new Date(Date.now() - 1000), // Đã qua → miễn phí
+        audioUrl: 'https://example.com/timed-chapter-audio.mp3',
+        r2AudioUrl: 'https://r2.example.com/timed-chapter-audio.mp3',
+      },
+    });
+  } else {
+    await prisma.chapter.update({
+      where: { id: timedChapter.id },
+      data: {
+        accessType: 'timed',
+        unlocksAt: new Date(Date.now() - 1000),
+        audioUrl: 'https://example.com/timed-chapter-audio.mp3',
+        r2AudioUrl: 'https://r2.example.com/timed-chapter-audio.mp3',
+      },
+    });
+  }
+
+  // ── TIMED Chapter Future (accessType = 'timed', unlocksAt tương lai) ──────────────────────
+  let timedChapterFuture = await prisma.chapter.findUnique({
+    where: { storyId_chapterNumber: { storyId: story.id, chapterNumber: 4 } },
+  });
+  if (!timedChapterFuture) {
+    timedChapterFuture = await prisma.chapter.create({
+      data: {
+        id: 'e2e-timed-chapter-future-id-000004',
+        storyId: story.id,
+        chapterNumber: 4,
+        title: 'Chapter 4 - TIMED E2E Test (Future)',
+        languageId: language.id,
+        accessType: 'timed',
+        unlockPrice: 0,
+        unlocksAt: new Date(Date.now() + 1000000), // Tương lai → cần VIP
+        audioUrl: 'https://example.com/timed-chapter-audio.mp3',
+        r2AudioUrl: 'https://r2.example.com/timed-chapter-audio.mp3',
+      },
+    });
+  } else {
+    await prisma.chapter.update({
+      where: { id: timedChapterFuture.id },
+      data: {
+        accessType: 'timed',
+        unlocksAt: new Date(Date.now() + 1000000),
+        audioUrl: 'https://example.com/timed-chapter-audio.mp3',
+        r2AudioUrl: 'https://r2.example.com/timed-chapter-audio.mp3',
       },
     });
   }
@@ -258,8 +372,12 @@ async function seedTestData(prisma: PrismaClient) {
   console.log(`[GlobalSetup]   Admin: ${admin.email} (id: ${admin.id}, roleId: ${adminRole.id})`);
   console.log(`[GlobalSetup]   User:  ${regularUser.email} (id: ${regularUser.id}, roleId: ${userRole.id})`);
   console.log(`[GlobalSetup]   Rich:  ${richUser.email} (id: ${richUser.id})`);
+  console.log(`[GlobalSetup]   VIP User: ${vipUser.email} (id: ${vipUser.id})`);
   console.log(`[GlobalSetup]   Story: ${story.slug} (id: ${story.id})`);
-  console.log(`[GlobalSetup]   Chapter: ${chapter.id}`);
+  console.log(`[GlobalSetup]   Free Chapter: ${chapter.id} (accessType: free)`);
+  console.log(`[GlobalSetup]   VIP Chapter: ${vipChapter.id} (accessType: vip)`);
+  console.log(`[GlobalSetup]   TIMED Chapter (Past): ${timedChapter.id} (accessType: timed)`);
+  console.log(`[GlobalSetup]   TIMED Chapter (Future): ${timedChapterFuture.id} (accessType: timed)`);
   console.log(`[GlobalSetup]   Free Variant: ${freeVariant.id}`);
   console.log(`[GlobalSetup]   Paid Variant: ${paidVariant.id}`);
 }

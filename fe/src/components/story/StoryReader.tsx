@@ -548,7 +548,7 @@ export default function StoryReader({
 
   if (isLocked) {
     return (
-      <div className={`relative overflow-hidden min-w-0 pr-0 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
+      <div className={`relative min-w-0 pr-0 pb-24 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
         {previewParagraphs.length ? (
           previewParagraphs.map((paragraph) => (
             <div key={paragraph.id} className="mb-6">

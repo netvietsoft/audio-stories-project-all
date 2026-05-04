@@ -437,8 +437,22 @@ export default function StoriesPage() {
 
     const handleEditChapter = async (storyId: string, chapter: any) => {
         setEditingChapterId(chapter.id);
-        // Copy the data as needed for the form
+        // Keep a fast fallback so modal can open immediately.
         setEditingChapterData({ ...chapter, storyId });
+
+        try {
+            const res = await apiClient.get(`/chapters/${chapter.id}`);
+            const fullChapter = res.data || {};
+
+            setEditingChapterData({
+                ...chapter,
+                ...fullChapter,
+                storyId,
+            });
+        } catch (error) {
+            console.error('Failed to fetch full chapter details:', error);
+            alert('Không thể tải đầy đủ dữ liệu chương.');
+        }
     };
 
     const handleChapterSubmit = async (data: ChapterSubmitPayload) => {

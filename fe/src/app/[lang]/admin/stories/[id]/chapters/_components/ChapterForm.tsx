@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -210,17 +210,23 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         console.log('ChapterForm initialData.storyId:', initialData?.storyId);
     }, [initialData]);
 
-    const initialTitle = toLocalizedText(initialData?.title, selectedLocale);
-    const initialDescription = toLocalizedText(initialData?.description, selectedLocale);
-    const initialContent = toLocalizedText(initialData?.content, selectedLocale);
-    const initialAudio = toLocalizedText(initialData?.audioUrl, selectedLocale);
-    if (!initialAudio.vi && !initialAudio.en && initialData?.r2AudioUrl) {
-        if (selectedLocale === 'en') {
-            initialAudio.en = initialData.r2AudioUrl;
-        } else {
-            initialAudio.vi = initialData.r2AudioUrl;
+    // Memoize localized text to prevent recalculation on every render
+    const { initialTitle, initialDescription, initialContent, initialAudio } = useMemo(() => {
+        const title = toLocalizedText(initialData?.title, selectedLocale);
+        const desc = toLocalizedText(initialData?.description, selectedLocale);
+        const cont = toLocalizedText(initialData?.content, selectedLocale);
+        const audio = toLocalizedText(initialData?.audioUrl, selectedLocale);
+        
+        if (!audio.vi && !audio.en && initialData?.r2AudioUrl) {
+            if (selectedLocale === 'en') {
+                audio.en = initialData.r2AudioUrl;
+            } else {
+                audio.vi = initialData.r2AudioUrl;
+            }
         }
-    }
+        
+        return { initialTitle: title, initialDescription: desc, initialContent: cont, initialAudio: audio };
+    }, [initialData, selectedLocale]);
 
     const safeString = (value: unknown, fallback = ''): string =>
         typeof value === 'string' ? value : fallback;
@@ -234,6 +240,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         handleSubmit,
         watch,
         setValue,
+        reset,
         setError,
         formState: { errors },
     } = useForm<ChapterFormValues>({
@@ -258,6 +265,31 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             unlocksAt: safeString(initialData?.unlocksAt),
         },
     });
+
+    // Update form when initialData changes (e.g., after async fetch)
+    useEffect(() => {
+        if (!initialData) return;
+        
+        reset({
+            chapterNumber: safeNumber(initialData?.chapterNumber, 1),
+            titleVi: safeString(initialData?.titleVi, initialTitle.vi),
+            titleEn: safeString(initialData?.titleEn, initialTitle.en),
+            descriptionVi: safeString(initialData?.descriptionVi, initialDescription.vi),
+            descriptionEn: safeString(initialData?.descriptionEn, initialDescription.en),
+            contentVi: safeString(initialData?.contentVi, initialContent.vi),
+            contentEn: safeString(initialData?.contentEn, initialContent.en),
+            audioUrlVi: safeString(initialData?.audioUrlVi, initialAudio.vi),
+            audioUrlEn: safeString(initialData?.audioUrlEn, initialAudio.en),
+            thumbnailUrl: safeString(initialData?.thumbnailUrl),
+            youtubeVideoId: safeString(initialData?.youtubeVideoId),
+            audioDuration: safeNumber(initialData?.audioDuration, 0),
+            accessType: safeAccessType(initialData?.accessType),
+            unlockPrice: safeNumber((initialData as { unlockPrice?: unknown } | undefined)?.unlockPrice, 0),
+            language: safeString((initialData as { language?: unknown } | undefined)?.language, selectedLocale),
+            storyId: safeString(initialData?.storyId),
+            unlocksAt: safeString(initialData?.unlocksAt),
+        });
+    }, [initialData, reset]);
 
     const selectedLanguage = watch('language') || selectedLocale;
     const isUploadingAudio = isUploadingAudioVi || isUploadingAudioEn;

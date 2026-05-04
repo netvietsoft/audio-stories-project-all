@@ -46,13 +46,15 @@ async function bootstrap() {
 
   // Allow localhost/127.0.0.1 during development
   if (process.env.NODE_ENV !== 'production') {
-    ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3058', 'http://127.0.0.1:3058'].forEach((u) => allowedOrigins.add(u));
+    ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001', 'http://localhost:3058', 'http://127.0.0.1:3058'].forEach((u) => allowedOrigins.add(u));
   }
 
   app.enableCors({
     origin: (origin, callback) => {
       // Allow server-to-server requests (no origin)
       if (!origin) return callback(null, true);
+      // Allow all origins if "*" is configured
+      if (allowedOrigins.has('*')) return callback(null, true);
       if (allowedOrigins.size === 0) return callback(null, true);
       if (allowedOrigins.has(origin)) return callback(null, true);
       callback(new Error('CORS not allowed'));

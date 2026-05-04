@@ -8,16 +8,15 @@ set -e
 # ==========================================
 APP_NAME="web-truyen-audio-fe"
 
-# Temp directory to backup .env file
-ENV_BACKUP_DIR="/tmp/${APP_NAME}-env-backup-$$"
+# File to backup .env file
+ENV_BACKUP_FILE=".env.deploy.backup"
 
 # Function to backup .env file before branch switch
 backup_env() {
     echo "📦 Backing up .env file..."
-    mkdir -p "$ENV_BACKUP_DIR"
     if [ -f ".env" ]; then
-        cp ".env" "$ENV_BACKUP_DIR/.env"
-        echo "✅ Backed up .env to $ENV_BACKUP_DIR"
+        cp ".env" "$ENV_BACKUP_FILE"
+        echo "✅ Backed up .env to $ENV_BACKUP_FILE"
     else
         echo "ℹ️  No .env file found to backup"
     fi
@@ -28,20 +27,16 @@ restore_env() {
     echo ""
     echo "📝 Restoring .env file from backup..."
     
-    if [ ! -d "$ENV_BACKUP_DIR" ]; then
-        echo "⚠️  No backup found at $ENV_BACKUP_DIR"
+    if [ ! -f "$ENV_BACKUP_FILE" ]; then
+        echo "⚠️  No backup found at $ENV_BACKUP_FILE"
         return
     fi
     
-    local backup_file="$ENV_BACKUP_DIR/.env"
-    
-    if [ -f "$backup_file" ]; then
-        cp "$backup_file" ".env"
+    if [ -f "$ENV_BACKUP_FILE" ]; then
+        cp "$ENV_BACKUP_FILE" ".env"
         echo "  ✓ Restored .env"
     fi
     
-    # Cleanup backup directory
-    rm -rf "$ENV_BACKUP_DIR"
     echo "✅ Restored .env file from backup"
 }
 

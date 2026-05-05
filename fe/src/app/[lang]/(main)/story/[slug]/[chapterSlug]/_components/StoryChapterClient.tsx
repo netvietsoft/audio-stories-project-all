@@ -43,6 +43,7 @@ import { resolveNextPlaybackRate } from "@/lib/player/control-helpers";
 import StoryAudioPlayerPanel from "@/components/player/StoryAudioPlayerPanel";
 import YouTubePlayerPanel from "@/components/player/YouTubePlayerPanel";
 import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscriptionButton";
+import type { AdvertisementItem } from "@/types/advertisement";
 
 const StoryReader = dynamic(() => import("@/components/story/StoryReader"));
 
@@ -86,10 +87,13 @@ type ChapterItem = {
   audioUrlEn?: string | null;
   youtubeVideoId?: string | null;
   audioDuration: number | null;
-  accessType: "free" | "timed" | "vip";
+  accessType: "free" | "timed" | "vip" | "ads";
   unlocksAt: string | null;
   isInteractive?: boolean;
   variants?: ChapterVariant[];
+  // If chapter is unlocked by ad, backend will populate this
+  unlockAdId?: string | null;
+  unlockAd?: AdvertisementItem | null;
 };
 
 type StoryListItem = {
@@ -223,10 +227,12 @@ const getUnlockLabel = (
     vipOnly: string;
     opensFreeLater: string;
     freeUnlocked: string;
+    adsLabel?: string;
   },
 ) => {
   if (chapter.accessType === "free") return null;
   if (chapter.accessType === "vip") return labels.vipOnly;
+  if (chapter.accessType === "ads") return labels.adsLabel || "Quảng cáo";
   if (!chapter.unlocksAt) return labels.opensFreeLater;
 
   const msLeft = new Date(chapter.unlocksAt).getTime() - Date.now();
@@ -290,6 +296,8 @@ export default function StoryChapterClient() {
   const [unlockError, setUnlockError] = useState("");
   const [showTopupAction, setShowTopupAction] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [unlockAdReappearMinutes, setUnlockAdReappearMinutes] = useState<number>(15);
+  const [unlockAdCountdownSeconds, setUnlockAdCountdownSeconds] = useState<number>(5);
   const user = useUserStore((state) => state.user);
   const { refreshProfile } = useAuth();
   const openLogin = useAuthModalStore((state) => state.openLogin);
@@ -469,6 +477,23 @@ export default function StoryChapterClient() {
         }));
 
         setStory(normalizedDetail);
+
+        // fetch public system settings for unlock ad timings (best-effort)
+        (async () => {
+          try {
+            const resp1 = await apiClient.get(`/settings/unlock_ad_reappearance_minutes`);
+            setUnlockAdReappearMinutes(Number(resp1?.data?.value) || 15);
+          } catch (e) {
+            setUnlockAdReappearMinutes(15);
+          }
+
+          try {
+            const resp2 = await apiClient.get(`/settings/unlock_ad_countdown_seconds`);
+            setUnlockAdCountdownSeconds(Number(resp2?.data?.value) || 5);
+          } catch (e) {
+            setUnlockAdCountdownSeconds(5);
+          }
+        })();
 
         const fromSlug = chapterNumberFromSlug(chapterSlug);
         const pickedBySlug = fromSlug
@@ -724,6 +749,7 @@ export default function StoryChapterClient() {
   const chapterIsLocked = useMemo(() => {
     if (!selectedChapter) return false;
     if (isVipActive) return false;
+    if (selectedChapter.accessType === "ads") return !!selectedChapter.unlockAd;
     if (selectedChapter.accessType === "vip") return true;
     if (selectedChapter.accessType === "timed") {
       if (!selectedChapter.unlocksAt) return true;
@@ -734,6 +760,9 @@ export default function StoryChapterClient() {
 
   const lockReasonLabel = useMemo(() => {
     if (!selectedChapter) return t("chapterLocked");
+    if (selectedChapter.accessType === "ads") {
+      return locale === "en" ? "Watch ads to unlock" : "Xem quảng cáo để mở khóa";
+    }
     if (selectedChapter.accessType === "vip") {
       return t("vipOnlyChapter");
     }
@@ -743,6 +772,7 @@ export default function StoryChapterClient() {
           vipOnly: t("vipOnlyAccess"),
           opensFreeLater: t("opensFreeLater"),
           freeUnlocked: t("freeUnlocked"),
+          adsLabel: locale === "en" ? "Ads" : "Quảng cáo",
         }) || t("chapterUnlockSoon")
       );
     }
@@ -1644,6 +1674,7 @@ export default function StoryChapterClient() {
                       vipOnly: t("vipOnlyAccess"),
                       opensFreeLater: t("opensFreeLater"),
                       freeUnlocked: t("freeUnlocked"),
+                      adsLabel: locale === "en" ? "Ads" : "Quảng cáo",
                     })}
                   </p>
                 ) : null}
@@ -1684,6 +1715,7 @@ export default function StoryChapterClient() {
                       })()}
                       {filteredChapters.map((chapter) => {
                         const isCurrent = chapter.id === selectedChapter.id;
+                        const chapterIsAdsLock = chapter.accessType === "ads";
                         return (
                           <button
                             key={chapter.id}
@@ -1693,7 +1725,15 @@ export default function StoryChapterClient() {
                               : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-[#464749]"
                               }`}
                           >
-                            <span className="line-clamp-1">{formatChapterTitle(t("chapterKeyword"), chapter.chapterNumber, cleanChapterTitle(getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)))}</span>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="line-clamp-1">{formatChapterTitle(t("chapterKeyword"), chapter.chapterNumber, cleanChapterTitle(getLocalizedValue(locale, chapter.titleVi, chapter.titleEn, chapter.title)))}</span>
+                              {chapterIsAdsLock ? (
+                                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${isCurrent ? "bg-white/20 text-yellow-100" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"}`}>
+                                  <Lock className="h-3 w-3" />
+                                  {locale === "en" ? "Ads" : "Quảng cáo"}
+                                </span>
+                              ) : null}
+                            </div>
                           </button>
                         );
                       })}
@@ -1835,10 +1875,17 @@ export default function StoryChapterClient() {
                     chapterId={`${selectedChapter.id}-part1`}
                     content={contentBeforeChoice}
                     adInterval={700}
-                    isLocked={chapterIsLocked}
+                    isLocked={selectedChapter.accessType === "ads" && chapterIsLocked}
                     previewChars={500}
                     lockLabel={lockReasonLabel}
                     onUnlockRequest={openUnlockModal}
+                    unlockAd={selectedChapter?.unlockAd ?? null}
+                    unlockReappearMinutes={unlockAdReappearMinutes}
+                    unlockCountdownSeconds={unlockAdCountdownSeconds}
+                    onAdUnlocked={() => {
+                      // attempt to refresh unlocked state
+                      void refreshProfile();
+                    }}
                   />
 
                   {/* Inline Variant Selection */}
@@ -2196,10 +2243,16 @@ export default function StoryChapterClient() {
                   chapterId={selectedChapter.id}
                   content={selectedChapterContentRaw}
                   adInterval={700}
-                  isLocked={chapterIsLocked}
+                  isLocked={selectedChapter.accessType === "ads" && chapterIsLocked}
                   previewChars={500}
                   lockLabel={lockReasonLabel}
                   onUnlockRequest={openUnlockModal}
+                  unlockAd={selectedChapter?.unlockAd ?? null}
+                  unlockReappearMinutes={unlockAdReappearMinutes}
+                  unlockCountdownSeconds={unlockAdCountdownSeconds}
+                  onAdUnlocked={() => {
+                    void refreshProfile();
+                  }}
                 />
               )
             ) : (

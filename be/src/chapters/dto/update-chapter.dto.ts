@@ -64,4 +64,9 @@ export class UpdateChapterDto {
     @IsString()
     @MaxLength(10)
     language?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(36)
+    unlockAdId?: string | null;
 }

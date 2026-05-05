@@ -47,8 +47,9 @@ export interface Chapter {
     thumbnailUrl?: string | null;
     youtubeVideoId?: string | null;
     audioDuration?: number | null;
-    accessType?: 'free' | 'timed' | 'vip';
+    accessType?: 'free' | 'timed' | 'vip' | 'ads';
     unlockPrice?: number;
+    unlockAdId?: string | null;
     language?: string | null;
     createdAt: string;
     storyId?: string | null;

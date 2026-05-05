@@ -24,8 +24,9 @@ type ChapterDetail = {
   thumbnailUrl?: string | null;
   youtubeVideoId?: string | null;
   audioDuration?: number | null;
-  accessType: "free" | "timed" | "vip";
+  accessType: "free" | "timed" | "vip" | "ads";
   unlockPrice?: number;
+  unlockAdId?: string | null;
   storyId?: string | null;
 };
 
@@ -179,6 +180,7 @@ export default function ChapterEditorPage() {
                     audioDuration: chapter?.audioDuration ?? 0,
                     accessType: chapter?.accessType,
                     unlockPrice: chapter?.unlockPrice ?? 0,
+                    unlockAdId: chapter?.unlockAdId ?? undefined,
                     language: chapter?.language ?? currentLang,
                     storyId: chapter?.storyId ?? undefined,
                   }

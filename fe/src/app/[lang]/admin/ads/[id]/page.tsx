@@ -9,6 +9,8 @@ import Link from '@/components/shared/LocalizedLink';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import AdForm, { type AdFormValues } from '../_components/AdForm';
 
+type EditAdFormValues = AdFormValues & { routeType?: number };
+
 type AdApiDetail = {
   id: string;
   partnerName: string;
@@ -18,6 +20,7 @@ type AdApiDetail = {
   languageId?: number | null;
   isGlobal?: boolean;
   isActive: boolean;
+  routeType?: number;
 };
 
 export default function EditAdPage() {
@@ -29,7 +32,7 @@ export default function EditAdPage() {
 
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [initialData, setInitialData] = useState<AdFormValues | null>(null);
+  const [initialData, setInitialData] = useState<EditAdFormValues | null>(null);
 
   useEffect(() => {
     if (!normalizedId) return;
@@ -84,6 +87,7 @@ export default function EditAdPage() {
         languageId: isGlobal ? null : Number(payload.languageId),
         isGlobal,
         isActive: payload.isActive ?? true,
+        routeType: initialData?.routeType ?? 1,
       };
       const endpoints = [`/ads/${safeId}`, `/ads/admin/${safeId}`];
 

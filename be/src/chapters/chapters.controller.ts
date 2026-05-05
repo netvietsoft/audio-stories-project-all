@@ -100,6 +100,17 @@ export class ChaptersController {
         return res.redirect(302, url);
     }
 
+        @UseGuards(OptionalJwtGuard)
+        @Post('chapters/:id/unlock-by-ad')
+        async unlockByAd(
+            @Param('id') id: string,
+            @Body('adId') adId: string | undefined,
+            @Req() req: Request,
+        ) {
+            const userId = (req.user as any)?.id;
+            return this.chaptersService.unlockByAd(id, adId, userId);
+        }
+
     @Get('chapters/:id')
     @UseGuards(JwtAccessGuard, RolesGuard)
     @Roles('ADMIN')

@@ -283,7 +283,11 @@
     "unlocked": "Unlocked",
     "topUp": "Top Up",
     "buyVip": "Buy VIP",
-    "buyVipInfo": "Unlock all chapters for {days} days with only {cost} Pulse."
+    "buyVipInfo": "Unlock all chapters for {days} days with only {cost} Pulse.",
+    "adminAccessFree": "Free",
+    "adminAccessTimed": "Time-gated unlock",
+    "adminAccessVip": "VIP only",
+    "adminAccessAds": "Unlock by watching ads"
 
   },
   "StoryPage": {

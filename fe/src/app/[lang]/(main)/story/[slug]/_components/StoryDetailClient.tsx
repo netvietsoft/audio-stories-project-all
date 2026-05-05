@@ -22,7 +22,7 @@ type ChapterItem = {
   titleEn?: string;
   chapterNumber: number;
   audioDuration: number | null;
-  accessType: "free" | "timed" | "vip";
+  accessType: "free" | "timed" | "vip" | "ads";
   unlocksAt: string | null;
 };
 
@@ -59,9 +59,10 @@ const formatDuration = (seconds?: number | null) => {
 
 const chapterHref = (slug: string, chapterNumber: number) => `/story/${slug}/chuong-${chapterNumber}`;
 
-const getUnlockLabel = (chapter: ChapterItem, t: ReturnType<typeof useTranslations>) => {
+const getUnlockLabel = (chapter: ChapterItem, t: ReturnType<typeof useTranslations>, locale: string) => {
   if (chapter.accessType === "free") return null;
   if (chapter.accessType === "vip") return t("unlockVip");
+  if (chapter.accessType === "ads") return locale === "en" ? "Ads" : "Quảng cáo";
   if (!chapter.unlocksAt) return t("unlockTimed");
 
   const msLeft = new Date(chapter.unlocksAt).getTime() - Date.now();
@@ -455,7 +456,7 @@ export default function StoryDetailClient() {
         <div className="chapter-list-wrapper bg-white dark:bg-[#242526]">
           <div className="chapter-grid grid grid-cols-1 md:grid-cols-3 gap-0">
             {story.chapters.map((chapter) => {
-              const unlockLabel = getUnlockLabel(chapter, t);
+              const unlockLabel = getUnlockLabel(chapter, t, locale);
               return (
                 <Link
                   key={chapter.id}

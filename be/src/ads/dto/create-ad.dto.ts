@@ -27,4 +27,8 @@ export class CreateAdDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  routeType?: number;
 }

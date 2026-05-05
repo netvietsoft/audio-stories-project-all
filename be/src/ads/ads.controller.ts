@@ -20,8 +20,9 @@ export class AdsController {
   @Get()
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')
-  findAllAdmin(@Query('lang') lang?: string) {
-    return this.adsService.findAllAdmin(lang);
+  findAllAdmin(@Query('lang') lang?: string, @Query('routeType') routeType?: string) {
+    const parsedRouteType = routeType ? Number(routeType) : undefined;
+    return this.adsService.findAllAdmin(lang, Number.isFinite(parsedRouteType) ? parsedRouteType : undefined);
   }
 
   @Get(':id')

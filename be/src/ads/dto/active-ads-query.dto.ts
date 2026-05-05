@@ -11,4 +11,10 @@ export class ActiveAdsQueryDto {
   @IsOptional()
   @IsString()
   lang?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined ? Number(value) : undefined))
+  @IsInt()
+  @Min(1)
+  routeType?: number;
 }

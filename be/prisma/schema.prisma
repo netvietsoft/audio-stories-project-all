@@ -103,7 +103,6 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
-
 enum AuthTokenType {
   VERIFY_EMAIL
   VERIFY_CODE
@@ -293,10 +292,15 @@ model Advertisement {
   languageId  Int?     @map("language_id") @db.UnsignedInt
   isGlobal    Boolean  @default(true) @map("is_global")
   isActive    Boolean  @default(true) @map("is_active")
+  // 1 = inline, 2 = unlock-by-ad
+  routeType   Int      @default(1) @map("route_type")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   language Language? @relation(fields: [languageId], references: [id], onDelete: SetNull)
+
+  // Chapters that are unlocked by this ad
+  unlockedChapters Chapter[] @relation("UnlockAdForChapter")
 
   @@index([isActive, updatedAt])
   @@index([languageId])
@@ -305,35 +309,35 @@ model Advertisement {
 }
 
 model Music {
-  id            String   @id @default(uuid()) @db.VarChar(36)
-  title         String   @db.VarChar(300)
-  slug          String   @unique @db.VarChar(350)
-  artist        String   @db.VarChar(150)
-  description   String?  @db.Text
-  tags          Json?
-  thumbnailUrl  String?  @map("thumbnail_url") @db.Text
-  audioUrl      String   @map("audio_url") @db.VarChar(500)
-  audioDuration Int?     @map("audio_duration") @db.UnsignedInt
-  contentType   MusicContentType @default(single) @map("content_type")
-  accessType    MusicAccessType @default(free) @map("access_type")
-  originalUnlockPrice Int?   @map("original_unlock_price") @db.UnsignedInt
-  discountPercent Int   @default(0) @map("discount_percent") @db.UnsignedInt
-  unlockPrice   Int      @default(0) @map("unlock_price") @db.UnsignedInt
-  introEnabled  Boolean  @default(true) @map("intro_enabled")
-  playlistTrackIds Json? @map("playlist_track_ids")
-  playCount     Int      @default(0) @map("play_count") @db.UnsignedInt
-  likeCount     Int      @default(0) @map("like_count") @db.UnsignedInt
-  commentCount  Int      @default(0) @map("comment_count") @db.UnsignedInt
-  isPublic      Boolean  @default(true) @map("is_public")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  id                  String           @id @default(uuid()) @db.VarChar(36)
+  title               String           @db.VarChar(300)
+  slug                String           @unique @db.VarChar(350)
+  artist              String           @db.VarChar(150)
+  description         String?          @db.Text
+  tags                Json?
+  thumbnailUrl        String?          @map("thumbnail_url") @db.Text
+  audioUrl            String           @map("audio_url") @db.VarChar(500)
+  audioDuration       Int?             @map("audio_duration") @db.UnsignedInt
+  contentType         MusicContentType @default(single) @map("content_type")
+  accessType          MusicAccessType  @default(free) @map("access_type")
+  originalUnlockPrice Int?             @map("original_unlock_price") @db.UnsignedInt
+  discountPercent     Int              @default(0) @map("discount_percent") @db.UnsignedInt
+  unlockPrice         Int              @default(0) @map("unlock_price") @db.UnsignedInt
+  introEnabled        Boolean          @default(true) @map("intro_enabled")
+  playlistTrackIds    Json?            @map("playlist_track_ids")
+  playCount           Int              @default(0) @map("play_count") @db.UnsignedInt
+  likeCount           Int              @default(0) @map("like_count") @db.UnsignedInt
+  commentCount        Int              @default(0) @map("comment_count") @db.UnsignedInt
+  isPublic            Boolean          @default(true) @map("is_public")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
 
-  comments       MusicComment[]
-  likes          MusicLike[]
-  historyEntries MusicHistory[]
-  playlistTracks MusicPlaylistTrack[]
-  unlocks        MusicUnlock[] @relation("MusicUnlockTrack")
-  unlocksAsSource MusicUnlock[] @relation("MusicUnlockSourcePlaylist")
+  comments        MusicComment[]
+  likes           MusicLike[]
+  historyEntries  MusicHistory[]
+  playlistTracks  MusicPlaylistTrack[]
+  unlocks         MusicUnlock[]        @relation("MusicUnlockTrack")
+  unlocksAsSource MusicUnlock[]        @relation("MusicUnlockSourcePlaylist")
 
   @@index([isPublic])
   @@index([createdAt])
@@ -354,10 +358,10 @@ model MusicComment {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  music    Music          @relation(fields: [musicId], references: [id], onDelete: Cascade)
-  parent   MusicComment?  @relation("MusicCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  children MusicComment[] @relation("MusicCommentReplies")
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  music    Music              @relation(fields: [musicId], references: [id], onDelete: Cascade)
+  parent   MusicComment?      @relation("MusicCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  children MusicComment[]     @relation("MusicCommentReplies")
   likes    MusicCommentLike[]
 
   @@index([userId])
@@ -487,12 +491,14 @@ enum ChapterAccessType {
   free
   timed
   vip
+  ads
 }
 
 enum ChapterUnlockType {
   VIP
   TIMED
   PULSE
+  AD
 }
 
 model Chapter {
@@ -510,6 +516,9 @@ model Chapter {
   audioDuration  Int?              @map("audio_duration") @db.UnsignedInt
   accessType     ChapterAccessType @default(free) @map("access_type")
   unlockPrice    Int               @default(0) @map("unlock_price") @db.UnsignedInt
+  // If this chapter is unlocked by watching an ad, store the ad id here
+  unlockAdId     String?           @map("unlock_ad_id") @db.VarChar(36)
+  unlockAd       Advertisement?    @relation("UnlockAdForChapter", fields: [unlockAdId], references: [id], onDelete: SetNull)
   isInteractive  Boolean           @default(false) @map("is_interactive")
   unlocksAt      DateTime?         @map("unlocks_at")
   viewCount      BigInt            @default(0) @map("view_count") @db.UnsignedBigInt
@@ -526,7 +535,7 @@ model Chapter {
   variants         ChapterVariant[]   @relation("ChapterVariants")
   incomingVariants ChapterVariant[]   @relation("VariantNextChapter")
 
-  chapterUnlocks   UserChapterUnlock[]
+  chapterUnlocks UserChapterUnlock[]
 
   @@unique([storyId, chapterNumber])
   @@index([accessType])
@@ -687,15 +696,15 @@ enum CreditTransactionType {
 }
 
 model CreditTransaction {
-  id            String                @id @default(uuid()) @db.VarChar(36)
-  userId        String                @map("user_id") @db.VarChar(36)
-  type          CreditTransactionType
-  pulseAmount   Int                   @map("amount")
-  pulseBalanceBefore Int              @map("balance_before") @db.UnsignedInt
-  pulseBalanceAfter  Int              @map("balance_after") @db.UnsignedInt
-  referenceId   String?               @map("reference_id") @db.VarChar(36)
-  description   String?               @db.VarChar(255)
-  createdAt     DateTime              @default(now()) @map("created_at")
+  id                 String                @id @default(uuid()) @db.VarChar(36)
+  userId             String                @map("user_id") @db.VarChar(36)
+  type               CreditTransactionType
+  pulseAmount        Int                   @map("amount")
+  pulseBalanceBefore Int                   @map("balance_before") @db.UnsignedInt
+  pulseBalanceAfter  Int                   @map("balance_after") @db.UnsignedInt
+  referenceId        String?               @map("reference_id") @db.VarChar(36)
+  description        String?               @db.VarChar(255)
+  createdAt          DateTime              @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id])
 
@@ -788,14 +797,14 @@ enum MembershipType {
 }
 
 model Membership {
-  id           String         @id @default(uuid()) @db.VarChar(36)
-  userId       String         @map("user_id") @db.VarChar(36)
-  type         MembershipType
-  authorId     String?        @map("author_id") @db.VarChar(36)
-  startDate    DateTime       @map("start_date")
-  endDate      DateTime       @map("end_date")
-  pulseSpent   Int            @map("credits_spent") @db.UnsignedInt
-  createdAt    DateTime       @default(now()) @map("created_at")
+  id         String         @id @default(uuid()) @db.VarChar(36)
+  userId     String         @map("user_id") @db.VarChar(36)
+  type       MembershipType
+  authorId   String?        @map("author_id") @db.VarChar(36)
+  startDate  DateTime       @map("start_date")
+  endDate    DateTime       @map("end_date")
+  pulseSpent Int            @map("credits_spent") @db.UnsignedInt
+  createdAt  DateTime       @default(now()) @map("created_at")
 
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   author Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)

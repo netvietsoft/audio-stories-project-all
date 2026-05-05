@@ -92,7 +92,8 @@ export default function AdminLayout({
         { href: '/admin/stories', label: 'Quản lý Truyện', icon: Newspaper },
         { href: '/admin/music', label: 'Quản lý Nhạc', icon: Music },
         { href: '/admin/banners', label: 'Quản lý Banner Hero', icon: ImageIcon },
-        { href: '/admin/ads', label: 'Quản lý Quảng cáo', icon: Megaphone },
+        { href: '/admin/ads', label: 'Quảng cáo Inline', icon: Megaphone },
+        { href: '/admin/ads/unlock', label: 'Quảng cáo mở khóa', icon: Megaphone },
         { href: '/admin/social-links', label: 'Quản lý Link Cộng đồng', icon: Share2 },
         { href: '/admin/interactive-stories', label: 'Truyện Tương Tác', icon: Zap },
 

@@ -282,7 +282,11 @@
     "unlocked": "Đã mở khóa",
     "topUp": "Nạp thêm",
     "buyVip": "Gói VIP",
-    "buyVipInfo": "Mở khóa trọn bộ mọi truyện trong {days} ngày chỉ với {cost} Pulse."
+    "buyVipInfo": "Mở khóa trọn bộ mọi truyện trong {days} ngày chỉ với {cost} Pulse.",
+    "adminAccessFree": "Miễn phí (Free)",
+    "adminAccessTimed": "Mở khóa theo thời gian",
+    "adminAccessVip": "Dành riêng cho VIP",
+    "adminAccessAds": "Mở khóa bằng xem quảng cáo"
   },
   "StoryPage": {
     "notFound": "Không tìm thấy truyện",

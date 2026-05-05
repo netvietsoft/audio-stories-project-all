@@ -747,6 +747,17 @@ export class StoriesService {
             description: true,
             thumbnailUrl: true,
             accessType: true,
+            unlockAdId: true,
+            unlockAd: {
+              select: {
+                id: true,
+                partnerName: true,
+                title: true,
+                imageUrl: true,
+                targetUrl: true,
+                language: { select: { key: true } },
+              },
+            },
             unlockPrice: true,
             unlocksAt: true,
             isInteractive: true,

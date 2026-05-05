@@ -18,6 +18,7 @@ type AdItem = {
   language?: 'vi' | 'en' | 'all' | string;
   languageId?: number | null;
   isGlobal?: boolean;
+  routeType?: number;
   isActive: boolean;
 };
 
@@ -64,8 +65,8 @@ export default function AdsPage() {
       const response = await apiClient.get('/ads', {
         params:
           selectedLanguage === 'all'
-            ? undefined
-            : { lang: selectedLanguage },
+            ? { routeType: 1 }
+            : { lang: selectedLanguage, routeType: 1 },
       });
       setItems(Array.isArray(response.data?.data) ? response.data.data : []);
     } catch (error) {
@@ -83,6 +84,8 @@ export default function AdsPage() {
   useEffect(() => {
     void fetchAds();
   }, [selectedLanguage]);
+
+  // If this admin ads page should show only inline ads, it's fine — routeType defaults to 1 on backend
 
   const handleLanguageFilterChange = (value: string) => {
     const next = new URLSearchParams(searchParams.toString());
@@ -184,9 +187,9 @@ export default function AdsPage() {
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 shadow-lg shadow-orange-200">
               <Megaphone className="h-6 w-6 text-white" />
             </span>
-            Quản lý Quảng cáo Đối tác
+            Quảng cáo Inline
           </h1>
-          <p className="mt-2 font-medium text-slate-500">Danh sách campaign quảng cáo dùng để nhúng vào nội dung chương truyện.</p>
+          <p className="mt-2 font-medium text-slate-500">Danh sách campaign quảng cáo inline dùng để nhúng vào nội dung chương truyện.</p>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

@@ -58,6 +58,11 @@ export class CreateChapterDto {
 
     @IsOptional()
     @IsString()
+    @MaxLength(36)
+    unlockAdId?: string | null;
+
+    @IsOptional()
+    @IsString()
     @MaxLength(10)
     language?: string;
 }

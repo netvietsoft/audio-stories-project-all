@@ -21,6 +21,7 @@ export default function NewAdPage() {
         languageId: isGlobal ? null : Number(payload.languageId),
         isGlobal,
         isActive: payload.isActive ?? true,
+        routeType: 1,
       });
       router.push('/admin/ads');
     } catch (error) {

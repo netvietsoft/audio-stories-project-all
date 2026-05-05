@@ -228,6 +228,50 @@ export class ChaptersService {
         return chapter;
     }
 
+        async unlockByAd(chapterId: string, adId?: string, userId?: string | null) {
+            const chapter = await this.prisma.chapter.findUnique({
+                where: { id: chapterId },
+                select: { id: true, accessType: true, unlockAdId: true },
+            });
+
+            if (!chapter) {
+                throw new NotFoundException(`Chapter with ID ${chapterId} not found`);
+            }
+
+            // In production data, ad-unlocked chapters are identified by unlockAdId.
+            // accessType may still be persisted as 'timed' on older schemas.
+            if (!chapter.unlockAdId && String(chapter.accessType) !== 'ads') {
+                throw new BadRequestException('This chapter is not configured for ad-based unlock');
+            }
+
+            // If chapter is tied to a specific ad, ensure the provided ad matches
+            if (chapter.unlockAdId && adId && chapter.unlockAdId !== adId) {
+                throw new BadRequestException('Provided ad does not match chapter unlock configuration');
+            }
+
+            // If adId provided, validate ad exists and is active
+            if (adId) {
+                const ad = await this.prisma.advertisement.findUnique({ where: { id: adId }, select: { id: true, isActive: true } });
+                if (!ad || !ad.isActive) {
+                    throw new BadRequestException('Invalid or inactive ad');
+                }
+            }
+
+            // If no user is present, nothing more to record server-side — return success
+            if (!userId) {
+                return { success: true };
+            }
+
+            // Record unlock for the user (upsert)
+            await this.prisma.userChapterUnlock.upsert({
+                where: { userId_chapterId: { userId, chapterId } },
+                create: { userId, chapterId, pulseAmount: 0, unlockType: 'AD' },
+                update: {},
+            });
+
+            return { success: true };
+        }
+
     /**
      * Resolve the playback URL for a chapter (or variant), enforcing entitlement.
      *

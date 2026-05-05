@@ -9,7 +9,11 @@ import { Roles } from '@/auth/decorators/roles.decorator';
 import { Public } from '@/auth/decorators/public.decorator';
 import { UpdateSystemConfigDto } from './dto/update-system-config.dto';
 
-const PUBLIC_KEYS = new Set<string>(['ad_insertion_frequency']);
+const PUBLIC_KEYS = new Set<string>([
+    'ad_insertion_frequency',
+    'unlock_ad_reappearance_minutes',
+    'unlock_ad_countdown_seconds',
+]);
 
 @Controller('settings')
 export class SettingsController {

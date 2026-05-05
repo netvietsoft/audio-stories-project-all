@@ -19,14 +19,20 @@ export class AdsService {
   }
 
   async findActive(query: ActiveAdsQueryDto) {
+    const baseWhere: any = {
+      isActive: true,
+      OR: [
+        { isGlobal: true },
+        ...(query.lang ? [{ language: { key: query.lang } }] : []),
+      ],
+    };
+
+    if (query.routeType) {
+      baseWhere.routeType = query.routeType;
+    }
+
     const rows = await this.prisma.advertisement.findMany({
-      where: {
-        isActive: true,
-        OR: [
-          { isGlobal: true },
-          ...(query.lang ? [{ language: { key: query.lang } }] : []),
-        ],
-      },
+      where: baseWhere,
       orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
       select: {
         id: true,
@@ -36,6 +42,7 @@ export class AdsService {
         targetUrl: true,
         isActive: true,
         isGlobal: true,
+        routeType: true,
         language: {
           select: { key: true },
         },
@@ -53,16 +60,19 @@ export class AdsService {
     };
   }
 
-  async findAllAdmin(lang?: string) {
+  async findAllAdmin(lang?: string, routeType?: number) {
     const rows = await this.prisma.advertisement.findMany({
-      where: lang && lang !== 'all'
-        ? {
-          OR: [
-            { isGlobal: true },
-            { language: { key: lang } },
-          ],
-        }
-        : undefined,
+      where: {
+        ...(lang && lang !== 'all'
+          ? {
+            OR: [
+              { isGlobal: true },
+              { language: { key: lang } },
+            ],
+          }
+          : {}),
+        ...(routeType ? { routeType } : {}),
+      },
       orderBy: [{ isActive: 'desc' }, { updatedAt: 'desc' }],
       select: {
         id: true,
@@ -72,6 +82,7 @@ export class AdsService {
         targetUrl: true,
         isActive: true,
         isGlobal: true,
+        routeType: true,
         languageId: true,
         language: {
           select: {
@@ -109,6 +120,7 @@ export class AdsService {
         languageId: dto.isGlobal ? null : dto.languageId ?? null,
         isGlobal: dto.isGlobal ?? !dto.languageId,
         isActive: dto.isActive ?? true,
+        routeType: dto.routeType ?? 1,
       },
     });
   }
@@ -129,6 +141,7 @@ export class AdsService {
         ...(dto.languageId !== undefined ? { languageId: dto.isGlobal ? null : dto.languageId } : {}),
         ...(dto.isGlobal !== undefined ? { isGlobal: dto.isGlobal } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+        ...(dto.routeType !== undefined ? { routeType: dto.routeType } : {}),
       },
     });
   }

@@ -27,6 +27,7 @@ import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import dynamic from 'next/dynamic';
 import DOMPurify from 'dompurify';
 import 'react-quill-new/dist/quill.snow.css';
+import { useTranslations } from 'next-intl';
 
 const ReactQuill: any = dynamic(() => import('react-quill-new'), {
     ssr: false,
@@ -51,7 +52,7 @@ const chapterSchema = z.object({
         (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : Number(value)),
         z.number().min(0, 'Thời lượng không hợp lệ').optional(),
     ),
-    accessType: z.enum(['free', 'timed', 'vip']),
+    accessType: z.enum(['free', 'timed', 'vip', 'ads']),
     unlockPrice: z.preprocess(
         (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : Number(value)),
         z.number().min(0, 'Credits mở khóa không hợp lệ').optional(),
@@ -62,6 +63,7 @@ const chapterSchema = z.object({
         z.string().uuid('ID truyện không hợp lệ').optional(),
     ),
     unlocksAt: z.string().optional(),
+    unlockAdId: z.string().optional(),
 });
 
 export type ChapterFormValues = {
@@ -77,11 +79,12 @@ export type ChapterFormValues = {
     thumbnailUrl?: string;
     youtubeVideoId?: string;
     audioDuration?: number;
-    accessType: 'free' | 'timed' | 'vip';
+    accessType: 'free' | 'timed' | 'vip' | 'ads';
     unlockPrice?: number;
     language: string;
     unlocksAt?: string;
     storyId?: string;
+    unlockAdId?: string;
 };
 
 export type ChapterSubmitPayload = {
@@ -93,10 +96,11 @@ export type ChapterSubmitPayload = {
     thumbnailUrl?: string | null;
     youtubeVideoId?: string | null;
     audioDuration?: number;
-    accessType: 'free' | 'timed' | 'vip';
+    accessType: 'free' | 'timed' | 'vip' | 'ads';
     unlockPrice?: number;
     storyId?: string;
     language?: string;
+    unlockAdId?: string;
 };
 
 interface ChapterFormProps {
@@ -129,6 +133,14 @@ interface StoryOption {
     titleEn?: string;
     language?: 'vi' | 'en' | string | null;
 }
+
+type UnlockAdOption = {
+    id: string;
+    title: string;
+    language?: string | null;
+    isGlobal?: boolean;
+    routeType?: number;
+};
 
 const toLocalizedText = (value: unknown, locale: string = 'vi'): LocalizedText => {
     if (typeof value === 'string') {
@@ -195,6 +207,7 @@ const getLocalizedText = (value: unknown, locale = 'vi'): string => {
 };
 
 export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCancel, isLoading }: ChapterFormProps) => {
+    const tChapter = useTranslations('StoryChapterClient');
     const { languages } = useAdminLanguages();
     const [stories, setStories] = useState<StoryOption[]>([]);
     const [isStoryOpen, setIsStoryOpen] = useState(false);
@@ -203,6 +216,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
     const [isUploadingAudioVi, setIsUploadingAudioVi] = useState(false);
     const [isUploadingAudioEn, setIsUploadingAudioEn] = useState(false);
+    const [unlockAds, setUnlockAds] = useState<UnlockAdOption[]>([]);
 
     // Debug: Log initialData
     useEffect(() => {
@@ -232,8 +246,8 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         typeof value === 'string' ? value : fallback;
     const safeNumber = (value: unknown, fallback = 0): number =>
         typeof value === 'number' && Number.isFinite(value) ? value : fallback;
-    const safeAccessType = (value: unknown): 'free' | 'timed' | 'vip' =>
-        value === 'timed' || value === 'vip' ? value : 'free';
+    const safeAccessType = (value: unknown): 'free' | 'timed' | 'vip' | 'ads' =>
+        value === 'timed' || value === 'vip' || value === 'ads' ? value : 'free';
 
     const {
         register,
@@ -263,6 +277,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             language: safeString((initialData as { language?: unknown } | undefined)?.language, selectedLocale),
             storyId: safeString(initialData?.storyId),
             unlocksAt: safeString(initialData?.unlocksAt),
+            unlockAdId: safeString((initialData as { unlockAdId?: unknown } | undefined)?.unlockAdId),
         },
     });
 
@@ -288,6 +303,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             language: safeString((initialData as { language?: unknown } | undefined)?.language, selectedLocale),
             storyId: safeString(initialData?.storyId),
             unlocksAt: safeString(initialData?.unlocksAt),
+            unlockAdId: safeString((initialData as { unlockAdId?: unknown } | undefined)?.unlockAdId),
         });
     }, [initialData, reset]);
 
@@ -426,6 +442,26 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
         };
         fetchStories();
     }, [selectedLocale, initialData?.storyId, setValue]);
+
+    useEffect(() => {
+        const fetchUnlockAds = async () => {
+            try {
+                const res = await adminApiClient.get('/ads', {
+                    params: {
+                        lang: selectedLanguage,
+                        routeType: 2,
+                    },
+                });
+                const items = Array.isArray(res.data?.data) ? res.data.data : [];
+                setUnlockAds(items);
+            } catch (error) {
+                console.error('Failed to fetch unlock ads:', error);
+                setUnlockAds([]);
+            }
+        };
+
+        void fetchUnlockAds();
+    }, [selectedLanguage]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -742,13 +778,14 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                     ? values.audioDuration
                     : undefined,
             accessType: values.accessType,
-            unlockPrice: values.accessType === 'free'
+            unlockPrice: values.accessType === 'free' || values.accessType === 'ads'
                 ? 0
                 : (typeof values.unlockPrice === 'number' && Number.isFinite(values.unlockPrice)
                     ? Math.max(0, Math.floor(values.unlockPrice))
                     : 0),
             storyId: cleanText(values.storyId),
             language: selectedLanguage,
+            unlockAdId: values.accessType === 'ads' ? cleanText(values.unlockAdId) : undefined,
         };
 
         try {
@@ -1177,9 +1214,10 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                         {...register('accessType')}
                                         className={`admin-input appearance-none`}
                                     >
-                                        <option value="free">Miễn phí (Free)</option>
-                                        <option value="timed">Mở khóa theo bản quyền</option>
-                                        <option value="vip">Dành riêng cho VIP</option>
+                                        <option value="free">{tChapter('adminAccessFree')}</option>
+                                        <option value="timed">{tChapter('adminAccessTimed')}</option>
+                                        <option value="vip">{tChapter('adminAccessVip')}</option>
+                                        <option value="ads">{tChapter('adminAccessAds')}</option>
                                     </select>
                                     <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                                 </div>
@@ -1196,7 +1234,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                 </div>
                             )}
 
-                            {watch('accessType') !== 'free' && (
+                            {watch('accessType') !== 'free' && watch('accessType') !== 'ads' && (
                                 <div className="flex flex-col space-y-1.5">
                                     <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Credits mở khóa</label>
                                     <input
@@ -1209,6 +1247,28 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                     />
                                     <p className="text-xs text-slate-500">Giá credits cần để mở khóa chương này.</p>
                                     {errors.unlockPrice && <p className="text-red-500 text-xs mt-1">{errors.unlockPrice.message}</p>}
+                                </div>
+                            )}
+
+                            {watch('accessType') === 'ads' && (
+                                <div className="flex flex-col space-y-1.5">
+                                    <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Quảng cáo mở khóa</label>
+                                    <div className="relative">
+                                        <select
+                                            {...register('unlockAdId')}
+                                            className={`admin-input ${errors.unlockAdId ? 'admin-input-error' : ''} appearance-none`}
+                                        >
+                                            <option value="">-- Chọn quảng cáo mở khóa --</option>
+                                            {unlockAds.map((ad) => (
+                                                <option key={ad.id} value={ad.id}>
+                                                    {ad.title}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                    </div>
+                                    <p className="text-xs text-slate-500">Danh sách quảng cáo được lọc theo ngôn ngữ hiện tại và route quảng cáo mở khóa.</p>
+                                    {errors.unlockAdId && <p className="text-red-500 text-xs mt-1">{errors.unlockAdId.message as string}</p>}
                                 </div>
                             )}
 

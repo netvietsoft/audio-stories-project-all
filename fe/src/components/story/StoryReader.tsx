@@ -148,6 +148,11 @@ type StoryReaderProps = {
   previewChars?: number;
   lockLabel?: string;
   onUnlockRequest?: () => void;
+  // Unlock-by-ad props
+  unlockAd?: AdvertisementItem | null;
+  unlockReappearMinutes?: number; // minutes until ad reappears after closed
+  unlockCountdownSeconds?: number; // seconds before [x] appears
+  onAdUnlocked?: () => void;
 };
 
 const normalizeStoryContent = (rawHtml: string) =>
@@ -237,9 +242,18 @@ export default function StoryReader({
   previewChars = 500,
   lockLabel,
   onUnlockRequest,
+  unlockAd = null,
+  unlockReappearMinutes = 15,
+  unlockCountdownSeconds = 5,
+  onAdUnlocked,
 }: StoryReaderProps) {
   const locale = useLocale();
   const insertionFrequency = useAdInsertionFrequency(adInterval || 1000);
+  // Ad-unlock modal state
+  const [showAdModal, setShowAdModal] = useState(false);
+  const [countdown, setCountdown] = useState<number>(unlockCountdownSeconds || 5);
+  const [xVisible, setXVisible] = useState(false);
+  const [adUnlockedLocally, setAdUnlockedLocally] = useState(false);
   const [openParagraphId, setOpenParagraphId] = useState<string | null>(null);
   const [paragraphDrafts, setParagraphDrafts] = useState<Record<string, string>>({});
   const [replyTargetByParagraph, setReplyTargetByParagraph] = useState<Record<string, string | null>>({});
@@ -261,6 +275,109 @@ export default function StoryReader({
     return splitParagraphs(chapterId, content);
   }, [chapterId, content]);
 
+  // Manage ad modal lifecycle: show on first load if chapter is locked by ad
+  useEffect(() => {
+    setAdUnlockedLocally(false);
+    if (!isLocked || !unlockAd || !chapterId) return;
+
+    try {
+      const storageKey = 'unlock_ad_last_closed_map';
+      const raw = localStorage.getItem(storageKey);
+      const map = raw ? (JSON.parse(raw) as Record<string, number>) : {};
+      const last = Number(map[chapterId] || 0);
+      const now = Date.now();
+      const reappearMs = (unlockReappearMinutes || 15) * 60 * 1000;
+      if (!last || now - last >= reappearMs) {
+        setShowAdModal(true);
+        setCountdown(unlockCountdownSeconds || 5);
+        setXVisible(false);
+      }
+    } catch (e) {
+      // ignore localStorage errors
+      setShowAdModal(true);
+      setCountdown(unlockCountdownSeconds || 5);
+      setXVisible(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLocked, unlockAd, chapterId, unlockReappearMinutes, unlockCountdownSeconds]);
+
+  // Countdown effect
+  useEffect(() => {
+    if (!showAdModal) return;
+    if ((unlockCountdownSeconds || 0) <= 0) {
+      setXVisible(true);
+      return;
+    }
+
+    setCountdown(unlockCountdownSeconds || 5);
+    setXVisible(false);
+    const total = unlockCountdownSeconds || 5;
+    const iv = setInterval(() => {
+      setCountdown((prev) => {
+        const next = prev - 1;
+        if (next <= 0) {
+          setXVisible(true);
+          clearInterval(iv);
+          return 0;
+        }
+        return next;
+      });
+    }, 1000);
+
+    return () => clearInterval(iv);
+  }, [showAdModal, unlockCountdownSeconds]);
+
+  const markAdClosed = (adId?: string) => {
+    if (!adId || !chapterId) return;
+    try {
+      const storageKey = 'unlock_ad_last_closed_map';
+      const raw = localStorage.getItem(storageKey);
+      const map = raw ? (JSON.parse(raw) as Record<string, number>) : {};
+      map[chapterId] = Date.now();
+      localStorage.setItem(storageKey, JSON.stringify(map));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const handleWatchAd = async () => {
+    if (!unlockAd) return;
+    const url = unlockAd.targetUrl || '/';
+    // open destination
+    try {
+      const isExternal = /^https?:\/\//i.test(url);
+      if (isExternal) {
+        window.open(url, '_blank', 'noopener');
+      } else {
+        window.location.href = url;
+      }
+    } catch (e) {
+      // fallback navigation
+      window.location.href = url;
+    }
+
+    // Try to notify backend about ad-unlock (best-effort)
+    try {
+      await apiClient.post(`/chapters/${chapterId}/unlock-by-ad`, { adId: unlockAd.id });
+      // notify parent
+      onAdUnlocked?.();
+    } catch (e) {
+      // ignore server errors; still unlock locally
+      onAdUnlocked?.();
+    }
+
+    markAdClosed(unlockAd.id);
+    setAdUnlockedLocally(true);
+    setShowAdModal(false);
+  };
+
+  const handleCloseAd = () => {
+    if (!unlockAd) return;
+    markAdClosed(unlockAd.id);
+    setAdUnlockedLocally(true);
+    setShowAdModal(false);
+  };
+
   // Load comment counts for all paragraphs on mount
   useEffect(() => {
     if (!chapterId || paragraphs.length === 0) return;
@@ -277,13 +394,6 @@ export default function StoryReader({
 
     void loadCommentCounts();
   }, [chapterId, paragraphs.length]);
-
-  const previewParagraphs = useMemo(() => {
-    if (!chapterId || !content) return [];
-    const preview = content.slice(0, previewChars).trim();
-    if (!preview) return [];
-    return splitParagraphs(chapterId, preview);
-  }, [chapterId, content, previewChars]);
 
   const flowItems = useMemo(() => {
     const items: Array<
@@ -546,46 +656,7 @@ export default function StoryReader({
     return null;
   }
 
-  if (isLocked) {
-    return (
-      <div className={`relative min-w-0 pr-0 pb-24 sm:pr-10 lg:pr-14 ${isProd ? "select-none" : ""}`}>
-        {previewParagraphs.length ? (
-          previewParagraphs.map((paragraph) => (
-            <div key={paragraph.id} className="mb-6">
-              <div 
-                className="text-base sm:text-lg leading-relaxed text-gray-800 dark:text-gray-100 px-1 sm:px-4 md:px-5 text-justify"
-                style={{ 
-                  wordBreak: "normal",
-                  overflowWrap: "break-word",
-                  whiteSpace: "normal",
-                  wordSpacing: "normal",
-                }}
-                dangerouslySetInnerHTML={{ __html: sanitizeStoryContent(paragraph.content) }}
-              />
-            </div>
-          ))
-        ) : (
-          <p className="text-base leading-loose text-gray-500 dark:text-gray-300 px-1 sm:px-4">Chương này hiện đang bị khóa nội dung.</p>
-        )}
-
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-b from-transparent to-white dark:to-[#242526]" />
-
-        <div className="absolute inset-x-3 bottom-3 z-10 rounded-xl bg-white/95 p-4 text-sm shadow-lg backdrop-blur dark:bg-[#242526]/95">
-          <p className="font-semibold text-amber-700 dark:text-amber-300">Nội dung bị khóa</p>
-          <p className="mt-1 text-gray-600 dark:text-gray-300">
-            {lockLabel || "Cần mở khóa VIP để đọc toàn bộ chương này."}
-          </p>
-          <button
-            type="button"
-            onClick={onUnlockRequest}
-            className="mt-3 rounded-md bg-pink-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-pink-700"
-          >
-            Mở khóa ngay
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const shouldBlurContent = isLocked && !!unlockAd && !adUnlockedLocally;
 
   return (
     <>
@@ -614,7 +685,11 @@ export default function StoryReader({
           margin-bottom: 0;
         }
       `}</style>
-      <div className={`relative min-w-0 overflow-x-hidden ${isProd ? "select-none" : ""}`}>
+      <div
+        className={`relative min-w-0 overflow-x-hidden ${isProd ? "select-none" : ""} ${
+          shouldBlurContent ? "blur-sm select-none pointer-events-none overflow-hidden" : ""
+        }`}
+      >
       {flowItems.map((item) => {
         if (item.type === "paragraph") {
           const { paragraph } = item;
@@ -857,6 +932,52 @@ export default function StoryReader({
           );
         }
       })}
+      </div>
+
+      {/* Ad Unlock Modal Overlay */}
+      {showAdModal && unlockAd ? (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative z-10 mx-4 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl dark:bg-[#1f1f1f]">
+            <div className="mb-1 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+              <span>{lockLabel || "Mở khóa bằng quảng cáo"}</span>
+              <span>{xVisible ? "0s" : `${countdown}s`}</span>
+            </div>
+            <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#323234]">
+              <div
+                className="h-full bg-amber-400 transition-all"
+                style={{ width: `${((unlockCountdownSeconds || 5) - countdown) / (unlockCountdownSeconds || 5) * 100}%` }}
+              />
+            </div>
+
+            <div className="flex flex-col items-center gap-4 text-center">
+              <img src={unlockAd.imageUrl} alt={unlockAd.title} className="h-40 w-full rounded-md object-cover" />
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{unlockAd.title}</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{unlockAd.partnerName}</p>
+
+              <div className="mt-4 flex w-full items-center justify-center gap-3">
+                <button
+                  onClick={handleWatchAd}
+                  className="w-full rounded-md bg-amber-500 px-4 py-3 text-sm font-bold text-white hover:bg-amber-600"
+                >
+                  Xem quảng cáo
+                </button>
+
+                {xVisible ? (
+                  <button
+                    onClick={handleCloseAd}
+                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-[#303133] dark:bg-[#2b2b2b] dark:text-gray-200"
+                  >
+                    X
+                  </button>
+                ) : (
+                  <div className="rounded-md px-3 py-2 text-sm font-semibold text-gray-500">{countdown}s</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Report Modal */}
       {reportingCommentId && (
@@ -901,9 +1022,6 @@ export default function StoryReader({
           </div>
         </div>
       )}
-    </div>
     </>
   );
 }
-
-

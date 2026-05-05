@@ -31,4 +31,8 @@ export class UpdateAdDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  routeType?: number;
 }

@@ -254,6 +254,7 @@ export default function StoryReader({
   const [countdown, setCountdown] = useState<number>(unlockCountdownSeconds || 5);
   const [xVisible, setXVisible] = useState(false);
   const [adUnlockedLocally, setAdUnlockedLocally] = useState(false);
+  const [isInUnlockCooldown, setIsInUnlockCooldown] = useState(false);
   const [openParagraphId, setOpenParagraphId] = useState<string | null>(null);
   const [paragraphDrafts, setParagraphDrafts] = useState<Record<string, string>>({});
   const [replyTargetByParagraph, setReplyTargetByParagraph] = useState<Record<string, string | null>>({});
@@ -278,7 +279,10 @@ export default function StoryReader({
   // Manage ad modal lifecycle: show on first load if chapter is locked by ad
   useEffect(() => {
     setAdUnlockedLocally(false);
+    setIsInUnlockCooldown(false);
     if (!isLocked || !unlockAd || !chapterId) return;
+
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     try {
       const storageKey = 'unlock_ad_last_closed_map';
@@ -291,13 +295,29 @@ export default function StoryReader({
         setShowAdModal(true);
         setCountdown(unlockCountdownSeconds || 5);
         setXVisible(false);
+        setIsInUnlockCooldown(false);
+      } else {
+        setShowAdModal(false);
+        setIsInUnlockCooldown(true);
+        const remainingMs = reappearMs - (now - last);
+        timeoutId = setTimeout(() => {
+          setIsInUnlockCooldown(false);
+          setShowAdModal(true);
+          setCountdown(unlockCountdownSeconds || 5);
+          setXVisible(false);
+        }, Math.max(0, remainingMs));
       }
     } catch (e) {
       // ignore localStorage errors
       setShowAdModal(true);
       setCountdown(unlockCountdownSeconds || 5);
       setXVisible(false);
+      setIsInUnlockCooldown(false);
     }
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLocked, unlockAd, chapterId, unlockReappearMinutes, unlockCountdownSeconds]);
 
@@ -335,6 +355,7 @@ export default function StoryReader({
       const map = raw ? (JSON.parse(raw) as Record<string, number>) : {};
       map[chapterId] = Date.now();
       localStorage.setItem(storageKey, JSON.stringify(map));
+      setIsInUnlockCooldown(true);
     } catch (e) {
       // ignore
     }
@@ -409,9 +430,9 @@ export default function StoryReader({
       items.push({ type: "paragraph", paragraph });
       accumulatedWords += countWords(paragraph.content);
 
-      while (accumulatedWords >= nextBreakAt && activeAds.length > 0) {
+      if (accumulatedWords >= nextBreakAt && activeAds.length > 0) {
         const ad = activeAds[adIndex % activeAds.length];
-        if (!ad) break;
+        if (!ad) return;
         items.push({
           type: 'ad',
           id: `${paragraph.id}-slot-${nextBreakAt}`,
@@ -656,7 +677,7 @@ export default function StoryReader({
     return null;
   }
 
-  const shouldBlurContent = isLocked && !!unlockAd && !adUnlockedLocally;
+  const shouldBlurContent = isLocked && !!unlockAd && !adUnlockedLocally && !isInUnlockCooldown;
 
   return (
     <>
@@ -686,6 +707,7 @@ export default function StoryReader({
         }
       `}</style>
       <div
+        key={`${chapterId || "chapter"}-${shouldBlurContent ? "locked" : "open"}`}
         className={`relative min-w-0 overflow-x-hidden ${isProd ? "select-none" : ""} ${
           shouldBlurContent ? "blur-sm select-none pointer-events-none overflow-hidden" : ""
         }`}
@@ -951,7 +973,7 @@ export default function StoryReader({
             </div>
 
             <div className="flex flex-col items-center gap-4 text-center">
-              <img src={unlockAd.imageUrl} alt={unlockAd.title} className="h-40 w-full rounded-md object-cover" />
+              <img src={unlockAd.imageUrl || "https://placehold.co/640x320?text=Ad"} alt={unlockAd.title} className="h-40 w-full rounded-md object-cover" />
               <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{unlockAd.title}</h3>
               <p className="text-sm text-gray-600 dark:text-gray-300">{unlockAd.partnerName}</p>
 

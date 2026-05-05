@@ -38,8 +38,10 @@ export class AdsService {
         id: true,
         partnerName: true,
         title: true,
+        contentType: true,
         imageUrl: true,
         targetUrl: true,
+        iframeCode: true,
         isActive: true,
         isGlobal: true,
         routeType: true,
@@ -78,8 +80,10 @@ export class AdsService {
         id: true,
         partnerName: true,
         title: true,
+        contentType: true,
         imageUrl: true,
         targetUrl: true,
+        iframeCode: true,
         isActive: true,
         isGlobal: true,
         routeType: true,
@@ -111,12 +115,17 @@ export class AdsService {
   }
 
   async create(dto: CreateAdDto) {
+    const contentType = dto.contentType ?? 'image';
+    const isIframe = contentType === 'iframe';
+
     return this.prisma.advertisement.create({
       data: {
         partnerName: dto.partnerName.trim(),
         title: dto.title.trim(),
-        imageUrl: dto.imageUrl.trim(),
-        targetUrl: dto.targetUrl.trim(),
+        contentType,
+        imageUrl: isIframe ? null : (dto.imageUrl || '').trim(),
+        targetUrl: isIframe ? null : (dto.targetUrl || '').trim(),
+        iframeCode: isIframe ? (dto.iframeCode || '').trim() : null,
         languageId: dto.isGlobal ? null : dto.languageId ?? null,
         isGlobal: dto.isGlobal ?? !dto.languageId,
         isActive: dto.isActive ?? true,
@@ -131,13 +140,31 @@ export class AdsService {
       throw new NotFoundException('Advertisement not found.');
     }
 
+    const current = await this.prisma.advertisement.findUnique({
+      where: { id },
+      select: { contentType: true },
+    });
+    const nextContentType = dto.contentType ?? current?.contentType ?? 'image';
+    const isIframe = nextContentType === 'iframe';
+
     return this.prisma.advertisement.update({
       where: { id },
       data: {
         ...(dto.partnerName !== undefined ? { partnerName: dto.partnerName.trim() } : {}),
         ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
-        ...(dto.imageUrl !== undefined ? { imageUrl: dto.imageUrl.trim() } : {}),
-        ...(dto.targetUrl !== undefined ? { targetUrl: dto.targetUrl.trim() } : {}),
+        ...(dto.contentType !== undefined ? { contentType: dto.contentType } : {}),
+        ...(isIframe
+          ? {
+              imageUrl: null,
+              targetUrl: null,
+              ...(dto.iframeCode !== undefined ? { iframeCode: dto.iframeCode.trim() } : {}),
+            }
+          : {
+              ...(dto.imageUrl !== undefined ? { imageUrl: dto.imageUrl.trim() } : {}),
+              ...(dto.targetUrl !== undefined ? { targetUrl: dto.targetUrl.trim() } : {}),
+              ...(dto.contentType === 'image' ? { iframeCode: null } : {}),
+            }),
+        ...(dto.iframeCode !== undefined && !isIframe ? { iframeCode: dto.iframeCode.trim() } : {}),
         ...(dto.languageId !== undefined ? { languageId: dto.isGlobal ? null : dto.languageId } : {}),
         ...(dto.isGlobal !== undefined ? { isGlobal: dto.isGlobal } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),

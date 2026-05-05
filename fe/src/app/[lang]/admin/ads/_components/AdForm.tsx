@@ -12,10 +12,37 @@ import { HybridImageUploader } from '@/components/upload/HybridImageUploader';
 const adSchema = z.object({
   partnerName: z.string().trim().min(1, 'Vui lòng nhập tên đối tác'),
   title: z.string().trim().min(1, 'Vui lòng nhập tên sản phẩm / tiêu đề quảng cáo'),
-  imageUrl: z.string().trim().min(1, 'Vui lòng nhập link ảnh'),
-  targetUrl: z.string().trim().min(1, 'Vui lòng nhập link affiliate đích'),
+  contentType: z.enum(['image', 'iframe']),
+  imageUrl: z.string().trim().optional(),
+  targetUrl: z.string().trim().optional(),
+  iframeCode: z.string().trim().optional(),
   languageId: z.string().min(1, 'Vui lòng chọn ngôn ngữ'),
   isActive: z.boolean().optional(),
+}).superRefine((data, ctx) => {
+  if (data.contentType === 'image') {
+    if (!data.imageUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['imageUrl'],
+        message: 'Vui lòng nhập link ảnh',
+      });
+    }
+    if (!data.targetUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['targetUrl'],
+        message: 'Vui lòng nhập link affiliate đích',
+      });
+    }
+  }
+
+  if (data.contentType === 'iframe' && !data.iframeCode) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['iframeCode'],
+      message: 'Vui lòng nhập mã iframe',
+    });
+  }
 });
 
 export type AdFormValues = z.infer<typeof adSchema>;
@@ -43,13 +70,16 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
     defaultValues: {
       partnerName: initialData?.partnerName || '',
       title: initialData?.title || '',
+      contentType: initialData?.contentType || 'image',
       imageUrl: initialData?.imageUrl || '',
       targetUrl: initialData?.targetUrl || '',
+      iframeCode: initialData?.iframeCode || '',
       languageId: initialData?.languageId || 'all',
       isActive: initialData?.isActive ?? true,
     },
   });
 
+  const contentType = watch('contentType');
   const previewImage = watch('imageUrl');
 
   const internalOnSubmit = async (data: AdFormValues) => {
@@ -135,6 +165,18 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
           </div>
 
           <div className="space-y-2">
+            <label className="text-sm font-black uppercase tracking-wider text-slate-700">Loại nội dung quảng cáo</label>
+            <select
+              {...register('contentType')}
+              className="admin-input h-[50px] w-full rounded-2xl bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition ring-indigo-500/20 focus:ring-2"
+            >
+              <option value="image">Ảnh + Link</option>
+              <option value="iframe">Iframe (Google Ads...)</option>
+            </select>
+          </div>
+
+          {contentType === 'image' ? (
+          <div className="space-y-2">
             <label className="text-sm font-black uppercase tracking-wider text-slate-700">Link ảnh sản phẩm</label>
             <HybridImageUploader
               value={previewImage}
@@ -145,7 +187,20 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
             />
             {errors.imageUrl ? <p className="text-red-500 text-xs mt-1">{errors.imageUrl.message}</p> : null}
           </div>
+          ) : (
+            <div className="space-y-2">
+              <label className="text-sm font-black uppercase tracking-wider text-slate-700">Mã iframe</label>
+              <textarea
+                {...register('iframeCode')}
+                rows={6}
+                placeholder="<iframe ...></iframe>"
+                className={`admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none transition ${errors.iframeCode ? 'admin-input-error' : 'ring-indigo-500/20 focus:ring-2'}`}
+              />
+              {errors.iframeCode ? <p className="text-red-500 text-xs mt-1">{errors.iframeCode.message}</p> : null}
+            </div>
+          )}
 
+          {contentType === 'image' ? (
           <div className="space-y-2">
             <label className="text-sm font-black uppercase tracking-wider text-slate-700">Link Affiliate đích</label>
             <input
@@ -155,6 +210,7 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
             />
             {errors.targetUrl ? <p className="text-red-500 text-xs mt-1">{errors.targetUrl.message}</p> : null}
           </div>
+          ) : null}
         </div>
 
         <div className="flex items-center justify-end gap-4 border-t border-slate-100 bg-slate-50 p-8">

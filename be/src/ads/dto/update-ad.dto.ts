@@ -1,4 +1,5 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { AdContentTypeDto } from './create-ad.dto';
 
 export class UpdateAdDto {
   @IsString()
@@ -11,6 +12,10 @@ export class UpdateAdDto {
   @IsOptional()
   title?: string;
 
+  @IsOptional()
+  @IsEnum(AdContentTypeDto)
+  contentType?: AdContentTypeDto;
+
   @IsString()
   @IsOptional()
   imageUrl?: string;
@@ -19,6 +24,10 @@ export class UpdateAdDto {
   @MaxLength(500)
   @IsOptional()
   targetUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  iframeCode?: string;
 
   @IsOptional()
   @IsNumber()

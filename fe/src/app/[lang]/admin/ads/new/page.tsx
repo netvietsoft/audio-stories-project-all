@@ -22,6 +22,10 @@ export default function NewAdPage() {
         isGlobal,
         isActive: payload.isActive ?? true,
         routeType: 1,
+        contentType: payload.contentType,
+        imageUrl: payload.contentType === 'image' ? payload.imageUrl : null,
+        targetUrl: payload.contentType === 'image' ? payload.targetUrl : null,
+        iframeCode: payload.contentType === 'iframe' ? payload.iframeCode : null,
       });
       router.push('/admin/ads');
     } catch (error) {

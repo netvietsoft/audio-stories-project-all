@@ -77,9 +77,17 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   }, [clearAuth]);
 
   const refreshProfile = useCallback(async () => {
-    const profile = await apiClient.get<BackendMeResponse>("/auth/me");
-    setUser(normalizeUserProfile(profile.data));
-  }, [setUser]);
+    try {
+      const profile = await apiClient.get<BackendMeResponse>("/auth/me");
+      setUser(normalizeUserProfile(profile.data));
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        logout();
+        return;
+      }
+      throw error;
+    }
+  }, [logout, setUser]);
 
   const login = useCallback(
     async (payload: LoginPayload) => {

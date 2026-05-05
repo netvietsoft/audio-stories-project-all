@@ -15,8 +15,10 @@ type AdApiDetail = {
   id: string;
   partnerName: string;
   title: string;
-  imageUrl: string;
-  targetUrl: string;
+  contentType?: 'image' | 'iframe';
+  imageUrl?: string | null;
+  targetUrl?: string | null;
+  iframeCode?: string | null;
   languageId?: number | null;
   isGlobal?: boolean;
   isActive: boolean;
@@ -62,6 +64,10 @@ export default function EditAdPage() {
 
         setInitialData({
           ...data,
+          contentType: data.contentType || 'image',
+          imageUrl: data.imageUrl || '',
+          targetUrl: data.targetUrl || '',
+          iframeCode: data.iframeCode || '',
           languageId: data.isGlobal || !data.languageId ? 'all' : String(data.languageId),
         });
       } catch (error) {
@@ -88,6 +94,10 @@ export default function EditAdPage() {
         isGlobal,
         isActive: payload.isActive ?? true,
         routeType: initialData?.routeType ?? 1,
+        contentType: payload.contentType,
+        imageUrl: payload.contentType === 'image' ? payload.imageUrl : null,
+        targetUrl: payload.contentType === 'image' ? payload.targetUrl : null,
+        iframeCode: payload.contentType === 'iframe' ? payload.iframeCode : null,
       };
       const endpoints = [`/ads/${safeId}`, `/ads/admin/${safeId}`];
 

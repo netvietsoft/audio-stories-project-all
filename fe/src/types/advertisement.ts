@@ -2,8 +2,10 @@ export type AdvertisementItem = {
   id: string;
   partnerName: string;
   title: string;
-  imageUrl: string;
-  targetUrl: string;
+  contentType?: "image" | "iframe";
+  imageUrl?: string | null;
+  targetUrl?: string | null;
+  iframeCode?: string | null;
   isActive: boolean;
   // Optional fields used by admin / unlock flow
   isGlobal?: boolean;

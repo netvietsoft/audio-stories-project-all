@@ -1,4 +1,9 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+
+export enum AdContentTypeDto {
+  image = 'image',
+  iframe = 'iframe',
+}
 
 export class CreateAdDto {
   @IsString()
@@ -9,12 +14,22 @@ export class CreateAdDto {
   @MaxLength(255)
   title: string;
 
+  @IsOptional()
+  @IsEnum(AdContentTypeDto)
+  contentType?: AdContentTypeDto;
+
   @IsString()
-  imageUrl: string;
+  @IsOptional()
+  imageUrl?: string;
 
   @IsString()
   @MaxLength(500)
-  targetUrl: string;
+  @IsOptional()
+  targetUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  iframeCode?: string;
 
   @IsOptional()
   @IsNumber()

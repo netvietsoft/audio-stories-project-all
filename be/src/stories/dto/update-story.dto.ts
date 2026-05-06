@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUrl, IsUUID } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { StoryStatus } from '@prisma/client';
 
 export class UpdateStoryDto {
@@ -38,6 +38,17 @@ export class UpdateStoryDto {
   @IsOptional()
   @IsBoolean()
   isInteractive?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  unlockPrice?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  discountPercent?: number;
   
   @IsOptional()
   @IsArray()

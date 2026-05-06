@@ -61,6 +61,7 @@ model User {
   commentReports         CommentReport[]
   userUnlockedVariants   UserUnlockedVariant[]
   chapterUnlocks         UserChapterUnlock[]
+  storyUnlocks           UserStoryUnlock[]
 
   @@index([roleId])
   @@index([isActive])
@@ -232,6 +233,8 @@ model Story {
   favoritesCount Int         @default(0) @map("favorites_count") @db.UnsignedInt
   publishedAt    DateTime?   @map("published_at")
   audioUrl       String?     @map("audio_url") @db.Text
+  unlockPrice    Int         @default(0) @map("unlock_price") @db.UnsignedInt
+  discountPercent Int        @default(0) @map("discount_percent") @db.UnsignedInt
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
   deletedAt      DateTime?   @map("deleted_at")
@@ -248,6 +251,7 @@ model Story {
   playlistItems          PlaylistItem[]
   chapterComments        ChapterComment[]
   heroBanners            HeroBanner[]
+  storyUnlocks           UserStoryUnlock[]
 
   @@unique([slug, languageId])
   @@index([title])
@@ -523,6 +527,7 @@ model Chapter {
   audioDuration  Int?              @map("audio_duration") @db.UnsignedInt
   accessType     ChapterAccessType @default(free) @map("access_type")
   unlockPrice    Int               @default(0) @map("unlock_price") @db.UnsignedInt
+  discountPercent Int              @default(0) @map("discount_percent") @db.UnsignedInt
   // If this chapter is unlocked by watching an ad, store the ad id here
   unlockAdId     String?           @map("unlock_ad_id") @db.VarChar(36)
   unlockAd       Advertisement?    @relation("UnlockAdForChapter", fields: [unlockAdId], references: [id], onDelete: SetNull)
@@ -1115,6 +1120,23 @@ model UserChapterUnlock {
   @@index([unlockType])
   @@index([createdAt])
   @@map("user_chapter_unlocks")
+}
+
+model UserStoryUnlock {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  userId      String   @map("user_id") @db.VarChar(36)
+  storyId     String   @map("story_id") @db.VarChar(36)
+  pulseAmount Int      @default(0) @map("pulse_amount") @db.UnsignedInt
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storyId])
+  @@index([userId])
+  @@index([storyId])
+  @@index([createdAt])
+  @@map("user_story_unlocks")
 }
 
 enum SocialPlatform {

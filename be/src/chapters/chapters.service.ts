@@ -17,7 +17,18 @@ export class ChaptersService {
 
     private normalizeChapterFlatPayload(data: Record<string, any>) {
         // Remove relation fields that should not be passed as flat values
-        const { storyId, language, ...rest } = data;
+        const { storyId, language, unlocksAt, ...rest } = data;
+        const normalizedUnlocksAt =
+            unlocksAt === '' || unlocksAt === null || typeof unlocksAt === 'undefined'
+                ? undefined
+                : new Date(unlocksAt);
+
+        if (typeof normalizedUnlocksAt !== 'undefined') {
+            return {
+                ...rest,
+                unlocksAt: normalizedUnlocksAt,
+            };
+        }
         return rest;
     }
 
@@ -37,6 +48,7 @@ export class ChaptersService {
                 audioDuration: true,
                 accessType: true,
                 unlockPrice: true,
+                discountPercent: true,
                 isInteractive: true,
                 unlocksAt: true,
                 viewCount: true,
@@ -128,6 +140,7 @@ export class ChaptersService {
                     audioDuration: true,
                     accessType: true,
                     unlockPrice: true,
+                    discountPercent: true,
                     isInteractive: true,
                     unlocksAt: true,
                     viewCount: true,
@@ -193,6 +206,7 @@ export class ChaptersService {
                 audioDuration: true,
                 accessType: true,
                 unlockPrice: true,
+                discountPercent: true,
                 isInteractive: true,
                 unlocksAt: true,
                 createdAt: true,
@@ -226,6 +240,187 @@ export class ChaptersService {
         }
 
         return chapter;
+    }
+
+    async getUnlockStatus(chapterId: string, userId?: string) {
+        const chapter = await this.prisma.chapter.findUnique({
+            where: { id: chapterId },
+            select: {
+                id: true,
+                storyId: true,
+                accessType: true,
+                unlocksAt: true,
+            },
+        });
+
+        if (!chapter) {
+            throw new NotFoundException(`Chapter with ID ${chapterId} not found`);
+        }
+
+        if (chapter.accessType === 'free') {
+            return { isUnlocked: true, unlockSource: 'FREE', isTimedFree: false };
+        }
+
+        if (chapter.accessType === 'timed' && chapter.unlocksAt && chapter.unlocksAt <= new Date()) {
+            return { isUnlocked: true, unlockSource: 'FREE', isTimedFree: true };
+        }
+
+        if (!userId) {
+            return { isUnlocked: false, unlockSource: null, isTimedFree: false };
+        }
+
+        const [user, storyUnlock, chapterUnlock] = await Promise.all([
+            this.prisma.user.findUnique({
+                where: { id: userId },
+                select: { vipTier: true, vipExpirationDate: true },
+            }),
+            chapter.storyId
+                ? this.prisma.userStoryUnlock.findUnique({
+                    where: { userId_storyId: { userId, storyId: chapter.storyId } },
+                    select: { id: true },
+                })
+                : Promise.resolve(null),
+            this.prisma.userChapterUnlock.findUnique({
+                where: { userId_chapterId: { userId, chapterId } },
+                select: { unlockType: true },
+            }),
+        ]);
+
+        const isVip =
+            !!user &&
+            (user.vipTier ?? 0) > 0 &&
+            (!user.vipExpirationDate || user.vipExpirationDate > new Date());
+
+        if (isVip) {
+            return { isUnlocked: true, unlockSource: 'VIP', isTimedFree: false };
+        }
+
+        if (storyUnlock) {
+            return { isUnlocked: true, unlockSource: 'PULSE_STORY', isTimedFree: false };
+        }
+
+        if (chapterUnlock) {
+            return { isUnlocked: true, unlockSource: `CHAPTER_${chapterUnlock.unlockType}`, isTimedFree: false };
+        }
+
+        return { isUnlocked: false, unlockSource: null, isTimedFree: false };
+    }
+
+    async unlockByPulse(chapterId: string, userId: string) {
+        const chapter = await this.prisma.chapter.findUnique({
+            where: { id: chapterId },
+            select: {
+                id: true,
+                storyId: true,
+                title: true,
+                accessType: true,
+                unlockPrice: true,
+                discountPercent: true,
+                unlocksAt: true,
+            },
+        });
+
+        if (!chapter) {
+            throw new NotFoundException(`Chapter with ID ${chapterId} not found`);
+        }
+
+        if (chapter.accessType === 'free' || chapter.accessType === 'ads') {
+            throw new BadRequestException('Chapter is not configured for pulse unlock');
+        }
+
+        if (chapter.accessType === 'timed' && chapter.unlocksAt && chapter.unlocksAt <= new Date()) {
+            return { success: true, alreadyUnlocked: true, charged: 0, reason: 'timed_free' };
+        }
+
+        const [user, storyUnlock, existingChapterUnlock] = await Promise.all([
+            this.prisma.user.findUnique({
+                where: { id: userId },
+                select: { id: true, pulseBalance: true, vipTier: true, vipExpirationDate: true },
+            }),
+            chapter.storyId
+                ? this.prisma.userStoryUnlock.findUnique({
+                    where: { userId_storyId: { userId, storyId: chapter.storyId } },
+                    select: { id: true },
+                })
+                : Promise.resolve(null),
+            this.prisma.userChapterUnlock.findUnique({
+                where: { userId_chapterId: { userId, chapterId } },
+                select: { id: true, unlockType: true },
+            }),
+        ]);
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        const isVip =
+            (user.vipTier ?? 0) > 0 &&
+            (!user.vipExpirationDate || user.vipExpirationDate > new Date());
+
+        if (isVip) {
+            await this.prisma.userChapterUnlock.upsert({
+                where: { userId_chapterId: { userId, chapterId } },
+                create: { userId, chapterId, pulseAmount: 0, unlockType: chapter.accessType === 'vip' ? 'VIP' : 'TIMED' },
+                update: {},
+            });
+            return { success: true, alreadyUnlocked: true, charged: 0, reason: 'vip' };
+        }
+
+        if (storyUnlock) {
+            return { success: true, alreadyUnlocked: true, charged: 0, reason: 'story_unlocked' };
+        }
+
+        if (existingChapterUnlock) {
+            return { success: true, alreadyUnlocked: true, charged: 0, reason: `chapter_${existingChapterUnlock.unlockType}` };
+        }
+
+        const basePrice = Math.max(0, Math.floor(Number(chapter.unlockPrice || 0)));
+        if (basePrice <= 0) {
+            throw new BadRequestException('Chapter unlock price is not configured');
+        }
+
+        const safeDiscount = Math.max(0, Math.min(100, Math.floor(Number(chapter.discountPercent || 0))));
+        const finalPrice = Math.max(0, Math.floor(basePrice * (100 - safeDiscount) / 100));
+
+        if (user.pulseBalance < finalPrice) {
+            throw new BadRequestException('Insufficient Pulse');
+        }
+
+        const updatedUser = await this.prisma.$transaction(async (tx) => {
+            const nextUser = await tx.user.update({
+                where: { id: userId },
+                data: { pulseBalance: { decrement: finalPrice } },
+                select: { pulseBalance: true },
+            });
+
+            await tx.userChapterUnlock.upsert({
+                where: { userId_chapterId: { userId, chapterId } },
+                create: { userId, chapterId, pulseAmount: finalPrice, unlockType: 'PULSE' },
+                update: { pulseAmount: finalPrice, unlockType: 'PULSE' },
+            });
+
+            await tx.creditTransaction.create({
+                data: {
+                    userId,
+                    type: 'spend',
+                    pulseAmount: -finalPrice,
+                    pulseBalanceBefore: user.pulseBalance,
+                    pulseBalanceAfter: nextUser.pulseBalance,
+                    referenceId: chapterId,
+                    description: `Mở khóa chương: ${chapter.title || chapter.id}`,
+                },
+            });
+
+            return nextUser;
+        });
+
+        return {
+            success: true,
+            charged: finalPrice,
+            basePrice,
+            discountPercent: safeDiscount,
+            pulseBalance: updatedUser.pulseBalance,
+        };
     }
 
         async unlockByAd(chapterId: string, adId?: string, userId?: string | null) {
@@ -292,10 +487,12 @@ export class ChaptersService {
             where: { id },
             select: {
                 id: true,
+                storyId: true,
                 audioUrl: true,
                 r2AudioUrl: true,
                 accessType: true,
                 unlockPrice: true,
+                discountPercent: true,
                 unlocksAt: true,
             },
         });
@@ -341,7 +538,7 @@ export class ChaptersService {
         }
 
         // --- Entitlement check ---
-        const { accessType, unlockPrice, unlocksAt } = chapter;
+        const { accessType, unlockPrice, unlocksAt, storyId } = chapter;
 
         // Free chapter: always accessible
         if (accessType === 'free') {
@@ -369,6 +566,27 @@ export class ChaptersService {
             (!user.vipExpirationDate || user.vipExpirationDate > new Date());
 
         if (accessType === 'vip' || accessType === 'timed') {
+            const storyUnlocked = storyId
+                ? await this.prisma.userStoryUnlock.findUnique({
+                    where: { userId_storyId: { userId, storyId } },
+                    select: { storyId: true },
+                })
+                : null;
+
+            if (storyUnlocked) {
+                setImmediate(() => {
+                    const unlockType = accessType === 'vip' ? 'VIP' : 'TIMED';
+                    this.prisma.userChapterUnlock
+                        .upsert({
+                            where: { userId_chapterId: { userId, chapterId: id } },
+                            create: { userId, chapterId: id, pulseAmount: 0, unlockType },
+                            update: {},
+                        })
+                        .catch(() => { /* silent */ });
+                });
+                return { url };
+            }
+
             if (!isVip) {
                 throw new ForbiddenException('VIP membership required to access this chapter');
             }

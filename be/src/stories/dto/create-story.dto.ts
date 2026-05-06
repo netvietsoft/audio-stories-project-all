@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, IsUUID, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { StoryStatus } from '@prisma/client';
 import { CreateChapterDto } from '@/chapters/dto/create-chapter.dto';
@@ -39,6 +39,17 @@ export class CreateStoryDto {
     @IsOptional()
     @IsBoolean()
     isInteractive?: boolean;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    unlockPrice?: number;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    @Max(100)
+    discountPercent?: number;
 
     @IsOptional()
     @IsArray()

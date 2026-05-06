@@ -57,6 +57,10 @@ const chapterSchema = z.object({
         (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : Number(value)),
         z.number().min(0, 'Credits mở khóa không hợp lệ').optional(),
     ),
+    discountPercent: z.preprocess(
+        (value) => (value === '' || value === null || typeof value === 'undefined' ? 0 : Number(value)),
+        z.number().min(0, 'Giảm giá không hợp lệ').max(100, 'Giảm giá tối đa 100%'),
+    ),
     language: z.string().min(1, 'Vui lòng chọn ngôn ngữ'),
     storyId: z.preprocess(
         (value) => (value === '' || value === null || typeof value === 'undefined' ? undefined : value),
@@ -81,6 +85,7 @@ export type ChapterFormValues = {
     audioDuration?: number;
     accessType: 'free' | 'timed' | 'vip' | 'ads';
     unlockPrice?: number;
+    discountPercent?: number;
     language: string;
     unlocksAt?: string;
     storyId?: string;
@@ -98,8 +103,10 @@ export type ChapterSubmitPayload = {
     audioDuration?: number;
     accessType: 'free' | 'timed' | 'vip' | 'ads';
     unlockPrice?: number;
+    discountPercent?: number;
     storyId?: string;
     language?: string;
+    unlocksAt?: string;
     unlockAdId?: string;
 };
 
@@ -274,6 +281,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             audioDuration: safeNumber(initialData?.audioDuration, 0),
             accessType: safeAccessType(initialData?.accessType),
             unlockPrice: safeNumber((initialData as { unlockPrice?: unknown } | undefined)?.unlockPrice, 0),
+            discountPercent: safeNumber((initialData as { discountPercent?: unknown } | undefined)?.discountPercent, 0),
             language: safeString((initialData as { language?: unknown } | undefined)?.language, selectedLocale),
             storyId: safeString(initialData?.storyId),
             unlocksAt: safeString(initialData?.unlocksAt),
@@ -300,6 +308,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             audioDuration: safeNumber(initialData?.audioDuration, 0),
             accessType: safeAccessType(initialData?.accessType),
             unlockPrice: safeNumber((initialData as { unlockPrice?: unknown } | undefined)?.unlockPrice, 0),
+            discountPercent: safeNumber((initialData as { discountPercent?: unknown } | undefined)?.discountPercent, 0),
             language: safeString((initialData as { language?: unknown } | undefined)?.language, selectedLocale),
             storyId: safeString(initialData?.storyId),
             unlocksAt: safeString(initialData?.unlocksAt),
@@ -783,8 +792,14 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                 : (typeof values.unlockPrice === 'number' && Number.isFinite(values.unlockPrice)
                     ? Math.max(0, Math.floor(values.unlockPrice))
                     : 0),
+            discountPercent: values.accessType === 'free' || values.accessType === 'ads'
+                ? 0
+                : (typeof values.discountPercent === 'number' && Number.isFinite(values.discountPercent)
+                    ? Math.max(0, Math.min(100, Math.floor(values.discountPercent)))
+                    : 0),
             storyId: cleanText(values.storyId),
             language: selectedLanguage,
+            unlocksAt: values.accessType === 'timed' ? cleanText(values.unlocksAt) : undefined,
             unlockAdId: values.accessType === 'ads' ? cleanText(values.unlockAdId) : undefined,
         };
 
@@ -1247,6 +1262,22 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                                     />
                                     <p className="text-xs text-slate-500">Giá credits cần để mở khóa chương này.</p>
                                     {errors.unlockPrice && <p className="text-red-500 text-xs mt-1">{errors.unlockPrice.message}</p>}
+                                </div>
+                            )}
+
+                            {watch('accessType') !== 'free' && watch('accessType') !== 'ads' && (
+                                <div className="flex flex-col space-y-1.5">
+                                    <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Giảm giá (%)</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={100}
+                                        step={1}
+                                        {...register('discountPercent', { valueAsNumber: true })}
+                                        className={`admin-input ${errors.discountPercent ? 'admin-input-error' : ''}`}
+                                        placeholder="Ví dụ: 15"
+                                    />
+                                    {errors.discountPercent && <p className="text-red-500 text-xs mt-1">{errors.discountPercent.message as string}</p>}
                                 </div>
                             )}
 

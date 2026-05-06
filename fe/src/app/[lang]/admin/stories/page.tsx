@@ -43,6 +43,8 @@ interface Story {
     thumbnailUrl: string | null;
     status: 'ongoing' | 'completed';
     isRecommended: boolean;
+    unlockPrice?: number;
+    discountPercent?: number;
     totalViews: number;
     averageRating: number | string;
     language: string;
@@ -356,6 +358,8 @@ export default function StoriesPage() {
                 status: data.status || "ongoing",
                 isInteractive: !!data.isInteractive,
                 isRecommended: !!data.isRecommended,
+                unlockPrice: Number(data.unlockPrice || 0),
+                discountPercent: Number(data.discountPercent || 0),
                 language: data.language,
             };
             
@@ -465,6 +469,7 @@ export default function StoriesPage() {
                 youtubeVideoId: data.youtubeVideoId || undefined,
                 r2AudioUrl: data.r2AudioUrl || undefined,
                 storyId: data.storyId || undefined,
+                unlocksAt: data.unlocksAt || undefined,
             };
 
             await apiClient.patch(`/chapters/${editingChapterId}`, payload);
@@ -1255,4 +1260,3 @@ export default function StoriesPage() {
         </div>
     );
 }
-

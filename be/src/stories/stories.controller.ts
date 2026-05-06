@@ -130,6 +130,12 @@ export class StoriesController {
     return this.storiesService.giftPulse(id, user.sub, dto.amount, dto.message, dto.chapterId);
   }
 
+  @Post(':id/unlock')
+  @UseGuards(JwtAccessGuard)
+  unlockStory(@Param('id') id: string, @Account() user: any) {
+    return this.storiesService.unlockStoryByPulse(id, user.sub);
+  }
+
   // IMPORTANT: This must be LAST because it's a catch-all route
   @Get(':slug')
   getBySlug(@Param('slug') slug: string) {

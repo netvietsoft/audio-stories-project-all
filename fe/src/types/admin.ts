@@ -49,6 +49,8 @@ export interface Chapter {
     audioDuration?: number | null;
     accessType?: 'free' | 'timed' | 'vip' | 'ads';
     unlockPrice?: number;
+    discountPercent?: number;
+    unlocksAt?: string | null;
     unlockAdId?: string | null;
     language?: string | null;
     createdAt: string;
@@ -72,5 +74,7 @@ export type StorySubmitPayload = {
     audioUrl?: string;
     isRecommended?: boolean;
     isInteractive?: boolean;
+    unlockPrice?: number;
+    discountPercent?: number;
     chapterIds?: string[];
 };

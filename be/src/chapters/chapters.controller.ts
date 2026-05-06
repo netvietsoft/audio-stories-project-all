@@ -75,6 +75,13 @@ export class ChaptersController {
         return this.chaptersService.findPublicDetail(id);
     }
 
+    @UseGuards(OptionalJwtGuard)
+    @Get('chapters/:id/unlock-status')
+    getUnlockStatus(@Param('id') id: string, @Req() req: Request) {
+        const userId = (req.user as any)?.id;
+        return this.chaptersService.getUnlockStatus(id, userId);
+    }
+
     /**
      * Audio proxy endpoint — resolves the CDN/R2 URL after entitlement check.
      *
@@ -110,6 +117,13 @@ export class ChaptersController {
             const userId = (req.user as any)?.id;
             return this.chaptersService.unlockByAd(id, adId, userId);
         }
+
+    @UseGuards(JwtAccessGuard)
+    @Post('chapters/:id/unlock-by-pulse')
+    unlockByPulse(@Param('id') id: string, @Req() req: Request) {
+        const userId = (req.user as any)?.id;
+        return this.chaptersService.unlockByPulse(id, userId);
+    }
 
     @Get('chapters/:id')
     @UseGuards(JwtAccessGuard, RolesGuard)

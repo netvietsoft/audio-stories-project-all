@@ -368,6 +368,8 @@ export class StoriesService {
           totalViews: true,
           isInteractive: true,
           averageRating: true,
+          unlockPrice: true,
+          discountPercent: true,
           title: true,
           createdAt: true,
           totalGifts: true,
@@ -747,6 +749,7 @@ export class StoriesService {
             description: true,
             thumbnailUrl: true,
             accessType: true,
+            discountPercent: true,
             unlockAdId: true,
             unlockAd: {
               select: {
@@ -785,6 +788,91 @@ export class StoriesService {
     }
 
     return this.serializeStory(story);
+  }
+
+  async unlockStoryByPulse(storyId: string, userId: string) {
+    const story = await this.prisma.story.findUnique({
+      where: { id: storyId },
+      select: {
+        id: true,
+        title: true,
+        unlockPrice: true,
+        discountPercent: true,
+        deletedAt: true,
+      },
+    });
+
+    if (!story || story.deletedAt) {
+      throw new NotFoundException('Story not found');
+    }
+
+    const basePrice = Math.max(0, Math.floor(Number(story.unlockPrice || 0)));
+    if (basePrice <= 0) {
+      throw new BadRequestException('Story is not configured for pulse unlock');
+    }
+
+    const safeDiscount = Math.max(0, Math.min(100, Math.floor(Number(story.discountPercent || 0))));
+    const finalPrice = Math.max(0, Math.floor(basePrice * (100 - safeDiscount) / 100));
+
+    const existingUnlock = await this.prisma.userStoryUnlock.findUnique({
+      where: { userId_storyId: { userId, storyId } },
+      select: { storyId: true },
+    });
+
+    if (existingUnlock) {
+      return { success: true, alreadyUnlocked: true, charged: 0 };
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, pulseBalance: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.pulseBalance < finalPrice) {
+      throw new BadRequestException('Insufficient Pulse');
+    }
+
+    const updatedUser = await this.prisma.$transaction(async (tx) => {
+      const nextUser = await tx.user.update({
+        where: { id: userId },
+        data: { pulseBalance: { decrement: finalPrice } },
+        select: { pulseBalance: true },
+      });
+
+      await tx.userStoryUnlock.create({
+        data: {
+          userId,
+          storyId,
+          pulseAmount: finalPrice,
+        },
+      });
+
+      await tx.creditTransaction.create({
+        data: {
+          userId,
+          type: 'spend',
+          pulseAmount: -finalPrice,
+          pulseBalanceBefore: user.pulseBalance,
+          pulseBalanceAfter: nextUser.pulseBalance,
+          referenceId: storyId,
+          description: `Mở khóa truyện: ${story.title}`,
+        },
+      });
+
+      return nextUser;
+    });
+
+    return {
+      success: true,
+      charged: finalPrice,
+      basePrice,
+      discountPercent: safeDiscount,
+      pulseBalance: updatedUser.pulseBalance,
+    };
   }
 
   async getAllCategories(language = 'vi') {

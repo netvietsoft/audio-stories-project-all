@@ -50,6 +50,8 @@ export default function EditStoryPage() {
           audioUrl: story.audioUrl || "",
           isRecommended: !!story.isRecommended,
           isInteractive: !!story.isInteractive,
+          unlockPrice: Number(story.unlockPrice || 0),
+          discountPercent: Number(story.discountPercent || 0),
         });
       } catch (error) {
         console.error("Failed to fetch story:", error);

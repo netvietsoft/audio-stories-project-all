@@ -89,6 +89,8 @@ type ChapterItem = {
   audioDuration: number | null;
   accessType: "free" | "timed" | "vip" | "ads";
   unlocksAt: string | null;
+  unlockPrice?: number;
+  discountPercent?: number;
   isInteractive?: boolean;
   variants?: ChapterVariant[];
   // If chapter is unlocked by ad, backend will populate this
@@ -125,6 +127,8 @@ type StoryDetail = {
   averageRating: string | number;
   ratingCount: number;
   updatedAt: string;
+  unlockPrice?: number;
+  discountPercent?: number;
   author?: { name: string };
   categories?: Array<{
     category: {
@@ -248,8 +252,6 @@ const getUnlockLabel = (
 };
 
 const chapterHref = (slug: string, chapterNumber: number) => `/story/${slug}/chuong-${chapterNumber}`;
-const VIP_UNLOCK_COST = 299;
-const VIP_UNLOCK_DAYS = 30;
 
 const chapterNumberFromSlug = (input: string | undefined) => {
   if (!input) return null;
@@ -298,6 +300,11 @@ export default function StoryChapterClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [unlockAdReappearMinutes, setUnlockAdReappearMinutes] = useState<number>(15);
   const [unlockAdCountdownSeconds, setUnlockAdCountdownSeconds] = useState<number>(5);
+  const [chapterUnlockState, setChapterUnlockState] = useState<{
+    isUnlocked: boolean;
+    unlockSource: string | null;
+    isTimedFree?: boolean;
+  } | null>(null);
   const user = useUserStore((state) => state.user);
   const { refreshProfile } = useAuth();
   const openLogin = useAuthModalStore((state) => state.openLogin);
@@ -319,7 +326,6 @@ export default function StoryChapterClient() {
   const lastRestoredHistoryKeyRef = useRef<string | null>(null);
   const hydratedChapterIdsRef = useRef<Set<string>>(new Set());
 
-  const setUser = useUserStore((state) => state.setUser);
 
   const currentTrack = useAudioStore((state) => state.currentTrack);
   const isPlaying = useAudioStore((state) => state.isPlaying);
@@ -748,6 +754,7 @@ export default function StoryChapterClient() {
 
   const chapterIsLocked = useMemo(() => {
     if (!selectedChapter) return false;
+    if (chapterUnlockState?.isUnlocked) return false;
     if (isVipActive) return false;
     if (selectedChapter.accessType === "ads") return !!selectedChapter.unlockAd;
     if (selectedChapter.accessType === "vip") return true;
@@ -756,7 +763,35 @@ export default function StoryChapterClient() {
       return new Date(selectedChapter.unlocksAt).getTime() > Date.now();
     }
     return false;
-  }, [isVipActive, selectedChapter]);
+  }, [chapterUnlockState?.isUnlocked, isVipActive, selectedChapter]);
+
+  const shouldShowInlineAds = useMemo(() => {
+    if (!selectedChapter) return false;
+    if (selectedChapter.accessType === "vip") return false;
+    if (selectedChapter.accessType === "timed") {
+      if (chapterUnlockState?.unlockSource === "PULSE_STORY" || chapterUnlockState?.unlockSource === "CHAPTER_PULSE") {
+        return false;
+      }
+      return true;
+    }
+    return true;
+  }, [chapterUnlockState?.unlockSource, selectedChapter]);
+
+  useEffect(() => {
+    if (!selectedChapter?.id) {
+      setChapterUnlockState(null);
+      return;
+    }
+    const fetchUnlockState = async () => {
+      try {
+        const res = await apiClient.get(`/chapters/${selectedChapter.id}/unlock-status`);
+        setChapterUnlockState(res.data || null);
+      } catch {
+        setChapterUnlockState(null);
+      }
+    };
+    void fetchUnlockState();
+  }, [selectedChapter?.id, user?.id, user?.vipTier, user?.vipExpirationDate]);
 
   const lockReasonLabel = useMemo(() => {
     if (!selectedChapter) return t("chapterLocked");
@@ -778,6 +813,14 @@ export default function StoryChapterClient() {
     }
     return t("chapterLocked");
   }, [selectedChapter, t]);
+
+  const chapterBaseUnlockPrice = Math.max(0, Math.floor(Number(selectedChapter?.unlockPrice || 0)));
+  const chapterDiscountPercent = Math.max(0, Math.min(100, Math.floor(Number(selectedChapter?.discountPercent || 0))));
+  const chapterFinalUnlockPrice = Math.max(0, Math.floor(chapterBaseUnlockPrice * (100 - chapterDiscountPercent) / 100));
+
+  const storyBaseUnlockPrice = Math.max(0, Math.floor(Number(story?.unlockPrice || 0)));
+  const storyDiscountPercent = Math.max(0, Math.min(100, Math.floor(Number(story?.discountPercent || 0))));
+  const storyFinalUnlockPrice = Math.max(0, Math.floor(storyBaseUnlockPrice * (100 - storyDiscountPercent) / 100));
 
   const filteredChapters = useMemo(() => {
     if (!story) return [];
@@ -1277,33 +1320,42 @@ export default function StoryChapterClient() {
     setIsUnlockModalOpen(true);
   };
 
-  const handleBuyVip = () => {
+  const handleBuyVip = async () => {
     if (!user) {
       router.push(`/${currentLang}/login`);
       return;
     }
 
-    if ((user.pulseBalance ?? user.credits ?? 0) < VIP_UNLOCK_COST) {
-      setUnlockError("Pulse không đủ để mở VIP. Vui lòng nạp thêm Pulse.");
-      setShowTopupAction(true);
-      return;
+    if (!selectedChapter?.id || !story?.id) return;
+
+    try {
+      setIsUnlocking(true);
+      setUnlockError("");
+      setShowTopupAction(false);
+
+      if (selectedChapter.accessType === "vip" || selectedChapter.accessType === "timed") {
+        await apiClient.post(`/chapters/${selectedChapter.id}/unlock-by-pulse`);
+      } else {
+        await apiClient.post(`/stories/${story.id}/unlock`);
+      }
+
+      await refreshProfile();
+      setIsUnlockModalOpen(false);
+      try {
+        const statusRes = await apiClient.get(`/chapters/${selectedChapter.id}/unlock-status`);
+        setChapterUnlockState(statusRes.data || null);
+      } catch {
+        // ignore
+      }
+    } catch (error: any) {
+      const msg = String(error?.response?.data?.message || "Không thể mở khóa. Vui lòng thử lại.");
+      setUnlockError(msg);
+      if (msg.toLowerCase().includes("insufficient") || msg.toLowerCase().includes("pulse")) {
+        setShowTopupAction(true);
+      }
+    } finally {
+      setIsUnlocking(false);
     }
-
-    const nextExpiry = new Date();
-    nextExpiry.setDate(nextExpiry.getDate() + VIP_UNLOCK_DAYS);
-
-    setUser({
-      ...user,
-      credits: (user.pulseBalance ?? user.credits ?? 0) - VIP_UNLOCK_COST,
-      pulseBalance: (user.pulseBalance ?? user.credits ?? 0) - VIP_UNLOCK_COST,
-      vipTier: Math.max(1, user.vipTier || 0),
-      vipExpirationDate: nextExpiry.toISOString(),
-    });
-
-    setUnlockError("");
-    setShowTopupAction(false);
-    setIsUnlockModalOpen(false);
-    void refreshProfile();
   };
 
   const handleGiftCredits = async () => {
@@ -1871,15 +1923,16 @@ export default function StoryChapterClient() {
             {selectedChapterContentRaw ? (
               hasInlineChoice ? (
                 <div className="space-y-8">
-                  <StoryReader
-                    chapterId={`${selectedChapter.id}-part1`}
-                    content={contentBeforeChoice}
-                    adInterval={700}
-                    isLocked={selectedChapter.accessType === "ads" && chapterIsLocked}
-                    previewChars={500}
-                    lockLabel={lockReasonLabel}
-                    onUnlockRequest={openUnlockModal}
-                    unlockAd={selectedChapter?.unlockAd ?? null}
+                <StoryReader
+                  chapterId={`${selectedChapter.id}-part1`}
+                  content={contentBeforeChoice}
+                  adInterval={shouldShowInlineAds ? 700 : Number.MAX_SAFE_INTEGER}
+                  isLocked={chapterIsLocked}
+                  previewChars={500}
+                  previewPercent={0.1}
+                  lockLabel={lockReasonLabel}
+                  onUnlockRequest={openUnlockModal}
+                  unlockAd={selectedChapter?.unlockAd ?? null}
                     unlockReappearMinutes={unlockAdReappearMinutes}
                     unlockCountdownSeconds={unlockAdCountdownSeconds}
                     onAdUnlocked={() => {
@@ -2128,9 +2181,12 @@ export default function StoryChapterClient() {
                               <StoryReader
                                 chapterId={`variant-${currentV.id}-p1`}
                                 content={vParts[0]}
-                                adInterval={700}
-                                isLocked={false}
+                                adInterval={shouldShowInlineAds ? 700 : Number.MAX_SAFE_INTEGER}
+                                isLocked={chapterIsLocked}
                                 previewChars={500}
+                                previewPercent={0.1}
+                                lockLabel={lockReasonLabel}
+                                onUnlockRequest={openUnlockModal}
                               />
                             </div>
                           ) : null}
@@ -2192,9 +2248,12 @@ export default function StoryChapterClient() {
                                 <StoryReader
                                   chapterId={`variant-${currentV.id}-p2`}
                                   content={vParts.slice(1).join('[DIEN_BIEN]')}
-                                  adInterval={700}
-                                  isLocked={false}
+                                  adInterval={shouldShowInlineAds ? 700 : Number.MAX_SAFE_INTEGER}
+                                  isLocked={chapterIsLocked}
                                   previewChars={500}
+                                  previewPercent={0.1}
+                                  lockLabel={lockReasonLabel}
+                                  onUnlockRequest={openUnlockModal}
                                 />
                               </div>
                             );
@@ -2231,9 +2290,12 @@ export default function StoryChapterClient() {
                       <StoryReader
                         chapterId={`${selectedChapter.id}-part2`}
                         content={contentAfterChoice}
-                        adInterval={700}
-                        isLocked={false}
+                        adInterval={shouldShowInlineAds ? 700 : Number.MAX_SAFE_INTEGER}
+                        isLocked={chapterIsLocked}
                         previewChars={500}
+                        previewPercent={0.1}
+                        lockLabel={lockReasonLabel}
+                        onUnlockRequest={openUnlockModal}
                       />
                     ) : null;
                   })()}
@@ -2242,9 +2304,10 @@ export default function StoryChapterClient() {
                 <StoryReader
                   chapterId={selectedChapter.id}
                   content={selectedChapterContentRaw}
-                  adInterval={700}
-                  isLocked={selectedChapter.accessType === "ads" && chapterIsLocked}
+                  adInterval={shouldShowInlineAds ? 700 : Number.MAX_SAFE_INTEGER}
+                  isLocked={chapterIsLocked}
                   previewChars={500}
+                  previewPercent={0.1}
                   lockLabel={lockReasonLabel}
                   onUnlockRequest={openUnlockModal}
                   unlockAd={selectedChapter?.unlockAd ?? null}
@@ -2590,11 +2653,59 @@ export default function StoryChapterClient() {
                       const variant = variants.find(v => v.id === pendingVariantId);
                       return variant ? t("unlockVariantPrice", { price: variant.unlockPrice.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") }) : "";
                     })()
-                    : t("buyVipInfo", { days: VIP_UNLOCK_DAYS, cost: VIP_UNLOCK_COST.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
+                    : (() => {
+                      const storyBase = storyBaseUnlockPrice;
+                      const storyFinal = storyFinalUnlockPrice;
+                      const hasStoryDiscount = storyDiscountPercent > 0 && storyBase > storyFinal;
+                      const chapterBase = chapterBaseUnlockPrice;
+                      const chapterFinal = chapterFinalUnlockPrice;
+                      const hasChapterDiscount = chapterDiscountPercent > 0 && chapterBase > chapterFinal;
+
+                      if (selectedChapter?.accessType === "timed" || selectedChapter?.accessType === "vip") {
+                        if (hasChapterDiscount) {
+                          return `${locale === "en" ? "Unlock chapter with" : "Mở khóa chương với"} ${chapterFinal.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US")} Pulse (${chapterBase.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US")} Pulse, -${chapterDiscountPercent}%).`;
+                        }
+                        return `${locale === "en" ? "Unlock chapter with" : "Mở khóa chương với"} ${chapterFinal.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US")} Pulse.`;
+                      }
+
+                      if (hasStoryDiscount) {
+                        return `${locale === "en" ? "Unlock whole story with" : "Mở khóa toàn bộ truyện với"} ${storyFinal.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US")} Pulse (${storyBase.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US")} Pulse, -${storyDiscountPercent}%).`;
+                      }
+                      return `${locale === "en" ? "Unlock whole story with" : "Mở khóa toàn bộ truyện với"} ${storyFinal.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US")} Pulse.`;
+                    })()}
                 </p>
+                {!pendingVariantId ? (
+                  <div className="mt-2 rounded-md border border-pink-100 bg-pink-50 px-3 py-2 text-sm dark:border-pink-900/40 dark:bg-pink-900/20">
+                    {(() => {
+                      const isChapterUnlock = selectedChapter?.accessType === "timed" || selectedChapter?.accessType === "vip";
+                      const basePrice = isChapterUnlock ? chapterBaseUnlockPrice : storyBaseUnlockPrice;
+                      const finalPrice = isChapterUnlock ? chapterFinalUnlockPrice : storyFinalUnlockPrice;
+                      const discount = isChapterUnlock ? chapterDiscountPercent : storyDiscountPercent;
+                      const hasDiscount = discount > 0 && basePrice > finalPrice;
+                      return (
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-pink-700 dark:text-pink-300">
+                            {finalPrice.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US")} Pulse
+                          </span>
+                          {hasDiscount ? (
+                            <span className="text-xs text-gray-500 line-through">
+                              {basePrice.toLocaleString(locale === 'vi' ? "vi-VN" : "en-US")} Pulse
+                            </span>
+                          ) : null}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : null}
+
+                {!pendingVariantId && selectedChapter?.accessType === "timed" && selectedChapter.unlocksAt && new Date(selectedChapter.unlocksAt).getTime() > Date.now() ? (
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-300">
+                    {lockReasonLabel}
+                  </p>
+                ) : null}
 
                 <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-[#303133] dark:bg-[#3a3b3c]">
-                  {t("yourBalance", { balance: Number(user?.credits ?? 0).toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
+                  {t("yourBalance", { balance: Number(user?.pulseBalance ?? user?.credits ?? 0).toLocaleString(locale === 'vi' ? "vi-VN" : "en-US") })}
                 </div>
 
                 {unlockError ? <p className="mt-3 text-sm font-medium text-red-600">{unlockError}</p> : null}
@@ -2622,7 +2733,7 @@ export default function StoryChapterClient() {
                     onClick={pendingVariantId ? handleUnlockVariant : handleBuyVip}
                     className="rounded-md bg-pink-600 px-3 py-2 text-sm font-semibold text-white hover:bg-pink-700 disabled:opacity-50"
                   >
-                    {isUnlocking ? "..." : (pendingVariantId ? t("unlockNow") : t("buyVip"))}
+                    {isUnlocking ? "..." : (pendingVariantId ? t("unlockNow") : (locale === "en" ? "Unlock Now" : "Mở khóa ngay"))}
                   </button>
                 </div>
               </div>
@@ -2693,7 +2804,7 @@ export default function StoryChapterClient() {
 
                   <div className="rounded-xl border border-gray-200 bg-gray-50 dark:border-[#303133] dark:bg-[#3a3b3c] px-4 py-3 text-sm">
                     <p className="text-gray-600 dark:text-gray-300">
-                      {t("yourBalance", { balance: Number(user?.credits ?? 0).toLocaleString() })}
+                      {t("yourBalance", { balance: Number(user?.pulseBalance ?? user?.credits ?? 0).toLocaleString() })}
                     </p>
                   </div>
 

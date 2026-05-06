@@ -157,6 +157,7 @@ type StoryReaderProps = {
   adInterval?: number;
   isLocked?: boolean;
   previewChars?: number;
+  previewPercent?: number;
   lockLabel?: string;
   onUnlockRequest?: () => void;
   // Unlock-by-ad props
@@ -276,6 +277,7 @@ export default function StoryReader({
   adInterval = 1000,
   isLocked = false,
   previewChars = 500,
+  previewPercent = 0.1,
   lockLabel,
   onUnlockRequest,
   unlockAd = null,
@@ -449,7 +451,7 @@ export default function StoryReader({
   const handleCloseAd = () => {
     if (!unlockAd) return;
     markAdClosed(unlockAd.id);
-    setAdUnlockedLocally(true);
+    setAdUnlockedLocally(false);
     setShowAdModal(false);
   };
 
@@ -731,7 +733,11 @@ export default function StoryReader({
     return null;
   }
 
-  const shouldBlurContent = isLocked && !!unlockAd && !adUnlockedLocally && !isInUnlockCooldown;
+  const effectiveIsLocked = isLocked && !adUnlockedLocally;
+  const shouldBlurContent = effectiveIsLocked && !!unlockAd && !isInUnlockCooldown;
+  const previewTextLimit = Math.max(80, Math.floor((content || "").replace(/<[^>]*>/g, "").length * Math.max(0.01, Math.min(0.9, previewPercent))));
+  let accumulatedPlainChars = 0;
+  let renderedLockGate = false;
 
   return (
     <>
@@ -761,20 +767,49 @@ export default function StoryReader({
         }
       `}</style>
       <div
-        key={`${chapterId || "chapter"}-${shouldBlurContent ? "locked" : "open"}`}
+        key={`${chapterId || "chapter"}-${effectiveIsLocked ? "locked" : "open"}`}
         className={`relative min-w-0 overflow-x-hidden ${isProd ? "select-none" : ""} ${
           shouldBlurContent ? "blur-sm select-none pointer-events-none overflow-hidden" : ""
         }`}
       >
       {flowItems.map((item) => {
+        if (renderedLockGate) {
+          return null;
+        }
         if (item.type === "paragraph") {
           const { paragraph } = item;
+          const plainLength = paragraph.content.replace(/<[^>]*>/g, "").length;
+          const nextAccumulated = accumulatedPlainChars + plainLength;
+          const isPreviewParagraph = !effectiveIsLocked || accumulatedPlainChars < previewTextLimit;
+          const shouldBlockAtThisParagraph = effectiveIsLocked && accumulatedPlainChars >= previewTextLimit;
+          accumulatedPlainChars = nextAccumulated;
+          if (shouldBlockAtThisParagraph) {
+            renderedLockGate = true;
+          }
           const comments = paragraphComments[paragraph.id] || [];
           const isOpen = openParagraphId === paragraph.id;
           const paragraphCount = paragraphCommentCounts[paragraph.index] || 0;
 
           return (
             <div key={paragraph.id} className="group mb-4 overflow-visible rounded-lg transition-colors md:mb-6">
+              {shouldBlockAtThisParagraph ? (
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onUnlockRequest?.()}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onUnlockRequest?.();
+                    }
+                  }}
+                  className="mb-4 rounded-2xl border border-pink-200 bg-gradient-to-b from-white to-pink-50 px-5 py-8 text-center shadow-sm cursor-pointer"
+                >
+                  <p className="text-sm font-semibold text-pink-700">{lockLabel || "Nội dung đang bị khóa"}</p>
+                  <p className="mt-1 text-xs text-gray-600">Bấm để mở khóa hoặc xem thời gian còn lại</p>
+                </div>
+              ) : null}
+              {!isPreviewParagraph ? null : (
               <div className="relative">
                 <div
                   className="story-paragraph-content rounded-lg px-1 py-2 text-base sm:text-lg leading-relaxed text-gray-800 transition-colors sm:px-4 sm:py-2.5 md:px-5 md:py-3 dark:text-gray-100 text-justify"
@@ -795,6 +830,7 @@ export default function StoryReader({
                   </span>
                 </div>
               </div>
+              )}
 
               {isOpen && (
                 <div className="mt-3 rounded-lg bg-white p-3 shadow-sm dark:bg-[#242526]">

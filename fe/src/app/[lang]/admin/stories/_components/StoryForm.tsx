@@ -38,6 +38,14 @@ const storySchema = z.object({
     audioUrl: z.string().optional().nullable(),
     isRecommended: z.boolean().optional(),
     isInteractive: z.boolean().optional(),
+    unlockPrice: z.preprocess(
+        (value) => (value === '' || value === null || typeof value === 'undefined' ? 0 : Number(value)),
+        z.number().min(0, 'Giá mở khóa không hợp lệ'),
+    ),
+    discountPercent: z.preprocess(
+        (value) => (value === '' || value === null || typeof value === 'undefined' ? 0 : Number(value)),
+        z.number().min(0, 'Giảm giá không hợp lệ').max(100, 'Giảm giá tối đa 100%'),
+    ),
     language: z.string().optional(),
 }).refine((data) => data.titleVi || data.titleEn, {
     message: 'Phải có ít nhất một tiêu đề (Tiếng Việt hoặc English)',
@@ -99,7 +107,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
         watch,
         formState: { errors },
     } = useForm<StoryFormValues>({
-        resolver: zodResolver(storySchema),
+        resolver: zodResolver(storySchema) as any,
         defaultValues: {
             titleVi: '',
             titleEn: '',
@@ -111,6 +119,8 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
             categoryIds: [],
             isRecommended: false,
             isInteractive: false,
+            unlockPrice: 0,
+            discountPercent: 0,
             language: initialData?.language || selectedLocale,
             ...(initialData
                 ? {
@@ -126,6 +136,8 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     audioUrl: initialData.audioUrl,
                     isRecommended: initialData.isRecommended,
                     isInteractive: initialData.isInteractive,
+                    unlockPrice: initialData.unlockPrice ?? 0,
+                    discountPercent: initialData.discountPercent ?? 0,
                     language: initialData.language,
                 }
                 : {}),
@@ -286,6 +298,8 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
             audioUrl: values.audioUrl || undefined,
             isRecommended: values.isRecommended,
             isInteractive: values.isInteractive,
+            unlockPrice: Math.max(0, Math.floor(Number(values.unlockPrice || 0))),
+            discountPercent: Math.max(0, Math.min(100, Math.floor(Number(values.discountPercent || 0)))),
             language: selectedLanguage,
         };
 
@@ -502,6 +516,34 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                                 <input type="checkbox" {...register('isInteractive')} className="h-5 w-5 rounded border-amber-300 text-amber-600 focus:ring-amber-500" />
                             </label>
                             {errors.isInteractive && <p className="text-red-500 text-xs mt-1">{errors.isInteractive.message}</p>}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Giá mở khóa toàn bộ truyện (Pulse)</label>
+                            <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                {...register('unlockPrice', { valueAsNumber: true })}
+                                className={`admin-input w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.unlockPrice ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm'}`}
+                                placeholder="Ví dụ: 299"
+                            />
+                            {errors.unlockPrice && <p className="text-red-500 text-xs mt-1">{errors.unlockPrice.message}</p>}
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Giảm giá (%)</label>
+                            <input
+                                type="number"
+                                min={0}
+                                max={100}
+                                step={1}
+                                {...register('discountPercent', { valueAsNumber: true })}
+                                className={`admin-input w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-medium transition-all ${errors.discountPercent ? 'admin-input-error' : 'focus:ring-4 focus:ring-indigo-500/10 shadow-sm'}`}
+                                placeholder="Ví dụ: 10"
+                            />
+                            {errors.discountPercent && <p className="text-red-500 text-xs mt-1">{errors.discountPercent.message}</p>}
                         </div>
                     </div>
 

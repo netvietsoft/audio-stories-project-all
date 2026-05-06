@@ -31,6 +31,17 @@ type InlineComment = {
 
 type CommentSort = "newest" | "helpful" | "all";
 
+type CreatedCommentResponse = {
+  id?: string;
+  content?: string;
+  createdAt?: string;
+  user?: {
+    displayName?: string;
+    name?: string;
+    avatarUrl?: string | null;
+  };
+};
+
 type ParagraphItem = {
   id: string;
   index: number;
@@ -157,6 +168,7 @@ type StoryReaderProps = {
 
 const normalizeStoryContent = (rawHtml: string) =>
   rawHtml
+    .replace(/&nbs[p]?;?/gi, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/\u00A0/g, " ")
     .replace(/[\u200B-\u200D\uFEFF]/g, "")
@@ -172,7 +184,7 @@ const sanitizeStoryContent = (rawHtml: string) =>
 const hasVisibleContent = (html: string) => {
   if (!html) return false;
   const stripped = html.replace(/<[^>]*>/g, "").trim();
-  return stripped.replace(/&nbsp;|\u00A0/g, "").trim().length > 0;
+  return stripped.replace(/&nbs[p]?;?|\u00A0/gi, "").trim().length > 0;
 };
 
 const splitParagraphs = (chapterId: string, content: string | null | undefined): ParagraphItem[] => {
@@ -190,23 +202,17 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
       .split(/<hr\s*\/?>/gi)
       .map((part) => part.trim())
       .filter(hasVisibleContent);
-  } else if (content.includes("<") && content.includes(">") && typeof window !== "undefined") {
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(content, "text/html");
-      const pNodes = Array.from(doc.querySelectorAll("p"));
+  } else if (content.includes("<") && content.includes(">")) {
+    const normalizedText = content
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(p|div|section|article|li|blockquote|h[1-6])>/gi, "\n")
+      .replace(/<[^>]*>/g, "")
+      .replace(/\r/g, "");
 
-      if (pNodes.length > 0) {
-        parts = pNodes
-          .map((node) => (node.textContent || "").trim())
-          .filter(hasVisibleContent);
-      } else {
-        const plainText = (doc.body?.textContent || "").replace(/\r/g, "").trim();
-        parts = plainText.split(/\n\s*\n/).map((part) => part.trim()).filter(hasVisibleContent);
-      }
-    } catch {
-      parts = [];
-    }
+    parts = normalizedText
+      .split(/\n{1,}/)
+      .map((part) => part.trim())
+      .filter(hasVisibleContent);
   }
 
   if (parts.length === 0) {
@@ -218,7 +224,13 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
   }
 
   parts = parts
-    .map((part) => part.replace(/^\[Paragraph\s*\d+\]\s*/i, "").replace(/^\[Đoạn\s*\d+\]\s*/i, "").replace(/\[.*?\]/g, "").trim())
+    .map((part) =>
+      part
+        .replace(/^\[Paragraph\s*\d+\]\s*/i, "")
+        .replace(/^\[Đoạn\s*\d+\]\s*/i, "")
+        .replace(/\[.*?\]/g, "")
+        .trim(),
+    )
     .filter(hasVisibleContent);
 
   return parts.map((part, index) => ({
@@ -229,9 +241,33 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
 };
 
 const countWords = (text: string) => {
-  const normalized = text.trim();
+  const normalized = text
+    .replace(/&nbs[p]?;?/gi, " ")
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   if (!normalized) return 0;
-  return normalized.split(/\s+/).length;
+  return normalized.split(" ").length;
+};
+
+const splitByWordLimit = (text: string, wordLimit: number): string[] => {
+  const normalized = text
+    .replace(/&nbs[p]?;?/gi, " ")
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!normalized) return [];
+  if (!Number.isFinite(wordLimit) || wordLimit <= 0) return [normalized];
+
+  const words = normalized.split(" ");
+  if (words.length <= wordLimit) return [normalized];
+
+  const chunks: string[] = [];
+  for (let i = 0; i < words.length; i += wordLimit) {
+    const chunk = words.slice(i, i + wordLimit).join(" ").trim();
+    if (chunk) chunks.push(chunk);
+  }
+  return chunks;
 };
 
 export default function StoryReader({
@@ -276,6 +312,25 @@ export default function StoryReader({
     return splitParagraphs(chapterId, content);
   }, [chapterId, content]);
 
+  const renderedParagraphs = useMemo(() => {
+    const safeSplitWords = Math.max(1, Math.floor(insertionFrequency || 1000));
+    const next: ParagraphItem[] = [];
+
+    paragraphs.forEach((paragraph) => {
+      const chunks = splitByWordLimit(paragraph.content, safeSplitWords);
+      if (!chunks.length) return;
+      chunks.forEach((chunk, idx) => {
+        next.push({
+          id: `${paragraph.id}-w-${idx}`,
+          index: next.length,
+          content: chunk,
+        });
+      });
+    });
+
+    return next;
+  }, [insertionFrequency, paragraphs]);
+
   // Manage ad modal lifecycle: show on first load if chapter is locked by ad
   useEffect(() => {
     setAdUnlockedLocally(false);
@@ -307,7 +362,7 @@ export default function StoryReader({
           setXVisible(false);
         }, Math.max(0, remainingMs));
       }
-    } catch (e) {
+    } catch {
       // ignore localStorage errors
       setShowAdModal(true);
       setCountdown(unlockCountdownSeconds || 5);
@@ -331,7 +386,6 @@ export default function StoryReader({
 
     setCountdown(unlockCountdownSeconds || 5);
     setXVisible(false);
-    const total = unlockCountdownSeconds || 5;
     const iv = setInterval(() => {
       setCountdown((prev) => {
         const next = prev - 1;
@@ -356,7 +410,7 @@ export default function StoryReader({
       map[chapterId] = Date.now();
       localStorage.setItem(storageKey, JSON.stringify(map));
       setIsInUnlockCooldown(true);
-    } catch (e) {
+    } catch {
       // ignore
     }
   };
@@ -372,7 +426,7 @@ export default function StoryReader({
       } else {
         window.location.href = url;
       }
-    } catch (e) {
+    } catch {
       // fallback navigation
       window.location.href = url;
     }
@@ -382,7 +436,7 @@ export default function StoryReader({
       await apiClient.post(`/chapters/${chapterId}/unlock-by-ad`, { adId: unlockAd.id });
       // notify parent
       onAdUnlocked?.();
-    } catch (e) {
+    } catch {
       // ignore server errors; still unlock locally
       onAdUnlocked?.();
     }
@@ -401,7 +455,7 @@ export default function StoryReader({
 
   // Load comment counts for all paragraphs on mount
   useEffect(() => {
-    if (!chapterId || paragraphs.length === 0) return;
+    if (!chapterId || renderedParagraphs.length === 0) return;
 
     const loadCommentCounts = async () => {
       try {
@@ -414,7 +468,7 @@ export default function StoryReader({
     };
 
     void loadCommentCounts();
-  }, [chapterId, paragraphs.length]);
+  }, [chapterId, renderedParagraphs.length]);
 
   const flowItems = useMemo(() => {
     const items: Array<
@@ -426,16 +480,16 @@ export default function StoryReader({
     let nextBreakAt = insertionFrequency;
     let adIndex = 0;
 
-    paragraphs.forEach((paragraph) => {
+    renderedParagraphs.forEach((paragraph) => {
       items.push({ type: "paragraph", paragraph });
       accumulatedWords += countWords(paragraph.content);
 
-      if (accumulatedWords >= nextBreakAt && activeAds.length > 0) {
+      while (accumulatedWords >= nextBreakAt && activeAds.length > 0) {
         const ad = activeAds[adIndex % activeAds.length];
-        if (!ad) return;
+        if (!ad) break;
         items.push({
           type: 'ad',
-          id: `${paragraph.id}-slot-${nextBreakAt}`,
+          id: `${paragraph.id}-slot-${nextBreakAt}-${adIndex}`,
           ad,
         });
         adIndex += 1;
@@ -444,7 +498,7 @@ export default function StoryReader({
     });
 
     return items;
-  }, [activeAds, insertionFrequency, paragraphs]);
+  }, [activeAds, insertionFrequency, renderedParagraphs]);
 
   const normalizeComments = (rawComments: ParagraphCommentsResponse["comments"] = []): InlineComment[] => {
     return rawComments.map((item) => ({
@@ -606,7 +660,7 @@ export default function StoryReader({
 
     setIsSubmittingParagraph(true);
     try {
-      const response = await apiClient.post<{ data?: any }>(`/chapters/${chapterId}/comments`, {
+      const response = await apiClient.post<{ data?: CreatedCommentResponse }>(`/chapters/${chapterId}/comments`, {
         content: contentValue,
         scope: "paragraph",
         paragraphIndex: paragraph.index,
@@ -673,7 +727,7 @@ export default function StoryReader({
     setCommentSort("newest");
   }, [chapterId]);
 
-  if (!paragraphs.length) {
+  if (!renderedParagraphs.length) {
     return null;
   }
 
@@ -961,14 +1015,25 @@ export default function StoryReader({
         <div className="fixed inset-0 z-[9999] flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div className="relative z-10 mx-4 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl dark:bg-[#1f1f1f]">
-            <div className="mb-1 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
-              <span>{lockLabel || "Mở khóa bằng quảng cáo"}</span>
-              <span>{xVisible ? "0s" : `${countdown}s`}</span>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs text-gray-600 dark:text-gray-300">{lockLabel || "Mở khóa bằng quảng cáo"}</span>
+              {xVisible ? (
+                <button
+                  onClick={handleCloseAd}
+                  className="inline-flex h-8 w-14 items-center justify-center rounded-md border border-pink-200 bg-pink-50 text-sm font-bold text-pink-700 hover:bg-pink-100 dark:border-pink-800 dark:bg-pink-900/20 dark:text-pink-200"
+                >
+                  X
+                </button>
+              ) : (
+                <div className="inline-flex h-8 w-14 items-center justify-center rounded-md bg-pink-50 text-sm font-bold text-pink-600 tabular-nums dark:bg-pink-900/20 dark:text-pink-200">
+                  {`${countdown}s`}
+                </div>
+              )}
             </div>
             <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#323234]">
               <div
-                className="h-full bg-amber-400 transition-all"
-                style={{ width: `${((unlockCountdownSeconds || 5) - countdown) / (unlockCountdownSeconds || 5) * 100}%` }}
+                className="h-full bg-pink-500 transition-all"
+                style={{ width: `${((unlockCountdownSeconds || 5) - countdown) / Math.max(1, unlockCountdownSeconds || 5) * 100}%` }}
               />
             </div>
 
@@ -977,24 +1042,13 @@ export default function StoryReader({
               <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{unlockAd.title}</h3>
               <p className="text-sm text-gray-600 dark:text-gray-300">{unlockAd.partnerName}</p>
 
-              <div className="mt-4 flex w-full items-center justify-center gap-3">
+              <div className="mt-4 flex w-full items-center justify-center">
                 <button
                   onClick={handleWatchAd}
-                  className="w-full rounded-md bg-amber-500 px-4 py-3 text-sm font-bold text-white hover:bg-amber-600"
+                  className="w-full rounded-md bg-pink-600 px-4 py-3 text-sm font-bold text-white hover:bg-pink-700"
                 >
                   Xem quảng cáo
                 </button>
-
-                {xVisible ? (
-                  <button
-                    onClick={handleCloseAd}
-                    className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-[#303133] dark:bg-[#2b2b2b] dark:text-gray-200"
-                  >
-                    X
-                  </button>
-                ) : (
-                  <div className="rounded-md px-3 py-2 text-sm font-semibold text-gray-500">{countdown}s</div>
-                )}
               </div>
             </div>
           </div>

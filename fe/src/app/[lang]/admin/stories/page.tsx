@@ -521,6 +521,32 @@ export default function StoriesPage() {
         }
     };
 
+    const getChapterAccessMeta = (chapter: { accessType?: string | null }) => {
+        const accessType = chapter?.accessType || 'free';
+        if (accessType === 'vip') {
+            return {
+                label: 'VIP',
+                className: 'text-[10px] font-bold text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded',
+            };
+        }
+        if (accessType === 'timed') {
+            return {
+                label: 'Hẹn giờ',
+                className: 'text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded',
+            };
+        }
+        if (accessType === 'ads') {
+            return {
+                label: 'Quảng cáo',
+                className: 'text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded',
+            };
+        }
+        return {
+            label: 'Miễn phí',
+            className: 'text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded',
+        };
+    };
+
     return (
         <div className="space-y-8 animate-in fade-in duration-700">
             {/* Header Area */}
@@ -860,14 +886,21 @@ export default function StoriesPage() {
                                                                                 <p className="text-sm font-bold text-slate-900 line-clamp-2">
                                                                                     Chương {chapter.chapterNumber}: {chapter.title}
                                                                                 </p>
-                                                                                <div className="flex items-center gap-2 mt-0.5">
-                                                                                    {chapter.unlockPrice > 0 ? (
-                                                                                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
-                                                                                            {chapter.unlockPrice} credit
-                                                                                        </span>
-                                                                                    ) : (
-                                                                                        <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Miễn phí</span>
-                                                                                    )}
+                                                                                <div className="mt-1 flex flex-wrap items-center gap-2">
+                                                                                    <span className={getChapterAccessMeta(chapter).className}>
+                                                                                        {getChapterAccessMeta(chapter).label}
+                                                                                    </span>
+                                                                                    <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                                                                                        {Number(chapter.unlockPrice || 0).toLocaleString('vi-VN')} credit
+                                                                                    </span>
+                                                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                                                                                        <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                                                                        {Number(chapter.averageRating ?? story.averageRating ?? 0).toFixed(1)}
+                                                                                    </span>
+                                                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                                                                                        <Eye className="w-3 h-3" />
+                                                                                        {Number(chapter.viewCount || 0).toLocaleString('vi-VN')}
+                                                                                    </span>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -990,14 +1023,21 @@ export default function StoriesPage() {
                                                                     <p className="text-sm font-bold text-slate-900">
                                                                         Chương {chapter.chapterNumber}: {chapter.title}
                                                                     </p>
-                                                                    <div className="mt-1">
-                                                                        {chapter.unlockPrice > 0 ? (
-                                                                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
-                                                                                {chapter.unlockPrice} credit
-                                                                            </span>
-                                                                        ) : (
-                                                                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">Miễn phí</span>
-                                                                        )}
+                                                                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                                                                        <span className={getChapterAccessMeta(chapter).className}>
+                                                                            {getChapterAccessMeta(chapter).label}
+                                                                        </span>
+                                                                        <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                                                                            {Number(chapter.unlockPrice || 0).toLocaleString('vi-VN')} credit
+                                                                        </span>
+                                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                                                                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                                                            {Number(chapter.averageRating ?? story.averageRating ?? 0).toFixed(1)}
+                                                                        </span>
+                                                                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
+                                                                            <Eye className="w-3 h-3" />
+                                                                            {Number(chapter.viewCount || 0).toLocaleString('vi-VN')}
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                                 <div className="flex items-center gap-1">
@@ -1215,6 +1255,4 @@ export default function StoriesPage() {
         </div>
     );
 }
-
-
 

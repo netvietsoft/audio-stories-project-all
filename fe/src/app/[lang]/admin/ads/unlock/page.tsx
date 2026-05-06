@@ -5,14 +5,24 @@ import { useTranslations } from "next-intl";
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
 import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
+
+type UnlockAdItem = {
+  id: string;
+  title: string;
+  partnerName: string;
+  imageUrl?: string | null;
+  targetUrl?: string | null;
+};
 
 export default function AdminAdsUnlockPage() {
   const t = useTranslations("Admin.AdsUnlock");
-  const [ads, setAds] = useState<any[]>([]);
+  const [ads, setAds] = useState<UnlockAdItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [reappearMinutes, setReappearMinutes] = useState<number>(15);
   const [countdownSeconds, setCountdownSeconds] = useState<number>(5);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -36,14 +46,14 @@ export default function AdminAdsUnlockPage() {
     try {
       const r1 = await apiClient.get('/settings/unlock_ad_reappearance_minutes');
       setReappearMinutes(Number(r1?.data?.value ?? r1?.data) || 15);
-    } catch (e) {
+    } catch {
       setReappearMinutes(15);
     }
 
     try {
       const r2 = await apiClient.get('/settings/unlock_ad_countdown_seconds');
       setCountdownSeconds(Number(r2?.data?.value ?? r2?.data) || 5);
-    } catch (e) {
+    } catch {
       setCountdownSeconds(5);
     }
   }
@@ -64,6 +74,21 @@ export default function AdminAdsUnlockPage() {
       console.error(e);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: string, title: string) {
+    if (!confirm(t("deleteConfirm", { title }))) return;
+
+    setDeletingId(id);
+    try {
+      await apiClient.delete(`/ads/${id}`);
+      setAds((prev) => prev.filter((item) => item.id !== id));
+    } catch (e) {
+      console.error(e);
+      alert(t("deleteFailed"));
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -92,7 +117,7 @@ export default function AdminAdsUnlockPage() {
           <h2 className="text-lg font-bold">{t("adsListTitle")}</h2>
           <div className="flex items-center gap-2">
             <Link href="/admin/ads/unlock/new">
-              <button className="rounded-md bg-amber-500 px-3 py-1 text-white">Thêm quảng cáo mở khóa</button>
+              <button className="rounded-md bg-amber-500 px-3 py-1 text-white">{t("addAd")}</button>
             </Link>
             <Link href="/admin/ads">
               <button className="rounded-md border px-3 py-1">{t("manageInline")}</button>
@@ -109,8 +134,20 @@ export default function AdminAdsUnlockPage() {
               <div className="flex-1">
                 <div className="font-semibold">{ad.title}</div>
                 <div className="text-sm text-gray-500">{ad.partnerName}</div>
-                <div className="mt-2">
+                <div className="mt-2 flex items-center gap-3">
                   <a href={ad.targetUrl} target="_blank" rel="noreferrer" className="text-pink-600">{t("preview")}</a>
+                  <Link href={`/admin/ads/unlock/${ad.id}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs">
+                    <Pencil className="h-3.5 w-3.5" />
+                    {t("edit")}
+                  </Link>
+                  <button
+                    onClick={() => void handleDelete(ad.id, ad.title)}
+                    disabled={deletingId === ad.id}
+                    className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs text-red-600 disabled:opacity-60"
+                  >
+                    {deletingId === ad.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    {t("delete")}
+                  </button>
                 </div>
               </div>
             </div>

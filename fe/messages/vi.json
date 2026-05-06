@@ -914,5 +914,25 @@
     "playingNow": "Đang phát",
     "resume": "Nghe tiếp",
     "delete": "Xóa"
+  },
+  "Admin": {
+    "AdsUnlock": {
+      "settingsTitle": "Cấu hình quảng cáo mở khóa",
+      "settingsDesc": "Thiết lập thời gian hiển thị lại quảng cáo mở khóa và thời gian đếm ngược trước khi cho phép đóng.",
+      "reappearMinutes": "Số phút hiển thị lại quảng cáo",
+      "countdownSeconds": "Số giây đếm ngược",
+      "saving": "Đang lưu...",
+      "save": "Lưu cấu hình",
+      "adsListTitle": "Danh sách quảng cáo mở khóa",
+      "addAd": "Thêm quảng cáo mở khóa",
+      "manageInline": "Quản lý quảng cáo inline",
+      "loading": "Đang tải...",
+      "noAds": "Chưa có quảng cáo mở khóa nào.",
+      "preview": "Xem link",
+      "edit": "Sửa",
+      "delete": "Xóa",
+      "deleteConfirm": "Bạn có chắc muốn xóa quảng cáo {title}?",
+      "deleteFailed": "Xóa quảng cáo thất bại."
+    }
   }
 }

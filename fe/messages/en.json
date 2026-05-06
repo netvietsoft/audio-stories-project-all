@@ -288,7 +288,6 @@
     "adminAccessTimed": "Time-gated unlock",
     "adminAccessVip": "VIP only",
     "adminAccessAds": "Unlock by watching ads"
-
   },
   "StoryPage": {
     "notFound": "Story not found",
@@ -916,5 +915,25 @@
     "playingNow": "Now Playing",
     "resume": "Resume",
     "delete": "Delete"
+  },
+  "Admin": {
+    "AdsUnlock": {
+      "settingsTitle": "Unlock ad settings",
+      "settingsDesc": "Configure unlock-ad reappearance interval and close countdown time.",
+      "reappearMinutes": "Ad reappearance (minutes)",
+      "countdownSeconds": "Close countdown (seconds)",
+      "saving": "Saving...",
+      "save": "Save settings",
+      "adsListTitle": "Unlock ads list",
+      "addAd": "Add unlock ad",
+      "manageInline": "Manage inline ads",
+      "loading": "Loading...",
+      "noAds": "No unlock ads yet.",
+      "preview": "Preview",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteConfirm": "Are you sure you want to delete ad {title}?",
+      "deleteFailed": "Failed to delete ad."
+    }
   }
 }

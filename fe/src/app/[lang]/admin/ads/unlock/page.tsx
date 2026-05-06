@@ -135,7 +135,7 @@ export default function AdminAdsUnlockPage() {
                 <div className="font-semibold">{ad.title}</div>
                 <div className="text-sm text-gray-500">{ad.partnerName}</div>
                 <div className="mt-2 flex items-center gap-3">
-                  <a href={ad.targetUrl} target="_blank" rel="noreferrer" className="text-pink-600">{t("preview")}</a>
+                  <a href={ad.targetUrl || '#'} target="_blank" rel="noreferrer" className="text-pink-600">{t("preview")}</a>
                   <Link href={`/admin/ads/unlock/${ad.id}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs">
                     <Pencil className="h-3.5 w-3.5" />
                     {t("edit")}

@@ -7,20 +7,22 @@ import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigat
 import Link from '@/components/shared/LocalizedLink';
 
 import { adminApiClient as apiClient, ADMIN_ACCESS_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useAdminStore } from '@/stores/admin-store';
 
 type AdItem = {
   id: string;
   partnerName: string;
   title: string;
-  imageUrl: string;
-  targetUrl: string;
+  imageUrl?: string | null;
+  targetUrl?: string | null;
   language?: 'vi' | 'en' | 'all' | string;
   languageId?: number | null;
   isGlobal?: boolean;
   routeType?: number;
   clickCount?: number;
   isActive: boolean;
+  createdAt?: string;
 };
 
 type ToastState = {
@@ -34,7 +36,15 @@ export default function AdsPage() {
   const searchParams = useSearchParams();
   const params = useParams<{ lang?: string }>();
   const selectedLanguage = searchParams.get('language') || 'all';
+  const selectedPartner = searchParams.get('partnerName') || 'all';
+  const selectedStatus = searchParams.get('isActive') || 'all';
+  const selectedSort = searchParams.get('sort') || 'click_desc';
+  const searchTitle = searchParams.get('title') || '';
   const [items, setItems] = useState<AdItem[]>([]);
+  const [languages, setLanguages] = useState<Array<{ key: string; name: string }>>([]);
+  const [partners, setPartners] = useState<string[]>([]);
+  const [searchInput, setSearchInput] = useState(searchTitle);
+  const debouncedTitle = useDebounce(searchInput, 400);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [frequencyValue, setFrequencyValue] = useState('1000');
@@ -60,14 +70,49 @@ export default function AdsPage() {
     router.push(`/${lang}/admin/login`);
   };
 
+  const setFilterParam = (key: string, value: string) => {
+    const next = new URLSearchParams(searchParams.toString());
+    if (!value || value === 'all') {
+      next.delete(key);
+    } else {
+      next.set(key, value);
+    }
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  };
+
+  useEffect(() => {
+    setSearchInput(searchTitle);
+  }, [searchTitle]);
+
+  useEffect(() => {
+    const current = (searchParams.get('title') || '').trim();
+    const nextTitle = debouncedTitle.trim();
+    if (current === nextTitle) return;
+    const next = new URLSearchParams(searchParams.toString());
+    if (nextTitle) {
+      next.set('title', nextTitle);
+    } else {
+      next.delete('title');
+    }
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }, [debouncedTitle, pathname, router, searchParams]);
+
   const fetchAds = async () => {
     setIsLoading(true);
     try {
+      const sortBy = selectedSort.startsWith('click_') ? 'clickCount' : undefined;
+      const sortOrder = selectedSort.endsWith('_asc') ? 'asc' : 'desc';
       const response = await apiClient.get('/ads', {
-        params:
-          selectedLanguage === 'all'
-            ? { routeType: 1 }
-            : { lang: selectedLanguage, routeType: 1 },
+        params: {
+          routeType: 1,
+          ...(searchTitle.trim() ? { title: searchTitle.trim() } : {}),
+          ...(selectedPartner !== 'all' ? { partnerName: selectedPartner } : {}),
+          ...(selectedLanguage !== 'all' ? { language: selectedLanguage } : {}),
+          ...(selectedStatus !== 'all' ? { isActive: selectedStatus } : {}),
+          ...(sortBy ? { sortBy, sortOrder } : {}),
+        },
       });
       setItems(Array.isArray(response.data?.data) ? response.data.data : []);
     } catch (error) {
@@ -84,20 +129,38 @@ export default function AdsPage() {
 
   useEffect(() => {
     void fetchAds();
-  }, [selectedLanguage]);
+  }, [searchTitle, selectedLanguage, selectedPartner, selectedStatus, selectedSort]);
 
-  // If this admin ads page should show only inline ads, it's fine — routeType defaults to 1 on backend
+  useEffect(() => {
+    const fetchFiltersData = async () => {
+      try {
+        const [partnersResponse, languagesResponse] = await Promise.all([
+          apiClient.get('/ads/partners', { params: { routeType: 1 } }),
+          apiClient.get('/languages', { params: { all: 'true', active: 'true' } }),
+        ]);
+        setPartners(Array.isArray(partnersResponse.data?.data) ? partnersResponse.data.data : []);
+        const rows = Array.isArray(languagesResponse.data?.data) ? languagesResponse.data.data : [];
+        setLanguages(
+          rows
+            .map((row: { key?: string; name?: string }) => ({
+              key: row.key || '',
+              name: row.name || row.key || '',
+            }))
+            .filter((row: { key: string; name: string }) => Boolean(row.key)),
+        );
+      } catch (error) {
+        if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
+          handleUnauthorized();
+        } else {
+          console.error('Failed to fetch ads filter data:', error);
+        }
+        setPartners([]);
+        setLanguages([]);
+      }
+    };
 
-  const handleLanguageFilterChange = (value: string) => {
-    const next = new URLSearchParams(searchParams.toString());
-    if (!value || value === 'all') {
-      next.delete('language');
-    } else {
-      next.set('language', value);
-    }
-    const query = next.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname);
-  };
+    void fetchFiltersData();
+  }, []);
 
   useEffect(() => {
     const fetchFrequencyConfig = async () => {
@@ -194,22 +257,6 @@ export default function AdsPage() {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
-            <label htmlFor="ads-language-filter" className="text-xs font-black uppercase tracking-wider text-slate-500">
-              Ngôn ngữ
-            </label>
-            <select
-              id="ads-language-filter"
-              value={selectedLanguage}
-              onChange={(event) => handleLanguageFilterChange(event.target.value)}
-              className="admin-input h-10 rounded-xl bg-white px-3 text-sm font-semibold text-slate-700"
-            >
-              <option value="all">Tất cả</option>
-              <option value="vi">Tiếng Việt</option>
-              <option value="en">English</option>
-            </select>
-          </div>
-
           <Link href="/admin/ads/new" className="inline-flex items-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-orange-100 transition hover:bg-orange-600">
             <Plus className="h-4 w-4" />
             Thêm quảng cáo
@@ -247,9 +294,91 @@ export default function AdsPage() {
         </div>
       </section>
 
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-nowrap items-end gap-3 overflow-x-auto pb-1">
+          <div className="min-w-[280px] flex-1">
+            <label htmlFor="ads-search-title" className="mb-1 block text-xs font-black uppercase tracking-wider text-slate-500">
+              Tìm theo tiêu đề
+            </label>
+            <input
+              id="ads-search-title"
+              type="text"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Nhập tiêu đề quảng cáo..."
+              className="admin-input h-10 w-full rounded-xl bg-white px-3 text-sm font-medium text-slate-700"
+            />
+          </div>
+
+          <div className="min-w-[190px] flex-shrink-0">
+            <label htmlFor="ads-partner-filter" className="mb-1 block text-xs font-black uppercase tracking-wider text-slate-500">
+              Đối tác
+            </label>
+            <select
+              id="ads-partner-filter"
+              value={selectedPartner}
+              onChange={(event) => setFilterParam('partnerName', event.target.value)}
+              className="admin-input h-10 w-full rounded-xl bg-white px-3 text-sm font-semibold text-slate-700"
+            >
+              <option value="all">Tất cả</option>
+              {partners.map((partner) => (
+                <option key={partner} value={partner}>{partner}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="min-w-[170px] flex-shrink-0">
+            <label htmlFor="ads-language-filter" className="mb-1 block text-xs font-black uppercase tracking-wider text-slate-500">
+              Ngôn ngữ
+            </label>
+            <select
+              id="ads-language-filter"
+              value={selectedLanguage}
+              onChange={(event) => setFilterParam('language', event.target.value)}
+              className="admin-input h-10 w-full rounded-xl bg-white px-3 text-sm font-semibold text-slate-700"
+            >
+              <option value="all">Tất cả</option>
+              {languages.map((language) => (
+                <option key={language.key} value={language.key}>{language.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="min-w-[170px] flex-shrink-0">
+            <label htmlFor="ads-status-filter" className="mb-1 block text-xs font-black uppercase tracking-wider text-slate-500">
+              Trạng thái
+            </label>
+            <select
+              id="ads-status-filter"
+              value={selectedStatus}
+              onChange={(event) => setFilterParam('isActive', event.target.value)}
+              className="admin-input h-10 w-full rounded-xl bg-white px-3 text-sm font-semibold text-slate-700"
+            >
+              <option value="all">Tất cả</option>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+          <div className="min-w-[180px] flex-shrink-0">
+          <label htmlFor="ads-sort-filter" className="mb-1 block text-xs font-black uppercase tracking-wider text-slate-500">
+            Sắp xếp click
+          </label>
+          <select
+            id="ads-sort-filter"
+            value={selectedSort}
+            onChange={(event) => setFilterParam('sort', event.target.value)}
+            className="admin-input h-10 w-full rounded-xl bg-white px-3 text-sm font-semibold text-slate-700"
+          >
+            <option value="click_desc">Click giảm dần</option>
+            <option value="click_asc">Click tăng dần</option>
+          </select>
+          </div>
+        </div>
+      </section>
+
       <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] border-collapse text-left">
+          <table className="w-full min-w-[1100px] border-collapse text-left">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/80">
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Ảnh</th>
@@ -258,7 +387,7 @@ export default function AdsPage() {
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Ngôn ngữ</th>
                 <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-wider text-slate-400">Lượt Click</th>
                 <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-wider text-slate-400">Trạng thái</th>
-                <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Link đích</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Ngày tạo</th>
                 <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-wider text-slate-400">Thao tác</th>
               </tr>
             </thead>
@@ -278,7 +407,9 @@ export default function AdsPage() {
                   <tr key={item.id} className="hover:bg-slate-50/60">
                     <td className="px-6 py-4">
                       <div className="h-14 w-14 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-                        <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+                        ) : null}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold text-slate-900">{item.title}</td>
@@ -294,8 +425,8 @@ export default function AdsPage() {
                         {item.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="line-clamp-1 text-xs text-slate-600">{item.targetUrl}</p>
+                    <td className="px-6 py-4 text-xs font-medium text-slate-600">
+                      {item.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : '--'}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">

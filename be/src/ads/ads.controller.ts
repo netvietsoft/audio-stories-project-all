@@ -20,9 +20,42 @@ export class AdsController {
   @Get()
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')
-  findAllAdmin(@Query('lang') lang?: string, @Query('routeType') routeType?: string) {
+  findAllAdmin(
+    @Query('title') title?: string,
+    @Query('partnerName') partnerName?: string,
+    @Query('language') language?: string,
+    @Query('lang') lang?: string,
+    @Query('isActive') isActive?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+    @Query('routeType') routeType?: string,
+  ) {
     const parsedRouteType = routeType ? Number(routeType) : undefined;
-    return this.adsService.findAllAdmin(lang, Number.isFinite(parsedRouteType) ? parsedRouteType : undefined);
+    const normalizedActive = typeof isActive === 'string' ? isActive.trim().toLowerCase() : '';
+    const parsedIsActive =
+      normalizedActive === 'true' || normalizedActive === '1'
+        ? true
+        : normalizedActive === 'false' || normalizedActive === '0'
+          ? false
+          : undefined;
+
+    return this.adsService.findAllAdmin({
+      title,
+      partnerName,
+      language: language ?? lang,
+      isActive: parsedIsActive,
+      sortBy,
+      sortOrder: sortOrder === 'asc' ? 'asc' : 'desc',
+      routeType: Number.isFinite(parsedRouteType) ? parsedRouteType : undefined,
+    });
+  }
+
+  @Get('partners')
+  @UseGuards(JwtAccessGuard, RolesGuard)
+  @Roles('ADMIN')
+  findPartners(@Query('routeType') routeType?: string) {
+    const parsedRouteType = routeType ? Number(routeType) : undefined;
+    return this.adsService.findPartners(Number.isFinite(parsedRouteType) ? parsedRouteType : undefined);
   }
 
   @Get(':id')

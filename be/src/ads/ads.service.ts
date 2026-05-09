@@ -1,9 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
 import { ActiveAdsQueryDto } from './dto/active-ads-query.dto';
 import { CreateAdDto } from './dto/create-ad.dto';
 import { UpdateAdDto } from './dto/update-ad.dto';
+
+type FindAllAdminQuery = {
+  title?: string;
+  partnerName?: string;
+  language?: string;
+  isActive?: boolean;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  routeType?: number;
+};
 
 @Injectable()
 export class AdsService {
@@ -62,20 +73,31 @@ export class AdsService {
     };
   }
 
-  async findAllAdmin(lang?: string, routeType?: number) {
-    const rows = await this.prisma.advertisement.findMany({
-      where: {
-        ...(lang && lang !== 'all'
-          ? {
+  async findAllAdmin(query: FindAllAdminQuery = {}) {
+    const where: Prisma.AdvertisementWhereInput = {
+      ...(query.title ? { title: { contains: query.title.trim() } } : {}),
+      ...(query.partnerName ? { partnerName: query.partnerName.trim() } : {}),
+      ...(typeof query.isActive === 'boolean' ? { isActive: query.isActive } : {}),
+      ...(query.routeType ? { routeType: query.routeType } : {}),
+      ...(query.language && query.language !== 'all'
+        ? {
             OR: [
               { isGlobal: true },
-              { language: { key: lang } },
+              { language: { key: query.language } },
             ],
           }
-          : {}),
-        ...(routeType ? { routeType } : {}),
-      },
-      orderBy: [{ isActive: 'desc' }, { updatedAt: 'desc' }],
+        : {}),
+    };
+
+    const orderBy: Prisma.AdvertisementOrderByWithRelationInput[] = [];
+    if (query.sortBy === 'clickCount') {
+      orderBy.push({ clickCount: query.sortOrder === 'asc' ? 'asc' : 'desc' });
+    }
+    orderBy.push({ isActive: 'desc' }, { updatedAt: 'desc' });
+
+    const rows = await this.prisma.advertisement.findMany({
+      where,
+      orderBy,
       select: {
         id: true,
         partnerName: true,
@@ -88,6 +110,7 @@ export class AdsService {
         isActive: true,
         isGlobal: true,
         routeType: true,
+        createdAt: true,
         languageId: true,
         language: {
           select: {
@@ -104,6 +127,25 @@ export class AdsService {
         ...row,
         language: row.language?.key ?? null,
       })),
+    };
+  }
+
+  async findPartners(routeType?: number) {
+    const rows = await this.prisma.advertisement.findMany({
+      where: {
+        ...(routeType ? { routeType } : {}),
+      },
+      select: {
+        partnerName: true,
+      },
+      distinct: ['partnerName'],
+      orderBy: {
+        partnerName: 'asc',
+      },
+    });
+
+    return {
+      data: rows.map((row) => row.partnerName).filter((name) => Boolean(name?.trim())),
     };
   }
 

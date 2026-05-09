@@ -13,4 +13,5 @@ export type AdvertisementItem = {
   languageId?: number | null;
   // 1 = inline, 2 = unlock
   routeType?: number;
+  clickCount?: number;
 };

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useLocale } from "next-intl";
 
+import { apiClient } from "@/lib/api/api-client";
 import type { AdvertisementItem } from "@/types/advertisement";
 
 type InlineAdvertisementCardProps = {
@@ -13,6 +14,9 @@ type InlineAdvertisementCardProps = {
 export default function InlineAdvertisementCard({ ad, className = "" }: InlineAdvertisementCardProps) {
   const locale = useLocale();
   const contentType = ad.contentType || "image";
+  const trackClick = () => {
+    void apiClient.post(`/ads/${ad.id}/click`).catch(() => {});
+  };
 
   if (contentType === "iframe" && ad.iframeCode) {
     return (
@@ -40,6 +44,7 @@ export default function InlineAdvertisementCard({ ad, className = "" }: InlineAd
       href={adHref}
       target={isExternal ? "_blank" : undefined}
       rel={isExternal ? "noreferrer" : undefined}
+      onClick={trackClick}
       className={`group relative block w-full overflow-hidden rounded-2xl bg-white p-3 shadow-sm transition hover:shadow-md dark:bg-[#242526] ${className}`}
     >
       <span className="absolute right-3 top-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">

@@ -300,6 +300,7 @@ model Advertisement {
   imageUrl    String?                  @map("image_url") @db.Text
   targetUrl   String?                  @map("target_url") @db.VarChar(500)
   iframeCode  String?                  @map("iframe_code") @db.LongText
+  clickCount  Int                      @default(0) @map("click_count") @db.UnsignedInt
   languageId  Int?                     @map("language_id") @db.UnsignedInt
   isGlobal    Boolean                  @default(true) @map("is_global")
   isActive    Boolean                  @default(true) @map("is_active")

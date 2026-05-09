@@ -13,6 +13,7 @@ type UnlockAdItem = {
   partnerName: string;
   imageUrl?: string | null;
   targetUrl?: string | null;
+  clickCount?: number;
 };
 
 export default function AdminAdsUnlockPage() {
@@ -134,6 +135,9 @@ export default function AdminAdsUnlockPage() {
               <div className="flex-1">
                 <div className="font-semibold">{ad.title}</div>
                 <div className="text-sm text-gray-500">{ad.partnerName}</div>
+                <div className="mt-1 text-xs font-semibold text-slate-600">
+                  Lượt Click: {Number(ad.clickCount ?? 0).toLocaleString('vi-VN')}
+                </div>
                 <div className="mt-2 flex items-center gap-3">
                   <a href={ad.targetUrl || '#'} target="_blank" rel="noreferrer" className="text-pink-600">{t("preview")}</a>
                   <Link href={`/admin/ads/unlock/${ad.id}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs">

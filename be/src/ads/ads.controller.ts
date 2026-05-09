@@ -39,6 +39,11 @@ export class AdsController {
     return this.adsService.create(dto);
   }
 
+  @Post(':id/click')
+  incrementClick(@Param('id') id: string) {
+    return this.adsService.incrementClick(id);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')

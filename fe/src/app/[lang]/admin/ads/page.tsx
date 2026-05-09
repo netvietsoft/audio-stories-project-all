@@ -19,6 +19,7 @@ type AdItem = {
   languageId?: number | null;
   isGlobal?: boolean;
   routeType?: number;
+  clickCount?: number;
   isActive: boolean;
 };
 
@@ -255,6 +256,7 @@ export default function AdsPage() {
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Tiêu đề</th>
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Đối tác</th>
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Ngôn ngữ</th>
+                <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-wider text-slate-400">Lượt Click</th>
                 <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-wider text-slate-400">Trạng thái</th>
                 <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Link đích</th>
                 <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-wider text-slate-400">Thao tác</th>
@@ -263,13 +265,13 @@ export default function AdsPage() {
             <tbody className="divide-y divide-slate-50">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-10 text-center">
+                  <td colSpan={8} className="px-6 py-10 text-center">
                     <Loader2 className="mx-auto h-6 w-6 animate-spin text-orange-500" />
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-10 text-center text-sm font-medium text-slate-500">Chưa có quảng cáo nào.</td>
+                  <td colSpan={8} className="px-6 py-10 text-center text-sm font-medium text-slate-500">Chưa có quảng cáo nào.</td>
                 </tr>
               ) : (
                 items.map((item) => (
@@ -283,6 +285,9 @@ export default function AdsPage() {
                     <td className="px-6 py-4 text-sm font-medium text-slate-700">{item.partnerName}</td>
                     <td className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       {item.isGlobal ? 'ALL' : (item.language === 'vi' ? 'VI' : item.language === 'en' ? 'EN' : 'ALL')}
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-semibold text-slate-800">
+                      {Number(item.clickCount ?? 0).toLocaleString('vi-VN')}
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${item.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>

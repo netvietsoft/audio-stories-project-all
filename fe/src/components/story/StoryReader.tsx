@@ -420,6 +420,7 @@ export default function StoryReader({
   const handleWatchAd = async () => {
     if (!unlockAd) return;
     const url = unlockAd.targetUrl || '/';
+    void apiClient.post(`/ads/${unlockAd.id}/click`).catch(() => {});
     // open destination
     try {
       const isExternal = /^https?:\/\//i.test(url);

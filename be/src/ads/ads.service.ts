@@ -84,6 +84,7 @@ export class AdsService {
         imageUrl: true,
         targetUrl: true,
         iframeCode: true,
+        clickCount: true,
         isActive: true,
         isGlobal: true,
         routeType: true,
@@ -182,5 +183,26 @@ export class AdsService {
     await this.prisma.advertisement.delete({ where: { id } });
 
     return { success: true };
+  }
+
+  async incrementClick(id: string) {
+    const existing = await this.prisma.advertisement.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existing) {
+      throw new NotFoundException('Advertisement not found.');
+    }
+
+    return this.prisma.advertisement.update({
+      where: { id },
+      data: {
+        clickCount: { increment: 1 },
+      },
+      select: {
+        id: true,
+        clickCount: true,
+      },
+    });
   }
 }

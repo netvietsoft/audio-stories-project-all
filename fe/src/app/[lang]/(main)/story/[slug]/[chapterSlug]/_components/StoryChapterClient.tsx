@@ -766,6 +766,19 @@ export default function StoryChapterClient() {
     return false;
   }, [chapterUnlockState?.isUnlocked, isVipActive, selectedChapter]);
 
+  const chapterRequiresUnlockAction = useMemo(() => {
+    if (!selectedChapter) return false;
+    if (chapterUnlockState?.isUnlocked) return false;
+    if (isVipActive) return false;
+    if (selectedChapter.accessType === "ads") return !!selectedChapter.unlockAd;
+    if (selectedChapter.accessType === "vip") return true;
+    if (selectedChapter.accessType === "timed") {
+      if (!selectedChapter.unlocksAt) return true;
+      return new Date(selectedChapter.unlocksAt).getTime() > Date.now();
+    }
+    return false;
+  }, [chapterUnlockState?.isUnlocked, isVipActive, selectedChapter]);
+
   const shouldShowInlineAds = useMemo(() => {
     if (!selectedChapter) return false;
     if (selectedChapter.accessType === "vip") return false;
@@ -1870,7 +1883,7 @@ export default function StoryChapterClient() {
                 onPrev={playPrev}
                 onBack10={() => seekBy(-10)}
                 onTogglePlay={() => {
-                  if (chapterIsLocked) {
+                  if (chapterRequiresUnlockAction) {
                     openUnlockModal();
                     return;
                   }
@@ -1906,10 +1919,21 @@ export default function StoryChapterClient() {
               <YouTubePlayerPanel
                 videoId={selectedChapter.youtubeVideoId}
                 title={t("youtubePlayer")}
-                locked={chapterIsLocked}
+                locked={chapterIsLocked && selectedChapter.accessType !== "ads"}
                 lockReasonLabel={lockReasonLabel}
                 unlockLabel={t("unlockYoutube")}
                 onUnlockRequest={openUnlockModal}
+                onPlaybackAttempt={() => {
+                  if (selectedChapter.accessType === "ads" && !user) {
+                    openLogin();
+                    return false;
+                  }
+                  if (chapterRequiresUnlockAction) {
+                    openUnlockModal();
+                    return false;
+                  }
+                  return true;
+                }}
                 autoPlaySignal={youtubeUnlockAutoPlaySignal}
                 labels={{
                   playbackSpeed: t("playbackSpeed"),

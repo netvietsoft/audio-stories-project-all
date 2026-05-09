@@ -22,6 +22,7 @@ type YouTubePlayerPanelProps = {
   lockReasonLabel: string;
   unlockLabel: string;
   onUnlockRequest: () => void;
+  onPlaybackAttempt?: () => boolean;
   autoPlaySignal?: number;
   labels: YoutubePlayerLabels;
 };
@@ -103,6 +104,7 @@ export default function YouTubePlayerPanel({
   lockReasonLabel,
   unlockLabel,
   onUnlockRequest,
+  onPlaybackAttempt,
   autoPlaySignal = 0,
   labels,
 }: YouTubePlayerPanelProps) {
@@ -257,15 +259,17 @@ export default function YouTubePlayerPanel({
   const seekBy = useCallback((deltaSeconds: number) => {
     const player = playerRef.current;
     if (!player || locked) return;
+    if (onPlaybackAttempt && !onPlaybackAttempt()) return;
 
     const nextTime = Math.max(0, Math.min(currentTime + deltaSeconds, duration > 0 ? duration : currentTime + deltaSeconds));
     player.seekTo(nextTime, true);
     setCurrentTime(nextTime);
-  }, [currentTime, duration, locked]);
+  }, [currentTime, duration, locked, onPlaybackAttempt]);
 
   const togglePlay = useCallback(() => {
     const player = playerRef.current;
     if (!player || locked) return;
+    if (onPlaybackAttempt && !onPlaybackAttempt()) return;
 
     if (isPlaying) {
       player.pauseVideo();
@@ -275,7 +279,7 @@ export default function YouTubePlayerPanel({
 
     player.playVideo();
     setIsPlaying(true);
-  }, [isPlaying, locked]);
+  }, [isPlaying, locked, onPlaybackAttempt]);
 
   const handleVolumeChange = useCallback((nextVolume: number) => {
     const player = playerRef.current;

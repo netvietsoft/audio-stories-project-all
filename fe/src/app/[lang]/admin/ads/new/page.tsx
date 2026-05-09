@@ -24,8 +24,11 @@ export default function NewAdPage() {
         routeType: 1,
         contentType: payload.contentType,
         imageUrl: payload.contentType === 'image' ? payload.imageUrl : null,
-        targetUrl: payload.contentType === 'image' ? payload.targetUrl : null,
+        targetUrl: payload.contentType !== 'iframe' ? payload.targetUrl : null,
         iframeCode: payload.contentType === 'iframe' ? payload.iframeCode : null,
+        youtubeId: payload.contentType === 'youtube' ? payload.youtubeId?.trim() || null : null,
+        youtubePlayTime: payload.contentType === 'youtube' ? (typeof payload.youtubePlayTime === 'number' ? payload.youtubePlayTime : 31) : null,
+        isForcedRedirect: payload.isForcedRedirect ?? false,
       });
       router.push('/admin/ads');
     } catch (error) {
@@ -52,7 +55,7 @@ export default function NewAdPage() {
         </div>
       </div>
 
-      <AdForm isLoading={isSubmitting} onSubmit={handleSubmit} onCancel={() => router.push('/admin/ads')} />
+      <AdForm isLoading={isSubmitting} showUnlockAdvanced={false} onSubmit={handleSubmit} onCancel={() => router.push('/admin/ads')} />
     </div>
   );
 }

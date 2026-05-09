@@ -3,6 +3,7 @@ import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, MaxLength } from 'cl
 export enum AdContentTypeDto {
   image = 'image',
   iframe = 'iframe',
+  youtube = 'youtube',
 }
 
 export class CreateAdDto {
@@ -30,6 +31,19 @@ export class CreateAdDto {
   @IsString()
   @IsOptional()
   iframeCode?: string;
+
+  @IsString()
+  @MaxLength(20)
+  @IsOptional()
+  youtubeId?: string;
+
+  @IsOptional()
+  @IsNumber()
+  youtubePlayTime?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isForcedRedirect?: boolean;
 
   @IsOptional()
   @IsNumber()

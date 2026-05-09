@@ -28,6 +28,18 @@ export class PrismaExceptionFilter implements ExceptionFilter {
       return;
     }
 
+    if (exception.code === 'P2022') {
+      const target = (exception.meta?.column as string | undefined) || 'unknown column';
+      this.logger.error(`Database schema mismatch (${target}) at ${request.method} ${request.url}`);
+
+      response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        error: 'Internal Server Error',
+        message: 'Database schema is out of sync with application code.',
+      });
+      return;
+    }
+
     this.logger.error(`Unhandled Prisma error ${exception.code} at ${request.method} ${request.url}`);
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,

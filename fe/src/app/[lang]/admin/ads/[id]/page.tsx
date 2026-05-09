@@ -15,10 +15,13 @@ type AdApiDetail = {
   id: string;
   partnerName: string;
   title: string;
-  contentType?: 'image' | 'iframe';
+  contentType?: 'image' | 'iframe' | 'youtube';
   imageUrl?: string | null;
   targetUrl?: string | null;
   iframeCode?: string | null;
+  youtubeId?: string | null;
+  youtubePlayTime?: number | null;
+  isForcedRedirect?: boolean;
   languageId?: number | null;
   isGlobal?: boolean;
   isActive: boolean;
@@ -68,6 +71,9 @@ export default function EditAdPage() {
           imageUrl: data.imageUrl || '',
           targetUrl: data.targetUrl || '',
           iframeCode: data.iframeCode || '',
+          youtubeId: data.youtubeId || '',
+          youtubePlayTime: typeof data.youtubePlayTime === 'number' ? data.youtubePlayTime : 31,
+          isForcedRedirect: data.isForcedRedirect ?? false,
           languageId: data.isGlobal || !data.languageId ? 'all' : String(data.languageId),
         });
       } catch (error) {
@@ -96,8 +102,11 @@ export default function EditAdPage() {
         routeType: initialData?.routeType ?? 1,
         contentType: payload.contentType,
         imageUrl: payload.contentType === 'image' ? payload.imageUrl : null,
-        targetUrl: payload.contentType === 'image' ? payload.targetUrl : null,
+        targetUrl: payload.contentType !== 'iframe' ? payload.targetUrl : null,
         iframeCode: payload.contentType === 'iframe' ? payload.iframeCode : null,
+        youtubeId: payload.contentType === 'youtube' ? payload.youtubeId?.trim() || null : null,
+        youtubePlayTime: payload.contentType === 'youtube' ? (typeof payload.youtubePlayTime === 'number' ? payload.youtubePlayTime : 31) : null,
+        isForcedRedirect: payload.isForcedRedirect ?? false,
       };
       const endpoints = [`/ads/${safeId}`, `/ads/admin/${safeId}`];
 
@@ -151,7 +160,7 @@ export default function EditAdPage() {
         </div>
       </div>
 
-      <AdForm initialData={initialData} isLoading={isSubmitting} onSubmit={handleSubmit} onCancel={() => router.push('/admin/ads')} />
+      <AdForm initialData={initialData} isLoading={isSubmitting} showUnlockAdvanced={false} onSubmit={handleSubmit} onCancel={() => router.push('/admin/ads')} />
     </div>
   );
 }

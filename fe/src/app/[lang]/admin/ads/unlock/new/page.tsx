@@ -19,6 +19,13 @@ export default function AdminAdsUnlockNewPage() {
         isGlobal,
         isActive: payload.isActive ?? true,
         routeType: 2,
+        contentType: payload.contentType,
+        imageUrl: payload.contentType === 'image' ? payload.imageUrl : null,
+        targetUrl: payload.contentType !== 'iframe' ? payload.targetUrl : null,
+        iframeCode: payload.contentType === 'iframe' ? payload.iframeCode : null,
+        youtubeId: payload.contentType === 'youtube' ? payload.youtubeId?.trim() || null : null,
+        youtubePlayTime: payload.contentType === 'youtube' ? (typeof payload.youtubePlayTime === 'number' ? payload.youtubePlayTime : 31) : null,
+        isForcedRedirect: payload.isForcedRedirect ?? false,
       });
       router.push('/admin/ads/unlock');
     } finally {
@@ -29,7 +36,7 @@ export default function AdminAdsUnlockNewPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Tạo quảng cáo mở khóa</h1>
-      <AdForm isLoading={isSubmitting} onSubmit={handleSubmit} onCancel={() => router.push('/admin/ads/unlock')} />
+      <AdForm isLoading={isSubmitting} showUnlockAdvanced onSubmit={handleSubmit} onCancel={() => router.push('/admin/ads/unlock')} />
     </div>
   );
 }

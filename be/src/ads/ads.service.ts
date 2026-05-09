@@ -20,6 +20,42 @@ type FindAllAdminQuery = {
 export class AdsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private extractYoutubeId(value?: string | null): string | null {
+    if (!value || typeof value !== 'string') return null;
+    const raw = value.trim();
+    if (!raw) return null;
+
+    const iframeSrcMatch = raw.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    const candidate = iframeSrcMatch?.[1] ?? raw;
+    const idPattern = /^[a-zA-Z0-9_-]{11}$/;
+
+    if (idPattern.test(candidate)) return candidate;
+
+    try {
+      const url = new URL(candidate);
+      const host = url.hostname.toLowerCase();
+      if (host.includes('youtu.be')) {
+        const id = url.pathname.split('/').filter(Boolean)[0];
+        return id && idPattern.test(id) ? id : null;
+      }
+
+      if (host.includes('youtube.com') || host.includes('youtube-nocookie.com')) {
+        const fromQuery = url.searchParams.get('v');
+        if (fromQuery && idPattern.test(fromQuery)) return fromQuery;
+
+        const parts = url.pathname.split('/').filter(Boolean);
+        const idx = parts.findIndex((part) => part === 'embed' || part === 'shorts' || part === 'live');
+        const fromPath = idx >= 0 ? parts[idx + 1] : null;
+        if (fromPath && idPattern.test(fromPath)) return fromPath;
+      }
+    } catch {
+      // fall through to regex
+    }
+
+    const matched = candidate.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/|live\/))([a-zA-Z0-9_-]{11})/i);
+    return matched?.[1] ?? null;
+  }
+
   private shuffle<T>(items: T[]): T[] {
     const arr = [...items];
     for (let i = arr.length - 1; i > 0; i -= 1) {
@@ -53,6 +89,9 @@ export class AdsService {
         imageUrl: true,
         targetUrl: true,
         iframeCode: true,
+        youtubeId: true,
+        youtubePlayTime: true,
+        isForcedRedirect: true,
         isActive: true,
         isGlobal: true,
         routeType: true,
@@ -106,6 +145,9 @@ export class AdsService {
         imageUrl: true,
         targetUrl: true,
         iframeCode: true,
+        youtubeId: true,
+        youtubePlayTime: true,
+        isForcedRedirect: true,
         clickCount: true,
         isActive: true,
         isGlobal: true,
@@ -160,15 +202,20 @@ export class AdsService {
   async create(dto: CreateAdDto) {
     const contentType = dto.contentType ?? 'image';
     const isIframe = contentType === 'iframe';
+    const isYoutube = contentType === 'youtube';
+    const normalizedYoutubeId = isYoutube ? this.extractYoutubeId(dto.youtubeId) || this.extractYoutubeId(dto.iframeCode) : null;
 
     return this.prisma.advertisement.create({
       data: {
         partnerName: dto.partnerName.trim(),
         title: dto.title.trim(),
         contentType,
-        imageUrl: isIframe ? null : (dto.imageUrl || '').trim(),
+        imageUrl: isIframe || isYoutube ? null : (dto.imageUrl || '').trim(),
         targetUrl: isIframe ? null : (dto.targetUrl || '').trim(),
         iframeCode: isIframe ? (dto.iframeCode || '').trim() : null,
+        youtubeId: isYoutube ? normalizedYoutubeId : null,
+        youtubePlayTime: isYoutube ? (typeof dto.youtubePlayTime === 'number' ? Math.max(1, Math.floor(dto.youtubePlayTime)) : 31) : null,
+        isForcedRedirect: dto.isForcedRedirect ?? false,
         languageId: dto.isGlobal ? null : dto.languageId ?? null,
         isGlobal: dto.isGlobal ?? !dto.languageId,
         isActive: dto.isActive ?? true,
@@ -189,7 +236,13 @@ export class AdsService {
     });
     const nextContentType = dto.contentType ?? current?.contentType ?? 'image';
     const isIframe = nextContentType === 'iframe';
+    const isYoutube = nextContentType === 'youtube';
     const safeTrim = (value?: string | null) => (typeof value === 'string' ? value.trim() : null);
+    const nextYoutubePlayTime = dto.youtubePlayTime !== undefined ? Math.max(1, Math.floor(dto.youtubePlayTime)) : undefined;
+    const normalizedYoutubeId =
+      isYoutube && (dto.youtubeId !== undefined || dto.iframeCode !== undefined)
+        ? this.extractYoutubeId(dto.youtubeId) || this.extractYoutubeId(dto.iframeCode)
+        : undefined;
 
     return this.prisma.advertisement.update({
       where: { id },
@@ -197,18 +250,31 @@ export class AdsService {
         ...(dto.partnerName !== undefined ? { partnerName: dto.partnerName.trim() } : {}),
         ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
         ...(dto.contentType !== undefined ? { contentType: dto.contentType } : {}),
+        ...(isYoutube
+          ? {
+              ...(normalizedYoutubeId !== undefined ? { youtubeId: normalizedYoutubeId } : {}),
+              ...(nextYoutubePlayTime !== undefined ? { youtubePlayTime: nextYoutubePlayTime } : {}),
+            }
+          : {
+              ...(dto.contentType !== undefined ? { youtubeId: null, youtubePlayTime: null } : {}),
+            }),
+        ...(dto.isForcedRedirect !== undefined ? { isForcedRedirect: dto.isForcedRedirect } : {}),
         ...(isIframe
           ? {
               imageUrl: null,
-              targetUrl: null,
+              ...(dto.contentType !== undefined ? { targetUrl: null } : {}),
               ...(dto.iframeCode !== undefined ? { iframeCode: safeTrim(dto.iframeCode) } : {}),
             }
-          : {
+          : isYoutube
+            ? {
+                ...(dto.contentType !== undefined ? { imageUrl: null, iframeCode: null } : {}),
+                ...(dto.targetUrl !== undefined ? { targetUrl: safeTrim(dto.targetUrl) } : {}),
+              }
+            : {
               ...(dto.imageUrl !== undefined ? { imageUrl: safeTrim(dto.imageUrl) } : {}),
               ...(dto.targetUrl !== undefined ? { targetUrl: safeTrim(dto.targetUrl) } : {}),
-              ...(dto.contentType === 'image' ? { iframeCode: null } : {}),
+              ...(dto.contentType !== undefined ? { iframeCode: null } : {}),
             }),
-        ...(dto.iframeCode !== undefined && !isIframe ? { iframeCode: safeTrim(dto.iframeCode) } : {}),
         ...(dto.languageId !== undefined ? { languageId: dto.isGlobal ? null : dto.languageId } : {}),
         ...(dto.isGlobal !== undefined ? { isGlobal: dto.isGlobal } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),

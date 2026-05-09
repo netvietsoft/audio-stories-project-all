@@ -29,6 +29,19 @@ export class UpdateAdDto {
   @IsOptional()
   iframeCode?: string;
 
+  @IsString()
+  @MaxLength(20)
+  @IsOptional()
+  youtubeId?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  youtubePlayTime?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isForcedRedirect?: boolean;
+
   @IsOptional()
   @IsNumber()
   languageId?: number | null;

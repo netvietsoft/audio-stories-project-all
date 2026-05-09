@@ -1,21 +1,61 @@
 "use client";
 
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Loader2, Save, X } from 'lucide-react';
-import { useState } from 'react';
 
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import { HybridImageUploader } from '@/components/upload/HybridImageUploader';
 
+const YOUTUBE_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
+
+const extractYoutubeIdFromValue = (input?: string | null): string | null => {
+  if (!input || typeof input !== 'string') return null;
+  const raw = input.trim();
+  if (!raw) return null;
+
+  const iframeSrcMatch = raw.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  const candidate = iframeSrcMatch?.[1] ?? raw;
+
+  if (YOUTUBE_ID_REGEX.test(candidate)) return candidate;
+
+  try {
+    const url = new URL(candidate);
+    const host = url.hostname.toLowerCase();
+    if (host.includes('youtu.be')) {
+      const id = url.pathname.split('/').filter(Boolean)[0];
+      return id && YOUTUBE_ID_REGEX.test(id) ? id : null;
+    }
+
+    if (host.includes('youtube.com') || host.includes('youtube-nocookie.com')) {
+      const fromQuery = url.searchParams.get('v');
+      if (fromQuery && YOUTUBE_ID_REGEX.test(fromQuery)) return fromQuery;
+
+      const parts = url.pathname.split('/').filter(Boolean);
+      const embedIndex = parts.findIndex((part) => part === 'embed' || part === 'shorts' || part === 'live');
+      const fromPath = embedIndex >= 0 ? parts[embedIndex + 1] : null;
+      if (fromPath && YOUTUBE_ID_REGEX.test(fromPath)) return fromPath;
+    }
+  } catch {
+    // fall through to regex parsing
+  }
+
+  const matched = candidate.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/|live\/))([a-zA-Z0-9_-]{11})/i);
+  return matched?.[1] ?? null;
+};
+
 const adSchema = z.object({
   partnerName: z.string().trim().min(1, 'Vui lòng nhập tên đối tác'),
   title: z.string().trim().min(1, 'Vui lòng nhập tên sản phẩm / tiêu đề quảng cáo'),
-  contentType: z.enum(['image', 'iframe']),
+  contentType: z.enum(['image', 'iframe', 'youtube']),
   imageUrl: z.string().trim().optional(),
   targetUrl: z.string().trim().optional(),
   iframeCode: z.string().trim().optional(),
+  youtubeId: z.string().trim().max(20, 'YouTube ID tối đa 20 ký tự').optional(),
+  youtubePlayTime: z.number().min(1, 'Thời gian xem tối thiểu 1 giây').max(3600, 'Thời gian xem tối đa 3600 giây').optional(),
+  isForcedRedirect: z.boolean().optional(),
   languageId: z.string().min(1, 'Vui lòng chọn ngôn ngữ'),
   isActive: z.boolean().optional(),
 }).superRefine((data, ctx) => {
@@ -43,6 +83,22 @@ const adSchema = z.object({
       message: 'Vui lòng nhập mã iframe',
     });
   }
+
+  if (data.contentType === 'youtube') {
+    const resolvedYoutubeId = extractYoutubeIdFromValue(data.youtubeId) || extractYoutubeIdFromValue(data.iframeCode);
+    if (!resolvedYoutubeId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['youtubeId'],
+        message: 'Vui lòng nhập YouTube ID hoặc dán mã iframe YouTube',
+      });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['iframeCode'],
+        message: 'Vui lòng nhập YouTube ID hoặc dán mã iframe YouTube',
+      });
+    }
+  }
 });
 
 export type AdFormValues = z.infer<typeof adSchema>;
@@ -50,12 +106,15 @@ export type AdFormValues = z.infer<typeof adSchema>;
 type AdFormProps = {
   initialData?: Partial<AdFormValues>;
   isLoading?: boolean;
+  showUnlockAdvanced?: boolean;
   onSubmit: (payload: AdFormValues) => Promise<void>;
   onCancel: () => void;
 };
 
-export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: AdFormProps) {
-    const [isUploadingImage, setIsUploadingImage] = useState(false);
+export default function AdForm({ initialData, isLoading, showUnlockAdvanced = false, onSubmit, onCancel }: AdFormProps) {
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const lastAutoFilledRef = useRef<{ youtubeId: string; title: string; partnerName: string } | null>(null);
+  const lastFetchedYoutubeIdRef = useRef<string>('');
   const { languages } = useAdminLanguages();
 
   const {
@@ -74,6 +133,9 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
       imageUrl: initialData?.imageUrl || '',
       targetUrl: initialData?.targetUrl || '',
       iframeCode: initialData?.iframeCode || '',
+      youtubeId: initialData?.youtubeId || '',
+      youtubePlayTime: typeof initialData?.youtubePlayTime === 'number' ? initialData.youtubePlayTime : 31,
+      isForcedRedirect: initialData?.isForcedRedirect ?? false,
       languageId: initialData?.languageId || 'all',
       isActive: initialData?.isActive ?? true,
     },
@@ -81,10 +143,80 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
 
   const contentType = watch('contentType');
   const previewImage = watch('imageUrl');
+  const youtubeIdValue = watch('youtubeId');
+  const iframeCodeValue = watch('iframeCode');
+  const titleValue = watch('title');
+  const partnerNameValue = watch('partnerName');
+  const derivedYoutubeId = useMemo(
+    () => extractYoutubeIdFromValue(youtubeIdValue) || extractYoutubeIdFromValue(iframeCodeValue) || '',
+    [youtubeIdValue, iframeCodeValue],
+  );
+
+  const youtubeIdDisabled = contentType === 'youtube' && Boolean((iframeCodeValue || '').trim());
+  const iframeCodeDisabled = contentType === 'youtube' && Boolean((youtubeIdValue || '').trim());
+
+  useEffect(() => {
+    if (contentType !== 'youtube') return;
+    const normalized = derivedYoutubeId.trim();
+    if (!normalized) return;
+    if (youtubeIdValue !== normalized) {
+      setValue('youtubeId', normalized, { shouldValidate: true, shouldDirty: true });
+    }
+  }, [contentType, derivedYoutubeId, setValue, youtubeIdValue]);
+
+  useEffect(() => {
+    if (contentType !== 'youtube') return;
+    if (!YOUTUBE_ID_REGEX.test(derivedYoutubeId)) return;
+    if (lastFetchedYoutubeIdRef.current === derivedYoutubeId) return;
+
+    let active = true;
+    lastFetchedYoutubeIdRef.current = derivedYoutubeId;
+
+    const run = async () => {
+      try {
+        const target = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${derivedYoutubeId}`)}&format=json`;
+        const response = await fetch(target);
+        if (!response.ok) return;
+        if (!active) return;
+        const payload = (await response.json()) as { title?: string; author_name?: string };
+        const nextTitle = (payload.title || '').trim();
+        const nextPartner = (payload.author_name || '').trim();
+        const previousAuto = lastAutoFilledRef.current;
+
+        if (nextTitle && (!titleValue.trim() || titleValue === previousAuto?.title)) {
+          setValue('title', nextTitle, { shouldDirty: true, shouldValidate: true });
+        }
+        if (nextPartner && (!partnerNameValue.trim() || partnerNameValue === previousAuto?.partnerName)) {
+          setValue('partnerName', nextPartner, { shouldDirty: true, shouldValidate: true });
+        }
+
+        lastAutoFilledRef.current = {
+          youtubeId: derivedYoutubeId,
+          title: nextTitle || previousAuto?.title || '',
+          partnerName: nextPartner || previousAuto?.partnerName || '',
+        };
+      } catch {
+        // ignore public oEmbed failures
+      }
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+    };
+  }, [contentType, derivedYoutubeId, partnerNameValue, setValue, titleValue]);
 
   const internalOnSubmit = async (data: AdFormValues) => {
     try {
-      await onSubmit(data);
+      const normalizedYoutubeId =
+        data.contentType === 'youtube'
+          ? extractYoutubeIdFromValue(data.youtubeId) || extractYoutubeIdFromValue(data.iframeCode) || undefined
+          : undefined;
+      await onSubmit({
+        ...data,
+        youtubeId: normalizedYoutubeId,
+      });
     } catch (err: any) {
       const res = err?.response?.data;
       const status = err?.response?.status;
@@ -172,6 +304,7 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
             >
               <option value="image">Ảnh + Link</option>
               <option value="iframe">Iframe (Google Ads...)</option>
+              <option value="youtube">YouTube Video</option>
             </select>
           </div>
 
@@ -186,21 +319,23 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
               previewAspectRatio="aspect-[4/3]"
             />
             {errors.imageUrl ? <p className="text-red-500 text-xs mt-1">{errors.imageUrl.message}</p> : null}
-          </div>
+            </div>
           ) : (
             <div className="space-y-2">
               <label className="text-sm font-black uppercase tracking-wider text-slate-700">Mã iframe</label>
               <textarea
                 {...register('iframeCode')}
                 rows={6}
-                placeholder="<iframe ...></iframe>"
+                placeholder={contentType === 'youtube' ? '<iframe src="https://www.youtube.com/embed/..."></iframe>' : '<iframe ...></iframe>'}
+                disabled={iframeCodeDisabled}
                 className={`admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none transition ${errors.iframeCode ? 'admin-input-error' : 'ring-indigo-500/20 focus:ring-2'}`}
               />
+              {contentType === 'youtube' ? <p className="text-xs text-slate-500">Khi nhập iframe YouTube, hệ thống sẽ tự bóc tách và lưu `youtubeId`.</p> : null}
               {errors.iframeCode ? <p className="text-red-500 text-xs mt-1">{errors.iframeCode.message}</p> : null}
             </div>
           )}
 
-          {contentType === 'image' ? (
+          {contentType !== 'iframe' ? (
           <div className="space-y-2">
             <label className="text-sm font-black uppercase tracking-wider text-slate-700">Link Affiliate đích</label>
             <input
@@ -210,6 +345,51 @@ export default function AdForm({ initialData, isLoading, onSubmit, onCancel }: A
             />
             {errors.targetUrl ? <p className="text-red-500 text-xs mt-1">{errors.targetUrl.message}</p> : null}
           </div>
+          ) : null}
+
+          {contentType === 'youtube' ? (
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-black uppercase tracking-wider text-slate-700">YouTube ID</label>
+                <input
+                  {...register('youtubeId')}
+                  placeholder="dQw4w9WgXcQ"
+                  disabled={youtubeIdDisabled}
+                  className={`admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none transition ${errors.youtubeId ? 'admin-input-error' : 'ring-indigo-500/20 focus:ring-2'}`}
+                />
+                {errors.youtubeId ? <p className="text-red-500 text-xs mt-1">{errors.youtubeId.message}</p> : null}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-black uppercase tracking-wider text-slate-700">Thời gian xem video YouTube (giây)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={3600}
+                  {...register('youtubePlayTime', { valueAsNumber: true })}
+                  className={`admin-input w-full rounded-2xl bg-white px-5 py-3 text-sm font-medium outline-none transition ${errors.youtubePlayTime ? 'admin-input-error' : 'ring-indigo-500/20 focus:ring-2'}`}
+                />
+                {errors.youtubePlayTime ? <p className="text-red-500 text-xs mt-1">{errors.youtubePlayTime.message}</p> : null}
+              </div>
+
+              {showUnlockAdvanced ? (
+                <div className="space-y-2 md:col-span-2">
+                  <label className="flex h-[50px] cursor-pointer items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4">
+                    <span className="text-sm font-semibold text-slate-700">Vô hiệu nút đóng quảng cáo &amp; Tự động chuyển hướng</span>
+                    <input type="checkbox" {...register('isForcedRedirect')} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                  </label>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {showUnlockAdvanced && contentType !== 'youtube' ? (
+            <div className="space-y-2">
+              <label className="flex h-[50px] cursor-pointer items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4">
+                <span className="text-sm font-semibold text-slate-700">Vô hiệu nút đóng quảng cáo &amp; Tự động chuyển hướng</span>
+                <input type="checkbox" {...register('isForcedRedirect')} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              </label>
+            </div>
           ) : null}
         </div>
 

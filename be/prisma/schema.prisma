@@ -290,6 +290,7 @@ model HeroBanner {
 enum AdvertisementContentType {
   image
   iframe
+  youtube
 }
 
 model Advertisement {
@@ -300,6 +301,9 @@ model Advertisement {
   imageUrl    String?                  @map("image_url") @db.Text
   targetUrl   String?                  @map("target_url") @db.VarChar(500)
   iframeCode  String?                  @map("iframe_code") @db.LongText
+  youtubeId   String?                  @map("youtube_id") @db.VarChar(20)
+  youtubePlayTime Int?                 @default(31) @map("youtube_play_time") @db.UnsignedInt
+  isForcedRedirect Boolean             @default(false) @map("is_forced_redirect")
   clickCount  Int                      @default(0) @map("click_count") @db.UnsignedInt
   languageId  Int?                     @map("language_id") @db.UnsignedInt
   isGlobal    Boolean                  @default(true) @map("is_global")

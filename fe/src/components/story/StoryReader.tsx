@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Heart, Lightbulb, Reply, Send, ThumbsUp, X } from "lucide-react";
 import DOMPurify from "dompurify";
 import { useLocale } from "next-intl";
@@ -237,11 +237,29 @@ export default function StoryReader({
   onAdUnlocked,
 }: StoryReaderProps) {
   const locale = useLocale();
+  const isEn = locale === "en";
   const insertionFrequency = useAdInsertionFrequency(Math.max(1, Math.floor(adInterval || 1000)));
+  const isYoutubeUnlockAd = Boolean(unlockAd?.youtubeId);
+  const unlockAdCountdown = Math.max(
+    0,
+    Number(
+      unlockAd?.youtubePlayTime
+      ?? unlockAd?.countdownSeconds
+      ?? unlockCountdownSeconds
+      ?? 5,
+    ),
+  );
   // Ad-unlock modal state
   const [showAdModal, setShowAdModal] = useState(false);
-  const [countdown, setCountdown] = useState<number>(unlockCountdownSeconds || 5);
+  const [countdown, setCountdown] = useState<number>(Math.floor(unlockAdCountdown));
   const [xVisible, setXVisible] = useState(false);
+  const [isVideoStarted, setIsVideoStarted] = useState(false);
+  const shouldStartCountdown = !isYoutubeUnlockAd || isVideoStarted;
+  const unlockButtonLabel = isYoutubeUnlockAd
+    ? isVideoStarted
+      ? (isEn ? "Ad playing" : "Đang phát quảng cáo")
+      : (isEn ? "Play ad" : "Phát quảng cáo")
+    : (isEn ? "View ad" : "Xem quảng cáo");
   const [adUnlockedLocally, setAdUnlockedLocally] = useState(false);
   const [isInUnlockCooldown, setIsInUnlockCooldown] = useState(false);
   const [openParagraphId, setOpenParagraphId] = useState<string | null>(null);
@@ -255,6 +273,7 @@ export default function StoryReader({
   const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState("");
   const activeAds = useActiveAdvertisements({ limit: 10 });
+  const youtubeIframeRef = useRef<HTMLIFrameElement | null>(null);
   
   const user = useUserStore((state) => state.user);
   const openLogin = useAuthModalStore((state) => state.openLogin);
@@ -286,8 +305,9 @@ export default function StoryReader({
       const reappearMs = (unlockReappearMinutes || 15) * 60 * 1000;
       if (!last || now - last >= reappearMs) {
         setShowAdModal(true);
-        setCountdown(unlockCountdownSeconds || 5);
+        setCountdown(Math.floor(unlockAdCountdown));
         setXVisible(false);
+        setIsVideoStarted(false);
         setIsInUnlockCooldown(false);
       } else {
         setShowAdModal(false);
@@ -296,15 +316,17 @@ export default function StoryReader({
         timeoutId = setTimeout(() => {
           setIsInUnlockCooldown(false);
           setShowAdModal(true);
-          setCountdown(unlockCountdownSeconds || 5);
+          setCountdown(Math.floor(unlockAdCountdown));
           setXVisible(false);
+          setIsVideoStarted(false);
         }, Math.max(0, remainingMs));
       }
     } catch {
       // ignore localStorage errors
       setShowAdModal(true);
-      setCountdown(unlockCountdownSeconds || 5);
+      setCountdown(Math.floor(unlockAdCountdown));
       setXVisible(false);
+      setIsVideoStarted(false);
       setIsInUnlockCooldown(false);
     }
 
@@ -312,17 +334,22 @@ export default function StoryReader({
       if (timeoutId) clearTimeout(timeoutId);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLocked, unlockAd, chapterId, unlockReappearMinutes, unlockCountdownSeconds]);
+  }, [chapterId, isLocked, unlockAd, unlockAdCountdown, unlockReappearMinutes]);
 
   // Countdown effect
   useEffect(() => {
     if (!showAdModal) return;
-    if ((unlockCountdownSeconds || 0) <= 0) {
+    if (!shouldStartCountdown) {
+      setCountdown(Math.floor(unlockAdCountdown));
+      setXVisible(false);
+      return;
+    }
+    if (unlockAdCountdown <= 0) {
       setXVisible(true);
       return;
     }
 
-    setCountdown(unlockCountdownSeconds || 5);
+    setCountdown(Math.floor(unlockAdCountdown));
     setXVisible(false);
     const iv = setInterval(() => {
       setCountdown((prev) => {
@@ -337,7 +364,7 @@ export default function StoryReader({
     }, 1000);
 
     return () => clearInterval(iv);
-  }, [showAdModal, unlockCountdownSeconds]);
+  }, [showAdModal, shouldStartCountdown, unlockAdCountdown]);
 
   const markAdClosed = (adId?: string) => {
     if (!adId || !chapterId) return;
@@ -355,6 +382,19 @@ export default function StoryReader({
 
   const handleWatchAd = async () => {
     if (!unlockAd) return;
+    if (unlockAd.youtubeId && youtubeIframeRef.current) {
+      const src = `https://www.youtube.com/embed/${unlockAd.youtubeId}?enablejsapi=1&playsinline=1&rel=0&modestbranding=1`;
+      youtubeIframeRef.current.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+        'https://www.youtube.com',
+      );
+      if (!youtubeIframeRef.current.src) {
+        youtubeIframeRef.current.src = src;
+      }
+      setIsVideoStarted(true);
+      return;
+    }
+
     const url = unlockAd.targetUrl || '/';
     void apiClient.post(`/ads/${unlockAd.id}/click`).catch(() => {});
     // open destination
@@ -387,6 +427,12 @@ export default function StoryReader({
 
   const handleCloseAd = () => {
     if (!unlockAd) return;
+    if (unlockAd.youtubeId && youtubeIframeRef.current) {
+      youtubeIframeRef.current.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
+        'https://www.youtube.com',
+      );
+    }
     markAdClosed(unlockAd.id);
     setAdUnlockedLocally(true);
     setShowAdModal(false);
@@ -982,23 +1028,37 @@ export default function StoryReader({
                 </button>
               ) : (
                 <div className="inline-flex h-8 w-14 items-center justify-center rounded-md bg-pink-50 text-sm font-bold text-pink-600 tabular-nums dark:bg-pink-900/20 dark:text-pink-200">
-                  {`${countdown}s`}
+                  {shouldStartCountdown ? `${countdown}s` : "--"}
                 </div>
               )}
             </div>
             <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#323234]">
               <div
                 className="h-full bg-pink-500 transition-all"
-                style={{ width: `${((unlockCountdownSeconds || 5) - countdown) / Math.max(1, unlockCountdownSeconds || 5) * 100}%` }}
+                style={{ width: `${shouldStartCountdown ? ((unlockAdCountdown - countdown) / Math.max(1, unlockAdCountdown)) * 100 : 0}%` }}
               />
             </div>
 
             <div className="flex flex-col items-center gap-4 text-center">
-              <img
-                src={unlockAd.imageUrl || "https://placehold.co/640x320?text=Ad"}
-                alt={unlockAd.title}
-                className="w-full h-auto max-h-[60vh] rounded-md object-contain"
-              />
+              {unlockAd.youtubeId ? (
+                <div className="relative w-full overflow-hidden rounded-md bg-black aspect-video">
+                  <iframe
+                    ref={youtubeIframeRef}
+                    src={`https://www.youtube.com/embed/${unlockAd.youtubeId}?enablejsapi=1&playsinline=1&rel=0&modestbranding=1`}
+                    title={unlockAd.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="h-full w-full border-0"
+                  />
+                  <div className="absolute inset-0 z-10 bg-transparent" />
+                </div>
+              ) : (
+                <img
+                  src={unlockAd.imageUrl || "https://placehold.co/640x320?text=Ad"}
+                  alt={unlockAd.title}
+                  className="w-full h-auto max-h-[60vh] rounded-md object-contain"
+                />
+              )}
               <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{unlockAd.title}</h3>
               <p className="text-sm text-gray-600 dark:text-gray-300">{unlockAd.partnerName}</p>
 
@@ -1007,7 +1067,7 @@ export default function StoryReader({
                   onClick={handleWatchAd}
                   className="w-full rounded-md bg-pink-600 px-4 py-3 text-sm font-bold text-white hover:bg-pink-700"
                 >
-                  Xem quảng cáo
+                  {unlockButtonLabel}
                 </button>
               </div>
             </div>

@@ -1079,9 +1079,7 @@ export default function StoryChapterClient() {
       const isVipLocked = chapter.accessType === "vip" && !isVipActive;
 
       if (isTimedLocked || isVipLocked) {
-        setUnlockError("");
-        setShowTopupAction(false);
-        setIsUnlockModalOpen(true);
+        openUnlockModalForChapter(chapter);
         return;
       }
 
@@ -1195,8 +1193,11 @@ export default function StoryChapterClient() {
         }
 
         setPendingVariantId(variant.id);
-        setUnlockError("");
-        setShowTopupAction(false);
+        const currentBalance = Number(user?.pulseBalance ?? user?.credits ?? 0);
+        const requiredPulse = Math.max(0, Math.floor(Number(variant.unlockPrice || 0)));
+        const insufficient = requiredPulse > 0 && currentBalance < requiredPulse;
+        setShowTopupAction(insufficient);
+        setUnlockError(insufficient ? (locale === "en" ? "Insufficient Pulse balance." : "Bạn không đủ Pulse để mở khóa.") : "");
         setIsUnlockModalOpen(true);
         return;
       }
@@ -1328,15 +1329,22 @@ export default function StoryChapterClient() {
     }, minutes * 60_000);
   };
 
-  const openUnlockModal = () => {
+  const getChapterFinalPrice = (chapter?: ChapterItem | null) => {
+    const basePrice = Math.max(0, Math.floor(Number(chapter?.unlockPrice || 0)));
+    const discountPercent = Math.max(0, Math.min(100, Math.floor(Number(chapter?.discountPercent || 0))));
+    return Math.max(0, Math.floor((basePrice * (100 - discountPercent)) / 100));
+  };
+
+  const openUnlockModalForChapter = (chapter?: ChapterItem | null) => {
     if (!user) {
       openLogin();
       return;
     }
     setUnlockError("");
     const currentBalance = Number(user?.pulseBalance ?? user?.credits ?? 0);
-    const isChapterUnlock = selectedChapter?.accessType === "timed" || selectedChapter?.accessType === "vip";
-    const requiredPulse = isChapterUnlock ? chapterFinalUnlockPrice : storyFinalUnlockPrice;
+    const chapterToUnlock = chapter || selectedChapter;
+    const isChapterUnlock = chapterToUnlock?.accessType === "timed" || chapterToUnlock?.accessType === "vip";
+    const requiredPulse = isChapterUnlock ? getChapterFinalPrice(chapterToUnlock) : storyFinalUnlockPrice;
     const insufficient = requiredPulse > 0 && currentBalance < requiredPulse;
     setShowTopupAction(insufficient);
     if (insufficient) {
@@ -1344,7 +1352,12 @@ export default function StoryChapterClient() {
     } else {
       setUnlockError("");
     }
+    setPendingVariantId(null);
     setIsUnlockModalOpen(true);
+  };
+
+  const openUnlockModal = () => {
+    openUnlockModalForChapter(selectedChapter);
   };
 
   const handleBuyVip = async () => {

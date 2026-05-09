@@ -1025,7 +1025,7 @@ export default function StoryReader({
       })}
       </div>
       {effectiveIsLocked && !unlockAd ? (
-        <div className="absolute inset-0 z-20 flex items-center justify-center p-4">
+        <div className="absolute inset-x-0 top-3 z-20 flex items-start justify-center p-3 sm:top-4 sm:p-4">
           <button
             type="button"
             onClick={() => onUnlockRequest?.()}

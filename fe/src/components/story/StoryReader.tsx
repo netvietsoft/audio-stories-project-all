@@ -190,49 +190,21 @@ const hasVisibleContent = (html: string) => {
 
 const splitParagraphs = (chapterId: string, content: string | null | undefined): ParagraphItem[] => {
   if (!content) return [];
+  const normalizedHtml = normalizeStoryContent(content);
+  const blockRegex = /<(p|div)\b[^>]*>[\s\S]*?<\/\1>/gi;
+  const blocks = normalizedHtml.match(blockRegex) || [];
 
-  let parts: string[] = [];
-  const doanRegex = /\[doan\d+\]/gi;
-  if (doanRegex.test(content)) {
-    parts = content
-      .split(doanRegex)
-      .map((part) => part.trim())
-      .filter(hasVisibleContent);
-  } else if (/<hr\s*\/?>/i.test(content)) {
-    parts = content
-      .split(/<hr\s*\/?>/gi)
-      .map((part) => part.trim())
-      .filter(hasVisibleContent);
-  } else if (content.includes("<") && content.includes(">")) {
-    const normalizedText = content
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/(p|div|section|article|li|blockquote|h[1-6])>/gi, "\n")
-      .replace(/<[^>]*>/g, "")
-      .replace(/\r/g, "");
-
-    parts = normalizedText
-      .split(/\n{1,}/)
-      .map((part) => part.trim())
-      .filter(hasVisibleContent);
-  }
+  let parts: string[] = blocks
+    .map((block) => block.trim())
+    .filter(hasVisibleContent);
 
   if (parts.length === 0) {
-    parts = content
-      .replace(/<[^>]*>/g, "\n")
-      .split(/\n\s*\n|\n/)
+    parts = normalizedHtml
+      .split(/\n{2,}|<br\s*\/?>/gi)
       .map((part) => part.trim())
-      .filter(hasVisibleContent);
+      .filter(hasVisibleContent)
+      .map((part) => (part.startsWith("<") ? part : `<p>${part}</p>`));
   }
-
-  parts = parts
-    .map((part) =>
-      part
-        .replace(/^\[Paragraph\s*\d+\]\s*/i, "")
-        .replace(/^\[Đoạn\s*\d+\]\s*/i, "")
-        .replace(/\[.*?\]/g, "")
-        .trim(),
-    )
-    .filter(hasVisibleContent);
 
   return parts.map((part, index) => ({
     id: `${chapterId}-p-${index}`,
@@ -241,34 +213,13 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
   }));
 };
 
-const countWords = (text: string) => {
-  const normalized = text
-    .replace(/&nbs[p]?;?/gi, " ")
-    .replace(/\u00A0/g, " ")
+const getPlainTextWordCount = (html: string) => {
+  const normalized = normalizeStoryContent(html)
+    .replace(/<[^>]*>/g, "")
     .replace(/\s+/g, " ")
     .trim();
   if (!normalized) return 0;
-  return normalized.split(" ").length;
-};
-
-const splitByWordLimit = (text: string, wordLimit: number): string[] => {
-  const normalized = text
-    .replace(/&nbs[p]?;?/gi, " ")
-    .replace(/\u00A0/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!normalized) return [];
-  if (!Number.isFinite(wordLimit) || wordLimit <= 0) return [normalized];
-
-  const words = normalized.split(" ");
-  if (words.length <= wordLimit) return [normalized];
-
-  const chunks: string[] = [];
-  for (let i = 0; i < words.length; i += wordLimit) {
-    const chunk = words.slice(i, i + wordLimit).join(" ").trim();
-    if (chunk) chunks.push(chunk);
-  }
-  return chunks;
+  return normalized.split(" ").filter(Boolean).length;
 };
 
 export default function StoryReader({
@@ -286,7 +237,7 @@ export default function StoryReader({
   onAdUnlocked,
 }: StoryReaderProps) {
   const locale = useLocale();
-  const insertionFrequency = useAdInsertionFrequency(adInterval || 1000);
+  const insertionFrequency = useAdInsertionFrequency(Math.max(1, Math.floor(adInterval || 1000)));
   // Ad-unlock modal state
   const [showAdModal, setShowAdModal] = useState(false);
   const [countdown, setCountdown] = useState<number>(unlockCountdownSeconds || 5);
@@ -315,23 +266,8 @@ export default function StoryReader({
   }, [chapterId, content]);
 
   const renderedParagraphs = useMemo(() => {
-    const safeSplitWords = Math.max(1, Math.floor(insertionFrequency || 1000));
-    const next: ParagraphItem[] = [];
-
-    paragraphs.forEach((paragraph) => {
-      const chunks = splitByWordLimit(paragraph.content, safeSplitWords);
-      if (!chunks.length) return;
-      chunks.forEach((chunk, idx) => {
-        next.push({
-          id: `${paragraph.id}-w-${idx}`,
-          index: next.length,
-          content: chunk,
-        });
-      });
-    });
-
-    return next;
-  }, [insertionFrequency, paragraphs]);
+    return paragraphs;
+  }, [paragraphs]);
 
   // Manage ad modal lifecycle: show on first load if chapter is locked by ad
   useEffect(() => {
@@ -452,7 +388,7 @@ export default function StoryReader({
   const handleCloseAd = () => {
     if (!unlockAd) return;
     markAdClosed(unlockAd.id);
-    setAdUnlockedLocally(false);
+    setAdUnlockedLocally(true);
     setShowAdModal(false);
   };
 
@@ -479,24 +415,26 @@ export default function StoryReader({
       | { type: "ad"; id: string; ad: AdvertisementItem }
     > = [];
 
-    let accumulatedWords = 0;
-    let nextBreakAt = insertionFrequency;
+    const inlineAds = activeAds.filter((ad) => (ad.routeType ?? 1) === 1);
+    if (renderedParagraphs.length === 0) return items;
+    const threshold = Math.max(1, Math.floor(insertionFrequency || 1000));
+    let wordCounter = 0;
     let adIndex = 0;
 
     renderedParagraphs.forEach((paragraph) => {
       items.push({ type: "paragraph", paragraph });
-      accumulatedWords += countWords(paragraph.content);
-
-      while (accumulatedWords >= nextBreakAt && activeAds.length > 0) {
-        const ad = activeAds[adIndex % activeAds.length];
-        if (!ad) break;
+      wordCounter += getPlainTextWordCount(paragraph.content);
+      const shouldInsertAd = inlineAds.length > 0 && adIndex < inlineAds.length && wordCounter >= threshold;
+      if (shouldInsertAd) {
+        const ad = inlineAds[adIndex];
+        if (!ad) return;
         items.push({
           type: 'ad',
-          id: `${paragraph.id}-slot-${nextBreakAt}-${adIndex}`,
+          id: `${paragraph.id}-slot-${adIndex}`,
           ad,
         });
         adIndex += 1;
-        nextBreakAt += insertionFrequency;
+        wordCounter = 0;
       }
     });
 
@@ -734,11 +672,8 @@ export default function StoryReader({
     return null;
   }
 
-  const effectiveIsLocked = isLocked && !adUnlockedLocally;
-  const shouldBlurContent = effectiveIsLocked && !!unlockAd && !isInUnlockCooldown;
-  const previewTextLimit = Math.max(80, Math.floor((content || "").replace(/<[^>]*>/g, "").length * Math.max(0.01, Math.min(0.9, previewPercent))));
-  let accumulatedPlainChars = 0;
-  let renderedLockGate = false;
+  const effectiveIsLocked = isLocked && !adUnlockedLocally && !(!!unlockAd && isInUnlockCooldown);
+  const shouldBlurContent = effectiveIsLocked;
 
   return (
     <>
@@ -767,6 +702,7 @@ export default function StoryReader({
           margin-bottom: 0;
         }
       `}</style>
+      <div className="relative">
       <div
         key={`${chapterId || "chapter"}-${effectiveIsLocked ? "locked" : "open"}`}
         className={`relative min-w-0 overflow-x-hidden ${isProd ? "select-none" : ""} ${
@@ -774,43 +710,14 @@ export default function StoryReader({
         }`}
       >
       {flowItems.map((item) => {
-        if (renderedLockGate) {
-          return null;
-        }
         if (item.type === "paragraph") {
           const { paragraph } = item;
-          const plainLength = paragraph.content.replace(/<[^>]*>/g, "").length;
-          const nextAccumulated = accumulatedPlainChars + plainLength;
-          const isPreviewParagraph = !effectiveIsLocked || accumulatedPlainChars < previewTextLimit;
-          const shouldBlockAtThisParagraph = effectiveIsLocked && accumulatedPlainChars >= previewTextLimit;
-          accumulatedPlainChars = nextAccumulated;
-          if (shouldBlockAtThisParagraph) {
-            renderedLockGate = true;
-          }
           const comments = paragraphComments[paragraph.id] || [];
           const isOpen = openParagraphId === paragraph.id;
           const paragraphCount = paragraphCommentCounts[paragraph.index] || 0;
 
           return (
             <div key={paragraph.id} className="group mb-4 overflow-visible rounded-lg transition-colors md:mb-6">
-              {shouldBlockAtThisParagraph ? (
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onUnlockRequest?.()}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      onUnlockRequest?.();
-                    }
-                  }}
-                  className="mb-4 rounded-2xl border border-pink-200 bg-gradient-to-b from-white to-pink-50 px-5 py-8 text-center shadow-sm cursor-pointer"
-                >
-                  <p className="text-sm font-semibold text-pink-700">{lockLabel || "Nội dung đang bị khóa"}</p>
-                  <p className="mt-1 text-xs text-gray-600">Bấm để mở khóa hoặc xem thời gian còn lại</p>
-                </div>
-              ) : null}
-              {!isPreviewParagraph ? null : (
               <div className="relative">
                 <div
                   className="story-paragraph-content rounded-lg px-1 py-2 text-base sm:text-lg leading-relaxed text-gray-800 transition-colors sm:px-4 sm:py-2.5 md:px-5 md:py-3 dark:text-gray-100 text-justify"
@@ -831,7 +738,6 @@ export default function StoryReader({
                   </span>
                 </div>
               </div>
-              )}
 
               {isOpen && (
                 <div className="mt-3 rounded-lg bg-white p-3 shadow-sm dark:bg-[#242526]">
@@ -1046,6 +952,19 @@ export default function StoryReader({
         }
       })}
       </div>
+      {effectiveIsLocked && !unlockAd ? (
+        <div className="absolute inset-0 z-20 flex items-center justify-center p-4">
+          <button
+            type="button"
+            onClick={() => onUnlockRequest?.()}
+            className="rounded-2xl border border-pink-200 bg-white/95 px-5 py-4 text-center shadow-lg backdrop-blur-sm transition hover:bg-white"
+          >
+            <p className="text-sm font-semibold text-pink-700">{lockLabel || "Nội dung đang bị khóa"}</p>
+            <p className="mt-1 text-xs text-gray-600">Bấm để mở khóa</p>
+          </button>
+        </div>
+      ) : null}
+      </div>
 
       {/* Ad Unlock Modal Overlay */}
       {showAdModal && unlockAd ? (
@@ -1075,7 +994,11 @@ export default function StoryReader({
             </div>
 
             <div className="flex flex-col items-center gap-4 text-center">
-              <img src={unlockAd.imageUrl || "https://placehold.co/640x320?text=Ad"} alt={unlockAd.title} className="h-40 w-full rounded-md object-cover" />
+              <img
+                src={unlockAd.imageUrl || "https://placehold.co/640x320?text=Ad"}
+                alt={unlockAd.title}
+                className="w-full h-auto max-h-[60vh] rounded-md object-contain"
+              />
               <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{unlockAd.title}</h3>
               <p className="text-sm text-gray-600 dark:text-gray-300">{unlockAd.partnerName}</p>
 

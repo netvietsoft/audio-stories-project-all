@@ -24,6 +24,7 @@ export function useActiveAdvertisements(options: UseActiveAdvertisementsOptions 
           params: {
             limit: options.limit || 10,
             lang: activeLang,
+            routeType: 1,
           },
         });
 

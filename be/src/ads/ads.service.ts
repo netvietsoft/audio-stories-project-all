@@ -189,6 +189,7 @@ export class AdsService {
     });
     const nextContentType = dto.contentType ?? current?.contentType ?? 'image';
     const isIframe = nextContentType === 'iframe';
+    const safeTrim = (value?: string | null) => (typeof value === 'string' ? value.trim() : null);
 
     return this.prisma.advertisement.update({
       where: { id },
@@ -200,14 +201,14 @@ export class AdsService {
           ? {
               imageUrl: null,
               targetUrl: null,
-              ...(dto.iframeCode !== undefined ? { iframeCode: dto.iframeCode.trim() } : {}),
+              ...(dto.iframeCode !== undefined ? { iframeCode: safeTrim(dto.iframeCode) } : {}),
             }
           : {
-              ...(dto.imageUrl !== undefined ? { imageUrl: dto.imageUrl.trim() } : {}),
-              ...(dto.targetUrl !== undefined ? { targetUrl: dto.targetUrl.trim() } : {}),
+              ...(dto.imageUrl !== undefined ? { imageUrl: safeTrim(dto.imageUrl) } : {}),
+              ...(dto.targetUrl !== undefined ? { targetUrl: safeTrim(dto.targetUrl) } : {}),
               ...(dto.contentType === 'image' ? { iframeCode: null } : {}),
             }),
-        ...(dto.iframeCode !== undefined && !isIframe ? { iframeCode: dto.iframeCode.trim() } : {}),
+        ...(dto.iframeCode !== undefined && !isIframe ? { iframeCode: safeTrim(dto.iframeCode) } : {}),
         ...(dto.languageId !== undefined ? { languageId: dto.isGlobal ? null : dto.languageId } : {}),
         ...(dto.isGlobal !== undefined ? { isGlobal: dto.isGlobal } : {}),
         ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),

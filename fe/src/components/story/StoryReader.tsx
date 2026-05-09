@@ -274,6 +274,8 @@ export default function StoryReader({
   const [reportReason, setReportReason] = useState("");
   const activeAds = useActiveAdvertisements({ limit: 10 });
   const youtubeIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const forcedRedirectRef = useRef(false);
+  const openedTargetRef = useRef(false);
   
   const user = useUserStore((state) => state.user);
   const openLogin = useAuthModalStore((state) => state.openLogin);
@@ -292,6 +294,8 @@ export default function StoryReader({
   useEffect(() => {
     setAdUnlockedLocally(false);
     setIsInUnlockCooldown(false);
+    forcedRedirectRef.current = false;
+    openedTargetRef.current = false;
     if (!isLocked || !unlockAd || !chapterId) return;
 
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -380,6 +384,44 @@ export default function StoryReader({
     }
   };
 
+  const handleNavigateTarget = () => {
+    if (!unlockAd) return;
+    if (openedTargetRef.current) return;
+    const url = unlockAd.targetUrl || '/';
+    try {
+      const isExternal = /^https?:\/\//i.test(url);
+      const href = isExternal ? url : (url.startsWith('/') ? url : `/${url}`);
+      const opened = window.open(href, '_blank', 'noopener,noreferrer');
+      if (!opened) {
+        window.location.href = href;
+      } else {
+        openedTargetRef.current = true;
+      }
+      openedTargetRef.current = true;
+    } catch {
+      window.location.href = url;
+      openedTargetRef.current = true;
+    }
+  };
+
+  const handleRedirectAndUnlock = async () => {
+    if (!unlockAd) return;
+    // Open target immediately in the current click gesture so popup is not blocked.
+    handleNavigateTarget();
+
+    void apiClient.post(`/ads/${unlockAd.id}/click`).catch(() => {});
+    try {
+      await apiClient.post(`/chapters/${chapterId}/unlock-by-ad`, { adId: unlockAd.id });
+      onAdUnlocked?.();
+    } catch {
+      onAdUnlocked?.();
+    }
+
+    markAdClosed(unlockAd.id);
+    setAdUnlockedLocally(true);
+    setShowAdModal(false);
+  };
+
   const handleWatchAd = async () => {
     if (!unlockAd) return;
     if (unlockAd.youtubeId && youtubeIframeRef.current) {
@@ -394,39 +436,14 @@ export default function StoryReader({
       setIsVideoStarted(true);
       return;
     }
-
-    const url = unlockAd.targetUrl || '/';
-    void apiClient.post(`/ads/${unlockAd.id}/click`).catch(() => {});
-    // open destination
-    try {
-      const isExternal = /^https?:\/\//i.test(url);
-      if (isExternal) {
-        window.open(url, '_blank', 'noopener');
-      } else {
-        window.location.href = url;
-      }
-    } catch {
-      // fallback navigation
-      window.location.href = url;
-    }
-
-    // Try to notify backend about ad-unlock (best-effort)
-    try {
-      await apiClient.post(`/chapters/${chapterId}/unlock-by-ad`, { adId: unlockAd.id });
-      // notify parent
-      onAdUnlocked?.();
-    } catch {
-      // ignore server errors; still unlock locally
-      onAdUnlocked?.();
-    }
-
-    markAdClosed(unlockAd.id);
-    setAdUnlockedLocally(true);
-    setShowAdModal(false);
+    await handleRedirectAndUnlock();
   };
 
   const handleCloseAd = () => {
     if (!unlockAd) return;
+    if (unlockAd.isForcedRedirect) {
+      return;
+    }
     if (unlockAd.youtubeId && youtubeIframeRef.current) {
       youtubeIframeRef.current.contentWindow?.postMessage(
         JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }),
@@ -437,6 +454,15 @@ export default function StoryReader({
     setAdUnlockedLocally(true);
     setShowAdModal(false);
   };
+
+  useEffect(() => {
+    if (!showAdModal || !unlockAd?.isForcedRedirect) return;
+    if (!shouldStartCountdown || countdown > 0) return;
+    if (forcedRedirectRef.current) return;
+
+    forcedRedirectRef.current = true;
+    void handleRedirectAndUnlock();
+  }, [countdown, showAdModal, shouldStartCountdown, unlockAd?.isForcedRedirect]);
 
   // Load comment counts for all paragraphs on mount
   useEffect(() => {
@@ -1019,7 +1045,7 @@ export default function StoryReader({
           <div className="relative z-10 mx-4 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl dark:bg-[#1f1f1f]">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs text-gray-600 dark:text-gray-300">{lockLabel || "Mở khóa bằng quảng cáo"}</span>
-              {xVisible ? (
+              {xVisible && !unlockAd.isForcedRedirect ? (
                 <button
                   onClick={handleCloseAd}
                   className="inline-flex h-8 w-14 items-center justify-center rounded-md border border-pink-200 bg-pink-50 text-sm font-bold text-pink-700 hover:bg-pink-100 dark:border-pink-800 dark:bg-pink-900/20 dark:text-pink-200"
@@ -1050,16 +1076,25 @@ export default function StoryReader({
                     allowFullScreen
                     className="h-full w-full border-0"
                   />
-                  <div className="absolute inset-0 z-10 bg-transparent" />
+                  <button
+                    type="button"
+                    onClick={() => { void handleRedirectAndUnlock(); }}
+                    className="absolute inset-0 z-10 bg-transparent"
+                    aria-label={isEn ? "Open ad destination" : "Mở trang đích quảng cáo"}
+                  />
                 </div>
               ) : (
-                <img
-                  src={unlockAd.imageUrl || "https://placehold.co/640x320?text=Ad"}
-                  alt={unlockAd.title}
-                  className="w-full h-auto max-h-[60vh] rounded-md object-contain"
-                />
+                <button type="button" onClick={() => { void handleRedirectAndUnlock(); }} className="w-full">
+                  <img
+                    src={unlockAd.imageUrl || "https://placehold.co/640x320?text=Ad"}
+                    alt={unlockAd.title}
+                    className="w-full h-auto max-h-[60vh] rounded-md object-contain"
+                  />
+                </button>
               )}
-              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{unlockAd.title}</h3>
+              <button type="button" onClick={() => { void handleRedirectAndUnlock(); }}>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 hover:underline">{unlockAd.title}</h3>
+              </button>
               <p className="text-sm text-gray-600 dark:text-gray-300">{unlockAd.partnerName}</p>
 
               <div className="mt-4 flex w-full items-center justify-center">

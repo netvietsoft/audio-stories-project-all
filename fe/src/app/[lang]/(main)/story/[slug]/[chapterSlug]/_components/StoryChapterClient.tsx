@@ -314,6 +314,7 @@ export default function StoryChapterClient() {
   const [unlockedVariantIds, setUnlockedVariantIds] = useState<string[]>([]);
   const [variants, setVariants] = useState<ChapterVariant[]>([]);
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [youtubeUnlockAutoPlaySignal, setYoutubeUnlockAutoPlaySignal] = useState(0);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [giftAmount, setGiftAmount] = useState("");
   const [giftMessage, setGiftMessage] = useState("");
@@ -1315,8 +1316,21 @@ export default function StoryChapterClient() {
   };
 
   const openUnlockModal = () => {
+    if (!user) {
+      openLogin();
+      return;
+    }
     setUnlockError("");
-    setShowTopupAction(false);
+    const currentBalance = Number(user?.pulseBalance ?? user?.credits ?? 0);
+    const isChapterUnlock = selectedChapter?.accessType === "timed" || selectedChapter?.accessType === "vip";
+    const requiredPulse = isChapterUnlock ? chapterFinalUnlockPrice : storyFinalUnlockPrice;
+    const insufficient = requiredPulse > 0 && currentBalance < requiredPulse;
+    setShowTopupAction(insufficient);
+    if (insufficient) {
+      setUnlockError(locale === "en" ? "Insufficient Pulse balance." : "Bạn không đủ Pulse để mở khóa.");
+    } else {
+      setUnlockError("");
+    }
     setIsUnlockModalOpen(true);
   };
 
@@ -1334,13 +1348,16 @@ export default function StoryChapterClient() {
       setShowTopupAction(false);
 
       if (selectedChapter.accessType === "vip" || selectedChapter.accessType === "timed") {
-        await apiClient.post(`/chapters/${selectedChapter.id}/unlock-by-pulse`);
+      await apiClient.post(`/chapters/${selectedChapter.id}/unlock-by-pulse`);
       } else {
         await apiClient.post(`/stories/${story.id}/unlock`);
       }
 
       await refreshProfile();
       setIsUnlockModalOpen(false);
+      if (selectedChapter.youtubeVideoId) {
+        setYoutubeUnlockAutoPlaySignal((prev) => prev + 1);
+      }
       try {
         const statusRes = await apiClient.get(`/chapters/${selectedChapter.id}/unlock-status`);
         setChapterUnlockState(statusRes.data || null);
@@ -1768,6 +1785,10 @@ export default function StoryChapterClient() {
                       {filteredChapters.map((chapter) => {
                         const isCurrent = chapter.id === selectedChapter.id;
                         const chapterIsAdsLock = chapter.accessType === "ads";
+                        const chapterIsVipLock = chapter.accessType === "vip";
+                        const chapterIsTimedLock =
+                          chapter.accessType === "timed"
+                          && (!chapter.unlocksAt || new Date(chapter.unlocksAt).getTime() > Date.now());
                         return (
                           <button
                             key={chapter.id}
@@ -1783,6 +1804,18 @@ export default function StoryChapterClient() {
                                 <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${isCurrent ? "bg-white/20 text-yellow-100" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"}`}>
                                   <Lock className="h-3 w-3" />
                                   {locale === "en" ? "Ads" : "Quảng cáo"}
+                                </span>
+                              ) : null}
+                              {chapterIsVipLock ? (
+                                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${isCurrent ? "bg-white/20 text-violet-100" : "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300"}`}>
+                                  <Lock className="h-3 w-3" />
+                                  {locale === "en" ? "VIP" : "VIP"}
+                                </span>
+                              ) : null}
+                              {chapterIsTimedLock ? (
+                                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${isCurrent ? "bg-white/20 text-sky-100" : "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300"}`}>
+                                  <Clock3 className="h-3 w-3" />
+                                  {locale === "en" ? "Timed" : "Hẹn giờ"}
                                 </span>
                               ) : null}
                             </div>
@@ -1877,6 +1910,7 @@ export default function StoryChapterClient() {
                 lockReasonLabel={lockReasonLabel}
                 unlockLabel={t("unlockYoutube")}
                 onUnlockRequest={openUnlockModal}
+                autoPlaySignal={youtubeUnlockAutoPlaySignal}
                 labels={{
                   playbackSpeed: t("playbackSpeed"),
                   sleepTimer: t("sleepTimer"),
@@ -2627,7 +2661,7 @@ export default function StoryChapterClient() {
         <>
           {isUnlockModalOpen ? (
             <div
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
                   setIsUnlockModalOpen(false);

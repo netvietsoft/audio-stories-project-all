@@ -22,6 +22,7 @@ type YouTubePlayerPanelProps = {
   lockReasonLabel: string;
   unlockLabel: string;
   onUnlockRequest: () => void;
+  autoPlaySignal?: number;
   labels: YoutubePlayerLabels;
 };
 
@@ -102,6 +103,7 @@ export default function YouTubePlayerPanel({
   lockReasonLabel,
   unlockLabel,
   onUnlockRequest,
+  autoPlaySignal = 0,
   labels,
 }: YouTubePlayerPanelProps) {
   const hostId = useId().replaceAll(":", "");
@@ -244,6 +246,14 @@ export default function YouTubePlayerPanel({
     };
   }, [isReady, locked]);
 
+  useEffect(() => {
+    if (!autoPlaySignal || locked || !isReady) return;
+    const player = playerRef.current;
+    if (!player) return;
+    player.playVideo();
+    setIsPlaying(true);
+  }, [autoPlaySignal, isReady, locked]);
+
   const seekBy = useCallback((deltaSeconds: number) => {
     const player = playerRef.current;
     if (!player || locked) return;
@@ -317,10 +327,10 @@ export default function YouTubePlayerPanel({
 
       {locked ? (
         <div className="rounded-xl bg-amber-50/70 p-4 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-          <p className="inline-flex items-center gap-1 font-semibold"><Lock className="h-4 w-4" /> {lockReasonLabel}</p>
+          <p className="flex items-start gap-2 font-semibold leading-relaxed"><Lock className="mt-0.5 h-4 w-4 shrink-0" /> <span>{lockReasonLabel}</span></p>
           <button
             onClick={onUnlockRequest}
-            className="mt-3 rounded-md bg-pink-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-pink-700"
+            className="mt-3 inline-flex w-full items-center justify-center rounded-md bg-pink-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-pink-700"
           >
             {unlockLabel}
           </button>

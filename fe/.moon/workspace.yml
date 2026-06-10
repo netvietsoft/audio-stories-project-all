@@ -1,0 +1,8 @@
+projects:
+  web: 'apps/web'
+  admin: 'apps/admin'
+  shared: 'packages/shared'
+  ui: 'packages/ui'
+  apiClient: 'packages/api-client'
+
+defaultProject: 'web'

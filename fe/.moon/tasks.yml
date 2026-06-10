@@ -1,0 +1,27 @@
+fileGroups:
+  sources:
+    - 'src/**/*'
+    - 'app/**/*'
+    - 'next.config.*'
+    - 'tsconfig.json'
+    - 'package.json'
+  tests:
+    - 'e2e/**/*'
+    - '**/*.spec.*'
+    - '**/*.test.*'
+
+tasks:
+  lint:
+    command: 'eslint .'
+    inputs:
+      - '@group(sources)'
+  typecheck:
+    command: 'tsc --noEmit'
+    inputs:
+      - '@group(sources)'
+  build:
+    command: 'next build'
+    inputs:
+      - '@group(sources)'
+    deps:
+      - '^:build'

@@ -1,0 +1,19 @@
+{
+  "name": "@audio-stories/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./auth": "./src/auth.ts",
+    "./env": "./src/env.ts",
+    "./i18n": "./src/i18n.ts",
+    "./middleware": "./src/middleware.ts"
+  },
+  "peerDependencies": {
+    "next": "16.1.0"
+  },
+  "devDependencies": {
+    "next": "16.1.0"
+  }
+}

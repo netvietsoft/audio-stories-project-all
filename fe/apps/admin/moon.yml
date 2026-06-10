@@ -1,0 +1,23 @@
+type: 'application'
+language: 'typescript'
+
+dependsOn:
+  - 'shared'
+  - 'ui'
+  - 'apiClient'
+
+tasks:
+  dev:
+    command: 'next dev -p 3002 -H 0.0.0.0'
+    local: true
+  start:
+    command: 'next start -p 3002'
+    local: true
+  build:
+    command: 'next build'
+    deps:
+      - '^:build'
+  typecheck:
+    command: 'tsc --noEmit'
+  lint:
+    command: 'eslint .'

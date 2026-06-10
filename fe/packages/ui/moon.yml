@@ -1,0 +1,8 @@
+type: 'library'
+language: 'typescript'
+
+tasks:
+  typecheck:
+    command: 'tsc -p tsconfig.json --noEmit false'
+  build:
+    command: 'tsc -p tsconfig.json'

@@ -7,6 +7,10 @@ import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { AppModule } from './app.module';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
+import {
+  collectAllowedOrigins,
+  isCorsOriginAllowed,
+} from './common/origin.util';
 
 // Patch BigInt so it can be serialized to JSON natively
 (BigInt.prototype as any).toJSON = function () {
@@ -17,11 +21,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Raw body parser for Stripe webhooks
-  app.use('/billing/webhook/stripe', json({
-    verify: (req: any, res, buf) => {
-      req.rawBody = buf;
-    }
-  }));
+  app.use(
+    '/billing/webhook/stripe',
+    json({
+      verify: (req: any, res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
 
   app.use(cookieParser());
   app.useGlobalPipes(
@@ -33,30 +40,12 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new PrismaExceptionFilter());
 
-  const frontendUrl = process.env.FRONTEND_URL;
-  const allowedOrigins = new Set<string>();
-
-  if (frontendUrl) allowedOrigins.add(frontendUrl.trim());
-
-  // Also accept any origins provided via CORS env variable (comma-separated)
-  const corsFromEnv = process.env.CORS;
-  if (corsFromEnv) {
-    corsFromEnv.split(',').map((s) => s.trim()).filter(Boolean).forEach((u) => allowedOrigins.add(u));
-  }
-
-  // Allow localhost/127.0.0.1 during development
-  if (process.env.NODE_ENV !== 'production') {
-    ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://127.0.0.1:3001', 'http://localhost:3058', 'http://127.0.0.1:3058'].forEach((u) => allowedOrigins.add(u));
-  }
+  const allowedOrigins = collectAllowedOrigins(process.env);
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow server-to-server requests (no origin)
-      if (!origin) return callback(null, true);
-      // Allow all origins if "*" is configured
-      if (allowedOrigins.has('*')) return callback(null, true);
-      if (allowedOrigins.size === 0) return callback(null, true);
-      if (allowedOrigins.has(origin)) return callback(null, true);
+      if (isCorsOriginAllowed(origin, allowedOrigins, process.env))
+        return callback(null, true);
       callback(new Error('CORS not allowed'));
     },
     credentials: true,
@@ -67,15 +56,18 @@ async function bootstrap() {
   if (!existsSync(uploadsPath)) {
     mkdirSync(uploadsPath, { recursive: true });
   }
-  
+
   // Configure express.static with proper MIME types for webp
-  app.use('/uploads', express.static(uploadsPath, {
-    setHeaders: (res, path) => {
-      if (path.endsWith('.webp')) {
-        res.setHeader('Content-Type', 'image/webp');
-      }
-    },
-  }));
+  app.use(
+    '/uploads',
+    express.static(uploadsPath, {
+      setHeaders: (res, path) => {
+        if (path.endsWith('.webp')) {
+          res.setHeader('Content-Type', 'image/webp');
+        }
+      },
+    }),
+  );
 
   const port = Number(process.env.PORT ?? 3000);
   const host = process.env.HOST ?? '0.0.0.0';

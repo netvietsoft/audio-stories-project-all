@@ -36,6 +36,7 @@ import {
   getDefaultRedirectUri,
   getDefaultClientUrl,
 } from '@/common/oauth-client.util';
+import { getRefreshCookieClearOptions, getRefreshCookieOptions } from './refresh-cookie.options';
 
 @Controller('auth')
 export class AuthController {
@@ -115,14 +116,7 @@ export class AuthController {
 
   /** Set refresh token in a Secure HttpOnly cookie (not visible to JS). */
   private setRefreshCookie(res: Response, token: string) {
-    res.cookie('refresh_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      // Scope cookie to root so server-side middleware can read it
-      path: '/',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in ms
-    });
+    res.cookie('refresh_token', token, getRefreshCookieOptions());
   }
 
   @Post('refresh')
@@ -143,7 +137,7 @@ export class AuthController {
   async logout(@Account() user: JwtPayload, @Res({ passthrough: true }) res: Response) {
     await this.auth.revokeAll(user.sub);
     // Clear refresh token cookie
-    res.clearCookie('refresh_token', { path: '/auth/refresh' });
+    res.clearCookie('refresh_token', getRefreshCookieClearOptions());
     return { ok: true };
   }
 

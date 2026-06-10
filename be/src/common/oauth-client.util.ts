@@ -1,31 +1,33 @@
 import { Logger } from '@nestjs/common';
+import { collectAllowedOrigins } from './origin.util';
 
 const logger = new Logger('OAuthClientUtil');
 
 export function getAllowedClientUrls(): string[] {
-  const envValue = process.env.ALLOWED_CLIENT_URLS || '';
+  const configuredOrigins = collectAllowedOrigins({
+    ...process.env,
+    NODE_ENV: 'production',
+  });
 
-  if (!envValue.trim()) {
+  if (configuredOrigins.size === 0) {
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:3001';
     return [clientUrl];
   }
 
-  const urls = envValue
-    .split(',')
-    .map((url) => url.trim())
-    .filter((url) => url.length > 0);
-
   const validUrls: string[] = [];
-  for (const url of urls) {
+  for (const url of configuredOrigins) {
+    if (url === '*') continue;
     try {
       const parsed = new URL(url);
       validUrls.push(parsed.origin);
     } catch {
-      logger.error(`Invalid URL in ALLOWED_CLIENT_URLS: ${url}`);
+      logger.error(`Invalid URL in client origin configuration: ${url}`);
     }
   }
 
-  return validUrls.length > 0 ? validUrls : ['http://localhost:3000'];
+  return validUrls.length > 0
+    ? Array.from(new Set(validUrls))
+    : ['http://localhost:3001'];
 }
 
 export function isAllowedRedirectUri(redirectUri: string): boolean {
@@ -50,11 +52,16 @@ export function getDefaultClientUrl(): string {
   return allowedUrls.length > 0 ? allowedUrls[0] : 'http://localhost:3000';
 }
 
-export function getDefaultRedirectUri(callbackPath = '/auth/google/callback'): string {
+export function getDefaultRedirectUri(
+  callbackPath = '/auth/google/callback',
+): string {
   return `${getDefaultClientUrl()}${callbackPath}`;
 }
 
-export function buildOAuthState(redirectUri: string, additionalData?: Record<string, unknown>): string {
+export function buildOAuthState(
+  redirectUri: string,
+  additionalData?: Record<string, unknown>,
+): string {
   const stateData = {
     redirect_uri: redirectUri,
     ...additionalData,
@@ -63,7 +70,13 @@ export function buildOAuthState(redirectUri: string, additionalData?: Record<str
   return Buffer.from(JSON.stringify(stateData)).toString('base64');
 }
 
-export function parseOAuthState(state: string): { redirect_uri?: string; timestamp?: number;[key: string]: unknown } | null {
+export function parseOAuthState(
+  state: string,
+): {
+  redirect_uri?: string;
+  timestamp?: number;
+  [key: string]: unknown;
+} | null {
   if (!state) return null;
 
   try {

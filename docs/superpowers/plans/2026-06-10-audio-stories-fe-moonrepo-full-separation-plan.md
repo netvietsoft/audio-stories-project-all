@@ -56,7 +56,7 @@
 - Create: `fe/.yarnrc.yml`
 - Create: `fe/.nvmrc`
 - Create: `fe/.moon/workspace.yml`
-- Create: `fe/.moon/toolchains.yml`
+- Create: `fe/.moon/toolchain.yml`
 - Create: `fe/.moon/tasks.yml`
 - Create: `fe/tsconfig.base.json`
 - Create: `fe/.env.example`
@@ -98,7 +98,7 @@
 - [ ] `node -v` => `v24.16.0`
 - [ ] `yarn --version` => `4.15.0`
 - [ ] `cd fe && yarn install --immutable`
-- [ ] `cd fe && yarn moon projects --json`
+- [ ] `cd fe && yarn moon query projects --json`
 - [ ] `cd fe && yarn moon run shared:typecheck ui:typecheck apiClient:typecheck web:typecheck admin:typecheck web:build admin:build`
 - [ ] `cd be && npm test -- origin.util.spec.ts refresh-cookie.options.spec.ts --runInBand && npm run build`
 - [ ] web smoke: `/`, `/vi/story`, `/vi/music`, `/vi/profile`
@@ -148,16 +148,14 @@ projects:
   shared: 'packages/shared'
   ui: 'packages/ui'
   apiClient: 'packages/api-client'
-defaultProject: 'web'
 ```
-- [ ] Create `fe/.moon/toolchains.yml`:
+- [ ] Create `fe/.moon/toolchain.yml`:
 ```yml
-javascript:
-  packageManager: 'yarn'
 node:
   version: '24.16.0'
-yarn:
-  version: '4.15.0'
+  packageManager: 'yarn'
+  yarn:
+    version: '4.15.0'
 ```
 - [ ] Create `fe/.moon/tasks.yml` with default `lint`, `typecheck`, `build`
 - [ ] Create `fe/tsconfig.base.json`
@@ -364,7 +362,7 @@ yarn install --immutable
 - [ ] Verify Moon project registry:
 ```bash
 cd fe
-yarn moon projects --json | tee /tmp/audio-stories-moon-projects.json
+yarn moon query projects --json | tee /tmp/audio-stories-moon-projects.json
 grep -E '"(web|admin|shared|ui|apiClient)"' /tmp/audio-stories-moon-projects.json
 ```
 - [ ] Commit lockfile/tool metadata:

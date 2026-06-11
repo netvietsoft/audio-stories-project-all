@@ -2,8 +2,14 @@ fileGroups:
   sources:
     - 'src/**/*'
     - 'app/**/*'
+    - 'public/**/*'
+    - 'messages/**/*'
     - 'next.config.*'
+    - 'eslint.config.*'
+    - 'postcss.config.*'
+    - 'tailwind.config.*'
     - 'tsconfig.json'
+    - '/tsconfig.base.json'
     - 'package.json'
   tests:
     - 'e2e/**/*'
@@ -12,15 +18,21 @@ fileGroups:
 
 tasks:
   lint:
-    command: 'eslint .'
+    command: 'eslint'
+    args:
+      - '.'
     inputs:
       - '@group(sources)'
   typecheck:
-    command: 'tsc --noEmit'
+    command: 'tsc'
+    args:
+      - '--noEmit'
     inputs:
       - '@group(sources)'
   build:
-    command: 'next build'
+    command: 'next'
+    args:
+      - 'build'
     inputs:
       - '@group(sources)'
     deps:

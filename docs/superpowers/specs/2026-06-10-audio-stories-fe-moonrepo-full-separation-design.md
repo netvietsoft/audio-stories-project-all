@@ -62,7 +62,7 @@ High-risk coupling points in the current codebase:
 fe/
   .moon/
     workspace.yml
-    toolchains.yml
+    toolchain.yml
     tasks.yml
 
   apps/

@@ -8,16 +8,47 @@ dependsOn:
 
 tasks:
   dev:
-    command: 'next dev -p 3001 -H 0.0.0.0'
+    command: 'next'
+    args:
+      - 'dev'
+      - '-p'
+      - '3001'
+      - '-H'
+      - '0.0.0.0'
+    platform: 'node'
+    options:
+      mergeArgs: 'replace'
     local: true
   start:
-    command: 'next start -p 3001'
+    command: 'next'
+    args:
+      - 'start'
+      - '-p'
+      - '3001'
+    platform: 'node'
+    options:
+      mergeArgs: 'replace'
     local: true
   build:
-    command: 'next build'
+    command: 'next'
+    args:
+      - 'build'
+    platform: 'node'
+    options:
+      mergeArgs: 'replace'
     deps:
       - '^:build'
   typecheck:
-    command: 'tsc --noEmit'
+    command: 'tsc'
+    args:
+      - '--noEmit'
+    platform: 'node'
+    options:
+      mergeArgs: 'replace'
   lint:
-    command: 'eslint .'
+    command: 'eslint'
+    args:
+      - '.'
+    platform: 'node'
+    options:
+      mergeArgs: 'replace'

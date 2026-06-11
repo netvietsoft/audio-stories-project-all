@@ -1,0 +1,456 @@
+"use client";
+
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Loader2, Megaphone, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
+import Link from '@/components/shared/LocalizedLink';
+
+import { adminApiClient as apiClient, ADMIN_ACCESS_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useAdminStore } from '@/stores/admin-store';
+
+type AdItem = {
+  id: string;
+  partnerName: string;
+  title: string;
+  imageUrl?: string | null;
+  targetUrl?: string | null;
+  language?: 'vi' | 'en' | 'all' | string;
+  languageId?: number | null;
+  isGlobal?: boolean;
+  routeType?: number;
+  clickCount?: number;
+  isActive: boolean;
+  createdAt?: string;
+};
+
+type ToastState = {
+  type: 'success' | 'error';
+  message: string;
+} | null;
+
+export default function AdsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const params = useParams<{ lang?: string }>();
+  const selectedLanguage = searchParams.get('language') || 'all';
+  const selectedPartner = searchParams.get('partnerName') || 'all';
+  const selectedStatus = searchParams.get('isActive') || 'all';
+  const selectedSort = searchParams.get('sort') || 'click_desc';
+  const searchTitle = searchParams.get('title') || '';
+  const [items, setItems] = useState<AdItem[]>([]);
+  const [languages, setLanguages] = useState<Array<{ key: string; name: string }>>([]);
+  const [partners, setPartners] = useState<string[]>([]);
+  const [searchInput, setSearchInput] = useState(searchTitle);
+  const debouncedTitle = useDebounce(searchInput, 400);
+  const [isLoading, setIsLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [frequencyValue, setFrequencyValue] = useState('1000');
+  const [isSavingFrequency, setIsSavingFrequency] = useState(false);
+  const [isLoadingFrequency, setIsLoadingFrequency] = useState(true);
+  const [toast, setToast] = useState<ToastState>(null);
+
+  const showToast = (next: NonNullable<ToastState>) => {
+    setToast(next);
+    window.setTimeout(() => {
+      setToast((current) => (current?.message === next.message ? null : current));
+    }, 2400);
+  };
+
+  const handleUnauthorized = () => {
+    useAdminStore.getState().clearAuth();
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('adminLoggedIn');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY);
+    }
+    const lang = params?.lang === 'en' ? 'en' : 'vi';
+    router.push(`/${lang}/login`);
+  };
+
+  const setFilterParam = (key: string, value: string) => {
+    const next = new URLSearchParams(searchParams.toString());
+    if (!value || value === 'all') {
+      next.delete(key);
+    } else {
+      next.set(key, value);
+    }
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  };
+
+  useEffect(() => {
+    setSearchInput(searchTitle);
+  }, [searchTitle]);
+
+  useEffect(() => {
+    const current = (searchParams.get('title') || '').trim();
+    const nextTitle = debouncedTitle.trim();
+    if (current === nextTitle) return;
+    const next = new URLSearchParams(searchParams.toString());
+    if (nextTitle) {
+      next.set('title', nextTitle);
+    } else {
+      next.delete('title');
+    }
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+  }, [debouncedTitle, pathname, router, searchParams]);
+
+  const fetchAds = async () => {
+    setIsLoading(true);
+    try {
+      const sortBy = selectedSort.startsWith('click_') ? 'clickCount' : undefined;
+      const sortOrder = selectedSort.endsWith('_asc') ? 'asc' : 'desc';
+      const response = await apiClient.get('/ads', {
+        params: {
+          routeType: 1,
+          ...(searchTitle.trim() ? { title: searchTitle.trim() } : {}),
+          ...(selectedPartner !== 'all' ? { partnerName: selectedPartner } : {}),
+          ...(selectedLanguage !== 'all' ? { language: selectedLanguage } : {}),
+          ...(selectedStatus !== 'all' ? { isActive: selectedStatus } : {}),
+          ...(sortBy ? { sortBy, sortOrder } : {}),
+        },
+      });
+      setItems(Array.isArray(response.data?.data) ? response.data.data : []);
+    } catch (error) {
+      if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
+        handleUnauthorized();
+      } else {
+        console.error('Failed to fetch ads:', error);
+      }
+      setItems([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void fetchAds();
+  }, [searchTitle, selectedLanguage, selectedPartner, selectedStatus, selectedSort]);
+
+  useEffect(() => {
+    const fetchFiltersData = async () => {
+      try {
+        const [partnersResponse, languagesResponse] = await Promise.all([
+          apiClient.get('/ads/partners', { params: { routeType: 1 } }),
+          apiClient.get('/languages', { params: { all: 'true', active: 'true' } }),
+        ]);
+        setPartners(Array.isArray(partnersResponse.data?.data) ? partnersResponse.data.data : []);
+        const rows = Array.isArray(languagesResponse.data?.data) ? languagesResponse.data.data : [];
+        setLanguages(
+          rows
+            .map((row: { key?: string; name?: string }) => ({
+              key: row.key || '',
+              name: row.name || row.key || '',
+            }))
+            .filter((row: { key: string; name: string }) => Boolean(row.key)),
+        );
+      } catch (error) {
+        if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
+          handleUnauthorized();
+        } else {
+          console.error('Failed to fetch ads filter data:', error);
+        }
+        setPartners([]);
+        setLanguages([]);
+      }
+    };
+
+    void fetchFiltersData();
+  }, []);
+
+  useEffect(() => {
+    const fetchFrequencyConfig = async () => {
+      setIsLoadingFrequency(true);
+      try {
+        const response = await apiClient.get('/settings/ad_insertion_frequency');
+        const rawValue = response?.data?.value;
+        const parsed = Number(rawValue);
+        setFrequencyValue(Number.isFinite(parsed) && parsed > 0 ? String(Math.floor(parsed)) : '1000');
+      } catch (error) {
+        if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
+          handleUnauthorized();
+        } else {
+          console.error('Failed to fetch ad insertion frequency config:', error);
+        }
+        setFrequencyValue('1000');
+      } finally {
+        setIsLoadingFrequency(false);
+      }
+    };
+
+    void fetchFrequencyConfig();
+  }, []);
+
+  const handleSaveFrequency = async () => {
+    const parsed = Number(frequencyValue);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      showToast({
+        type: 'error',
+        message: 'Giá trị tần suất phải là số nguyên dương.',
+      });
+      return;
+    }
+
+    setIsSavingFrequency(true);
+    try {
+      await apiClient.patch('/settings/ad_insertion_frequency', {
+        value: Math.floor(parsed),
+      });
+      setFrequencyValue(String(Math.floor(parsed)));
+      showToast({
+        type: 'success',
+        message: 'Đã lưu cấu hình tần suất chèn quảng cáo.',
+      });
+    } catch (error) {
+      console.error('Failed to update ad insertion frequency config:', error);
+      showToast({
+        type: 'error',
+        message: 'Lưu cấu hình thất bại. Vui lòng thử lại.',
+      });
+    } finally {
+      setIsSavingFrequency(false);
+    }
+  };
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Bạn có chắc muốn xoá quảng cáo \"${title}\"?`)) return;
+
+    setDeletingId(id);
+    try {
+      await apiClient.delete(`/ads/${id}`);
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error('Failed to delete ad:', error);
+      alert('Xoá quảng cáo thất bại.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-700">
+      {toast ? (
+        <div className="fixed right-6 top-5 z-[100]">
+          <div
+            className={`rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg ${
+              toast.type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'
+            }`}
+          >
+            {toast.message}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight text-slate-900">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500 shadow-lg shadow-orange-200">
+              <Megaphone className="h-6 w-6 text-white" />
+            </span>
+            Quảng cáo Inline
+          </h1>
+          <p className="mt-2 font-medium text-slate-500">Danh sách campaign quảng cáo inline dùng để nhúng vào nội dung chương truyện.</p>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Link href="/ads/new" className="inline-flex items-center gap-2 rounded-2xl bg-orange-500 px-5 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-orange-100 transition hover:bg-orange-600">
+            <Plus className="h-4 w-4" />
+            Thêm quảng cáo
+          </Link>
+        </div>
+      </div>
+
+      <section className="rounded-2xl bg-pink-50 p-6 shadow-sm dark:bg-pink-950/30">
+        <div className="space-y-3">
+          <h2 className="text-lg font-black tracking-tight text-pink-900 dark:text-pink-100">Cấu hình tần suất chèn quảng cáo</h2>
+          <p className="text-sm text-pink-800/90 dark:text-pink-200/90">
+            Nhập số chữ (ký tự) ước tính để chia đoạn và chèn quảng cáo xen kẽ vào truyện (Ví dụ: 1000).
+          </p>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <input
+            type="number"
+            min={1}
+            step={1}
+            value={frequencyValue}
+            onChange={(event) => setFrequencyValue(event.target.value)}
+            disabled={isLoadingFrequency || isSavingFrequency}
+            className="h-11 w-full max-w-[220px] rounded-xl bg-white px-4 text-sm font-semibold text-slate-800 outline-none ring-pink-400/20 transition focus:ring-2 disabled:opacity-60 dark:bg-slate-900 dark:text-slate-100"
+          />
+          <button
+            type="button"
+            onClick={() => void handleSaveFrequency()}
+            disabled={isLoadingFrequency || isSavingFrequency}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-pink-600 px-5 text-sm font-bold text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSavingFrequency ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Lưu cấu hình
+          </button>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-nowrap items-end gap-3 overflow-x-auto pb-1">
+          <div className="min-w-[280px] flex-1">
+            <label htmlFor="ads-search-title" className="mb-1 block text-xs font-black uppercase tracking-wider text-slate-500">
+              Tìm theo tiêu đề
+            </label>
+            <input
+              id="ads-search-title"
+              type="text"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Nhập tiêu đề quảng cáo..."
+              className="admin-input h-10 w-full rounded-xl bg-white px-3 text-sm font-medium text-slate-700"
+            />
+          </div>
+
+          <div className="min-w-[190px] flex-shrink-0">
+            <label htmlFor="ads-partner-filter" className="mb-1 block text-xs font-black uppercase tracking-wider text-slate-500">
+              Đối tác
+            </label>
+            <select
+              id="ads-partner-filter"
+              value={selectedPartner}
+              onChange={(event) => setFilterParam('partnerName', event.target.value)}
+              className="admin-input h-10 w-full rounded-xl bg-white px-3 text-sm font-semibold text-slate-700"
+            >
+              <option value="all">Tất cả</option>
+              {partners.map((partner) => (
+                <option key={partner} value={partner}>{partner}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="min-w-[170px] flex-shrink-0">
+            <label htmlFor="ads-language-filter" className="mb-1 block text-xs font-black uppercase tracking-wider text-slate-500">
+              Ngôn ngữ
+            </label>
+            <select
+              id="ads-language-filter"
+              value={selectedLanguage}
+              onChange={(event) => setFilterParam('language', event.target.value)}
+              className="admin-input h-10 w-full rounded-xl bg-white px-3 text-sm font-semibold text-slate-700"
+            >
+              <option value="all">Tất cả</option>
+              {languages.map((language) => (
+                <option key={language.key} value={language.key}>{language.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="min-w-[170px] flex-shrink-0">
+            <label htmlFor="ads-status-filter" className="mb-1 block text-xs font-black uppercase tracking-wider text-slate-500">
+              Trạng thái
+            </label>
+            <select
+              id="ads-status-filter"
+              value={selectedStatus}
+              onChange={(event) => setFilterParam('isActive', event.target.value)}
+              className="admin-input h-10 w-full rounded-xl bg-white px-3 text-sm font-semibold text-slate-700"
+            >
+              <option value="all">Tất cả</option>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+          <div className="min-w-[180px] flex-shrink-0">
+          <label htmlFor="ads-sort-filter" className="mb-1 block text-xs font-black uppercase tracking-wider text-slate-500">
+            Sắp xếp click
+          </label>
+          <select
+            id="ads-sort-filter"
+            value={selectedSort}
+            onChange={(event) => setFilterParam('sort', event.target.value)}
+            className="admin-input h-10 w-full rounded-xl bg-white px-3 text-sm font-semibold text-slate-700"
+          >
+            <option value="click_desc">Click giảm dần</option>
+            <option value="click_asc">Click tăng dần</option>
+          </select>
+          </div>
+        </div>
+      </section>
+
+      <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1100px] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/80">
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Ảnh</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Tiêu đề</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Đối tác</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Ngôn ngữ</th>
+                <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-wider text-slate-400">Lượt Click</th>
+                <th className="px-6 py-4 text-center text-xs font-black uppercase tracking-wider text-slate-400">Trạng thái</th>
+                <th className="px-6 py-4 text-xs font-black uppercase tracking-wider text-slate-400">Ngày tạo</th>
+                <th className="px-6 py-4 text-right text-xs font-black uppercase tracking-wider text-slate-400">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-10 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-orange-500" />
+                  </td>
+                </tr>
+              ) : items.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-10 text-center text-sm font-medium text-slate-500">Chưa có quảng cáo nào.</td>
+                </tr>
+              ) : (
+                items.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/60">
+                    <td className="px-6 py-4">
+                      <div className="h-14 w-14 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                        {item.imageUrl ? (
+                          <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-900">{item.title}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-slate-700">{item.partnerName}</td>
+                    <td className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                      {item.isGlobal ? 'ALL' : (item.language === 'vi' ? 'VI' : item.language === 'en' ? 'EN' : 'ALL')}
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-semibold text-slate-800">
+                      {Number(item.clickCount ?? 0).toLocaleString('vi-VN')}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${item.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+                        {item.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-xs font-medium text-slate-600">
+                      {item.createdAt ? new Date(item.createdAt).toLocaleDateString('vi-VN') : '--'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link href={`/ads/${item.id}`} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100">
+                          <Pencil className="h-3.5 w-3.5" />
+                          Sửa
+                        </Link>
+                        <button
+                          onClick={() => void handleDelete(item.id, item.title)}
+                          disabled={deletingId === item.id}
+                          className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                        >
+                          {deletingId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                          Xoá
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}

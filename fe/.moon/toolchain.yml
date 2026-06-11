@@ -1,0 +1,5 @@
+node:
+  version: '24.16.0'
+  packageManager: 'yarn'
+  yarn:
+    version: '4.15.0'

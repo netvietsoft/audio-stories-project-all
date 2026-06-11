@@ -1,6 +1,0 @@
-javascript:
-  packageManager: 'yarn'
-node:
-  version: '24.16.0'
-yarn:
-  version: '4.15.0'

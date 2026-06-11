@@ -1,8 +1,8 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# See https://help.github.com/articles/ignoring-files/ for more about ignore files.
 
 # dependencies
-/node_modules
-/.pnp
+node_modules/
+.pnp
 .pnp.*
 .yarn/*
 !.yarn/patches
@@ -10,15 +10,22 @@
 !.yarn/releases
 !.yarn/versions
 
+# moon
+.moon/cache/
+
 # testing
-/coverage
+coverage/
+playwright-report/
+test-results/
 
 # next.js
-/.next/
-/out/
+.next/
+**/.next/
+out/
+**/out/
 
 # production
-/build
+build/
 
 # misc
 .DS_Store
@@ -41,3 +48,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# package build artifacts
+dist/
+
+# build output (packages/dist)
+packages/*/dist/

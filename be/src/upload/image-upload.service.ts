@@ -14,16 +14,22 @@ type UploadedImageFile = {
 
 @Injectable()
 export class ImageUploadService {
-  private readonly utapi: UTApi;
+  private utapi: UTApi | null = null;
 
-  constructor(private readonly configService: ConfigService) {
-    const token = this.configService.get<string>('UPLOADTHING_TOKEN');
+  constructor(private readonly configService: ConfigService) {}
 
-    if (!token) {
-      throw new BadRequestException('Missing UPLOADTHING_TOKEN configuration');
+  private getUtApi(): UTApi {
+    if (!this.utapi) {
+      const token = this.configService.get<string>('UPLOADTHING_TOKEN');
+
+      if (!token) {
+        throw new BadRequestException('Missing UPLOADTHING_TOKEN configuration');
+      }
+
+      this.utapi = new UTApi({ token });
     }
 
-    this.utapi = new UTApi({ token });
+    return this.utapi;
   }
 
   async uploadImage(file: UploadedImageFile): Promise<string> {
@@ -37,7 +43,7 @@ export class ImageUploadService {
       const blob = new Blob([uint8Array], { type: file.mimetype });
       const uploadFile = new File([blob], fileName, { type: file.mimetype });
 
-      const response = await this.utapi.uploadFiles(uploadFile);
+      const response = await this.getUtApi().uploadFiles(uploadFile);
 
       if (!response.data || response.error) {
         throw new InternalServerErrorException(
@@ -47,6 +53,10 @@ export class ImageUploadService {
 
       return response.data.url;
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
       console.error('Failed to upload image to UploadThing:', error);
       throw new InternalServerErrorException('Failed to upload image to UploadThing');
     }

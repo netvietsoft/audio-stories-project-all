@@ -3,6 +3,21 @@ language: 'typescript'
 
 tasks:
   typecheck:
-    command: 'tsc -p tsconfig.json --noEmit false'
+    command: 'tsc'
+    args:
+      - '--noEmit'
+      - '-p'
+      - 'tsconfig.json'
+    platform: 'node'
+    options:
+      inferInputs: false
+      mergeArgs: 'replace'
   build:
-    command: 'tsc -p tsconfig.json'
+    command: 'tsc'
+    args:
+      - '-p'
+      - 'tsconfig.json'
+    platform: 'node'
+    options:
+      inferInputs: false
+      mergeArgs: 'replace'

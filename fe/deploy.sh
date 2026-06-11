@@ -1,206 +1,154 @@
 #!/bin/bash
 
-# Deployment script for web-truyen-audio-fe
-set -e
+set -euo pipefail
 
-# ==========================================
-# Configuration
-# ==========================================
 APP_NAME="web-truyen-audio-fe"
+WEB_PM2_NAME="web-truyen-audio-web"
+ADMIN_PM2_NAME="web-truyen-audio-admin"
+ARCHIVE_NAME="next-source.tar.gz"
 
-# File to backup .env file
-ENV_BACKUP_FILE=".env.deploy.backup"
+resolve_env_file() {
+    local primary="$1"
+    local legacy="$2"
 
-# Function to backup .env file before branch switch
-backup_env() {
-    echo "📦 Backing up .env file..."
-    if [ -f ".env" ]; then
-        cp ".env" "$ENV_BACKUP_FILE"
-        echo "✅ Backed up .env to $ENV_BACKUP_FILE"
-    else
-        echo "ℹ️  No .env file found to backup"
+    if [ -f "$primary" ]; then
+        echo "$primary"
+        return 0
     fi
+
+    if [ -f "$legacy" ]; then
+        echo "$legacy"
+        return 0
+    fi
+
+    return 1
 }
-
-# Function to restore .env file from backup
-restore_env() {
-    echo ""
-    echo "📝 Restoring .env file from backup..."
-    
-    if [ ! -f "$ENV_BACKUP_FILE" ]; then
-        echo "⚠️  No backup found at $ENV_BACKUP_FILE"
-        return
-    fi
-    
-    if [ -f "$ENV_BACKUP_FILE" ]; then
-        cp "$ENV_BACKUP_FILE" ".env"
-        echo "  ✓ Restored .env"
-    fi
-    
-    echo "✅ Restored .env file from backup"
-}
-
-# Function to cleanup and switch back to original branch
-cleanup_and_restore() {
-    local exit_code=$?
-    echo ""
-    
-    # Cleanup build archives
-    rm -f next-source.tar.gz 2>/dev/null || true
-    
-    # Switch back to original branch if not already there
-    local current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '')"
-    if [ -n "$ORIGINAL_BRANCH" ] && [ "$current_branch" != "$ORIGINAL_BRANCH" ]; then
-        echo "🔄 Switching back to original branch: $ORIGINAL_BRANCH"
-        git checkout "$ORIGINAL_BRANCH" 2>/dev/null || true
-        echo "✅ Returned to branch: $ORIGINAL_BRANCH"
-    fi
-    
-    # Always restore .env file
-    restore_env
-    
-    if [ $exit_code -ne 0 ]; then
-        echo ""
-        echo "❌ Deployment failed with exit code: $exit_code"
-    fi
-    
-    exit $exit_code
-}
-
-# Trap for signals
-trap 'echo ""; echo "⚠️  Received SIGINT (Ctrl+C), cleaning up..."; exit 130' INT
-trap 'echo ""; echo "⚠️  Received SIGTERM, cleaning up..."; exit 143' TERM
-
-# Set trap to ensure cleanup runs on exit
-trap cleanup_and_restore EXIT
 
 read -p "Enter DEV | PROD: " env
 env=$(echo "$env" | tr -d '\r')
 
-# Setup Host and Env File
-if [ "$env" == 'DEV' ]; then
+if [ "$env" = "DEV" ]; then
     echo "Deploying DEV"
     HOST=72.62.198.196
-    PRIMARY_ENV_FILE=.env.development
-    LEGACY_ENV_FILE=.env.dev
-elif [ "$env" == 'PROD' ]; then
+    WEB_PRIMARY_ENV_FILE="apps/web/.env.development"
+    WEB_LEGACY_ENV_FILE="apps/web/.env.dev"
+    ADMIN_PRIMARY_ENV_FILE="apps/admin/.env.development"
+    ADMIN_LEGACY_ENV_FILE="apps/admin/.env.dev"
+elif [ "$env" = "PROD" ]; then
     echo "Deploying PROD"
     HOST=72.62.198.196
-    PRIMARY_ENV_FILE=.env.production
-    LEGACY_ENV_FILE=.env.prod
+    WEB_PRIMARY_ENV_FILE="apps/web/.env.production"
+    WEB_LEGACY_ENV_FILE="apps/web/.env.prod"
+    ADMIN_PRIMARY_ENV_FILE="apps/admin/.env.production"
+    ADMIN_LEGACY_ENV_FILE="apps/admin/.env.prod"
 else
     echo "❌ Invalid environment: '$env'"
     exit 1
 fi
 
-if [ -f "$PRIMARY_ENV_FILE" ]; then
-    ENV_FILE="$PRIMARY_ENV_FILE"
-elif [ -f "$LEGACY_ENV_FILE" ]; then
-    echo "⚠️  Using legacy env file: $LEGACY_ENV_FILE"
-    ENV_FILE="$LEGACY_ENV_FILE"
-else
-    echo "❌ Env file not found. Expected '$PRIMARY_ENV_FILE' (or legacy '$LEGACY_ENV_FILE')"
+WEB_ENV_FILE=$(resolve_env_file "$WEB_PRIMARY_ENV_FILE" "$WEB_LEGACY_ENV_FILE") || {
+    echo "❌ Web env file not found. Expected '$WEB_PRIMARY_ENV_FILE' (or legacy '$WEB_LEGACY_ENV_FILE')"
+    exit 1
+}
+
+ADMIN_ENV_FILE=$(resolve_env_file "$ADMIN_PRIMARY_ENV_FILE" "$ADMIN_LEGACY_ENV_FILE") || {
+    echo "❌ Admin env file not found. Expected '$ADMIN_PRIMARY_ENV_FILE' (or legacy '$ADMIN_LEGACY_ENV_FILE')"
+    exit 1
+}
+
+WEB_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$WEB_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+ADMIN_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$ADMIN_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+WEB_SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' "$WEB_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+ADMIN_SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' "$ADMIN_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+if [ -z "$WEB_API_URL" ] || [ -z "$ADMIN_API_URL" ]; then
+    echo "❌ NEXT_PUBLIC_API_URL is missing in one of the app env files"
     exit 1
 fi
 
-API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-if [ -z "$API_URL" ]; then
-    echo "❌ NEXT_PUBLIC_API_URL is missing or empty in $ENV_FILE"
+if [ -z "$WEB_SITE_URL" ] || [ -z "$ADMIN_SITE_URL" ]; then
+    echo "❌ NEXT_PUBLIC_SITE_URL is missing in one of the app env files"
     exit 1
 fi
-echo "🌐 Using NEXT_PUBLIC_API_URL=$API_URL"
+
+echo "🌐 Web NEXT_PUBLIC_API_URL=$WEB_API_URL"
+echo "🌐 Admin NEXT_PUBLIC_API_URL=$ADMIN_API_URL"
+echo "🌐 Web NEXT_PUBLIC_SITE_URL=$WEB_SITE_URL"
+echo "🌐 Admin NEXT_PUBLIC_SITE_URL=$ADMIN_SITE_URL"
 
 read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
 SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 
-# Server path
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
-
-# Save current branch for reference
 ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+
 echo "ℹ️  Current branch: $ORIGINAL_BRANCH"
 
-# Backup .env file
-backup_env
+echo "🗑️  Cleaning generated outputs before packaging..."
+rm -rf .moon/cache apps/web/.next apps/admin/.next packages/shared/dist packages/ui/dist packages/api-client/dist
 
-# Prepare .env file for build
-echo "📝 Preparing .env file for build..."
-if [ -f "$ENV_FILE" ]; then
-    echo "  Copying $ENV_FILE → .env"
-    cp "$ENV_FILE" ".env"
-fi
-echo "✅ .env file prepared for build"
+echo "📦 Creating workspace archive..."
+TAR_FILES=(
+    apps
+    packages
+    .moon
+    package.json
+    yarn.lock
+    .yarnrc.yml
+    .nvmrc
+    tsconfig.base.json
+    ecosystem.config.js
+    deploy.sh
+)
 
-# Clean old .next folder to avoid cache issues
-echo "🗑️  Cleaning old .next folder to avoid cache issues..."
-if [ -d ".next" ]; then
-    rm -rf .next
-    echo "  ✓ Removed .next folder"
-else
-    echo "  ℹ️  No .next folder found"
-fi
-echo "✅ .next folder cleaned"
+tar \
+  --exclude='apps/*/.env*' \
+  --exclude='.moon/cache' \
+  --exclude='apps/*/.next' \
+  --exclude='packages/*/dist' \
+  -czf "$ARCHIVE_NAME" "${TAR_FILES[@]}"
 
-# Create archive of source code
-echo "📦 Creating archive of source code..."
-TAR_FILES="src public messages next.config.ts package.json tsconfig.json tailwind.config.ts postcss.config.mjs ecosystem.config.js"
+echo "📤 Uploading workspace archive..."
+ssh "$SSH_USER@$HOST" "mkdir -p '$SERVER_DIR/apps/web' '$SERVER_DIR/apps/admin' '$SERVER_DIR/logs'"
+scp "$ARCHIVE_NAME" "$SSH_USER@$HOST:$SERVER_DIR/$ARCHIVE_NAME"
+scp "$WEB_ENV_FILE" "$SSH_USER@$HOST:$SERVER_DIR/apps/web/.env"
+scp "$ADMIN_ENV_FILE" "$SSH_USER@$HOST:$SERVER_DIR/apps/admin/.env"
 
-# Add optional files if they exist
-[ -f "yarn.lock" ] && TAR_FILES="$TAR_FILES yarn.lock" && echo "  ✓ Including yarn.lock"
-[ -f "package-lock.json" ] && TAR_FILES="$TAR_FILES package-lock.json" && echo "  ✓ Including package-lock.json"
-
-tar -czf next-source.tar.gz $TAR_FILES
-
-# Upload to server
-echo "📤 Uploading..."
-ssh $SSH_USER@$HOST "mkdir -p $SERVER_DIR"
-
-if [ -f "next-source.tar.gz" ]; then
-    scp next-source.tar.gz $SSH_USER@$HOST:$SERVER_DIR/
-fi
-
-# Upload .env file
-if [ -f "$ENV_FILE" ]; then
-    scp $ENV_FILE $SSH_USER@$HOST:$SERVER_DIR/.env
-fi
-
-# Deploy on server
 echo "🚀 Deploying on server..."
-ssh $SSH_USER@$HOST << EOF
-cd $SERVER_DIR
+ssh "$SSH_USER@$HOST" << EOF_REMOTE
+cd "$SERVER_DIR"
 
-# Extract source
-if [ -f "next-source.tar.gz" ]; then
-    echo "Extracting source..."
-    rm -rf src public messages next.config.ts package.json yarn.lock package-lock.json tsconfig.json tailwind.config.ts postcss.config.mjs
-    tar -xzf next-source.tar.gz
-    rm -f next-source.tar.gz
+if [ -f "$ARCHIVE_NAME" ]; then
+    echo "Extracting workspace..."
+    rm -rf apps packages .moon .yarn package.json yarn.lock .yarnrc.yml .nvmrc tsconfig.base.json ecosystem.config.js deploy.sh src public messages next.config.ts tailwind.config.ts postcss.config.mjs tsconfig.json eslint.config.mjs
+    tar -xzf "$ARCHIVE_NAME"
+    rm -f "$ARCHIVE_NAME"
 fi
 
-# Install dependencies and build
+mkdir -p logs apps/web apps/admin
+
 echo "📦 Installing dependencies..."
-if command -v yarn >/dev/null 2>&1; then
-    yarn install
+if command -v corepack >/dev/null 2>&1; then
+    corepack enable
+    corepack yarn install --immutable
+    echo "📦 Building workspace..."
+    corepack yarn build
 else
-    echo "  ⚠️  yarn not found, using npm..."
-    npm install
-fi
-
-echo "📦 Building application on server..."
-if command -v yarn >/dev/null 2>&1; then
+    yarn install --immutable
+    echo "📦 Building workspace..."
     yarn build
-else
-    npm run build
 fi
 
-# Reload PM2
 if [ -f "ecosystem.config.js" ]; then
-    pm2 startOrReload ecosystem.config.js --update-env && pm2 save
+    pm2 startOrReload ecosystem.config.js --only "$WEB_PM2_NAME,$ADMIN_PM2_NAME" --update-env
+    pm2 save
 fi
 
 echo "✅ Deployed!"
 pm2 list
-EOF
+EOF_REMOTE
+
+rm -f "$ARCHIVE_NAME"
 
 echo ""
 echo "✅ Deployment completed successfully!"

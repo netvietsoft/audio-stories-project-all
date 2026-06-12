@@ -2,7 +2,6 @@
 import { CacheModule } from '@nestjs/cache-manager';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
 import { redisStore } from 'cache-manager-redis-yet';
@@ -34,6 +33,7 @@ import { TrackingModule } from './tracking/tracking.module';
 import { SocialLinksModule } from './social-links/social-links.module';
 import { MusicModule } from './music/music.module';
 import { PersonalPlaylistModule } from './personal-playlist/personal-playlist.module';
+import { buildScheduleImports } from './common/app-role.util';
 
 @Module({
   imports: [
@@ -60,7 +60,7 @@ import { PersonalPlaylistModule } from './personal-playlist/personal-playlist.mo
         };
       },
     }),
-    ScheduleModule.forRoot(),
+    ...buildScheduleImports(process.env),
     // Rate limiting: 100 requests per 60 seconds per IP globally
     ThrottlerModule.forRoot([
       {

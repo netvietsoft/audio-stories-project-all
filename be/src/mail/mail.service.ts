@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { resolveMailFromAddress } from '@/common/env-alias.util';
 import { Transporter } from 'nodemailer';
 
 @Injectable()
@@ -11,7 +12,11 @@ export class MailService {
     @Inject('MAIL_TRANSPORT') private readonly transport: Transporter,
     private readonly cfg: ConfigService,
   ) {
-    const email = this.cfg.get('SMTP_FROM') || this.cfg.get('SMTP_USER') || 'no-reply@example.com';
+    const email = resolveMailFromAddress({
+      SMTP_FROM: this.cfg.get<string>('SMTP_FROM'),
+      MAIL_FROM: this.cfg.get<string>('MAIL_FROM'),
+      SMTP_USER: this.cfg.get<string>('SMTP_USER'),
+    });
     this.from = `NetViet Audio <${email}>`;
   }
 

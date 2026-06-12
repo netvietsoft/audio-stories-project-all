@@ -30,3 +30,6 @@ Thumbs.db
 # Temporary files
 /tmp
 /temp
+
+# Yarn local state
+.yarn/

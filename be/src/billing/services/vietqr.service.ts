@@ -4,6 +4,7 @@ import { PackagesHelperService } from './packages-helper.service';
 import { MailService } from '../../mail/mail.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { v4 as uuidv4 } from 'uuid';
+import { resolveVietQrTemplate } from '@/common/env-alias.util';
 
 @Injectable()
 export class VietQRService {
@@ -92,7 +93,7 @@ export class VietQRService {
     const bankId = this.bankId;
     const accountNo = process.env.VIETQR_ACCOUNT_NO;
     const accountName = process.env.VIETQR_ACCOUNT_NAME;
-    const template = process.env.VIETQR_TEMPLATE || 'compact2';
+    const template = resolveVietQrTemplate(process.env);
 
     // Use VietQR.io API
     const url = `https://img.vietqr.io/image/${bankId}-${accountNo}-${template}.png?amount=${amount}&addInfo=${encodeURIComponent(addInfo)}&accountName=${encodeURIComponent(accountName || '')}`;

@@ -6,6 +6,8 @@ APP_NAME="web-truyen-audio-fe"
 WEB_PM2_NAME="web-truyen-audio-web"
 ADMIN_PM2_NAME="web-truyen-audio-admin"
 ARCHIVE_NAME="next-source.tar.gz"
+REQUIRED_NODE_VERSION="v24.16.0"
+REQUIRED_YARN_VERSION="4.15.0"
 
 resolve_env_file() {
     local primary="$1"
@@ -22,6 +24,39 @@ resolve_env_file() {
     fi
 
     return 1
+}
+
+ensure_yarn_toolchain() {
+    local scope="$1"
+
+    if ! command -v node >/dev/null 2>&1; then
+        echo "❌ [$scope] Node.js is required"
+        exit 1
+    fi
+
+    local current_node_version
+    current_node_version="$(node -v)"
+    if [ "$current_node_version" != "$REQUIRED_NODE_VERSION" ]; then
+        echo "❌ [$scope] Node version mismatch. Expected $REQUIRED_NODE_VERSION, got $current_node_version"
+        exit 1
+    fi
+
+    if ! command -v corepack >/dev/null 2>&1; then
+        echo "❌ [$scope] Corepack is required to enforce Yarn $REQUIRED_YARN_VERSION"
+        exit 1
+    fi
+
+    corepack enable
+    corepack prepare "yarn@$REQUIRED_YARN_VERSION" --activate >/dev/null
+
+    local current_yarn_version
+    current_yarn_version="$(yarn --version)"
+    if [ "$current_yarn_version" != "$REQUIRED_YARN_VERSION" ]; then
+        echo "❌ [$scope] Yarn version mismatch. Expected $REQUIRED_YARN_VERSION, got $current_yarn_version"
+        exit 1
+    fi
+
+    echo "✅ [$scope] Toolchain ready: Node $current_node_version / Yarn $current_yarn_version"
 }
 
 read -p "Enter DEV | PROD: " env
@@ -84,6 +119,8 @@ ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 
 echo "ℹ️  Current branch: $ORIGINAL_BRANCH"
 
+ensure_yarn_toolchain "local"
+
 echo "🗑️  Cleaning generated outputs before packaging..."
 rm -rf .moon/cache apps/web/.next apps/admin/.next packages/shared/dist packages/ui/dist packages/api-client/dist
 
@@ -127,17 +164,16 @@ fi
 
 mkdir -p logs apps/web apps/admin
 
+export REQUIRED_NODE_VERSION="$REQUIRED_NODE_VERSION"
+export REQUIRED_YARN_VERSION="$REQUIRED_YARN_VERSION"
+$(typeset -f ensure_yarn_toolchain)
+ensure_yarn_toolchain "server"
+
 echo "📦 Installing dependencies..."
-if command -v corepack >/dev/null 2>&1; then
-    corepack enable
-    corepack yarn install --immutable
-    echo "📦 Building workspace..."
-    corepack yarn build
-else
-    yarn install --immutable
-    echo "📦 Building workspace..."
-    yarn build
-fi
+yarn install --immutable
+
+echo "📦 Building workspace..."
+yarn build
 
 if [ -f "ecosystem.config.js" ]; then
     pm2 startOrReload ecosystem.config.js --only "$WEB_PM2_NAME,$ADMIN_PM2_NAME" --update-env

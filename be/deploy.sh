@@ -1,15 +1,50 @@
 #!/bin/bash
 
 # Deployment script for auth-be
-set -e
+set -euo pipefail
 
 # ==========================================
 # Configuration
 # ==========================================
 APP_NAME="auth-be"
+REQUIRED_NODE_VERSION="v24.16.0"
+REQUIRED_YARN_VERSION="4.15.0"
 
 # File to backup .env file
 ENV_BACKUP_FILE=".env.deploy.backup"
+
+ensure_yarn_toolchain() {
+    local scope="$1"
+
+    if ! command -v node >/dev/null 2>&1; then
+        echo "❌ [$scope] Node.js is required"
+        exit 1
+    fi
+
+    local current_node_version
+    current_node_version="$(node -v)"
+    if [ "$current_node_version" != "$REQUIRED_NODE_VERSION" ]; then
+        echo "❌ [$scope] Node version mismatch. Expected $REQUIRED_NODE_VERSION, got $current_node_version"
+        exit 1
+    fi
+
+    if ! command -v corepack >/dev/null 2>&1; then
+        echo "❌ [$scope] Corepack is required to enforce Yarn $REQUIRED_YARN_VERSION"
+        exit 1
+    fi
+
+    corepack enable
+    corepack prepare "yarn@$REQUIRED_YARN_VERSION" --activate >/dev/null
+
+    local current_yarn_version
+    current_yarn_version="$(yarn --version)"
+    if [ "$current_yarn_version" != "$REQUIRED_YARN_VERSION" ]; then
+        echo "❌ [$scope] Yarn version mismatch. Expected $REQUIRED_YARN_VERSION, got $current_yarn_version"
+        exit 1
+    fi
+
+    echo "✅ [$scope] Toolchain ready: Node $current_node_version / Yarn $current_yarn_version"
+}
 
 # Function to backup .env file before branch switch
 backup_env() {
@@ -123,6 +158,8 @@ SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
 ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 echo "ℹ️  Current branch: $ORIGINAL_BRANCH"
 
+ensure_yarn_toolchain "local"
+
 # Backup .env file
 backup_env
 
@@ -136,11 +173,7 @@ echo "✅ .env file prepared for build"
 
 # Create archive of source code
 echo "📦 Creating archive of source code..."
-TAR_FILES="src prisma scripts package.json ecosystem.config.js nest-cli.json tsconfig.json tsconfig.build.json"
-
-# Add optional files if they exist
-[ -f "package-lock.json" ] && TAR_FILES="$TAR_FILES package-lock.json" && echo "  ✓ Including package-lock.json"
-[ -f "yarn.lock" ] && TAR_FILES="$TAR_FILES yarn.lock" && echo "  ✓ Including yarn.lock"
+TAR_FILES="src prisma scripts package.json yarn.lock .yarnrc.yml .nvmrc ecosystem.config.js nest-cli.json tsconfig.json tsconfig.build.json"
 
 tar -czf be-source.tar.gz $TAR_FILES
 
@@ -165,29 +198,22 @@ cd $SERVER_DIR
 # Extract source
 if [ -f "be-source.tar.gz" ]; then
     echo "Extracting source..."
-    rm -rf src prisma scripts package.json package-lock.json nest-cli.json tsconfig.json tsconfig.build.json
+    rm -rf src prisma scripts package.json package-lock.json yarn.lock .yarnrc.yml .nvmrc nest-cli.json tsconfig.json tsconfig.build.json
     tar -xzf be-source.tar.gz
     rm -f be-source.tar.gz
 fi
 
-# Ensure Prisma 6 is installed (remove Prisma 7 if exists)
-echo "📦 Ensuring Prisma 6..."
-if command -v prisma >/dev/null 2>&1; then
-    PRISMA_VERSION=\$(prisma --version 2>/dev/null | grep -oP 'prisma\\s+:\\s+\\K[0-9]+' | head -1)
-    if [ "\$PRISMA_VERSION" = "7" ]; then
-        echo "  Removing Prisma 7 global..."
-        sudo npm uninstall -g prisma 2>/dev/null || true
-        sudo npm install -g prisma@6.0.0
-        echo "  ✓ Installed Prisma 6 globally"
-    fi
-fi
+export REQUIRED_NODE_VERSION="$REQUIRED_NODE_VERSION"
+export REQUIRED_YARN_VERSION="$REQUIRED_YARN_VERSION"
+$(typeset -f ensure_yarn_toolchain)
+ensure_yarn_toolchain "server"
 
 # Install dependencies and build
 echo "📦 Installing dependencies..."
-npm install --legacy-peer-deps
+yarn install --immutable
 
 echo "📦 Generating Prisma client..."
-npx prisma generate
+yarn prisma:generate
 
 # Reset database if requested
 if [ "$RESET_DB" = "yes" ]; then
@@ -247,7 +273,7 @@ if [ "$RESET_DB" = "yes" ]; then
     echo "  ✅ Database reset complete"
     
     echo "🌱 Running migrations from scratch..."
-    npm run prisma:migrate:deploy:safe
+    yarn prisma:migrate:deploy:safe
     
     if [ \$? -ne 0 ]; then
         echo "  ❌ Failed to apply migrations"
@@ -257,7 +283,7 @@ if [ "$RESET_DB" = "yes" ]; then
     echo "  ✅ Migrations applied"
     
     echo "🌱 Seeding database..."
-    npx prisma db seed
+    yarn prisma:seed
     
     if [ \$? -ne 0 ]; then
         echo "  ⚠️  Warning: Seeding failed or partially completed"
@@ -267,7 +293,7 @@ if [ "$RESET_DB" = "yes" ]; then
 
     echo "🎵 Seeding music data..."
     if [ -f "prisma/seed-music.ts" ]; then
-        npx ts-node prisma/seed-music.ts
+        yarn ts-node prisma/seed-music.ts
         if [ \$? -ne 0 ]; then
             echo "  ⚠️  Warning: Music seed failed or partially completed"
         else
@@ -278,12 +304,12 @@ if [ "$RESET_DB" = "yes" ]; then
     fi
 else
     echo "📦 Running migrations..."
-    npm run prisma:migrate:deploy:safe
+    yarn prisma:migrate:deploy:safe
     echo "  ✅ Migrations applied"
 fi
 
 echo "📦 Building application on server..."
-npm run build
+yarn build
 
 # Reload PM2
 if [ -f "ecosystem.config.js" ]; then

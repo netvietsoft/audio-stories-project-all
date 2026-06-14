@@ -5,14 +5,14 @@ module.exports = {
       severity: 'error',
       comment: 'shared/kernel must be framework-agnostic',
       from: { path: '^src/shared/kernel' },
-      to: { path: '^(@nestjs|@prisma)' },
+      to: { path: 'node_modules/(@nestjs|@prisma)' },
     },
     {
       name: 'no-domain-on-prisma',
       severity: 'error',
       comment: 'domain layer cannot import Prisma',
-      from: { path: 'domain/' },
-      to: { path: '^@prisma/client' },
+      from: { path: '/domain/' },
+      to: { path: 'node_modules/@prisma/client' },
     },
     {
       name: 'no-api-on-infrastructure',

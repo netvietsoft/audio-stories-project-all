@@ -7,6 +7,7 @@ import { AppConfigModule } from './shared/config/app-config.module';
 import { AppConfigService } from './shared/config/app-config.service';
 import { LoggerModule } from './shared/logging/logger.module';
 import { CorrelationIdMiddleware } from './shared/logging/correlation-id.middleware';
+import { HealthModule } from './shared/health/health.module';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
 import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
@@ -65,6 +66,7 @@ import { buildScheduleImports } from './common/app-role.util';
       },
     ]),
     PrismaModule,
+    HealthModule,
     AuthModule,
     MailModule,
     StatsModule,

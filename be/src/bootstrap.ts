@@ -3,6 +3,8 @@ import { join } from 'node:path';
 
 import { ValidationPipe, type INestApplication, Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { OpenAPIObject } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { json } from 'express';
 import * as express from 'express';
@@ -25,6 +27,25 @@ import { ApiResponseInterceptor } from './shared/http/api-response.interceptor';
   return this.toString();
 };
 
+export function buildSwaggerDocument(app: INestApplication): OpenAPIObject {
+  const config = new DocumentBuilder()
+    .setTitle('Audio Stories BE')
+    .setDescription('REST API for the Audio Stories platform')
+    .setVersion('0.1.0')
+    .addBearerAuth()
+    .addCookieAuth('refresh_token')
+    .build();
+  return SwaggerModule.createDocument(app, config);
+}
+
+function configureSwagger(app: INestApplication, env: NodeJS.ProcessEnv) {
+  if (env.NODE_ENV === 'production') return;
+  const document = buildSwaggerDocument(app);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: { persistAuthorization: true },
+  });
+}
+
 function configureHttpApp(app: INestApplication, env: NodeJS.ProcessEnv) {
   // Raw body parser for Stripe webhooks
   app.use(
@@ -46,6 +67,8 @@ function configureHttpApp(app: INestApplication, env: NodeJS.ProcessEnv) {
   );
   app.useGlobalFilters(new GlobalExceptionFilter(app.get(PinoLogger)));
   app.useGlobalInterceptors(new ApiResponseInterceptor());
+
+  configureSwagger(app, env);
 
   const allowedOrigins = collectAllowedOrigins(env);
 

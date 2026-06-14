@@ -32,7 +32,8 @@
         "prisma:migrate:deploy": "prisma migrate deploy",
         "prisma:migrate:deploy:safe": "node scripts/prisma-safe-migrate.cjs",
         "prisma:push": "prisma db push",
-        "prisma:seed": "dotenv -e .env -- prisma db seed"
+        "prisma:seed": "dotenv -e .env -- prisma db seed",
+        "openapi": "ts-node -r tsconfig-paths/register scripts/generate-openapi.ts"
     },
     "dependencies": {
         "@aws-sdk/client-s3": "3.958.0",
@@ -47,6 +48,7 @@
         "@nestjs/platform-express": "11.0.0",
         "@nestjs/platform-socket.io": "11.1.10",
         "@nestjs/schedule": "5.0.0",
+        "@nestjs/swagger": "^11.4.4",
         "@nestjs/terminus": "^11.1.1",
         "@nestjs/throttler": "^6.5.0",
         "@nestjs/websockets": "11.1.10",

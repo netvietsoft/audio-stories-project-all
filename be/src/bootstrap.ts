@@ -119,11 +119,23 @@ export async function bootstrap(
 
     process.on('SIGTERM', () => {
       Logger.log('SIGTERM received, closing app...');
-      void app.close().then(() => process.exit(0));
+      void app
+        .close()
+        .then(() => process.exit(0))
+        .catch((err) => {
+          Logger.error('Error during shutdown', err);
+          process.exit(1);
+        });
     });
     process.on('SIGINT', () => {
       Logger.log('SIGINT received, closing app...');
-      void app.close().then(() => process.exit(0));
+      void app
+        .close()
+        .then(() => process.exit(0))
+        .catch((err) => {
+          Logger.error('Error during shutdown', err);
+          process.exit(1);
+        });
     });
 
     return app;
@@ -136,11 +148,23 @@ export async function bootstrap(
 
   process.on('SIGTERM', () => {
     Logger.log('SIGTERM received, closing context...');
-    void appContext.close().then(() => process.exit(0));
+    void appContext
+      .close()
+      .then(() => process.exit(0))
+      .catch((err) => {
+        Logger.error('Error during shutdown', err);
+        process.exit(1);
+      });
   });
   process.on('SIGINT', () => {
     Logger.log('SIGINT received, closing context...');
-    void appContext.close().then(() => process.exit(0));
+    void appContext
+      .close()
+      .then(() => process.exit(0))
+      .catch((err) => {
+        Logger.error('Error during shutdown', err);
+        process.exit(1);
+      });
   });
 
   return appContext;

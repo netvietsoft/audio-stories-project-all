@@ -17,9 +17,13 @@ import { CORRELATION_ID_HEADER } from './correlation-id.middleware';
             paths: [
               'req.headers.authorization',
               'req.headers.cookie',
+              'req.headers["x-refresh-token"]',
               'req.body.password',
+              'req.body.newPassword',
               'req.body.refreshToken',
               'req.body.accessToken',
+              'req.body.token',
+              'req.body.code',
               'res.headers["set-cookie"]',
             ],
             censor: '[REDACTED]',

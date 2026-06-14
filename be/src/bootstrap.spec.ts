@@ -31,7 +31,9 @@ function createHttpAppDouble() {
     useGlobalFilters: jest.fn(),
     useGlobalInterceptors: jest.fn(),
     enableCors: jest.fn(),
+    enableShutdownHooks: jest.fn(),
     listen: jest.fn().mockResolvedValue(undefined),
+    close: jest.fn().mockResolvedValue(undefined),
     get: jest.fn().mockReturnValue({}),
     useLogger: jest.fn(),
   };
@@ -40,6 +42,13 @@ function createHttpAppDouble() {
 describe('bootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  // Bootstrap registers SIGTERM/SIGINT listeners on the real `process` object.
+  // Strip them between tests so listeners do not leak across cases.
+  afterEach(() => {
+    process.removeAllListeners('SIGTERM');
+    process.removeAllListeners('SIGINT');
   });
 
   it('boots api role as HTTP app and listens on configured host/port', async () => {
@@ -63,13 +72,17 @@ describe('bootstrap', () => {
     expect(nestFactory.createApplicationContext).not.toHaveBeenCalled();
     expect(httpApp.enableCors).toHaveBeenCalledTimes(1);
     expect(httpApp.listen).toHaveBeenCalledWith(4321, '127.0.0.1');
+    expect(httpApp.enableShutdownHooks).toHaveBeenCalledTimes(1);
+    expect(process.listenerCount('SIGTERM')).toBeGreaterThanOrEqual(1);
+    expect(process.listenerCount('SIGINT')).toBeGreaterThanOrEqual(1);
   });
 
   it.each(['worker', 'scheduler'] as const)(
     'boots %s role as standalone application context without HTTP listen',
     async (role) => {
       const appContext = {
-        close: jest.fn(),
+        close: jest.fn().mockResolvedValue(undefined),
+        enableShutdownHooks: jest.fn(),
         get: jest.fn().mockReturnValue({}),
         useLogger: jest.fn(),
       };
@@ -88,6 +101,9 @@ describe('bootstrap', () => {
 
       expect(nestFactory.create).not.toHaveBeenCalled();
       expect(nestFactory.createApplicationContext).toHaveBeenCalledTimes(1);
+      expect(appContext.enableShutdownHooks).toHaveBeenCalledTimes(1);
+      expect(process.listenerCount('SIGTERM')).toBeGreaterThanOrEqual(1);
+      expect(process.listenerCount('SIGINT')).toBeGreaterThanOrEqual(1);
     },
   );
 });

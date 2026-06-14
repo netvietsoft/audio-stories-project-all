@@ -109,17 +109,39 @@ export async function bootstrap(
   if (shouldStartHttpServer(role)) {
     const app = await nestFactory.create(AppModule, { bufferLogs: true });
     app.useLogger(app.get(PinoLogger));
+    app.enableShutdownHooks();
     configureHttpApp(app, env);
 
     const port = Number(env.PORT ?? 3000);
     const host = env.HOST ?? '0.0.0.0';
     await app.listen(port, host);
     Logger.log(`HTTP server listening on http://${host}:${port}`);
+
+    process.on('SIGTERM', () => {
+      Logger.log('SIGTERM received, closing app...');
+      void app.close().then(() => process.exit(0));
+    });
+    process.on('SIGINT', () => {
+      Logger.log('SIGINT received, closing app...');
+      void app.close().then(() => process.exit(0));
+    });
+
     return app;
   }
 
   const appContext = await nestFactory.createApplicationContext(AppModule, { bufferLogs: true });
   appContext.useLogger(appContext.get(PinoLogger));
+  appContext.enableShutdownHooks();
   Logger.log(`Standalone context ready for role: ${role}`);
+
+  process.on('SIGTERM', () => {
+    Logger.log('SIGTERM received, closing context...');
+    void appContext.close().then(() => process.exit(0));
+  });
+  process.on('SIGINT', () => {
+    Logger.log('SIGINT received, closing context...');
+    void appContext.close().then(() => process.exit(0));
+  });
+
   return appContext;
 }

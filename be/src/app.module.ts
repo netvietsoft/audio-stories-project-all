@@ -1,10 +1,12 @@
-﻿import { Module } from '@nestjs/common';
+﻿import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppConfigModule } from './shared/config/app-config.module';
 import { AppConfigService } from './shared/config/app-config.service';
+import { LoggerModule } from './shared/logging/logger.module';
+import { CorrelationIdMiddleware } from './shared/logging/correlation-id.middleware';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
 import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
@@ -40,6 +42,7 @@ import { buildScheduleImports } from './common/app-role.util';
 @Module({
   imports: [
     AppConfigModule,
+    LoggerModule,
     // TODO: Remove once all ConfigService consumers migrate to AppConfigService (Phase 1+)
     ConfigModule.forRoot({ isGlobal: true }),
     CacheModule.registerAsync({
@@ -98,4 +101,8 @@ import { buildScheduleImports } from './common/app-role.util';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  }
+}

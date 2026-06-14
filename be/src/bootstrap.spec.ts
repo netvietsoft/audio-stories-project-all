@@ -16,6 +16,8 @@ function createHttpAppDouble() {
     useGlobalFilters: jest.fn(),
     enableCors: jest.fn(),
     listen: jest.fn().mockResolvedValue(undefined),
+    get: jest.fn().mockReturnValue({}),
+    useLogger: jest.fn(),
   };
 }
 
@@ -50,7 +52,11 @@ describe('bootstrap', () => {
   it.each(['worker', 'scheduler'] as const)(
     'boots %s role as standalone application context without HTTP listen',
     async (role) => {
-      const appContext = { close: jest.fn() };
+      const appContext = {
+        close: jest.fn(),
+        get: jest.fn().mockReturnValue({}),
+        useLogger: jest.fn(),
+      };
       const nestFactory = {
         create: jest.fn(),
         createApplicationContext: jest.fn().mockResolvedValue(appContext),

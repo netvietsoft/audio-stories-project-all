@@ -6,6 +6,7 @@ import { NestFactory } from '@nestjs/core';
 import cookieParser from 'cookie-parser';
 import { json } from 'express';
 import * as express from 'express';
+import { Logger as PinoLogger } from 'nestjs-pino';
 
 import { AppModule } from './app.module';
 import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
@@ -81,7 +82,8 @@ export async function bootstrap(
   Logger.log(`Bootstrapping BE role: ${role}`);
 
   if (shouldStartHttpServer(role)) {
-    const app = await nestFactory.create(AppModule);
+    const app = await nestFactory.create(AppModule, { bufferLogs: true });
+    app.useLogger(app.get(PinoLogger));
     configureHttpApp(app, env);
 
     const port = Number(env.PORT ?? 3000);
@@ -91,7 +93,8 @@ export async function bootstrap(
     return app;
   }
 
-  const appContext = await nestFactory.createApplicationContext(AppModule);
+  const appContext = await nestFactory.createApplicationContext(AppModule, { bufferLogs: true });
+  appContext.useLogger(appContext.get(PinoLogger));
   Logger.log(`Standalone context ready for role: ${role}`);
   return appContext;
 }

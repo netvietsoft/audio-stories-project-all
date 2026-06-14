@@ -1,8 +1,10 @@
 ﻿import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { APP_GUARD } from '@nestjs/core';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { AppConfigModule } from './shared/config/app-config.module';
+import { AppConfigService } from './shared/config/app-config.service';
 import { CustomThrottlerGuard } from './common/guards/custom-throttler.guard';
 import { redisStore } from 'cache-manager-redis-yet';
 import { AppController } from './app.controller';
@@ -37,23 +39,14 @@ import { buildScheduleImports } from './common/app-role.util';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: process.env.NODE_ENV === 'production' ? '.env.prod' : '.env',
-    }),
+    AppConfigModule,
+    // TODO: Remove once all ConfigService consumers migrate to AppConfigService (Phase 1+)
+    ConfigModule.forRoot({ isGlobal: true }),
     CacheModule.registerAsync({
       isGlobal: true,
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
-        const redisUrl = configService.get<string>('REDIS_URL');
-
-        if (!redisUrl) {
-          return {
-            ttl: 300,
-            max: 500,
-          };
-        }
-
+      inject: [AppConfigService],
+      useFactory: async (cfg: AppConfigService) => {
+        const redisUrl = cfg.redis.url;
         return {
           store: await redisStore({ url: redisUrl }),
           ttl: 300,

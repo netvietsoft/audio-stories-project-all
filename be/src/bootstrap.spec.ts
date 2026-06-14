@@ -14,6 +14,7 @@ function createHttpAppDouble() {
     use: jest.fn(),
     useGlobalPipes: jest.fn(),
     useGlobalFilters: jest.fn(),
+    useGlobalInterceptors: jest.fn(),
     enableCors: jest.fn(),
     listen: jest.fn().mockResolvedValue(undefined),
     get: jest.fn().mockReturnValue({}),

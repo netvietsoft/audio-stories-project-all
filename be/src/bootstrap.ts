@@ -9,7 +9,6 @@ import * as express from 'express';
 import { Logger as PinoLogger } from 'nestjs-pino';
 
 import { AppModule } from './app.module';
-import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter';
 import {
   collectAllowedOrigins,
   isCorsOriginAllowed,
@@ -18,6 +17,8 @@ import {
   getAppRole,
   shouldStartHttpServer,
 } from './common/app-role.util';
+import { GlobalExceptionFilter } from './shared/http/global-exception.filter';
+import { ApiResponseInterceptor } from './shared/http/api-response.interceptor';
 
 // Patch BigInt so it can be serialized to JSON natively
 (BigInt.prototype as any).toJSON = function () {
@@ -43,7 +44,8 @@ function configureHttpApp(app: INestApplication, env: NodeJS.ProcessEnv) {
       forbidNonWhitelisted: false,
     }),
   );
-  app.useGlobalFilters(new PrismaExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter(app.get(PinoLogger)));
+  app.useGlobalInterceptors(new ApiResponseInterceptor());
 
   const allowedOrigins = collectAllowedOrigins(env);
 

@@ -14,9 +14,11 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.test'), override: true })
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import { Logger as PinoLogger } from 'nestjs-pino';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { PrismaExceptionFilter } from '../src/common/filters/prisma-exception.filter';
+import { GlobalExceptionFilter } from '../src/shared/http/global-exception.filter';
+import { ApiResponseInterceptor } from '../src/shared/http/api-response.interceptor';
 
 // BigInt serialization patch
 (BigInt.prototype as any).toJSON = function () {
@@ -41,7 +43,8 @@ export async function createTestApp(): Promise<INestApplication> {
       forbidNonWhitelisted: false,
     }),
   );
-  app.useGlobalFilters(new PrismaExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter(app.get(PinoLogger)));
+  app.useGlobalInterceptors(new ApiResponseInterceptor());
 
   await app.init();
   return app;

@@ -3,7 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { AppConfigService } from '../shared/config/app-config.service';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { randomUUID } from 'node:crypto';
 
@@ -30,13 +30,12 @@ export class AudioUploadService {
   private readonly bucketName: string;
   private readonly publicBaseUrl: string;
 
-  constructor(private readonly configService: ConfigService) {
-    const endpoint = this.configService.get<string>('R2_ENDPOINT');
-    const accessKeyId = this.configService.get<string>('R2_ACCESS_KEY_ID');
-    const secretAccessKey =
-      this.configService.get<string>('R2_SECRET_ACCESS_KEY') || this.configService.get<string>('R2_SECRET_KEY_ID');
-    const bucketName = this.configService.get<string>('R2_BUCKET_NAME');
-    const publicBaseUrl = this.configService.get<string>('R2_URL');
+  constructor(private readonly cfg: AppConfigService) {
+    const endpoint = this.cfg.storage.r2.endpoint;
+    const accessKeyId = this.cfg.storage.r2.accessKeyId;
+    const secretAccessKey = this.cfg.storage.r2.secretAccessKey;
+    const bucketName = this.cfg.storage.r2.bucketName;
+    const publicBaseUrl = this.cfg.storage.r2.url;
 
     if (!endpoint || !accessKeyId || !secretAccessKey || !bucketName || !publicBaseUrl) {
       throw new BadRequestException('Missing required Cloudflare R2 configuration');

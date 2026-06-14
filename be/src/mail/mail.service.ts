@@ -1,6 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { resolveMailFromAddress } from '@/common/env-alias.util';
+import { AppConfigService } from '../shared/config/app-config.service';
 import { Transporter } from 'nodemailer';
 
 @Injectable()
@@ -10,14 +9,9 @@ export class MailService {
 
   constructor(
     @Inject('MAIL_TRANSPORT') private readonly transport: Transporter,
-    private readonly cfg: ConfigService,
+    private readonly cfg: AppConfigService,
   ) {
-    const email = resolveMailFromAddress({
-      SMTP_FROM: this.cfg.get<string>('SMTP_FROM'),
-      MAIL_FROM: this.cfg.get<string>('MAIL_FROM'),
-      SMTP_USER: this.cfg.get<string>('SMTP_USER'),
-    });
-    this.from = `NetViet Audio <${email}>`;
+    this.from = `NetViet Audio <${this.cfg.mail.from}>`;
   }
 
   async sendVerifyEmail(to: string, link: string) {
@@ -248,7 +242,7 @@ export class MailService {
               </div>
 
               <div style="text-align: center; margin-top: 30px;">
-                <a href="${this.cfg.get('FRONTEND_URL') || 'http://localhost:3001'}" 
+                <a href="${this.cfg.cors.frontendUrl || 'http://localhost:3001'}"
                    style="display: inline-block; background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold;">
                   Về trang chủ
                 </a>

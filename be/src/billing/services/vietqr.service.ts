@@ -3,14 +3,15 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { PackagesHelperService } from './packages-helper.service';
 import { MailService } from '../../mail/mail.service';
 import { NotificationsService } from '../../notifications/notifications.service';
+import { AppConfigService } from '../../shared/config/app-config.service';
 import { v4 as uuidv4 } from 'uuid';
-import { resolveVietQrTemplate } from '@/common/env-alias.util';
 
 @Injectable()
 export class VietQRService {
   private readonly logger = new Logger(VietQRService.name);
 
   constructor(
+    private readonly cfg: AppConfigService,
     private readonly prisma: PrismaService,
     private readonly packagesHelper: PackagesHelperService,
     private readonly mailService: MailService,
@@ -19,14 +20,14 @@ export class VietQRService {
 
   private get isConfigured(): boolean {
     return !!(
-      (process.env.VIETQR_BANK_ID || process.env.VIETQR_ACQ_ID) &&
-      process.env.VIETQR_ACCOUNT_NO &&
-      process.env.VIETQR_ACCOUNT_NAME
+      this.cfg.payment.vietqr.bankId &&
+      this.cfg.payment.vietqr.accountNo &&
+      this.cfg.payment.vietqr.accountName
     );
   }
 
   private get bankId(): string {
-    return process.env.VIETQR_BANK_ID || process.env.VIETQR_ACQ_ID || '';
+    return this.cfg.payment.vietqr.bankId ?? '';
   }
 
   async createOrder(params: { userId: string; packageCode: string }) {
@@ -83,17 +84,17 @@ export class VietQRService {
       expires_at: payment.expiresAt,
       bank_info: {
         pulse: payment.pulseAdded,
-        account_no: process.env.VIETQR_ACCOUNT_NO,
-        account_name: process.env.VIETQR_ACCOUNT_NAME,
+        account_no: this.cfg.payment.vietqr.accountNo,
+        account_name: this.cfg.payment.vietqr.accountName,
       },
     };
   }
 
   private async generateQRCode(amount: number, addInfo: string) {
     const bankId = this.bankId;
-    const accountNo = process.env.VIETQR_ACCOUNT_NO;
-    const accountName = process.env.VIETQR_ACCOUNT_NAME;
-    const template = resolveVietQrTemplate(process.env);
+    const accountNo = this.cfg.payment.vietqr.accountNo;
+    const accountName = this.cfg.payment.vietqr.accountName;
+    const template = this.cfg.payment.vietqr.template;
 
     // Use VietQR.io API
     const url = `https://img.vietqr.io/image/${bankId}-${accountNo}-${template}.png?amount=${amount}&addInfo=${encodeURIComponent(addInfo)}&accountName=${encodeURIComponent(accountName || '')}`;

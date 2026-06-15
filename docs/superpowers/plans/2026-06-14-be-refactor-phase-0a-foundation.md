@@ -1432,7 +1432,9 @@ git commit -m "feat(be): add API response envelope + global exception filter, dr
 - Modify: `be/package.json` (add `@nestjs/terminus`)
 - Create: `be/src/shared/health/health.controller.ts`
 - Create: `be/src/shared/health/health.module.ts`
+- Create: `be/src/shared/health/redis-health.indicator.ts`
 - Create: `be/src/shared/health/__tests__/health.controller.spec.ts`
+- Create: `be/src/shared/health/__tests__/redis-health.indicator.spec.ts`
 - Modify: `be/src/app.module.ts`
 
 - [ ] **Step 1: Install @nestjs/terminus**
@@ -1442,14 +1444,66 @@ cd be
 yarn add @nestjs/terminus
 ```
 
-- [ ] **Step 2: Implement HealthController + HealthModule**
+- [ ] **Step 2: Implement HealthController + HealthModule + RedisHealthIndicator**
+
+`be/src/shared/health/redis-health.indicator.ts`:
+
+```ts
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { HealthCheckError, HealthIndicator, HealthIndicatorResult } from '@nestjs/terminus';
+import Redis from 'ioredis';
+import { AppConfigService } from '../config/app-config.service';
+
+@Injectable()
+export class RedisHealthIndicator extends HealthIndicator implements OnModuleInit, OnModuleDestroy {
+  private client?: Redis;
+
+  constructor(private readonly cfg: AppConfigService) {
+    super();
+  }
+
+  onModuleInit(): void {
+    this.client = new Redis(this.cfg.redis.url, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
+    });
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    if (this.client) {
+      await this.client.quit().catch(() => undefined);
+    }
+  }
+
+  async pingCheck(key: string): Promise<HealthIndicatorResult> {
+    try {
+      const pong = await this.client!.ping();
+      const isHealthy = pong === 'PONG';
+      const result = this.getStatus(key, isHealthy);
+      if (!isHealthy) {
+        throw new HealthCheckError('Redis ping unexpected response', result);
+      }
+      return result;
+    } catch (err) {
+      if (err instanceof HealthCheckError) throw err;
+      const message = err instanceof Error ? err.message : 'unknown';
+      throw new HealthCheckError(
+        'Redis ping failed',
+        this.getStatus(key, false, { error: message }),
+      );
+    }
+  }
+}
+```
 
 `be/src/shared/health/health.controller.ts`:
 
 ```ts
 import { Controller, Get } from '@nestjs/common';
-import { HealthCheck, HealthCheckService, HttpHealthIndicator, PrismaHealthIndicator } from '@nestjs/terminus';
+import { HealthCheck, HealthCheckService, PrismaHealthIndicator } from '@nestjs/terminus';
 import { PrismaService } from '../../prisma/prisma.service';
+import { RedisHealthIndicator } from './redis-health.indicator';
 
 @Controller()
 export class HealthController {
@@ -1457,6 +1511,7 @@ export class HealthController {
     private readonly health: HealthCheckService,
     private readonly prismaIndicator: PrismaHealthIndicator,
     private readonly prisma: PrismaService,
+    private readonly redisIndicator: RedisHealthIndicator,
   ) {}
 
   @Get('healthz')
@@ -1469,6 +1524,7 @@ export class HealthController {
   readiness() {
     return this.health.check([
       () => this.prismaIndicator.pingCheck('database', this.prisma),
+      () => this.redisIndicator.pingCheck('redis'),
     ]);
   }
 }
@@ -1481,18 +1537,21 @@ import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
 import { HttpModule } from '@nestjs/axios';
 import { HealthController } from './health.controller';
+import { RedisHealthIndicator } from './redis-health.indicator';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { AppConfigModule } from '../config/app-config.module';
 
 @Module({
-  imports: [TerminusModule, HttpModule, PrismaModule],
+  imports: [TerminusModule, HttpModule, PrismaModule, AppConfigModule],
   controllers: [HealthController],
+  providers: [RedisHealthIndicator],
 })
 export class HealthModule {}
 ```
 
 If `@nestjs/axios` is not installed, install with `yarn add @nestjs/axios @nestjs/common`. The Prisma indicator works without HttpModule, but Terminus may peer-require it; remove `HttpModule` import if Terminus doesn't complain.
 
-- [ ] **Step 3: Write failing test for liveness**
+- [ ] **Step 3: Write tests for HealthController + RedisHealthIndicator**
 
 `be/src/shared/health/__tests__/health.controller.spec.ts`:
 
@@ -1501,6 +1560,7 @@ import { Test } from '@nestjs/testing';
 import { HealthController } from '../health.controller';
 import { HealthCheckService, PrismaHealthIndicator } from '@nestjs/terminus';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { RedisHealthIndicator } from '../redis-health.indicator';
 
 describe('HealthController', () => {
   let ctrl: HealthController;
@@ -1512,6 +1572,7 @@ describe('HealthController', () => {
         { provide: HealthCheckService, useValue: { check: jest.fn() } },
         { provide: PrismaHealthIndicator, useValue: { pingCheck: jest.fn() } },
         { provide: PrismaService, useValue: {} },
+        { provide: RedisHealthIndicator, useValue: { pingCheck: jest.fn() } },
       ],
     }).compile();
     ctrl = moduleRef.get(HealthController);
@@ -1521,23 +1582,94 @@ describe('HealthController', () => {
     expect(ctrl.liveness()).toEqual({ status: 'ok' });
   });
 
-  it('readiness delegates to terminus', async () => {
+  it('readiness delegates to terminus with database + redis indicators', async () => {
     const checkResult = { status: 'ok' as const, info: {}, error: {}, details: {} };
     const healthSvc = ctrl['health'] as any;
     healthSvc.check.mockResolvedValue(checkResult);
     const result = await ctrl.readiness();
     expect(result).toBe(checkResult);
-    expect(healthSvc.check).toHaveBeenCalled();
+    expect(healthSvc.check).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.any(Function),
+      expect.any(Function),
+    ]));
+    const [dbCheck, redisCheck] = (healthSvc.check.mock.calls[0] as [Array<() => unknown>])[0];
+    dbCheck();
+    redisCheck();
+    expect((ctrl['prismaIndicator'] as any).pingCheck).toHaveBeenCalledWith(
+      'database',
+      ctrl['prisma'],
+    );
+    expect((ctrl['redisIndicator'] as any).pingCheck).toHaveBeenCalledWith('redis');
   });
 });
 ```
 
-- [ ] **Step 4: Run test, expect PASS** (we have all files in place now)
+`be/src/shared/health/__tests__/redis-health.indicator.spec.ts`:
+
+```ts
+import { Test } from '@nestjs/testing';
+import { HealthCheckError } from '@nestjs/terminus';
+import { RedisHealthIndicator } from '../redis-health.indicator';
+import { AppConfigService } from '../../config/app-config.service';
+
+const mockPing = jest.fn();
+const mockQuit = jest.fn().mockResolvedValue('OK');
+
+jest.mock('ioredis', () => {
+  return jest.fn().mockImplementation(() => ({
+    ping: mockPing,
+    quit: mockQuit,
+  }));
+});
+
+describe('RedisHealthIndicator', () => {
+  let indicator: RedisHealthIndicator;
+
+  beforeEach(async () => {
+    mockPing.mockReset();
+    mockQuit.mockClear();
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        RedisHealthIndicator,
+        {
+          provide: AppConfigService,
+          useValue: { redis: { url: 'redis://localhost:6379/0' } },
+        },
+      ],
+    }).compile();
+    indicator = moduleRef.get(RedisHealthIndicator);
+    indicator.onModuleInit();
+  });
+
+  it('returns healthy result on PONG', async () => {
+    mockPing.mockResolvedValue('PONG');
+    const result = await indicator.pingCheck('redis');
+    expect(result).toEqual({ redis: { status: 'up' } });
+  });
+
+  it('throws HealthCheckError on non-PONG response', async () => {
+    mockPing.mockResolvedValue('something-else');
+    await expect(indicator.pingCheck('redis')).rejects.toThrow(HealthCheckError);
+  });
+
+  it('throws HealthCheckError on ping rejection', async () => {
+    mockPing.mockRejectedValue(new Error('connection refused'));
+    await expect(indicator.pingCheck('redis')).rejects.toThrow(HealthCheckError);
+  });
+
+  it('quits client on module destroy', async () => {
+    await indicator.onModuleDestroy();
+    expect(mockQuit).toHaveBeenCalled();
+  });
+});
+```
+
+- [ ] **Step 4: Run tests, expect PASS** (we have all files in place now)
 
 ```
 yarn jest src/shared/health
 ```
-Expected: PASS, 2 tests.
+Expected: PASS, 6 tests across 2 suites.
 
 - [ ] **Step 5: Wire HealthModule into app.module.ts**
 
@@ -1575,6 +1707,20 @@ Expected: PASS.
 git add be/package.json be/yarn.lock be/src/shared/health be/src/app.module.ts
 git commit -m "feat(be): add /healthz liveness and /readyz readiness endpoints"
 ```
+
+### Task 6 deviations from initial plan code block
+
+The initial Task 6 commit (`d19f7b2`) implemented `/readyz` with a Prisma indicator ONLY, matching the plan code block as written at the time. Gate G0a verification (2026-06-15) surfaced that the spec at Section 2.5 line 177 explicitly requires `/readyz` to "check DB + Redis" — the original plan code block dropped the Redis indicator. The polish commit applied retroactively:
+
+1. Added `RedisHealthIndicator` (ioredis-based, lazy-connect, terminus `HealthIndicator` subclass).
+2. Wired the indicator into `HealthController.readiness()` as a second `check` callback.
+3. Imported `AppConfigModule` into `HealthModule` so the indicator can resolve `AppConfigService.redis.url`.
+4. Updated controller spec to mock the new indicator and assert the readiness array contains both DB + Redis callbacks.
+5. Added dedicated indicator unit test mocking `ioredis` to cover PONG / non-PONG / rejection / shutdown paths.
+
+The plan code blocks above have been rewritten lockstep with the polish commit so that the plan matches the final committed code. This is the 5th application of the plan-lockstep convention (Tasks 8 → 9 → 10 → 12 → 6-polish) and the first RETROACTIVE application — earlier applications happened in the implementer's commit, this one re-syncs the plan after a separately-committed quality fix.
+
+**Known limitation**: `@nestjs/terminus` v11 has deprecated `HealthIndicator` + `HealthCheckError` in favor of `HealthIndicatorService.check()`. The polish kept the class-based pattern to match the existing `PrismaHealthIndicator` integration in this controller. A full migration to the new service pattern is a Phase 0b/Phase 3 candidate — TS6385 warnings on these symbols are documented carry-forward debt.
 
 ---
 

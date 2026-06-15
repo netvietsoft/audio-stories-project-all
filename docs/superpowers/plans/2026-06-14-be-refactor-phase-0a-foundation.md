@@ -2249,9 +2249,7 @@ jobs:
       - name: Cache Yarn
         uses: actions/cache@v4
         with:
-          path: |
-            be/.yarn/cache
-            be/.yarn/install-state.gz
+          path: ~/.yarn/berry/cache
           key: ${{ runner.os }}-yarn-${{ hashFiles('be/yarn.lock') }}
 
       - name: Install dependencies
@@ -2261,7 +2259,7 @@ jobs:
         run: yarn prisma:generate
 
       - name: Lint
-        run: yarn lint
+        run: yarn lint:check
 
       - name: Typecheck
         run: yarn tsc --noEmit -p tsconfig.build.json
@@ -2274,17 +2272,13 @@ jobs:
 
       - name: Build
         run: yarn build
-
-      - name: Generate OpenAPI
-        run: yarn openapi
-
-      - name: Upload openapi.json artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: openapi
-          path: be/dist/openapi.json
-          if-no-files-found: error
 ```
+
+**Task 12 deviations from the initial plan code block (applied during execution):**
+
+1. **`yarn lint` → `yarn lint:check`** — the `lint` script is defined as `eslint ... --fix` in `be/package.json` (auto-fix on). Running it in CI would silently modify code on the runner without surfacing a diff in the PR. Task 8 added `lint:check` (no `--fix`) specifically for CI; this step now uses it.
+2. **`yarn openapi` step + `actions/upload-artifact` step dropped (Option B1)** — `scripts/generate-openapi.ts` boots the full `AppModule`, which constructs `CacheModule.registerAsync` → `redisStore({ url })` and hangs without a Redis service. CI currently has no Redis service container (same constraint that forced Task 10 to drop `yarn openapi` from the Docker build). `dist/openapi.json` is tooling-only — no `src/` consumes it, and Swagger UI builds the document live at runtime — so dropping the steps does not lose runtime capability. If the artifact is needed later, add a Redis service container in a follow-up phase.
+3. **Yarn 4 cache path corrected to `~/.yarn/berry/cache` (Option C1)** — `be/.yarnrc.yml` sets `enableGlobalCache: true`, so Yarn 4 stores its cache at `~/.yarn/berry/cache`, not `be/.yarn/cache`. The original `be/.yarn/cache` + `be/.yarn/install-state.gz` paths would silently miss on every CI run. Cache key still hashes `be/yarn.lock` as planned.
 
 - [ ] **Step 3: Verify workflow YAML is parseable**
 

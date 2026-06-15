@@ -2176,107 +2176,17 @@ git commit -m "build(be): add multi-stage Dockerfile with non-root user and heal
 
 ---
 
-## Task 11: docker-compose.dev.yml
+## Task 11: docker-compose.dev.yml — **SKIPPED (scope override 2026-06-15)**
 
-**Files:**
-- Create: `be/docker-compose.dev.yml`
+**Status:** SKIPPED. No files created. Phase 0a continues directly to Task 12.
 
-- [ ] **Step 1: Create docker-compose.dev.yml**
+**Rationale:** User scope override (2026-06-15) restricts Phase 0a Docker configuration to PRODUCTION-only artifacts. Local development continues to run on the host via `yarn start:dev` against host-installed MySQL and Redis — no local-dev container stack is needed.
 
-`be/docker-compose.dev.yml`:
+The originally-planned `docker-compose.dev.yml` would have served only local development (it composed dev MySQL 8 + Redis 7 + the API image built from the Task 10 Dockerfile). Under the scope override, this is dead code: it duplicates host services that are already running, introduces a parallel dev workflow nobody uses, and confuses the production deployment story. SKIP is the right call.
 
-```yaml
-services:
-  mysql:
-    image: mysql:8.0
-    container_name: audio-stories-mysql-dev
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: audio_stories_dev
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+**Gate G0a impact:** none. The Phase 0a gate requirement "Docker builds+runs" is already satisfied by Task 10 (`86d9006`) — `docker build -t audio-stories-be:phase0a .` succeeds, image runs as non-root with `HEALTHCHECK /healthz`. No compose-level requirement exists in G0a.
 
-  redis:
-    image: redis:7-alpine
-    container_name: audio-stories-redis-dev
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: audio-stories-api-dev
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      NODE_ENV: development
-      APP_ROLE: api
-      HOST: 0.0.0.0
-      PORT: 3000
-      DATABASE_URL: mysql://root:root@mysql:3306/audio_stories_dev
-      REDIS_URL: redis://redis:6379/0
-    env_file:
-      - .env
-    ports:
-      - "3000:3000"
-    restart: unless-stopped
-
-volumes:
-  mysql-data:
-  redis-data:
-```
-
-- [ ] **Step 2: Bring stack up**
-
-```
-cd be
-docker compose -f docker-compose.dev.yml up --build -d
-```
-Expected: mysql and redis become healthy. api builds and starts.
-
-```
-docker compose -f docker-compose.dev.yml ps
-```
-Expected: all 3 services with status "running" / "healthy".
-
-- [ ] **Step 3: Verify endpoints from host**
-
-```
-curl -fsS http://localhost:3000/healthz
-curl -fsS http://localhost:3000/readyz
-```
-Expected: 200 from both. `readyz` confirms DB connection (Prisma indicator).
-
-- [ ] **Step 4: Tear down**
-
-```
-docker compose -f docker-compose.dev.yml down -v
-```
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add be/docker-compose.dev.yml
-git commit -m "build(be): add docker-compose.dev.yml with MySQL + Redis + API stack"
-```
+**Carry-forward for production deploy (later phase, NOT Phase 0a):** A `docker-compose.prod.yml` (or equivalent Kubernetes manifest) for staging/production deployment is deferred. When that work happens, address the `docker --env-file` quote-stripping vs Node `dotenv` mismatch surfaced during Task 10 smoke (use `environment:` mapping or strip quotes from `.env*`). See [[project-be-refactor-state]] tactical decisions for context.
 
 ---
 

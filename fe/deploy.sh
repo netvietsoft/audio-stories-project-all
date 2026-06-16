@@ -91,10 +91,10 @@ ADMIN_ENV_FILE=$(resolve_env_file "$ADMIN_PRIMARY_ENV_FILE" "$ADMIN_LEGACY_ENV_F
     exit 1
 }
 
-WEB_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$WEB_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-ADMIN_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$ADMIN_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-WEB_SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' "$WEB_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-ADMIN_SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' "$ADMIN_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+WEB_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$WEB_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)
+ADMIN_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$ADMIN_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)
+WEB_SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' "$WEB_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)
+ADMIN_SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' "$ADMIN_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)
 
 if [ -z "$WEB_API_URL" ] || [ -z "$ADMIN_API_URL" ]; then
     echo "❌ NEXT_PUBLIC_API_URL is missing in one of the app env files"

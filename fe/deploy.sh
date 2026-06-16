@@ -164,6 +164,14 @@ fi
 
 mkdir -p logs apps/web apps/admin
 
+# Load fnm (Fast Node Manager) — non-interactive SSH does not source ~/.bashrc,
+# so the user's fnm-managed Node is invisible by default. Inject PATH + env here.
+if [ -x "\$HOME/.local/share/fnm/fnm" ]; then
+    export PATH="\$HOME/.local/share/fnm:\$PATH"
+    eval "\$(fnm env --shell bash)"
+    fnm use "$REQUIRED_NODE_VERSION" 2>/dev/null || fnm use default 2>/dev/null || true
+fi
+
 export REQUIRED_NODE_VERSION="$REQUIRED_NODE_VERSION"
 export REQUIRED_YARN_VERSION="$REQUIRED_YARN_VERSION"
 $(typeset -f ensure_yarn_toolchain)

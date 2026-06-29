@@ -188,13 +188,12 @@ if [ -f "be-source.tar.gz" ]; then
     scp $SSH_OPTIONS be-source.tar.gz $SSH_USER@$HOST:$SERVER_DIR/
 fi
 
-# Upload env to BOTH .env and .env.prod (identical content):
+# Upload env as .env.prod only — on the server every process uses .env.prod:
 #  - the Nest app (NODE_ENV=production) loads `.env.prod` (app-config.module.ts)
-#  - Prisma (CLI + client engine) and the `dotenv -e .env` seed scripts read `.env`
+#  - Prisma CLI + seed commands are wrapped with `dotenv -e .env.prod` below
 # The DEV/PROD choice only selects which local values file (.env.dev/.env.prod) to send.
 if [ -f "$ENV_FILE" ]; then
     scp $SSH_OPTIONS $ENV_FILE $SSH_USER@$HOST:$SERVER_DIR/.env.prod
-    scp $SSH_OPTIONS $ENV_FILE $SSH_USER@$HOST:$SERVER_DIR/.env
 fi
 
 # Deploy on server
@@ -231,8 +230,12 @@ if ! yarn install --immutable; then
     echo "  ❌ yarn install failed — aborting deploy"; exit 1
 fi
 
+# Prisma CLI + the seed scripts default to reading `.env`, but the server only
+# has `.env.prod`. Load it explicitly for every DB command.
+DOTENV_PROD="npx dotenv -e .env.prod --"
+
 echo "📦 Generating Prisma client..."
-if ! yarn prisma:generate; then
+if ! \$DOTENV_PROD yarn prisma:generate; then
     echo "  ❌ prisma generate failed — aborting deploy"; exit 1
 fi
 
@@ -294,19 +297,15 @@ if [ "$RESET_DB" = "yes" ]; then
     echo "  ✅ Database reset complete"
     
     echo "🌱 Running migrations from scratch..."
-    yarn prisma:migrate:deploy:safe
-    
-    if [ \$? -ne 0 ]; then
+    if ! \$DOTENV_PROD yarn prisma:migrate:deploy:safe; then
         echo "  ❌ Failed to apply migrations"
         exit 1
     fi
-    
+
     echo "  ✅ Migrations applied"
-    
+
     echo "🌱 Seeding database..."
-    yarn prisma:seed
-    
-    if [ \$? -ne 0 ]; then
+    if ! \$DOTENV_PROD yarn prisma:seed; then
         echo "  ⚠️  Warning: Seeding failed or partially completed"
     else
         echo "  ✅ Database seeded"
@@ -314,7 +313,7 @@ if [ "$RESET_DB" = "yes" ]; then
 
     echo "🎵 Seeding music data..."
     if [ -f "prisma/seed-music.ts" ]; then
-        yarn ts-node prisma/seed-music.ts
+        \$DOTENV_PROD yarn ts-node prisma/seed-music.ts
         if [ \$? -ne 0 ]; then
             echo "  ⚠️  Warning: Music seed failed or partially completed"
         else
@@ -325,7 +324,7 @@ if [ "$RESET_DB" = "yes" ]; then
     fi
 else
     echo "📦 Running migrations..."
-    if ! yarn prisma:migrate:deploy:safe; then
+    if ! \$DOTENV_PROD yarn prisma:migrate:deploy:safe; then
         echo "  ❌ Migration failed — aborting deploy"
         exit 1
     fi

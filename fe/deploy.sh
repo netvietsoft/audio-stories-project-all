@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-APP_NAME="web-truyen-audio-fe"
 WEB_PM2_NAME="web-truyen-audio-web"
 ADMIN_PM2_NAME="web-truyen-audio-admin"
 ARCHIVE_NAME="next-source.tar.gz"
@@ -77,7 +76,7 @@ fi
 echo "🌐 Web   API=$WEB_API_URL  SITE=$WEB_SITE_URL"
 echo "🌐 Admin API=$ADMIN_API_URL  SITE=$ADMIN_SITE_URL"
 
-SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
+SERVER_DIR="/home/netviet/projects-deploy/audio-stories-project-all/fe"
 ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 
 echo "ℹ️  Current branch: $ORIGINAL_BRANCH"
@@ -121,19 +120,27 @@ echo "🚀 Deploying on server..."
 ssh "$SSH_USER@$HOST" << EOF_REMOTE
 cd "$SERVER_DIR"
 
-if [ -f "$ARCHIVE_NAME" ]; then
-    echo "Extracting workspace..."
-    rm -rf apps packages .moon .yarn package.json yarn.lock .yarnrc.yml .nvmrc tsconfig.base.json ecosystem.config.js deploy.sh src public messages next.config.ts tailwind.config.ts postcss.config.mjs tsconfig.json eslint.config.mjs
-    tar -xzf "$ARCHIVE_NAME"
-    rm -f "$ARCHIVE_NAME"
+if [ ! -f "$ARCHIVE_NAME" ]; then
+    echo "  ❌ archive $ARCHIVE_NAME not found on server — aborting"; exit 1
 fi
+echo "Extracting workspace..."
+rm -rf apps packages .moon .yarn package.json yarn.lock .yarnrc.yml .nvmrc tsconfig.base.json ecosystem.config.js deploy.sh src public messages next.config.ts tailwind.config.ts postcss.config.mjs tsconfig.json eslint.config.mjs
+if ! tar -xzf "$ARCHIVE_NAME"; then echo "  ❌ archive extraction failed — aborting"; exit 1; fi
+rm -f "$ARCHIVE_NAME"
 
 mkdir -p logs apps/web apps/admin
 
 # Move uploaded env into place (these sit at the deploy root so the rm -rf above
-# does not wipe them). Next.js loads .env.production when NODE_ENV=production.
-[ -f .env.web.production ] && mv -f .env.web.production apps/web/.env.production
-[ -f .env.admin.production ] && mv -f .env.admin.production apps/admin/.env.production
+# does not wipe them). Next.js inlines NEXT_PUBLIC_* from .env.production at build
+# (NODE_ENV=production). Fail closed if an env file is missing — never build env-less.
+for app in web admin; do
+    if [ -f ".env.\$app.production" ]; then
+        mv -f ".env.\$app.production" "apps/\$app/.env.production"
+        echo "  ✓ apps/\$app/.env.production in place"
+    else
+        echo "  ❌ uploaded .env.\$app.production missing on server — aborting"; exit 1
+    fi
+done
 
 # Load fnm (Fast Node Manager) — non-interactive SSH does not source ~/.bashrc,
 # so the user's fnm-managed Node is invisible by default. Inject PATH + env here.

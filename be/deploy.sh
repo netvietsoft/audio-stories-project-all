@@ -6,7 +6,6 @@ set -euo pipefail
 # ==========================================
 # Configuration
 # ==========================================
-APP_NAME="auth-be"
 REQUIRED_NODE_VERSION="v24.16.0"
 REQUIRED_YARN_VERSION="4.15.0"
 
@@ -156,7 +155,7 @@ else
 fi
 
 # Server path
-SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
+SERVER_DIR="/home/netviet/projects-deploy/audio-stories-project-all/be"
 
 # Save current branch for reference
 ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"

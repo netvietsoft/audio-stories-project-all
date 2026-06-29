@@ -188,11 +188,13 @@ if [ -f "be-source.tar.gz" ]; then
     scp $SSH_OPTIONS be-source.tar.gz $SSH_USER@$HOST:$SERVER_DIR/
 fi
 
-# Upload env file as .env.prod — PM2 runs every role with NODE_ENV=production,
-# and the app loads `.env.prod` in production (src/shared/config/app-config.module.ts).
+# Upload env to BOTH .env and .env.prod (identical content):
+#  - the Nest app (NODE_ENV=production) loads `.env.prod` (app-config.module.ts)
+#  - Prisma (CLI + client engine) and the `dotenv -e .env` seed scripts read `.env`
 # The DEV/PROD choice only selects which local values file (.env.dev/.env.prod) to send.
 if [ -f "$ENV_FILE" ]; then
     scp $SSH_OPTIONS $ENV_FILE $SSH_USER@$HOST:$SERVER_DIR/.env.prod
+    scp $SSH_OPTIONS $ENV_FILE $SSH_USER@$HOST:$SERVER_DIR/.env
 fi
 
 # Deploy on server
@@ -221,12 +223,18 @@ export REQUIRED_YARN_VERSION="$REQUIRED_YARN_VERSION"
 $(typeset -f ensure_yarn_toolchain)
 ensure_yarn_toolchain "server"
 
-# Install dependencies and build
+# Install dependencies and build (the SSH heredoc has no `set -e`, so guard each
+# must-succeed step explicitly — otherwise a failure is swallowed and the deploy
+# falsely reports success).
 echo "📦 Installing dependencies..."
-yarn install --immutable
+if ! yarn install --immutable; then
+    echo "  ❌ yarn install failed — aborting deploy"; exit 1
+fi
 
 echo "📦 Generating Prisma client..."
-yarn prisma:generate
+if ! yarn prisma:generate; then
+    echo "  ❌ prisma generate failed — aborting deploy"; exit 1
+fi
 
 # Reset database if requested
 if [ "$RESET_DB" = "yes" ]; then
@@ -317,12 +325,17 @@ if [ "$RESET_DB" = "yes" ]; then
     fi
 else
     echo "📦 Running migrations..."
-    yarn prisma:migrate:deploy:safe
+    if ! yarn prisma:migrate:deploy:safe; then
+        echo "  ❌ Migration failed — aborting deploy"
+        exit 1
+    fi
     echo "  ✅ Migrations applied"
 fi
 
 echo "📦 Building application on server..."
-yarn build
+if ! yarn build; then
+    echo "  ❌ Build failed — aborting deploy (PM2 not reloaded)"; exit 1
+fi
 
 # Preflight: the HLS worker (APP_ROLE=worker) shells out to ffmpeg. Deploy runs
 # node dist/main.js directly (not the Docker image), so ffmpeg must be on the

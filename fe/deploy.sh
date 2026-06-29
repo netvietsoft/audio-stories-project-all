@@ -9,23 +9,6 @@ ARCHIVE_NAME="next-source.tar.gz"
 REQUIRED_NODE_VERSION="v24.16.0"
 REQUIRED_YARN_VERSION="4.15.0"
 
-resolve_env_file() {
-    local primary="$1"
-    local legacy="$2"
-
-    if [ -f "$primary" ]; then
-        echo "$primary"
-        return 0
-    fi
-
-    if [ -f "$legacy" ]; then
-        echo "$legacy"
-        return 0
-    fi
-
-    return 1
-}
-
 ensure_yarn_toolchain() {
     local scope="$1"
 
@@ -59,60 +42,40 @@ ensure_yarn_toolchain() {
     echo "✅ [$scope] Toolchain ready: Node $current_node_version / Yarn $current_yarn_version"
 }
 
-read -p "Enter DEV | PROD: " env
-env=$(echo "$env" | tr -d '\r')
+# Staging/prod uses a single env per app (.env.production). There is no DEV/PROD
+# split — local dev uses .env.local and is never deployed.
+WEB_ENV_FILE="apps/web/.env.production"
+ADMIN_ENV_FILE="apps/admin/.env.production"
 
-if [ "$env" = "DEV" ]; then
-    echo "Deploying DEV"
-    HOST=72.62.198.196
-    WEB_PRIMARY_ENV_FILE="apps/web/.env.development"
-    WEB_LEGACY_ENV_FILE="apps/web/.env.dev"
-    ADMIN_PRIMARY_ENV_FILE="apps/admin/.env.development"
-    ADMIN_LEGACY_ENV_FILE="apps/admin/.env.dev"
-elif [ "$env" = "PROD" ]; then
-    echo "Deploying PROD"
-    HOST=72.62.198.196
-    WEB_PRIMARY_ENV_FILE="apps/web/.env.production"
-    WEB_LEGACY_ENV_FILE="apps/web/.env.prod"
-    ADMIN_PRIMARY_ENV_FILE="apps/admin/.env.production"
-    ADMIN_LEGACY_ENV_FILE="apps/admin/.env.prod"
-else
-    echo "❌ Invalid environment: '$env'"
-    exit 1
-fi
+for f in "$WEB_ENV_FILE" "$ADMIN_ENV_FILE"; do
+    if [ ! -f "$f" ]; then
+        echo "❌ Env file not found: $f (create it from $f.example)"
+        exit 1
+    fi
+done
 
-WEB_ENV_FILE=$(resolve_env_file "$WEB_PRIMARY_ENV_FILE" "$WEB_LEGACY_ENV_FILE") || {
-    echo "❌ Web env file not found. Expected '$WEB_PRIMARY_ENV_FILE' (or legacy '$WEB_LEGACY_ENV_FILE')"
-    exit 1
-}
-
-ADMIN_ENV_FILE=$(resolve_env_file "$ADMIN_PRIMARY_ENV_FILE" "$ADMIN_LEGACY_ENV_FILE") || {
-    echo "❌ Admin env file not found. Expected '$ADMIN_PRIMARY_ENV_FILE' (or legacy '$ADMIN_LEGACY_ENV_FILE')"
-    exit 1
-}
-
-WEB_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$WEB_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)
-ADMIN_API_URL=$(grep '^NEXT_PUBLIC_API_URL=' "$ADMIN_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)
-WEB_SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' "$WEB_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)
-ADMIN_SITE_URL=$(grep '^NEXT_PUBLIC_SITE_URL=' "$ADMIN_ENV_FILE" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)
-
-if [ -z "$WEB_API_URL" ] || [ -z "$ADMIN_API_URL" ]; then
-    echo "❌ NEXT_PUBLIC_API_URL is missing in one of the app env files"
-    exit 1
-fi
-
-if [ -z "$WEB_SITE_URL" ] || [ -z "$ADMIN_SITE_URL" ]; then
-    echo "❌ NEXT_PUBLIC_SITE_URL is missing in one of the app env files"
-    exit 1
-fi
-
-echo "🌐 Web NEXT_PUBLIC_API_URL=$WEB_API_URL"
-echo "🌐 Admin NEXT_PUBLIC_API_URL=$ADMIN_API_URL"
-echo "🌐 Web NEXT_PUBLIC_SITE_URL=$WEB_SITE_URL"
-echo "🌐 Admin NEXT_PUBLIC_SITE_URL=$ADMIN_SITE_URL"
+# Target server (BE and FE share the same server). Allow overriding the IP.
+DEFAULT_HOST=72.62.198.196
+read -p "Enter server IP/host (default: $DEFAULT_HOST): " INPUT_HOST
+HOST=$(echo "${INPUT_HOST:-$DEFAULT_HOST}" | tr -d '\r')
 
 read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
 SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
+
+# Validate the public URLs Next.js inlines at build time are present.
+get_env() { grep "^$1=" "$2" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true; }
+WEB_API_URL=$(get_env NEXT_PUBLIC_API_URL "$WEB_ENV_FILE")
+ADMIN_API_URL=$(get_env NEXT_PUBLIC_API_URL "$ADMIN_ENV_FILE")
+WEB_SITE_URL=$(get_env NEXT_PUBLIC_SITE_URL "$WEB_ENV_FILE")
+ADMIN_SITE_URL=$(get_env NEXT_PUBLIC_SITE_URL "$ADMIN_ENV_FILE")
+
+if [ -z "$WEB_API_URL" ] || [ -z "$ADMIN_API_URL" ] || [ -z "$WEB_SITE_URL" ] || [ -z "$ADMIN_SITE_URL" ]; then
+    echo "❌ NEXT_PUBLIC_API_URL / NEXT_PUBLIC_SITE_URL missing in an app .env.production"
+    exit 1
+fi
+
+echo "🌐 Web   API=$WEB_API_URL  SITE=$WEB_SITE_URL"
+echo "🌐 Admin API=$ADMIN_API_URL  SITE=$ADMIN_SITE_URL"
 
 SERVER_DIR="/srv/projects-deploy/${APP_NAME}"
 ORIGINAL_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
@@ -146,10 +109,13 @@ tar \
   -czf "$ARCHIVE_NAME" "${TAR_FILES[@]}"
 
 echo "📤 Uploading workspace archive..."
-ssh "$SSH_USER@$HOST" "mkdir -p '$SERVER_DIR/apps/web' '$SERVER_DIR/apps/admin' '$SERVER_DIR/logs'"
+ssh "$SSH_USER@$HOST" "mkdir -p '$SERVER_DIR'"
 scp "$ARCHIVE_NAME" "$SSH_USER@$HOST:$SERVER_DIR/$ARCHIVE_NAME"
-scp "$WEB_ENV_FILE" "$SSH_USER@$HOST:$SERVER_DIR/apps/web/.env"
-scp "$ADMIN_ENV_FILE" "$SSH_USER@$HOST:$SERVER_DIR/apps/admin/.env"
+# Upload env to temp files at the deploy root. Uploading straight to
+# apps/*/.env would be wiped by the remote `rm -rf apps` below, so we move them
+# into place AFTER extraction (Next.js loads apps/<app>/.env.production at build).
+scp "$WEB_ENV_FILE" "$SSH_USER@$HOST:$SERVER_DIR/.env.web.production"
+scp "$ADMIN_ENV_FILE" "$SSH_USER@$HOST:$SERVER_DIR/.env.admin.production"
 
 echo "🚀 Deploying on server..."
 ssh "$SSH_USER@$HOST" << EOF_REMOTE
@@ -164,6 +130,11 @@ fi
 
 mkdir -p logs apps/web apps/admin
 
+# Move uploaded env into place (these sit at the deploy root so the rm -rf above
+# does not wipe them). Next.js loads .env.production when NODE_ENV=production.
+[ -f .env.web.production ] && mv -f .env.web.production apps/web/.env.production
+[ -f .env.admin.production ] && mv -f .env.admin.production apps/admin/.env.production
+
 # Load fnm (Fast Node Manager) — non-interactive SSH does not source ~/.bashrc,
 # so the user's fnm-managed Node is invisible by default. Inject PATH + env here.
 if [ -x "\$HOME/.local/share/fnm/fnm" ]; then
@@ -177,11 +148,12 @@ export REQUIRED_YARN_VERSION="$REQUIRED_YARN_VERSION"
 $(typeset -f ensure_yarn_toolchain)
 ensure_yarn_toolchain "server"
 
+# The SSH heredoc has no `set -e`, so guard must-succeed steps explicitly.
 echo "📦 Installing dependencies..."
-yarn install --immutable
+if ! yarn install --immutable; then echo "  ❌ yarn install failed — aborting"; exit 1; fi
 
 echo "📦 Building workspace..."
-yarn build
+if ! yarn build; then echo "  ❌ build failed — aborting (PM2 not reloaded)"; exit 1; fi
 
 if [ -f "ecosystem.config.js" ]; then
     pm2 startOrReload ecosystem.config.js --only "$WEB_PM2_NAME,$ADMIN_PM2_NAME" --update-env

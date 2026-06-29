@@ -19,8 +19,9 @@ export interface HlsTranscodeJob {
   hlsAssetId: string;
 }
 
-/** Deterministic jobId so repeated enqueues for one asset dedupe. */
+/** Deterministic jobId so repeated enqueues for one asset dedupe.
+ * Uses `__` (not `:`) — BullMQ forbids `:` in a custom jobId. */
 export const hlsJobId = (
   assetType: HlsAssetTypeName,
   assetId: string,
-): string => `${assetType}:${assetId}`;
+): string => `${assetType}__${assetId}`;

@@ -29,7 +29,9 @@ describe('HlsQueueService.enqueueTranscode', () => {
     const [, data, opts] = add.mock.calls[0];
     expect(data).toEqual(payload);
     // jobId dedupes repeated enqueues for the same asset (red-team idempotency).
-    expect(opts.jobId).toBe('chapter:c1');
+    // Must NOT contain ':' — BullMQ rejects that in a custom jobId.
+    expect(opts.jobId).toBe('chapter__c1');
+    expect(opts.jobId).not.toContain(':');
   });
 
   it('derives distinct jobIds per assetType + assetId', async () => {
@@ -46,7 +48,7 @@ describe('HlsQueueService.enqueueTranscode', () => {
       sourceUrl: 'http://r2/x.mp3',
       hlsAssetId: 'h2',
     });
-    expect(add.mock.calls[0][2].jobId).toBe('variant:v9');
+    expect(add.mock.calls[0][2].jobId).toBe('variant__v9');
   });
 });
 
@@ -77,7 +79,7 @@ describe('HlsQueueService.registerAsset', () => {
     const arg = upsert.mock.calls[0][0];
     expect(arg.create.status).toBe('pending');
     expect(add).toHaveBeenCalledTimes(1);
-    expect(add.mock.calls[0][2].jobId).toBe('chapter:c1');
+    expect(add.mock.calls[0][2].jobId).toBe('chapter__c1');
   });
 
   it('does not throw when enqueue fails (left pending for reconcile, H7)', async () => {

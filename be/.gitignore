@@ -33,3 +33,6 @@ Thumbs.db
 
 # Yarn local state
 .yarn/
+
+# Local HLS transcode test output (Phase 1)
+uploads/hls-local-test/

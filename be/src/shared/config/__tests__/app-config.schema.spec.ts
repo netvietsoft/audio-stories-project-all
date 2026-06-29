@@ -19,6 +19,8 @@ const validEnv = (overrides: Record<string, string | undefined> = {}) => ({
   ADMIN_EMAIL: 'admin@example.com',
   ADMIN_PASSWORD: 'admin123',
   INTERNAL_API_KEY: 'k'.repeat(16),
+  HLS_MASTER_KEY: 'a'.repeat(64),
+  PUBLIC_API_URL: 'http://localhost:3000',
   ...overrides,
 });
 

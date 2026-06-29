@@ -1171,3 +1171,35 @@ model SocialLink {
   @@index([isActive, orderIndex])
   @@map("social_links")
 }
+
+// HLS (AES-128) audio assets. 'ad' is excluded — Advertisement has no audio.
+enum HlsAssetType {
+  chapter
+  variant
+  music
+}
+
+enum HlsStatus {
+  pending
+  processing
+  ready
+  failed
+}
+
+model HlsAsset {
+  id          String       @id @default(uuid()) @db.VarChar(36)
+  assetType   HlsAssetType @map("asset_type")
+  assetId     String       @map("asset_id") @db.VarChar(36)
+  status      HlsStatus    @default(pending)
+  playlistUrl String?      @map("playlist_url") @db.VarChar(500)
+  encKey      Bytes        @map("enc_key") // AES-256-GCM wrapped content key (iv+tag+ct)
+  keyIv       String       @map("key_iv") @db.VarChar(32) // HLS content IV (hex)
+  durationSec Int?         @map("duration_sec") @db.UnsignedInt
+  error       String?      @db.Text
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@unique([assetType, assetId])
+  @@index([status])
+  @@map("hls_assets")
+}

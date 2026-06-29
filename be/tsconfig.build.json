@@ -6,6 +6,7 @@
     "dist",
     "**/*spec.ts",
     "prisma",
-    "scripts"
+    "scripts",
+    "uploads"
   ]
 }

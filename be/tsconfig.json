@@ -27,5 +27,10 @@
       "node",
       "jest"
     ]
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "uploads"
+  ]
 }

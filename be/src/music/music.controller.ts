@@ -8,15 +8,18 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
+import { OptionalJwtGuard } from '@/auth/guards/optional-jwt.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { MusicQueryDto } from './dto/music-query.dto';
@@ -47,8 +50,10 @@ export class MusicController {
   constructor(private readonly musicService: MusicService) {}
 
   @Get()
-  findPublic(@Query() query: MusicQueryDto) {
-    return this.musicService.findPublic(query);
+  @UseGuards(OptionalJwtGuard)
+  findPublic(@Query() query: MusicQueryDto, @Req() req: Request) {
+    const userId = (req.user as { id?: string } | undefined)?.id;
+    return this.musicService.findPublic(query, { userId });
   }
 
   @Get('admin')
@@ -59,9 +64,19 @@ export class MusicController {
   }
 
   @Get(':slug/related')
-  findRelatedPublic(@Param('slug') slug: string, @Query('limit') limit?: string) {
+  @UseGuards(OptionalJwtGuard)
+  findRelatedPublic(
+    @Param('slug') slug: string,
+    @Req() req: Request,
+    @Query('limit') limit?: string,
+  ) {
     const parsedLimit = Number(limit);
-    return this.musicService.findRelatedPublic(slug, Number.isFinite(parsedLimit) ? parsedLimit : 8);
+    const userId = (req.user as { id?: string } | undefined)?.id;
+    return this.musicService.findRelatedPublic(
+      slug,
+      Number.isFinite(parsedLimit) ? parsedLimit : 8,
+      { userId },
+    );
   }
 
   @Post()
@@ -77,7 +92,11 @@ export class MusicController {
   @UseGuards(JwtAccessGuard, RolesGuard)
   @Roles('ADMIN')
   @UseInterceptors(MUSIC_INTERCEPTOR)
-  update(@Param('id') id: string, @Body() dto: UpdateMusicDto, @UploadedFiles() files?: UploadFiles) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateMusicDto,
+    @UploadedFiles() files?: UploadFiles,
+  ) {
     this.validateUploadFiles(files);
     return this.musicService.update(id, dto, files || {});
   }
@@ -90,8 +109,10 @@ export class MusicController {
   }
 
   @Get(':slug')
-  findOnePublic(@Param('slug') slug: string) {
-    return this.musicService.findOnePublic(slug);
+  @UseGuards(OptionalJwtGuard)
+  findOnePublic(@Param('slug') slug: string, @Req() req: Request) {
+    const userId = (req.user as { id?: string } | undefined)?.id;
+    return this.musicService.findOnePublic(slug, { userId });
   }
 
   @Post(':id/play')

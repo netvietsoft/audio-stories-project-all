@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HLS AES-128 local test player</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+      audio { width: 100%; margin: 1rem 0; }
+      input { width: 100%; padding: .4rem; }
+      #log { white-space: pre-wrap; background: #f4f4f4; padding: .75rem; border-radius: 6px; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>HLS AES-128 local test</h1>
+    <p>
+      Serve this directory over HTTP and open this page, e.g. from
+      <code>uploads/hls-local-test/</code>:
+      <br />
+      <code>python3 -m http.server 8088 --directory uploads/hls-local-test</code>
+      <br />then copy <code>scripts/hls/test-player.html</code> in, or point the
+      URL field at the served <code>index.m3u8</code>.
+    </p>
+    <input id="src" value="index.m3u8" />
+    <audio id="audio" controls></audio>
+    <div id="log"></div>
+    <script>
+      const audio = document.getElementById('audio');
+      const log = (m) => (document.getElementById('log').textContent += m + '\n');
+      const src = document.getElementById('src').value;
+      if (Hls.isSupported()) {
+        const hls = new Hls({ debug: false });
+        hls.loadSource(src);
+        hls.attachMedia(audio);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => log('manifest parsed — ready to play/seek'));
+        hls.on(Hls.Events.KEY_LOADED, () => log('AES-128 key loaded'));
+        hls.on(Hls.Events.ERROR, (_e, d) => log('ERROR: ' + d.type + ' / ' + d.details));
+      } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+        audio.src = src; // native HLS (Safari)
+        log('using native HLS');
+      } else {
+        log('HLS not supported in this browser');
+      }
+    </script>
+  </body>
+</html>

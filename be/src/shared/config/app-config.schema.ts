@@ -88,6 +88,16 @@ const RawEnvSchema = z
     ADMIN_EMAIL: stringNonEmpty,
     ADMIN_PASSWORD: stringNonEmpty,
 
+    // HLS audio (AES-128). Master key + public API origin are required and
+    // fail-closed (red-team C3, H5): the worker has no request host, so the
+    // key URI must be built from PUBLIC_API_URL.
+    HLS_MASTER_KEY: z
+      .string()
+      .regex(/^[0-9a-fA-F]{64}$/, 'HLS_MASTER_KEY must be 64 hex characters (32 bytes)'),
+    PUBLIC_API_URL: z.url(),
+    HLS_AUDIO_BITRATE: stringNonEmpty.default('128k'),
+    HLS_SEGMENT_SECONDS: z.coerce.number().int().positive().default(10),
+
     THROTTLE_DISABLED: z
       .union([z.boolean(), z.enum(['true', 'false'])])
       .default('false')
@@ -174,6 +184,8 @@ export interface AppConfig {
     casso: { apiUrl?: string; apiKey?: string; secureToken?: string; webhookUrl?: string };
   };
   admin: { email: string; password: string };
+  publicApiUrl: string;
+  hls: { masterKey: string; audioBitrate: string; segmentSeconds: number };
   rateLimit: { disabled: boolean };
   testing: { e2eCleanup?: string; testStorySlug?: string; testUserToken?: string; testAdminToken?: string };
 }
@@ -264,6 +276,12 @@ export function parseAppConfig(env: NodeJS.ProcessEnv | Record<string, string | 
       },
     },
     admin: { email: raw.ADMIN_EMAIL, password: raw.ADMIN_PASSWORD },
+    publicApiUrl: raw.PUBLIC_API_URL,
+    hls: {
+      masterKey: raw.HLS_MASTER_KEY,
+      audioBitrate: raw.HLS_AUDIO_BITRATE,
+      segmentSeconds: raw.HLS_SEGMENT_SECONDS,
+    },
     rateLimit: { disabled: raw.THROTTLE_DISABLED },
     testing: {
       e2eCleanup: raw.E2E_CLEANUP,

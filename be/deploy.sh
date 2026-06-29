@@ -126,6 +126,10 @@ else
     exit 1
 fi
 
+# Allow overriding the target server IP/host (default is the env's preset).
+read -p "Enter server IP/host (default: $HOST): " INPUT_HOST
+HOST=$(echo "${INPUT_HOST:-$HOST}" | tr -d '\r')
+
 read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
 SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
 
@@ -185,9 +189,11 @@ if [ -f "be-source.tar.gz" ]; then
     scp $SSH_OPTIONS be-source.tar.gz $SSH_USER@$HOST:$SERVER_DIR/
 fi
 
-# Upload .env file
+# Upload env file as .env.prod — PM2 runs every role with NODE_ENV=production,
+# and the app loads `.env.prod` in production (src/shared/config/app-config.module.ts).
+# The DEV/PROD choice only selects which local values file (.env.dev/.env.prod) to send.
 if [ -f "$ENV_FILE" ]; then
-    scp $SSH_OPTIONS $ENV_FILE $SSH_USER@$HOST:$SERVER_DIR/.env
+    scp $SSH_OPTIONS $ENV_FILE $SSH_USER@$HOST:$SERVER_DIR/.env.prod
 fi
 
 # Deploy on server
@@ -227,11 +233,11 @@ yarn prisma:generate
 if [ "$RESET_DB" = "yes" ]; then
     echo "🗑️  Resetting database..."
     
-    # Extract database credentials from DATABASE_URL
-    DB_URL=\$(grep '^DATABASE_URL=' .env | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    
+    # Extract database credentials from DATABASE_URL (server runs with .env.prod)
+    DB_URL=\$(grep '^DATABASE_URL=' .env.prod | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
     if [ -z "\$DB_URL" ]; then
-        echo "  ❌ Could not find DATABASE_URL in .env"
+        echo "  ❌ Could not find DATABASE_URL in .env.prod"
         exit 1
     fi
     
@@ -318,6 +324,16 @@ fi
 
 echo "📦 Building application on server..."
 yarn build
+
+# Preflight: the HLS worker (APP_ROLE=worker) shells out to ffmpeg. Deploy runs
+# node dist/main.js directly (not the Docker image), so ffmpeg must be on the
+# host. Warn loudly if missing so transcode jobs don't silently fail.
+if ! command -v ffmpeg >/dev/null 2>&1; then
+    echo "⚠️  WARNING: ffmpeg not found on host — HLS transcode worker will fail."
+    echo "    Install once with: sudo apt-get update && sudo apt-get install -y ffmpeg"
+else
+    echo "✅ ffmpeg present: \$(ffmpeg -version | head -1)"
+fi
 
 # Reload PM2
 if [ -f "ecosystem.config.js" ]; then

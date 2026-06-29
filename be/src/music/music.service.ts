@@ -1,11 +1,21 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { MusicAccessType, MusicContentType, Prisma } from '@prisma/client';
 
 import { PrismaService } from '@/prisma/prisma.service';
 import { AudioUploadService } from '@/upload/audio-upload.service';
+import { checkMusicEntitlement } from '@/hls/hls-entitlement';
+import { HlsQueueService } from '@/hls/hls-queue.service';
 import { CreateMusicDto } from './dto/create-music.dto';
 import { MusicQueryDto } from './dto/music-query.dto';
 import { UpdateMusicDto } from './dto/update-music.dto';
+
+/** Viewer context for public reads. When present, paid-but-locked tracks have
+ * their audioUrl/hlsUrl masked (red-team H3 / validation V2). Omitted for admin. */
+type MusicViewer = { userId?: string };
 
 type UploadFiles = {
   audioFile?: Express.Multer.File[];
@@ -65,17 +75,28 @@ export class MusicService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audioUploadService: AudioUploadService,
+    private readonly hlsQueue: HlsQueueService,
   ) {}
 
-  async findPublic(query: MusicQueryDto) {
-    return this.findByQuery(query, true);
+  /** Enqueue HLS transcode for a single-track music asset (M2: playlist/podcast skipped). */
+  private async registerMusicHls(music: {
+    id: string;
+    contentType: MusicContentType;
+    audioUrl: string | null;
+  }) {
+    if (music.contentType !== MusicContentType.single) return;
+    await this.hlsQueue.registerAsset('music', music.id, music.audioUrl);
+  }
+
+  async findPublic(query: MusicQueryDto, viewer?: MusicViewer) {
+    return this.findByQuery(query, true, viewer);
   }
 
   async findAllAdmin(query: MusicQueryDto) {
     return this.findByQuery(query, false);
   }
 
-  async findOnePublic(slug: string) {
+  async findOnePublic(slug: string, viewer?: MusicViewer) {
     const row = await this.prisma.music.findFirst({
       where: {
         slug,
@@ -87,14 +108,14 @@ export class MusicService {
       throw new NotFoundException('Music not found.');
     }
 
-    const [serialized] = await this.enrichPlaylistTracks([row]);
+    const [serialized] = await this.enrichPlaylistTracks([row], viewer);
 
     return {
       data: serialized,
     };
   }
 
-  async findRelatedPublic(slug: string, limit = 8) {
+  async findRelatedPublic(slug: string, limit = 8, viewer?: MusicViewer) {
     const safeLimit = Math.min(Math.max(limit || 8, 1), 20);
 
     const source = await this.prisma.music.findFirst({
@@ -109,7 +130,9 @@ export class MusicService {
     }
 
     const sourceArtist = source.artist.trim().toLowerCase();
-    const sourceTags = new Set(this.parseTags(source.tags).map((tag) => tag.toLowerCase()));
+    const sourceTags = new Set(
+      this.parseTags(source.tags).map((tag) => tag.toLowerCase()),
+    );
 
     const candidates = await this.prisma.music.findMany({
       where: {
@@ -152,7 +175,10 @@ export class MusicService {
       deduped.push(row);
     });
 
-    const enrichedRows = await this.enrichPlaylistTracks(deduped.slice(0, safeLimit));
+    const enrichedRows = await this.enrichPlaylistTracks(
+      deduped.slice(0, safeLimit),
+      viewer,
+    );
 
     return {
       data: enrichedRows,
@@ -175,7 +201,10 @@ export class MusicService {
         },
       };
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
         throw new NotFoundException('Music not found.');
       }
 
@@ -183,12 +212,18 @@ export class MusicService {
     }
   }
 
-  private async findByQuery(query: MusicQueryDto, onlyPublic: boolean) {
+  private async findByQuery(
+    query: MusicQueryDto,
+    onlyPublic: boolean,
+    viewer?: MusicViewer,
+  ) {
     const page = query.page || 1;
     const limit = query.limit || 12;
     const normalizedSearch = query.search?.trim();
     const normalizedTag = query.tag?.trim().toLowerCase();
-    const normalizedContentType = query.contentType?.trim() as MusicContentType | undefined;
+    const normalizedContentType = query.contentType?.trim() as
+      | MusicContentType
+      | undefined;
 
     const whereClauses: Prisma.MusicWhereInput[] = [];
 
@@ -213,8 +248,14 @@ export class MusicService {
     if (onlyPublic) {
       const childTrackIds = await this.listPlaylistChildTrackIds();
 
-      if (childTrackIds.length && normalizedContentType !== MusicContentType.playlist) {
-        if (normalizedContentType === MusicContentType.single || normalizedContentType === MusicContentType.podcast) {
+      if (
+        childTrackIds.length &&
+        normalizedContentType !== MusicContentType.playlist
+      ) {
+        if (
+          normalizedContentType === MusicContentType.single ||
+          normalizedContentType === MusicContentType.podcast
+        ) {
           whereClauses.push({ id: { notIn: childTrackIds } });
         } else {
           whereClauses.push({
@@ -222,7 +263,11 @@ export class MusicService {
               { contentType: MusicContentType.playlist },
               {
                 AND: [
-                  { contentType: { in: [MusicContentType.single, MusicContentType.podcast] } },
+                  {
+                    contentType: {
+                      in: [MusicContentType.single, MusicContentType.podcast],
+                    },
+                  },
                   { id: { notIn: childTrackIds } },
                 ],
               },
@@ -232,7 +277,9 @@ export class MusicService {
       }
     }
 
-    const where: Prisma.MusicWhereInput = whereClauses.length ? { AND: whereClauses } : {};
+    const where: Prisma.MusicWhereInput = whereClauses.length
+      ? { AND: whereClauses }
+      : {};
 
     if (!normalizedTag) {
       const [total, rows] = await Promise.all([
@@ -245,7 +292,7 @@ export class MusicService {
         }),
       ]);
 
-      const enrichedRows = await this.enrichPlaylistTracks(rows);
+      const enrichedRows = await this.enrichPlaylistTracks(rows, viewer);
 
       return {
         data: enrichedRows,
@@ -263,11 +310,16 @@ export class MusicService {
     });
 
     const filtered = allRows.filter((item) =>
-      this.parseTags(item.tags).some((tag) => tag.toLowerCase() === normalizedTag),
+      this.parseTags(item.tags).some(
+        (tag) => tag.toLowerCase() === normalizedTag,
+      ),
     );
 
-    const paged = filtered.slice((page - 1) * limit, (page - 1) * limit + limit);
-    const enrichedRows = await this.enrichPlaylistTracks(paged);
+    const paged = filtered.slice(
+      (page - 1) * limit,
+      (page - 1) * limit + limit,
+    );
+    const enrichedRows = await this.enrichPlaylistTracks(paged, viewer);
 
     return {
       data: enrichedRows,
@@ -291,7 +343,10 @@ export class MusicService {
       discountPercent: dto.discountPercent,
     });
     const playlistTrackIds = this.normalizeMusicIdArray(dto.playlistTrackIds);
-    const playlistTrackAccess = this.normalizePlaylistTrackAccessInput(dto.playlistTrackAccess, playlistTrackIds);
+    const playlistTrackAccess = this.normalizePlaylistTrackAccessInput(
+      dto.playlistTrackAccess,
+      playlistTrackIds,
+    );
 
     const audioFile = files.audioFile?.[0];
     const thumbnailFile = files.thumbnailFile?.[0];
@@ -301,16 +356,24 @@ export class MusicService {
 
     let resolvedPlaylistTracks: PlaylistTrackSummary[] = [];
     let audioUrl: string | undefined;
-    let audioDuration: number | null = this.normalizeDuration(dto.audioDuration);
+    let audioDuration: number | null = this.normalizeDuration(
+      dto.audioDuration,
+    );
 
     if (contentType === MusicContentType.playlist) {
       if (!playlistTrackIds.length) {
-        throw new BadRequestException('playlistTrackIds is required for playlist content.');
+        throw new BadRequestException(
+          'playlistTrackIds is required for playlist content.',
+        );
       }
 
-      resolvedPlaylistTracks = await this.resolvePlaylistTracks(playlistTrackIds);
+      resolvedPlaylistTracks =
+        await this.resolvePlaylistTracks(playlistTrackIds);
       audioUrl = resolvedPlaylistTracks[0]?.audioUrl;
-      audioDuration = resolvedPlaylistTracks.reduce((sum, item) => sum + (item.audioDuration || 0), 0);
+      audioDuration = resolvedPlaylistTracks.reduce(
+        (sum, item) => sum + (item.audioDuration || 0),
+        0,
+      );
     } else {
       audioUrl = audioFile
         ? await this.audioUploadService.uploadAudio(audioFile, 'music')
@@ -329,12 +392,22 @@ export class MusicService {
       ? await this.audioUploadService.uploadMusicThumbnail(thumbnailFile)
       : thumbnailUrlFromBody;
 
-    const thumbnailUrl = uploadedThumbnailUrl
-      ?? (contentType === MusicContentType.playlist ? resolvedPlaylistTracks[0]?.thumbnailUrl || null : null);
+    const thumbnailUrl =
+      uploadedThumbnailUrl ??
+      (contentType === MusicContentType.playlist
+        ? resolvedPlaylistTracks[0]?.thumbnailUrl || null
+        : null);
 
     const created = await this.prisma.$transaction(async (tx) => {
-      if (contentType === MusicContentType.playlist && playlistTrackAccess.size) {
-        await this.applyPlaylistTrackAccessConfig(tx, resolvedPlaylistTracks, playlistTrackAccess);
+      if (
+        contentType === MusicContentType.playlist &&
+        playlistTrackAccess.size
+      ) {
+        await this.applyPlaylistTrackAccessConfig(
+          tx,
+          resolvedPlaylistTracks,
+          playlistTrackAccess,
+        );
       }
 
       return tx.music.create({
@@ -353,7 +426,8 @@ export class MusicService {
           discountPercent: pricing.discountPercent,
           unlockPrice: pricing.unlockPrice,
           introEnabled: dto.introEnabled ?? true,
-          playlistTrackIds: contentType === MusicContentType.playlist ? playlistTrackIds : [],
+          playlistTrackIds:
+            contentType === MusicContentType.playlist ? playlistTrackIds : [],
           isPublic: dto.isPublic ?? true,
         },
       });
@@ -361,6 +435,7 @@ export class MusicService {
 
     const [serialized] = await this.enrichPlaylistTracks([created]);
 
+    await this.registerMusicHls(created);
     return serialized;
   }
 
@@ -382,33 +457,55 @@ export class MusicService {
       ? this.normalizeAccessType(dto.accessType)
       : existing.accessType;
 
-    const nextPricing = this.resolveMusicPricing(nextAccessType, {
-      unlockPrice: dto.unlockPrice,
-      originalUnlockPrice: dto.originalUnlockPrice,
-      discountPercent: dto.discountPercent,
-    }, {
-      originalUnlockPrice: existing.originalUnlockPrice,
-      discountPercent: existing.discountPercent,
-      unlockPrice: existing.unlockPrice,
-    });
+    const nextPricing = this.resolveMusicPricing(
+      nextAccessType,
+      {
+        unlockPrice: dto.unlockPrice,
+        originalUnlockPrice: dto.originalUnlockPrice,
+        discountPercent: dto.discountPercent,
+      },
+      {
+        originalUnlockPrice: existing.originalUnlockPrice,
+        discountPercent: existing.discountPercent,
+        unlockPrice: existing.unlockPrice,
+      },
+    );
 
-    const nextPlaylistTrackIds = dto.playlistTrackIds === undefined
-      ? this.parsePlaylistTrackIds(existing.playlistTrackIds)
-      : this.normalizeMusicIdArray(dto.playlistTrackIds);
+    const nextPlaylistTrackIds =
+      dto.playlistTrackIds === undefined
+        ? this.parsePlaylistTrackIds(existing.playlistTrackIds)
+        : this.normalizeMusicIdArray(dto.playlistTrackIds);
 
-    const playlistTrackAccess = this.normalizePlaylistTrackAccessInput(dto.playlistTrackAccess, nextPlaylistTrackIds);
+    const playlistTrackAccess = this.normalizePlaylistTrackAccessInput(
+      dto.playlistTrackAccess,
+      nextPlaylistTrackIds,
+    );
 
-    const nextTitle = dto.title === undefined ? undefined : this.normalizeRequiredText(dto.title, 'title');
+    const nextTitle =
+      dto.title === undefined
+        ? undefined
+        : this.normalizeRequiredText(dto.title, 'title');
     const titleForSlug = nextTitle ?? existing.title;
     const requestedSlug = dto.slug === undefined ? existing.slug : dto.slug;
-    const nextSlug = await this.generateUniqueSlug(titleForSlug, requestedSlug, id);
-    const nextArtist = dto.artist === undefined ? undefined : this.normalizeRequiredText(dto.artist, 'artist');
+    const nextSlug = await this.generateUniqueSlug(
+      titleForSlug,
+      requestedSlug,
+      id,
+    );
+    const nextArtist =
+      dto.artist === undefined
+        ? undefined
+        : this.normalizeRequiredText(dto.artist, 'artist');
 
-    const audioUrlFromBody = dto.audioUrl === undefined
-      ? undefined
-      : this.normalizeRequiredText(dto.audioUrl, 'audioUrl');
+    const audioUrlFromBody =
+      dto.audioUrl === undefined
+        ? undefined
+        : this.normalizeRequiredText(dto.audioUrl, 'audioUrl');
     const thumbnailUrlFromBody = this.normalizeNullableText(dto.thumbnailUrl);
-    const nextDescription = dto.description === undefined ? undefined : this.normalizeNullableText(dto.description);
+    const nextDescription =
+      dto.description === undefined
+        ? undefined
+        : this.normalizeNullableText(dto.description);
 
     const uploadedAudioUrl = audioFile
       ? await this.audioUploadService.uploadAudio(audioFile, 'music')
@@ -425,38 +522,63 @@ export class MusicService {
 
     if (nextContentType === MusicContentType.playlist) {
       if (!nextPlaylistTrackIds.length) {
-        throw new BadRequestException('playlistTrackIds is required for playlist content.');
+        throw new BadRequestException(
+          'playlistTrackIds is required for playlist content.',
+        );
       }
 
-      resolvedPlaylistTracks = await this.resolvePlaylistTracks(nextPlaylistTrackIds, id);
+      resolvedPlaylistTracks = await this.resolvePlaylistTracks(
+        nextPlaylistTrackIds,
+        id,
+      );
       derivedAudioUrl = resolvedPlaylistTracks[0]?.audioUrl;
-      derivedDuration = resolvedPlaylistTracks.reduce((sum, item) => sum + (item.audioDuration || 0), 0);
+      derivedDuration = resolvedPlaylistTracks.reduce(
+        (sum, item) => sum + (item.audioDuration || 0),
+        0,
+      );
       derivedThumbnail = resolvedPlaylistTracks[0]?.thumbnailUrl || null;
 
       if (!derivedAudioUrl) {
-        throw new BadRequestException('playlistTrackIds must contain at least one playable track.');
+        throw new BadRequestException(
+          'playlistTrackIds must contain at least one playable track.',
+        );
       }
     }
 
     let nextAudioUrl = uploadedAudioUrl ?? audioUrlFromBody;
-    let nextDuration = dto.audioDuration !== undefined ? this.normalizeDuration(dto.audioDuration) : undefined;
+    let nextDuration =
+      dto.audioDuration !== undefined
+        ? this.normalizeDuration(dto.audioDuration)
+        : undefined;
 
     if (nextContentType === MusicContentType.playlist) {
       nextAudioUrl = derivedAudioUrl;
       nextDuration = derivedDuration;
     }
 
-    if (nextContentType === MusicContentType.single && !nextAudioUrl && !existing.audioUrl) {
+    if (
+      nextContentType === MusicContentType.single &&
+      !nextAudioUrl &&
+      !existing.audioUrl
+    ) {
       throw new BadRequestException('audioFile or audioUrl is required.');
     }
 
-    if (nextContentType === MusicContentType.podcast && !nextAudioUrl && !existing.audioUrl) {
+    if (
+      nextContentType === MusicContentType.podcast &&
+      !nextAudioUrl &&
+      !existing.audioUrl
+    ) {
       throw new BadRequestException('audioFile or audioUrl is required.');
     }
 
-    let nextThumbnailUrl: string | null | undefined = uploadedThumbnailUrl ?? thumbnailUrlFromBody;
+    let nextThumbnailUrl: string | null | undefined =
+      uploadedThumbnailUrl ?? thumbnailUrlFromBody;
 
-    if (nextContentType === MusicContentType.playlist && nextThumbnailUrl === undefined) {
+    if (
+      nextContentType === MusicContentType.playlist &&
+      nextThumbnailUrl === undefined
+    ) {
       nextThumbnailUrl = existing.thumbnailUrl || derivedThumbnail || null;
     }
 
@@ -465,29 +587,56 @@ export class MusicService {
       ...(nextSlug !== existing.slug ? { slug: nextSlug } : {}),
       ...(nextArtist !== undefined ? { artist: nextArtist } : {}),
       ...(nextAudioUrl !== undefined ? { audioUrl: nextAudioUrl } : {}),
-      ...(nextThumbnailUrl !== undefined ? { thumbnailUrl: nextThumbnailUrl } : {}),
-      ...(nextDescription !== undefined ? { description: nextDescription } : {}),
-      ...(dto.tags !== undefined ? { tags: this.normalizeTagsInput(dto.tags) } : {}),
-      ...(nextDuration !== undefined ? { audioDuration: nextDuration } : {}),
-      ...(dto.contentType !== undefined ? { contentType: nextContentType } : {}),
-      ...(dto.accessType !== undefined ? { accessType: nextAccessType } : {}),
-      ...(dto.accessType !== undefined || dto.unlockPrice !== undefined || dto.originalUnlockPrice !== undefined || dto.discountPercent !== undefined
-        ? {
-          originalUnlockPrice: nextPricing.originalUnlockPrice,
-          discountPercent: nextPricing.discountPercent,
-          unlockPrice: nextPricing.unlockPrice,
-        }
+      ...(nextThumbnailUrl !== undefined
+        ? { thumbnailUrl: nextThumbnailUrl }
         : {}),
-      ...(dto.introEnabled !== undefined ? { introEnabled: dto.introEnabled } : {}),
-      ...(dto.playlistTrackIds !== undefined || nextContentType === MusicContentType.playlist || existing.contentType === MusicContentType.playlist
-        ? { playlistTrackIds: nextContentType === MusicContentType.playlist ? nextPlaylistTrackIds : [] }
+      ...(nextDescription !== undefined
+        ? { description: nextDescription }
+        : {}),
+      ...(dto.tags !== undefined
+        ? { tags: this.normalizeTagsInput(dto.tags) }
+        : {}),
+      ...(nextDuration !== undefined ? { audioDuration: nextDuration } : {}),
+      ...(dto.contentType !== undefined
+        ? { contentType: nextContentType }
+        : {}),
+      ...(dto.accessType !== undefined ? { accessType: nextAccessType } : {}),
+      ...(dto.accessType !== undefined ||
+      dto.unlockPrice !== undefined ||
+      dto.originalUnlockPrice !== undefined ||
+      dto.discountPercent !== undefined
+        ? {
+            originalUnlockPrice: nextPricing.originalUnlockPrice,
+            discountPercent: nextPricing.discountPercent,
+            unlockPrice: nextPricing.unlockPrice,
+          }
+        : {}),
+      ...(dto.introEnabled !== undefined
+        ? { introEnabled: dto.introEnabled }
+        : {}),
+      ...(dto.playlistTrackIds !== undefined ||
+      nextContentType === MusicContentType.playlist ||
+      existing.contentType === MusicContentType.playlist
+        ? {
+            playlistTrackIds:
+              nextContentType === MusicContentType.playlist
+                ? nextPlaylistTrackIds
+                : [],
+          }
         : {}),
       ...(dto.isPublic !== undefined ? { isPublic: dto.isPublic } : {}),
     };
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      if (nextContentType === MusicContentType.playlist && playlistTrackAccess.size) {
-        await this.applyPlaylistTrackAccessConfig(tx, resolvedPlaylistTracks, playlistTrackAccess);
+      if (
+        nextContentType === MusicContentType.playlist &&
+        playlistTrackAccess.size
+      ) {
+        await this.applyPlaylistTrackAccessConfig(
+          tx,
+          resolvedPlaylistTracks,
+          playlistTrackAccess,
+        );
       }
 
       return tx.music.update({
@@ -498,11 +647,17 @@ export class MusicService {
 
     const [serialized] = await this.enrichPlaylistTracks([updated]);
 
+    const audioChanged =
+      uploadedAudioUrl !== undefined || audioUrlFromBody !== undefined;
+    if (audioChanged) await this.registerMusicHls(updated);
     return serialized;
   }
 
   async remove(id: string) {
-    const existing = await this.prisma.music.findUnique({ where: { id }, select: { id: true } });
+    const existing = await this.prisma.music.findUnique({
+      where: { id },
+      select: { id: true },
+    });
 
     if (!existing) {
       throw new NotFoundException('Music not found.');
@@ -513,7 +668,10 @@ export class MusicService {
     return { success: true };
   }
 
-  private serializeMusic(row: SerializableMusicRow, playlistTracks: PlaylistTrackSummary[] = []) {
+  private serializeMusic(
+    row: SerializableMusicRow,
+    playlistTracks: PlaylistTrackSummary[] = [],
+  ) {
     return {
       ...row,
       tags: this.parseTags(row.tags),
@@ -522,17 +680,27 @@ export class MusicService {
     };
   }
 
-  private async enrichPlaylistTracks(rows: SerializableMusicRow[]) {
+  private async enrichPlaylistTracks(
+    rows: SerializableMusicRow[],
+    viewer?: MusicViewer,
+  ) {
     if (!rows.length) return [];
 
-    const playlistRows = rows.filter((row) => row.contentType === MusicContentType.playlist);
+    const playlistRows = rows.filter(
+      (row) => row.contentType === MusicContentType.playlist,
+    );
     if (!playlistRows.length) {
-      return rows.map((row) => this.serializeMusic(row));
+      return this.applyEntitlementMasking(
+        rows.map((row) => this.serializeMusic(row)),
+        viewer,
+      );
     }
 
     const allTrackIds = new Set<string>();
     playlistRows.forEach((row) => {
-      this.parsePlaylistTrackIds(row.playlistTrackIds).forEach((id) => allTrackIds.add(id));
+      this.parsePlaylistTrackIds(row.playlistTrackIds).forEach((id) =>
+        allTrackIds.add(id),
+      );
     });
 
     const ids = Array.from(allTrackIds);
@@ -540,7 +708,9 @@ export class MusicService {
       ? await this.prisma.music.findMany({
           where: {
             id: { in: ids },
-            contentType: { in: [MusicContentType.single, MusicContentType.podcast] },
+            contentType: {
+              in: [MusicContentType.single, MusicContentType.podcast],
+            },
           },
           select: {
             id: true,
@@ -563,7 +733,7 @@ export class MusicService {
 
     const trackMap = new Map(trackRows.map((item) => [item.id, item]));
 
-    return rows.map((row) => {
+    const serialized = rows.map((row) => {
       if (row.contentType !== MusicContentType.playlist) {
         return this.serializeMusic(row);
       }
@@ -590,6 +760,69 @@ export class MusicService {
 
       return this.serializeMusic(row, playlistTracks);
     });
+
+    return this.applyEntitlementMasking(serialized, viewer);
+  }
+
+  /**
+   * Mask paid-but-locked single/podcast tracks and attach `hlsUrl` (validation
+   * V2 / red-team H3). For a public viewer, a track the viewer is not entitled
+   * to has both `audioUrl` and `hlsUrl` nulled; entitled/free tracks keep
+   * `audioUrl` and gain `hlsUrl` when a ready HLS asset exists. Admin/no-viewer
+   * calls are returned unchanged. Playlists are out of HLS scope (hlsUrl=null).
+   */
+  private async applyEntitlementMasking<
+    T extends { id: string; contentType: MusicContentType },
+  >(
+    items: T[],
+    viewer?: MusicViewer,
+  ): Promise<(T & { hlsUrl: string | null })[]> {
+    if (!viewer) {
+      // Admin path: expose as-is, but still surface hlsUrl when ready.
+      const ready = await this.loadReadyMusicHls(items.map((i) => i.id));
+      return items.map((item) => ({
+        ...item,
+        hlsUrl: ready.get(item.id) ?? null,
+      }));
+    }
+
+    const trackIds = items
+      .filter((i) => i.contentType !== MusicContentType.playlist)
+      .map((i) => i.id);
+    const ready = await this.loadReadyMusicHls(items.map((i) => i.id));
+    const entitled = new Map<string, boolean>();
+    for (const id of trackIds) {
+      entitled.set(
+        id,
+        await checkMusicEntitlement(this.prisma, id, viewer.userId),
+      );
+    }
+
+    return items.map((item) => {
+      const isPlaylist = item.contentType === MusicContentType.playlist;
+      const allowed = isPlaylist ? true : entitled.get(item.id) === true;
+      const hlsUrl = allowed ? (ready.get(item.id) ?? null) : null;
+      if (!allowed) {
+        return { ...item, audioUrl: null, hlsUrl };
+      }
+      return { ...item, hlsUrl };
+    });
+  }
+
+  /** Map of musicId → ready HLS playlist URL for the given ids. */
+  private async loadReadyMusicHls(ids: string[]): Promise<Map<string, string>> {
+    if (!ids.length) return new Map();
+    const assets = await this.prisma.hlsAsset.findMany({
+      where: { assetType: 'music', assetId: { in: ids }, status: 'ready' },
+      select: { assetId: true, playlistUrl: true },
+    });
+    return new Map(
+      assets
+        .filter(
+          (a): a is { assetId: string; playlistUrl: string } => !!a.playlistUrl,
+        )
+        .map((a) => [a.assetId, a.playlistUrl]),
+    );
   }
 
   private parseTags(value: Prisma.JsonValue | null): string[] {
@@ -608,15 +841,13 @@ export class MusicService {
       .filter(Boolean);
   }
 
-  private normalizeTagsInput(value: string[] | undefined): Prisma.InputJsonValue {
+  private normalizeTagsInput(
+    value: string[] | undefined,
+  ): Prisma.InputJsonValue {
     if (!value?.length) return [];
 
     const deduped = Array.from(
-      new Set(
-        value
-          .map((item) => item.trim())
-          .filter(Boolean),
-      ),
+      new Set(value.map((item) => item.trim()).filter(Boolean)),
     );
 
     return deduped;
@@ -626,11 +857,7 @@ export class MusicService {
     if (!value?.length) return [];
 
     return Array.from(
-      new Set(
-        value
-          .map((item) => item.trim())
-          .filter(Boolean),
-      ),
+      new Set(value.map((item) => item.trim()).filter(Boolean)),
     );
   }
 
@@ -645,22 +872,31 @@ export class MusicService {
       return new Map();
     }
 
-    const result = new Map<string, { accessType: MusicAccessType; unlockPrice: number }>();
+    const result = new Map<
+      string,
+      { accessType: MusicAccessType; unlockPrice: number }
+    >();
 
     value.forEach((item, index) => {
-      const trackId = typeof item.trackId === 'string' ? item.trackId.trim() : '';
+      const trackId =
+        typeof item.trackId === 'string' ? item.trackId.trim() : '';
       if (!trackId) {
-        throw new BadRequestException(`playlistTrackAccess[${index}].trackId is required.`);
+        throw new BadRequestException(
+          `playlistTrackAccess[${index}].trackId is required.`,
+        );
       }
 
       if (!allowedIds.has(trackId)) {
-        throw new BadRequestException(`playlistTrackAccess contains trackId not included in playlistTrackIds: ${trackId}`);
+        throw new BadRequestException(
+          `playlistTrackAccess contains trackId not included in playlistTrackIds: ${trackId}`,
+        );
       }
 
       const accessType = this.normalizeAccessType(item.accessType);
-      const unlockPrice = accessType === MusicAccessType.free
-        ? 0
-        : this.normalizeUnlockPrice(item.unlockPrice, accessType);
+      const unlockPrice =
+        accessType === MusicAccessType.free
+          ? 0
+          : this.normalizeUnlockPrice(item.unlockPrice, accessType);
 
       result.set(trackId, {
         accessType,
@@ -674,7 +910,10 @@ export class MusicService {
   private async applyPlaylistTrackAccessConfig(
     tx: Prisma.TransactionClient,
     resolvedPlaylistTracks: PlaylistTrackSummary[],
-    accessConfig: Map<string, { accessType: MusicAccessType; unlockPrice: number }>,
+    accessConfig: Map<
+      string,
+      { accessType: MusicAccessType; unlockPrice: number }
+    >,
   ) {
     if (!accessConfig.size || !resolvedPlaylistTracks.length) return;
 
@@ -684,10 +923,11 @@ export class MusicService {
         if (!config) return null;
 
         if (
-          track.accessType === config.accessType
-          && track.unlockPrice === config.unlockPrice
-          && (track.originalUnlockPrice ?? config.unlockPrice) === config.unlockPrice
-          && track.discountPercent === 0
+          track.accessType === config.accessType &&
+          track.unlockPrice === config.unlockPrice &&
+          (track.originalUnlockPrice ?? config.unlockPrice) ===
+            config.unlockPrice &&
+          track.discountPercent === 0
         ) {
           return null;
         }
@@ -696,13 +936,18 @@ export class MusicService {
           where: { id: track.id },
           data: {
             accessType: config.accessType,
-            originalUnlockPrice: config.accessType === MusicAccessType.vip ? config.unlockPrice : null,
+            originalUnlockPrice:
+              config.accessType === MusicAccessType.vip
+                ? config.unlockPrice
+                : null,
             discountPercent: 0,
             unlockPrice: config.unlockPrice,
           },
         });
       })
-      .filter((item): item is ReturnType<typeof tx.music.update> => Boolean(item));
+      .filter((item): item is ReturnType<typeof tx.music.update> =>
+        Boolean(item),
+      );
 
     if (!updates.length) return;
     await Promise.all(updates);
@@ -718,16 +963,23 @@ export class MusicService {
     return value === 'vip' ? MusicAccessType.vip : MusicAccessType.free;
   }
 
-  private normalizeUnlockPrice(value: number | undefined, accessType: MusicAccessType): number {
+  private normalizeUnlockPrice(
+    value: number | undefined,
+    accessType: MusicAccessType,
+  ): number {
     if (accessType === MusicAccessType.free) return 0;
 
     const next = typeof value === 'number' ? Math.floor(value) : 0;
     if (!Number.isFinite(next) || next < 0) {
-      throw new BadRequestException('unlockPrice must be a non-negative number.');
+      throw new BadRequestException(
+        'unlockPrice must be a non-negative number.',
+      );
     }
 
     if (next <= 0) {
-      throw new BadRequestException('unlockPrice is required when accessType is vip.');
+      throw new BadRequestException(
+        'unlockPrice is required when accessType is vip.',
+      );
     }
 
     return next;
@@ -737,16 +989,23 @@ export class MusicService {
     const next = typeof value === 'number' ? Math.floor(value) : 0;
 
     if (!Number.isFinite(next) || next < 0 || next > 99) {
-      throw new BadRequestException('discountPercent must be an integer between 0 and 99.');
+      throw new BadRequestException(
+        'discountPercent must be an integer between 0 and 99.',
+      );
     }
 
     return next;
   }
 
-  private computeDiscountedPrice(originalUnlockPrice: number, discountPercent: number): number {
+  private computeDiscountedPrice(
+    originalUnlockPrice: number,
+    discountPercent: number,
+  ): number {
     if (discountPercent <= 0) return originalUnlockPrice;
 
-    const discounted = Math.floor((originalUnlockPrice * (100 - discountPercent)) / 100);
+    const discounted = Math.floor(
+      (originalUnlockPrice * (100 - discountPercent)) / 100,
+    );
     return Math.max(1, discounted);
   }
 
@@ -775,24 +1034,37 @@ export class MusicService {
       };
     }
 
-    const fallbackOriginal = typeof fallback?.originalUnlockPrice === 'number'
-      ? fallback.originalUnlockPrice
-      : (typeof fallback?.unlockPrice === 'number' ? fallback.unlockPrice : 0);
+    const fallbackOriginal =
+      typeof fallback?.originalUnlockPrice === 'number'
+        ? fallback.originalUnlockPrice
+        : typeof fallback?.unlockPrice === 'number'
+          ? fallback.unlockPrice
+          : 0;
 
-    const originalSource = input.originalUnlockPrice !== undefined
-      ? input.originalUnlockPrice
-      : (input.unlockPrice !== undefined ? input.unlockPrice : fallbackOriginal);
+    const originalSource =
+      input.originalUnlockPrice !== undefined
+        ? input.originalUnlockPrice
+        : input.unlockPrice !== undefined
+          ? input.unlockPrice
+          : fallbackOriginal;
 
-    const originalUnlockPrice = this.normalizeUnlockPrice(originalSource, MusicAccessType.vip);
+    const originalUnlockPrice = this.normalizeUnlockPrice(
+      originalSource,
+      MusicAccessType.vip,
+    );
 
-    const discountPercent = input.discountPercent !== undefined
-      ? this.normalizeDiscountPercent(input.discountPercent)
-      : this.normalizeDiscountPercent(fallback?.discountPercent);
+    const discountPercent =
+      input.discountPercent !== undefined
+        ? this.normalizeDiscountPercent(input.discountPercent)
+        : this.normalizeDiscountPercent(fallback?.discountPercent);
 
     return {
       originalUnlockPrice,
       discountPercent,
-      unlockPrice: this.computeDiscountedPrice(originalUnlockPrice, discountPercent),
+      unlockPrice: this.computeDiscountedPrice(
+        originalUnlockPrice,
+        discountPercent,
+      ),
     };
   }
 
@@ -807,7 +1079,11 @@ export class MusicService {
       .replace(/-{2,}/g, '-');
   }
 
-  private async generateUniqueSlug(title: string, requestedSlug?: string, excludeId?: string): Promise<string> {
+  private async generateUniqueSlug(
+    title: string,
+    requestedSlug?: string,
+    excludeId?: string,
+  ): Promise<string> {
     const source = this.normalizeOptionalText(requestedSlug) ?? title;
     const baseSlug = this.toSlug(source) || `music-${Date.now()}`;
 
@@ -842,23 +1118,34 @@ export class MusicService {
     const ids = new Set<string>();
 
     playlists.forEach((playlist) => {
-      this.parsePlaylistTrackIds(playlist.playlistTrackIds).forEach((id) => ids.add(id));
+      this.parsePlaylistTrackIds(playlist.playlistTrackIds).forEach((id) =>
+        ids.add(id),
+      );
     });
 
     return Array.from(ids);
   }
 
-  private async resolvePlaylistTracks(trackIds: string[], excludeMusicId?: string): Promise<PlaylistTrackSummary[]> {
-    const normalizedIds = this.normalizeMusicIdArray(trackIds).filter((id) => id !== excludeMusicId);
+  private async resolvePlaylistTracks(
+    trackIds: string[],
+    excludeMusicId?: string,
+  ): Promise<PlaylistTrackSummary[]> {
+    const normalizedIds = this.normalizeMusicIdArray(trackIds).filter(
+      (id) => id !== excludeMusicId,
+    );
 
     if (!normalizedIds.length) {
-      throw new BadRequestException('playlistTrackIds is required for playlist content.');
+      throw new BadRequestException(
+        'playlistTrackIds is required for playlist content.',
+      );
     }
 
     const rows = await this.prisma.music.findMany({
       where: {
         id: { in: normalizedIds },
-        contentType: { in: [MusicContentType.single, MusicContentType.podcast] },
+        contentType: {
+          in: [MusicContentType.single, MusicContentType.podcast],
+        },
       },
       select: {
         id: true,
@@ -879,7 +1166,9 @@ export class MusicService {
     });
 
     if (rows.length !== normalizedIds.length) {
-      throw new BadRequestException('playlistTrackIds contains invalid or unsupported track IDs.');
+      throw new BadRequestException(
+        'playlistTrackIds contains invalid or unsupported track IDs.',
+      );
     }
 
     const map = new Map(rows.map((item) => [item.id, item]));
@@ -909,7 +1198,10 @@ export class MusicService {
     });
   }
 
-  private normalizeRequiredText(value: string | undefined, field: string): string {
+  private normalizeRequiredText(
+    value: string | undefined,
+    field: string,
+  ): string {
     const normalized = value?.trim();
     if (!normalized) {
       throw new BadRequestException(`${field} is required.`);
@@ -923,7 +1215,9 @@ export class MusicService {
     return normalized ? normalized : undefined;
   }
 
-  private normalizeNullableText(value: string | undefined): string | null | undefined {
+  private normalizeNullableText(
+    value: string | undefined,
+  ): string | null | undefined {
     if (value === undefined) return undefined;
     const normalized = value.trim();
     return normalized ? normalized : null;
@@ -932,7 +1226,9 @@ export class MusicService {
   private normalizeDuration(value: number | undefined): number | null {
     if (value === undefined || value === null) return null;
     if (!Number.isFinite(value) || value < 0) {
-      throw new BadRequestException('audioDuration must be a non-negative number.');
+      throw new BadRequestException(
+        'audioDuration must be a non-negative number.',
+      );
     }
     return Math.round(value);
   }

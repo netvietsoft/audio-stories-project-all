@@ -52,8 +52,9 @@ RUN yarn workspaces focus --all --production
 FROM node:24.16.0-slim AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
+# ffmpeg is required by the HLS worker (APP_ROLE=worker) to transcode audio.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssl ca-certificates curl dumb-init \
+    && apt-get install -y --no-install-recommends openssl ca-certificates curl dumb-init ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --system --gid 1001 nodejs \
     && useradd --system --uid 1001 --gid nodejs nestjs

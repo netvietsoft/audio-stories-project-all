@@ -38,6 +38,8 @@ import { TrackingModule } from './tracking/tracking.module';
 import { SocialLinksModule } from './social-links/social-links.module';
 import { MusicModule } from './music/music.module';
 import { PersonalPlaylistModule } from './personal-playlist/personal-playlist.module';
+import { HlsModule } from './hls/hls.module';
+import { BullModule } from '@nestjs/bullmq';
 import { buildScheduleImports } from './common/app-role.util';
 
 @Module({
@@ -58,6 +60,23 @@ import { buildScheduleImports } from './common/app-role.util';
       },
     }),
     ...buildScheduleImports(process.env),
+    // BullMQ connection (HLS transcode queue). Reuses REDIS_URL; queue keys are
+    // namespaced via the `hls-bull` prefix so they never collide with the cache.
+    BullModule.forRootAsync({
+      inject: [AppConfigService],
+      useFactory: (cfg: AppConfigService) => {
+        const u = new URL(cfg.redis.url);
+        return {
+          connection: {
+            host: u.hostname,
+            port: Number(u.port) || 6379,
+            password: u.password || cfg.redis.password || undefined,
+            db: Number(u.pathname.slice(1)) || 0,
+            maxRetriesPerRequest: null, // required by BullMQ blocking ops
+          },
+        };
+      },
+    }),
     // Rate limiting: 100 requests per 60 seconds per IP globally
     ThrottlerModule.forRoot([
       {
@@ -92,6 +111,7 @@ import { buildScheduleImports } from './common/app-role.util';
     SocialLinksModule,
     MusicModule,
     PersonalPlaylistModule,
+    HlsModule,
   ],
   controllers: [AppController],
   providers: [

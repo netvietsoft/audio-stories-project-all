@@ -35,6 +35,12 @@ export class AppConfigService {
   get admin() {
     return this.cfg.admin;
   }
+  get publicApiUrl() {
+    return this.cfg.publicApiUrl;
+  }
+  get hls() {
+    return this.cfg.hls;
+  }
   get rateLimit() {
     return this.cfg.rateLimit;
   }

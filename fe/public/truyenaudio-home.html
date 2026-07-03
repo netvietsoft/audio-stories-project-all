@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TruyệnAudio - Dark Cinematic Premium</title>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("theme");
+        if (saved === "light") document.documentElement.classList.add("light");
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap');
+
+    :root {
+      --bg: #0B0D14;
+      --surface: #13151F;
+      --surface-2: #1C1F2E;
+      --surface-3: #232738;
+      --text: #E8E3DC;
+      --text-2: #9A9590;
+      --text-3: #5C5850;
+      --gold: #C9A84C;
+      --gold-hi: #E8C96A;
+      --red: #C0392B;
+      --green: #1A6B4A;
+      --border: rgba(201,168,76,0.15);
+      --border-2: rgba(255,255,255,0.06);
+      --shadow: 0 18px 60px rgba(0,0,0,0.4);
+      --shadow-soft: 0 10px 30px rgba(0,0,0,0.24);
+      --radius: 18px;
+      --radius-sm: 12px;
+      --player-h: 72px;
+      --hot-soft: rgba(192,57,43,0.18);
+      --new-soft: rgba(26,107,74,0.2);
+      --vip-soft: rgba(118,74,188,0.18);
+    }
+
+    html.light {
+      --bg: #F5F2EC;
+      --surface: #FFFFFF;
+      --surface-2: #F0ECE4;
+      --surface-3: #E8E3DA;
+      --text: #1A1612;
+      --text-2: #6B6560;
+      --text-3: #A09890;
+      --gold: #9B7520;
+      --gold-hi: #B8891E;
+      --border: rgba(155,117,32,0.2);
+      --border-2: rgba(0,0,0,0.08);
+      --shadow: 0 18px 60px rgba(23,18,10,0.09);
+      --shadow-soft: 0 10px 24px rgba(23,18,10,0.06);
+      --hot-soft: rgba(192,57,43,0.1);
+      --new-soft: rgba(26,107,74,0.1);
+      --vip-soft: rgba(118,74,188,0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.2s ease, opacity 0.3s ease;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scrollbar-width: thin;
+      scrollbar-color: var(--gold) transparent;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top center, rgba(201,168,76,0.08), transparent 24%),
+        linear-gradient(180deg, rgba(255,255,255,0.01), transparent 25%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: calc(var(--player-h) + 24px);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+    img { display: block; max-width: 100%; }
+
+    .shell {
+      width: min(1440px, calc(100vw - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 120;
+      backdrop-filter: blur(18px);
+      background: color-mix(in srgb, var(--bg) 82%, transparent);
+      border-bottom: 1px solid var(--border-2);
+    }
+
+    .topbar-inner {
+      height: 60px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      min-width: max-content;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--gold-hi), var(--gold), rgba(192,57,43,0.9));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 8px 22px rgba(201,168,76,0.22);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-mark::before {
+      content: "";
+      position: absolute;
+      inset: 7px 9px 7px 7px;
+      border-radius: 999px 10px 10px 999px;
+      background: rgba(11,13,20,0.72);
+    }
+
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      right: 8px;
+      top: 9px;
+      bottom: 9px;
+      width: 5px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.2);
+    }
+
+    .brand-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      letter-spacing: 0.02em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .nav-link {
+      padding: 10px 14px;
+      color: var(--text-2);
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .nav-link.active,
+    .nav-link:hover {
+      color: var(--gold-hi);
+      background: color-mix(in srgb, var(--surface-3) 80%, transparent);
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 42px;
+      width: 220px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-2);
+      border-radius: 999px;
+      padding: 0 14px;
+    }
+
+    .search input {
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      width: 100%;
+    }
+
+    .ghost-btn,
+    .theme-btn,
+    .avatar-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 999px;
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .ghost-btn {
+      padding: 0 16px;
+      color: var(--gold-hi);
+      box-shadow: inset 0 0 0 1px rgba(201,168,76,0.06);
+    }
+
+    .theme-btn,
+    .avatar-btn {
+      width: 42px;
+    }
+
+    .theme-btn .icon {
+      display: inline-block;
+      transform: rotate(0deg);
+      transition: transform 0.3s ease;
+    }
+
+    html.light .theme-btn .icon {
+      transform: rotate(180deg);
+    }
+
+    main {
+      padding: 26px 0 0;
+    }
+
+    .trending-strip {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      overflow: auto;
+      white-space: nowrap;
+      padding: 0 0 16px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--gold) transparent;
+    }
+
+    .ticker-label,
+    .ticker-item {
+      border-radius: 999px;
+      border: 1px solid var(--border-2);
+      background: var(--surface);
+      padding: 8px 12px;
+      font-size: 0.88rem;
+    }
+
+    .ticker-label {
+      color: var(--gold-hi);
+      font-weight: 600;
+    }
+
+    .hero {
+      position: relative;
+      min-height: 520px;
+      border-radius: 30px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .hero-slide.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .hero-bg,
+    .hero-overlay,
+    .hero-vignette {
+      position: absolute;
+      inset: 0;
+    }
+
+    .hero-overlay {
+      background: linear-gradient(90deg, rgba(11,13,20,0.82) 0%, rgba(11,13,20,0.55) 42%, rgba(11,13,20,0.08) 100%);
+    }
+
+    .hero-vignette {
+      background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(11,13,20,0.64) 100%);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      min-height: 520px;
+      display: grid;
+      grid-template-columns: minmax(0, 580px) 1fr;
+      align-items: center;
+      gap: 42px;
+      padding: 54px 54px 72px;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.24);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.84rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      width: fit-content;
+      backdrop-filter: blur(10px);
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--red);
+      animation: pulseDot 2s infinite;
+      box-shadow: 0 0 0 8px rgba(192,57,43,0.08);
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.92); }
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: clamp(2.6rem, 4vw, 3.1rem);
+      line-height: 1.05;
+      margin: 18px 0 14px;
+      max-width: 11ch;
+    }
+
+    .chip-row,
+    .hero-stats,
+    .hero-actions,
+    .indicator-row,
+    .section-head,
+    .continue-grid,
+    .featured-grid,
+    .category-grid,
+    .player-center,
+    .player-actions,
+    .volume-wrap {
+      display: flex;
+      align-items: center;
+    }
+
+    .chip-row { gap: 8px; flex-wrap: wrap; }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--gold-hi);
+      padding: 7px 12px;
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    .hero-meta,
+    .hero-desc,
+    .muted,
+    .story-meta,
+    .rank-meta,
+    .small-meta,
+    .editor-copy,
+    .genre-count,
+    .timecode,
+    .player-chapter {
+      color: var(--text-2);
+    }
+
+    .hero-meta {
+      margin: 14px 0;
+      font-size: 0.96rem;
+    }
+
+    .hero-desc {
+      max-width: 56ch;
+      font-size: 0.98rem;
+      line-height: 1.75;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .hero-actions {
+      gap: 12px;
+      margin: 24px 0 20px;
+      flex-wrap: wrap;
+    }
+
+    .cta,
+    .ghost-hero {
+      height: 48px;
+      padding: 0 20px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .cta {
+      background: linear-gradient(135deg, var(--gold-hi), var(--gold));
+      color: #17110b;
+      box-shadow: 0 10px 30px rgba(201,168,76,0.25);
+    }
+
+    .ghost-hero {
+      background: rgba(255,255,255,0.02);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .hero-stats {
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .hero-stat { min-width: 100px; }
+    .hero-stat strong { display: block; font-size: 1.1rem; color: var(--text); }
+    .hero-stat span { font-size: 0.82rem; color: var(--text-3); }
+
+    .cover-stage {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .hero-cover {
+      width: 180px;
+      height: 270px;
+      border-radius: 14px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      transform: rotate(4deg);
+    }
+
+    .hero-cover::after {
+      content: "";
+      position: absolute;
+      inset: auto -25% 12px;
+      height: 26px;
+      background: rgba(255,255,255,0.08);
+      transform: rotate(-8deg);
+      filter: blur(18px);
+    }
+
+    .hero-emoji {
+      position: relative;
+      z-index: 2;
+      font-size: 80px;
+      filter: drop-shadow(0 8px 26px rgba(0,0,0,0.24));
+    }
+
+    .indicator-row {
+      position: absolute;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      gap: 8px;
+      z-index: 3;
+    }
+
+    .indicator {
+      width: 26px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.2);
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .indicator.active { background: linear-gradient(90deg, var(--gold), var(--gold-hi)); }
+
+    .genre-strip {
+      display: flex;
+      gap: 12px;
+      overflow: auto;
+      padding: 18px 0 8px;
+      white-space: nowrap;
+      scrollbar-width: thin;
+      scrollbar-color: var(--gold) transparent;
+    }
+
+    .genre-pill {
+      border: 1px solid var(--border-2);
+      background: var(--surface);
+      color: var(--text-2);
+      border-radius: 999px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .genre-pill.active,
+    .genre-pill:hover {
+      color: var(--gold-hi);
+      border-color: var(--border);
+      background: var(--surface-3);
+    }
+
+    .genre-pill:active { transform: scale(0.96); }
+
+    .dual-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, transparent), var(--surface));
+      border: 1px solid var(--border-2);
+      border-radius: 22px;
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
+    .panel-head,
+    .section-head {
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .panel-head {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--border-2);
+    }
+
+    .section-title,
+    .panel-title {
+      font-family: 'Playfair Display', serif;
+      margin: 0;
+      font-size: 1.4rem;
+      letter-spacing: 0.01em;
+    }
+
+    .panel-title { font-size: 1.2rem; }
+
+    .section-link {
+      color: var(--gold-hi);
+      font-weight: 600;
+      font-size: 0.95rem;
+      white-space: nowrap;
+    }
+
+    .continue-list,
+    .ranking-list {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .continue-item,
+    .rank-item,
+    .editor-card,
+    .genre-tile {
+      background: var(--surface-2);
+      border: 1px solid transparent;
+      border-radius: 18px;
+    }
+
+    .continue-item {
+      display: grid;
+      grid-template-columns: 46px 1fr auto;
+      gap: 14px;
+      padding: 12px;
+      align-items: center;
+    }
+
+    .mini-cover {
+      width: 46px;
+      height: 66px;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.22);
+    }
+
+    .cover-art,
+    .editor-cover,
+    .rank-thumb,
+    .story-card-cover,
+    .category-icon-wrap {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cover-art::before,
+    .editor-cover::before,
+    .mini-cover::before,
+    .rank-thumb::before {
+      content: attr(data-emoji);
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 30px;
+      z-index: 2;
+    }
+
+    .continue-title,
+    .story-title,
+    .editor-title,
+    .player-title {
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .continue-title,
+    .editor-title,
+    .story-title {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .continue-title,
+    .editor-title { -webkit-line-clamp: 2; }
+    .story-title { -webkit-line-clamp: 2; min-height: 2.9em; }
+
+    .progress-wrap { margin-top: 8px; }
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      overflow: hidden;
+    }
+
+    .progress-fill,
+    .player-progress-fill,
+    .volume-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--gold), var(--red));
+      width: 0%;
+    }
+
+    .play-dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 0;
+      background: linear-gradient(135deg, var(--gold-hi), var(--gold));
+      color: #17110b;
+      cursor: pointer;
+      font-weight: 700;
+      box-shadow: 0 10px 22px rgba(201,168,76,0.2);
+    }
+
+    .rank-item {
+      display: grid;
+      grid-template-columns: 44px 48px 1fr auto;
+      gap: 12px;
+      padding: 12px;
+      align-items: center;
+    }
+
+    .rank-no {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      text-align: center;
+    }
+
+    .rank-no.top-1 { color: var(--gold-hi); text-shadow: 0 0 18px rgba(201,168,76,0.22); }
+    .rank-no.top-2 { color: #b7bcc6; }
+    .rank-no.top-3 { color: #b67b42; }
+    .rank-no.other { color: var(--text-3); }
+
+    .rank-thumb {
+      width: 48px;
+      height: 68px;
+      border-radius: 10px;
+      box-shadow: 0 10px 22px rgba(0,0,0,0.22);
+    }
+
+    .trend-arrow { color: var(--gold-hi); font-size: 1.1rem; }
+
+    .section {
+      margin-top: 34px;
+    }
+
+    .section-head {
+      margin-bottom: 16px;
+    }
+
+    .row-scroller {
+      display: flex;
+      gap: 14px;
+      overflow: auto;
+      padding-bottom: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--gold) transparent;
+    }
+
+    .story-card {
+      flex: 0 0 130px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .story-card:hover { transform: translateY(-4px); }
+
+    .story-card-cover {
+      width: 130px;
+      aspect-ratio: 2 / 3;
+      border-radius: 16px;
+      border: 1px solid var(--border-2);
+      box-shadow: var(--shadow-soft);
+      isolation: isolate;
+    }
+
+    .story-card-cover::before {
+      content: attr(data-emoji);
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 44px;
+      z-index: 2;
+      filter: drop-shadow(0 8px 18px rgba(0,0,0,0.22));
+    }
+
+    .story-card-cover::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.34));
+      opacity: 0.9;
+    }
+
+    .cover-overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(0,0,0,0.16);
+      opacity: 0;
+      z-index: 3;
+    }
+
+    .story-card:hover .cover-overlay { opacity: 1; }
+
+    .cover-play {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(11,13,20,0.66);
+      color: var(--text);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+    }
+
+    .story-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 4;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 5px 9px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .story-badge.hot { background: var(--hot-soft); color: #f1a499; border: 1px solid rgba(192,57,43,0.28); }
+    .story-badge.new { background: var(--new-soft); color: #91d3b4; border: 1px solid rgba(26,107,74,0.28); }
+    .story-badge.full { background: rgba(201,168,76,0.18); color: var(--gold-hi); border: 1px solid var(--border); }
+    .story-badge.vip { background: var(--vip-soft); color: #cfb3ff; border: 1px solid rgba(118,74,188,0.28); }
+
+    .story-author,
+    .story-submeta,
+    .rank-meta,
+    .small-meta,
+    .editor-copy,
+    .genre-count,
+    .continue-chapter,
+    .continue-progress-text,
+    .hero-side-note {
+      font-size: 0.82rem;
+    }
+
+    .story-author { color: var(--text-2); margin-top: -2px; }
+    .story-submeta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--text-3);
+    }
+
+    .featured-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .editor-card {
+      display: grid;
+      grid-template-columns: 66px 1fr;
+      gap: 14px;
+      padding: 14px;
+      cursor: pointer;
+    }
+
+    .editor-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border);
+    }
+
+    .editor-cover {
+      width: 66px;
+      height: 94px;
+      border-radius: 12px;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+    }
+
+    .editor-cover::before { font-size: 28px; }
+
+    .editor-copy {
+      line-height: 1.65;
+      margin: 8px 0 10px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .editor-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .genre-tile {
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .genre-tile:hover {
+      border-color: var(--border);
+      transform: translateY(-2px);
+    }
+
+    .category-icon-wrap {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 12px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: var(--surface-3);
+      font-size: 28px;
+    }
+
+    .category-name { font-weight: 600; }
+
+    .mini-player {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 200;
+      border-top: 1px solid var(--border-2);
+      backdrop-filter: blur(20px);
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      transform: translateY(100%);
+      transition: transform 0.4s ease-out, background 0.3s ease, color 0.3s ease;
+    }
+
+    .mini-player.visible { transform: translateY(0); }
+
+    .player-inner {
+      height: var(--player-h);
+      display: grid;
+      grid-template-columns: 280px 1fr 220px;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .player-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .player-cover {
+      width: 46px;
+      height: 46px;
+      border-radius: 10px;
+      position: relative;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .player-cover::before {
+      content: attr(data-emoji);
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+    }
+
+    .player-center {
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .player-actions { gap: 10px; }
+
+    .player-btn,
+    .speed-btn {
+      border: 1px solid var(--border-2);
+      background: var(--surface-2);
+      color: var(--text);
+      border-radius: 999px;
+      min-width: 34px;
+      height: 34px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .player-btn.play-main {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, var(--gold-hi), var(--gold));
+      color: #17110b;
+      border: 0;
+    }
+
+    .player-progress-wrap,
+    .volume-bar {
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .time-row {
+      width: min(520px, 100%);
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .player-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .volume-wrap { gap: 10px; width: 120px; }
+    .speed-btn { padding: 0 12px; width: auto; }
+
+    .wave {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 16px;
+    }
+
+    .wave span {
+      width: 3px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--gold-hi);
+      opacity: 0.35;
+    }
+
+    .mini-player.playing .wave span {
+      animation: wave 1.2s ease-in-out infinite;
+    }
+
+    .mini-player.playing .wave span:nth-child(2) { animation-delay: 0.15s; }
+    .mini-player.playing .wave span:nth-child(3) { animation-delay: 0.3s; }
+    .mini-player.playing .wave span:nth-child(4) { animation-delay: 0.45s; }
+    .mini-player.playing .wave span:nth-child(5) { animation-delay: 0.6s; }
+
+    @keyframes wave {
+      0%, 100% { height: 4px; opacity: 0.4; }
+      50% { height: 16px; opacity: 1; }
+    }
+
+    .loading,
+    .empty {
+      padding: 26px 18px;
+      text-align: center;
+      color: var(--text-2);
+      border: 1px dashed var(--border-2);
+      border-radius: 18px;
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 1180px) {
+      .hero-content { grid-template-columns: 1fr; }
+      .cover-stage { justify-content: flex-start; }
+      .dual-grid { grid-template-columns: 1fr; }
+      .category-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .player-inner { grid-template-columns: 220px 1fr 180px; }
+    }
+
+    @media (max-width: 900px) {
+      .topbar-inner {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding: 10px 0;
+      }
+      .nav-links { justify-content: flex-start; overflow: auto; white-space: nowrap; flex-wrap: nowrap; }
+      .topbar-actions { flex-wrap: wrap; justify-content: flex-start; }
+      .search { width: min(100%, 320px); }
+      .featured-grid { grid-template-columns: 1fr; }
+      .category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .player-inner {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding: 10px 0;
+        gap: 10px;
+      }
+      .player-right { justify-content: flex-start; }
+    }
+
+    @media (max-width: 640px) {
+      .shell { width: min(100vw - 20px, 1440px); }
+      main { padding-top: 18px; }
+      .hero { min-height: 600px; border-radius: 22px; }
+      .hero-content { padding: 32px 22px 64px; min-height: 600px; }
+      .hero-title { max-width: 100%; font-size: 2.25rem; }
+      .hero-cover { width: 148px; height: 222px; }
+      .section-title { font-size: 1.2rem; }
+      .story-card { flex-basis: 118px; }
+      .story-card-cover { width: 118px; }
+      .category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+      .continue-item, .rank-item { grid-template-columns: 40px 42px 1fr auto; gap: 10px; }
+      .mini-player .player-center,
+      .mini-player .player-right { display: none; }
+      .player-inner { grid-template-columns: 1fr; height: 64px; }
+      .player-left { justify-content: space-between; }
+      .mobile-play-wrap { display: flex !important; align-items: center; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="#">
+        <span class="brand-mark"></span>
+        <span class="brand-text">TruyệnAudio</span>
+      </a>
+
+      <nav class="nav-links">
+        <a class="nav-link active" href="#">Trang chủ</a>
+        <a class="nav-link" href="#discovery">Khám phá</a>
+        <a class="nav-link" href="#genres">Thể loại</a>
+        <a class="nav-link" href="#ranking">BXH</a>
+        <a class="nav-link" href="#authors">Tác giả</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <label class="search">
+          <span>🔎</span>
+          <input id="searchInput" type="search" placeholder="Tìm truyện audio..." />
+        </label>
+        <button class="ghost-btn">Nạp credits</button>
+        <button id="themeToggle" class="theme-btn" aria-label="Đổi giao diện"><span class="icon">☀</span></button>
+        <button class="avatar-btn" aria-label="Tài khoản">🧑</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <div id="trendingStrip" class="trending-strip"></div>
+
+    <section id="heroSection" class="hero"></section>
+
+    <div id="genreStrip" class="genre-strip"></div>
+
+    <section class="dual-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Đọc tiếp</h2>
+          <a class="section-link" href="#">Xem thư viện →</a>
+        </div>
+        <div id="continueList" class="continue-list"></div>
+      </div>
+
+      <div id="ranking" class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">🔥 BXH hôm nay</h2>
+          <a class="section-link" href="#">Xem tất cả →</a>
+        </div>
+        <div id="rankingList" class="ranking-list"></div>
+      </div>
+    </section>
+
+    <section id="discovery" class="section">
+      <div class="section-head">
+        <h2 class="section-title">🔥 Đang Thịnh Hành</h2>
+        <a class="section-link" href="#">Xem tất cả →</a>
+      </div>
+      <div id="trendingRow" class="row-scroller"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">✨ Mới Cập Nhật</h2>
+        <a class="section-link" href="#">Xem tất cả →</a>
+      </div>
+      <div id="newRow" class="row-scroller"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">🎯 Biên Tập Viên Đề Cử</h2>
+        <a class="section-link" href="#">Khám phá thêm →</a>
+      </div>
+      <div id="featuredGrid" class="featured-grid"></div>
+    </section>
+
+    <section id="genres" class="section">
+      <div class="section-head">
+        <h2 class="section-title">📚 Khám Phá Thể Loại</h2>
+      </div>
+      <div id="categoryGrid" class="category-grid"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2 class="section-title">✅ Hoàn Thành — Đọc An Tâm</h2>
+        <a class="section-link" href="#">Xem tất cả →</a>
+      </div>
+      <div id="completeRow" class="row-scroller"></div>
+    </section>
+  </main>
+
+  <div id="miniPlayer" class="mini-player">
+    <div class="shell player-inner">
+      <div class="player-left">
+        <div id="playerCover" class="player-cover" data-emoji="🎧"></div>
+        <div style="min-width:0;">
+          <p id="playerTitle" class="player-title">Chưa phát truyện nào</p>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="playerChapter" class="player-chapter">Hãy chọn một truyện để bắt đầu</span>
+            <span class="wave" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></span>
+          </div>
+        </div>
+        <div class="mobile-play-wrap hidden">
+          <button id="mobilePlayBtn" class="player-btn play-main">▶</button>
+        </div>
+      </div>
+
+      <div class="player-center">
+        <div class="player-actions">
+          <button class="player-btn" id="prevBtn">⏮</button>
+          <button class="player-btn play-main" id="playBtn">▶</button>
+          <button class="player-btn" id="nextBtn">⏭</button>
+        </div>
+        <div class="time-row">
+          <span id="currentTime" class="timecode">00:00</span>
+          <div id="progressBar" class="player-progress-wrap"><div id="progressFill" class="player-progress-fill"></div></div>
+          <span id="durationTime" class="timecode">03:23</span>
+        </div>
+      </div>
+
+      <div class="player-right">
+        <div class="volume-wrap">
+          <span>🔊</span>
+          <div id="volumeBar" class="volume-bar"><div id="volumeFill" class="volume-fill" style="width:68%"></div></div>
+        </div>
+        <button id="speedBtn" class="speed-btn">1.0x</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      lang: 'vi',
+      theme: document.documentElement.classList.contains('light') ? 'light' : 'dark',
+      selectedGenre: 'all',
+      isPlaying: false,
+      progress: 0,
+      duration: 203,
+      volume: 0.68,
+      speedIndex: 0,
+      speeds: [1.0, 1.25, 1.5, 1.75, 2.0],
+      activeHero: 0,
+      heroTimer: null,
+      playerTimer: null,
+      datasets: {
+        trending: [],
+        newest: [],
+        rating: [],
+        completed: [],
+        filtered: {
+          trending: [],
+          newest: [],
+          rating: [],
+          completed: []
+        }
+      }
+    };
+
+    const genrePresets = [
+      { key: 'all', label: '✨ Tất cả', emoji: '✨' },
+      { key: 'huyen-huyen', label: '⚔️ Huyền Huyễn', emoji: '⚔️' },
+      { key: 'ngon-tinh', label: '💕 Ngôn Tình', emoji: '💕' },
+      { key: 'co-dai', label: '🏯 Cổ Đại', emoji: '🏯' },
+      { key: 'khoa-huyen', label: '🚀 Khoa Huyễn', emoji: '🚀' },
+      { key: 'kinh-di', label: '👻 Kinh Dị', emoji: '👻' },
+      { key: 'tien-hiep', label: '🥷 Tiên Hiệp', emoji: '🥷' },
+      { key: 'dien-van', label: '🌸 Điền Văn', emoji: '🌸' },
+      { key: 'di-gioi', label: '⚡ Dị Giới', emoji: '⚡' },
+      { key: 'trong-sinh', label: '🎭 Trọng Sinh', emoji: '🎭' }
+    ];
+
+    const genreTokens = {
+      'huyền huyễn': { emoji: '⚔️', bg: '#3A245F', key: 'huyen-huyen' },
+      'huyen huyền': { emoji: '⚔️', bg: '#3A245F', key: 'huyen-huyen' },
+      'tiên hiệp': { emoji: '🥷', bg: '#4B2D5E', key: 'tien-hiep' },
+      'tien hiep': { emoji: '🥷', bg: '#4B2D5E', key: 'tien-hiep' },
+      'ngôn tình': { emoji: '💕', bg: '#6B243C', key: 'ngon-tinh' },
+      'ngon tinh': { emoji: '💕', bg: '#6B243C', key: 'ngon-tinh' },
+      'cổ đại': { emoji: '🏯', bg: '#5B4027', key: 'co-dai' },
+      'co dai': { emoji: '🏯', bg: '#5B4027', key: 'co-dai' },
+      'khoa huyễn': { emoji: '🚀', bg: '#1F4664', key: 'khoa-huyen' },
+      'khoa huyen': { emoji: '🚀', bg: '#1F4664', key: 'khoa-huyen' },
+      'kinh dị': { emoji: '👻', bg: '#203743', key: 'kinh-di' },
+      'kinh di': { emoji: '👻', bg: '#203743', key: 'kinh-di' },
+      'điền văn': { emoji: '🌸', bg: '#6A4B4B', key: 'dien-van' },
+      'dien van': { emoji: '🌸', bg: '#6A4B4B', key: 'dien-van' },
+      'dị giới': { emoji: '⚡', bg: '#3D3B66', key: 'di-gioi' },
+      'di gioi': { emoji: '⚡', bg: '#3D3B66', key: 'di-gioi' },
+      'trọng sinh': { emoji: '🎭', bg: '#5C3030', key: 'trong-sinh' },
+      'trong sinh': { emoji: '🎭', bg: '#5C3030', key: 'trong-sinh' },
+    };
+
+    const refs = {
+      heroSection: document.getElementById('heroSection'),
+      trendingStrip: document.getElementById('trendingStrip'),
+      genreStrip: document.getElementById('genreStrip'),
+      continueList: document.getElementById('continueList'),
+      rankingList: document.getElementById('rankingList'),
+      trendingRow: document.getElementById('trendingRow'),
+      newRow: document.getElementById('newRow'),
+      featuredGrid: document.getElementById('featuredGrid'),
+      categoryGrid: document.getElementById('categoryGrid'),
+      completeRow: document.getElementById('completeRow'),
+      searchInput: document.getElementById('searchInput'),
+      themeToggle: document.getElementById('themeToggle'),
+      miniPlayer: document.getElementById('miniPlayer'),
+      playerCover: document.getElementById('playerCover'),
+      playerTitle: document.getElementById('playerTitle'),
+      playerChapter: document.getElementById('playerChapter'),
+      playBtn: document.getElementById('playBtn'),
+      mobilePlayBtn: document.getElementById('mobilePlayBtn'),
+      prevBtn: document.getElementById('prevBtn'),
+      nextBtn: document.getElementById('nextBtn'),
+      progressBar: document.getElementById('progressBar'),
+      progressFill: document.getElementById('progressFill'),
+      currentTime: document.getElementById('currentTime'),
+      durationTime: document.getElementById('durationTime'),
+      volumeBar: document.getElementById('volumeBar'),
+      volumeFill: document.getElementById('volumeFill'),
+      speedBtn: document.getElementById('speedBtn'),
+    };
+
+    function fmtViews(value) {
+      const n = Number(value || 0);
+      if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M';
+      if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'K';
+      return String(n);
+    }
+
+    function fmtTime(sec) {
+      const s = Math.max(0, Math.floor(sec || 0));
+      const mm = String(Math.floor(s / 60)).padStart(2, '0');
+      const ss = String(s % 60).padStart(2, '0');
+      return mm + ':' + ss;
+    }
+
+    function slugify(input) {
+      return String(input || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-');
+    }
+
+    function escapeHtml(text) {
+      return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function getPrimaryCategory(story) {
+      return story.categories && story.categories[0] && story.categories[0].category ? story.categories[0].category : null;
+    }
+
+    function genreProfile(story) {
+      const category = getPrimaryCategory(story);
+      const raw = category ? (category.nameVi || category.name || '') : '';
+      const norm = raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+
+      let found = null;
+      Object.keys(genreTokens).some((key) => {
+        if (norm.includes(key)) {
+          found = genreTokens[key];
+          return true;
+        }
+        return false;
+      });
+
+      return {
+        genre: raw || 'Khám phá',
+        emoji: found ? found.emoji : '🎧',
+        bgColor: found ? found.bg : '#2F3548',
+        key: found ? found.key : 'all'
+      };
+    }
+
+    function deriveBadge(story, index, context) {
+      if (story.status === 'completed' || context === 'completed') return 'full';
+      if (story.isRecommended) return 'vip';
+      const createdAt = story.createdAt ? new Date(story.createdAt).getTime() : 0;
+      const days = createdAt ? (Date.now() - createdAt) / 86400000 : 999;
+      if (days <= 14 || index % 7 === 0) return 'new';
+      if (Number(story.totalViews || 0) > 200000 || index < 3) return 'hot';
+      return '';
+    }
+
+    function normalizeStory(story, index, context) {
+      const profile = genreProfile(story);
+      return {
+        id: story.id,
+        slug: story.slug,
+        title: story.titleVi || story.title || 'Chưa có tên',
+        author: story.author && story.author.name ? story.author.name : 'Ẩn danh',
+        genre: profile.genre,
+        genreKey: profile.key,
+        emoji: profile.emoji,
+        badge: deriveBadge(story, index, context),
+        views: fmtViews(story.totalViews),
+        rating: Number(story.averageRating || (4.4 + (index % 5) * 0.1)).toFixed(1),
+        chapters: Number(story.totalChapters || story._count && story._count.chapters || (12 + index * 3) || 0),
+        bgColor: profile.bgColor,
+        description: story.descriptionVi || story.description || 'Một chuyến phiêu lưu âm thanh đang chờ bạn mở nghe.',
+        categoryName: profile.genre,
+        raw: story
+      };
+    }
+
+    function buildGradient(color) {
+      return `radial-gradient(circle at 20% 10%, color-mix(in srgb, ${color} 70%, #ffffff 6%) 0%, transparent 30%), linear-gradient(135deg, ${color} 0%, color-mix(in srgb, ${color} 52%, #0B0D14 48%) 55%, #0B0D14 100%)`;
+    }
+
+    async function fetchStories(params) {
+      const query = new URLSearchParams(Object.assign({ lang: 'vi' }, params));
+      const response = await fetch('/api/public/stories/explore?' + query.toString(), { headers: { 'Accept': 'application/json' } });
+      if (!response.ok) throw new Error('Không lấy được dữ liệu truyện');
+      const json = await response.json();
+      const items = Array.isArray(json.data) ? json.data : [];
+      return items;
+    }
+
+    async function loadData() {
+      try {
+        const [trendingRaw, newestRaw, ratingRaw, completedRaw] = await Promise.all([
+          fetchStories({ limit: 12, sort: 'views', trendWindow: 'week' }),
+          fetchStories({ limit: 12, sort: 'latest' }),
+          fetchStories({ limit: 12, sort: 'rating' }),
+          fetchStories({ limit: 12, status: 'completed', sort: 'latest' })
+        ]);
+
+        state.datasets.trending = trendingRaw.map((story, index) => normalizeStory(story, index, 'trending'));
+        state.datasets.newest = newestRaw.map((story, index) => normalizeStory(story, index, 'newest'));
+        state.datasets.rating = ratingRaw.map((story, index) => normalizeStory(story, index, 'rating'));
+        state.datasets.completed = completedRaw.map((story, index) => normalizeStory(story, index, 'completed'));
+
+        applyFilters();
+        renderAll();
+        startHeroAutoplay();
+      } catch (error) {
+        console.error(error);
+        refs.heroSection.innerHTML = '<div class="loading">Không tải được dữ liệu thật từ API. Hãy mở file này qua app FE để dùng chung origin với `/api/public/stories/explore`.</div>';
+      }
+    }
+
+    function allStoriesMerged() {
+      return [
+        ...state.datasets.filtered.trending,
+        ...state.datasets.filtered.newest,
+        ...state.datasets.filtered.rating,
+        ...state.datasets.filtered.completed
+      ].reduce((acc, item) => {
+        if (!acc.some((s) => s.id === item.id)) acc.push(item);
+        return acc;
+      }, []);
+    }
+
+    function applyFilters() {
+      const q = refs.searchInput.value.trim().toLowerCase();
+      const genre = state.selectedGenre;
+      const test = (story) => {
+        const matchGenre = genre === 'all' || story.genreKey === genre || slugify(story.genre).includes(genre);
+        const matchSearch = !q || [story.title, story.author, story.genre].join(' ').toLowerCase().includes(q);
+        return matchGenre && matchSearch;
+      };
+
+      state.datasets.filtered.trending = state.datasets.trending.filter(test);
+      state.datasets.filtered.newest = state.datasets.newest.filter(test);
+      state.datasets.filtered.rating = state.datasets.rating.filter(test);
+      state.datasets.filtered.completed = state.datasets.completed.filter(test);
+    }
+
+    function renderTrendingStrip() {
+      const items = state.datasets.trending.slice(0, 6);
+      refs.trendingStrip.innerHTML = '<span class="ticker-label">Đang nóng</span>' + items.map((story, index) => (`
+        <button class="ticker-item" onclick="playStoryById('${story.id}', 'trending')">#${index + 1} ${escapeHtml(story.title)} · ${escapeHtml(story.views)} lượt nghe</button>
+      `)).join('');
+    }
+
+    function renderHero() {
+      const source = state.datasets.filtered.trending.length ? state.datasets.filtered.trending : state.datasets.trending;
+      const slides = source.slice(0, 4);
+      refs.heroSection.innerHTML = slides.length ? slides.map((story, index) => {
+        const isActive = index === state.activeHero;
+        const bg = buildGradient(story.bgColor);
+        return `
+          <article class="hero-slide ${isActive ? 'active' : ''}" data-index="${index}">
+            <div class="hero-bg" style="background:${bg};"></div>
+            <div class="hero-overlay"></div>
+            <div class="hero-vignette"></div>
+            <div class="hero-content">
+              <div>
+                <div class="live-badge"><span class="live-dot"></span> ĐANG PHÁT</div>
+                <h1 class="hero-title">${escapeHtml(story.title)}</h1>
+                <div class="chip-row">
+                  <span class="chip">${story.emoji} ${escapeHtml(story.genre)}</span>
+                  <span class="chip">⭐ ${escapeHtml(story.rating)}</span>
+                  <span class="chip">${story.badge ? story.badge.toUpperCase() : 'TRENDING'}</span>
+                </div>
+                <p class="hero-meta">${escapeHtml(story.author)} · Đánh giá ${escapeHtml(story.rating)}</p>
+                <p class="hero-desc">${escapeHtml(story.description)}</p>
+                <div class="hero-actions">
+                  <button class="cta" onclick="playStory('${escapeHtml(story.title)}', 'Chương 1: Mở đầu', '${story.emoji}', '${story.bgColor}')">▶ Nghe ngay</button>
+                  <button class="ghost-hero">♡ Yêu thích</button>
+                </div>
+                <div class="hero-stats">
+                  <div class="hero-stat"><strong>${escapeHtml(story.views)}</strong><span>Lượt nghe</span></div>
+                  <div class="hero-stat"><strong>${escapeHtml(story.chapters)}</strong><span>Chương</span></div>
+                  <div class="hero-stat"><strong>${story.badge === 'full' ? 'Hoàn thành' : 'Đang cập nhật'}</strong><span>Trạng thái</span></div>
+                </div>
+              </div>
+              <div class="cover-stage">
+                <div class="hero-cover" style="background:${bg};">
+                  <span class="hero-emoji">${story.emoji}</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('') + `
+        <div class="indicator-row">
+          ${slides.map((_, index) => `<button class="indicator ${index === state.activeHero ? 'active' : ''}" onclick="setHero(${index})"></button>`).join('')}
+        </div>
+      ` : '<div class="loading">Chưa có hero stories phù hợp bộ lọc.</div>';
+    }
+
+    function renderGenreStrip() {
+      const fromData = allStoriesMerged().reduce((acc, story) => {
+        if (story.genreKey !== 'all' && !acc.some((item) => item.key === story.genreKey)) {
+          acc.push({ key: story.genreKey, label: `${story.emoji} ${story.genre}`, emoji: story.emoji });
+        }
+        return acc;
+      }, []);
+      const merged = [...genrePresets.filter((item) => item.key === 'all'), ...fromData].slice(0, 10);
+      refs.genreStrip.innerHTML = merged.map((genre) => `
+        <button class="genre-pill ${state.selectedGenre === genre.key ? 'active' : ''}" onclick="selectGenre('${genre.key}')">${escapeHtml(genre.label)}</button>
+      `).join('');
+    }
+
+    function renderContinue() {
+      const items = state.datasets.filtered.newest.slice(0, 3);
+      refs.continueList.innerHTML = items.length ? items.map((story, index) => {
+        const progress = 22 + index * 27;
+        return `
+          <article class="continue-item">
+            <div class="mini-cover" data-emoji="${story.emoji}" style="background:${buildGradient(story.bgColor)};"></div>
+            <div>
+              <p class="continue-title">${escapeHtml(story.title)}</p>
+              <div class="continue-chapter">Chương ${index + 3}: Dở dang mà cuốn</div>
+              <div class="progress-wrap">
+                <div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div>
+              </div>
+              <div class="continue-progress-text">${progress}% hoàn thành</div>
+            </div>
+            <button class="play-dot" onclick="playStory('${escapeHtml(story.title)}', 'Chương ${index + 3}: Dở dang mà cuốn', '${story.emoji}', '${story.bgColor}')">▶</button>
+          </article>
+        `;
+      }).join('') : '<div class="empty">Không có truyện phù hợp để tiếp tục.</div>';
+    }
+
+    function renderRanking() {
+      const items = state.datasets.filtered.rating.slice(0, 4);
+      refs.rankingList.innerHTML = items.length ? items.map((story, index) => `
+        <article class="rank-item">
+          <div class="rank-no ${index === 0 ? 'top-1' : index === 1 ? 'top-2' : index === 2 ? 'top-3' : 'other'}">${index + 1}</div>
+          <div class="rank-thumb" data-emoji="${story.emoji}" style="background:${buildGradient(story.bgColor)};"></div>
+          <div>
+            <p class="story-title">${escapeHtml(story.title)}</p>
+            <div class="rank-meta">${escapeHtml(story.genre)} · ${escapeHtml(story.views)} lượt nghe</div>
+          </div>
+          <div class="trend-arrow">↗</div>
+        </article>
+      `).join('') : '<div class="empty">Không có dữ liệu BXH.</div>';
+    }
+
+    function renderStoryCard(story, index, context) {
+      return `
+        <article class="story-card" data-genre="${story.genreKey}" data-search="${escapeHtml((story.title + ' ' + story.author + ' ' + story.genre).toLowerCase())}">
+          <div class="story-card-cover" data-emoji="${story.emoji}" style="background:${buildGradient(story.bgColor)};">
+            ${story.badge ? `<span class="story-badge ${story.badge}">${story.badge}</span>` : ''}
+            <div class="cover-overlay">
+              <button class="cover-play" onclick="event.stopPropagation(); playStory('${escapeHtml(story.title)}', 'Chương ${Math.max(1, Math.floor(story.chapters / 4))}: Khởi đầu', '${story.emoji}', '${story.bgColor}')">▶</button>
+            </div>
+          </div>
+          <div>
+            <p class="story-title">${escapeHtml(story.title)}</p>
+            <div class="story-author">${escapeHtml(story.author)}</div>
+            <div class="story-submeta"><span>${escapeHtml(story.views)}</span><span>⭐ ${escapeHtml(story.rating)}</span></div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderStoryRow(target, stories, emptyText) {
+      target.innerHTML = stories.length ? stories.map(renderStoryCard).join('') : `<div class="empty">${emptyText}</div>`;
+      target.querySelectorAll('.story-card').forEach((card, index) => {
+        card.addEventListener('click', () => {
+          const story = stories[index];
+          playStory(story.title, `Chương ${Math.max(1, Math.floor(story.chapters / 4))}: Khởi đầu`, story.emoji, story.bgColor);
+        });
+      });
+    }
+
+    function renderFeatured() {
+      const picks = state.datasets.filtered.rating.slice(0, 4);
+      refs.featuredGrid.innerHTML = picks.length ? picks.map((story, index) => {
+        const community = 45 + index * 12;
+        return `
+          <article class="editor-card" onclick="playStory('${escapeHtml(story.title)}', 'Tập đề cử #${index + 1}', '${story.emoji}', '${story.bgColor}')">
+            <div class="editor-cover" data-emoji="${story.emoji}" style="background:${buildGradient(story.bgColor)};"></div>
+            <div>
+              <p class="editor-title">${escapeHtml(story.title)}</p>
+              <div class="small-meta">${escapeHtml(story.author)}</div>
+              <div class="chip-row" style="margin-top:8px;">
+                <span class="chip">${story.emoji} ${escapeHtml(story.genre)}</span>
+                <span class="chip">${story.badge ? story.badge.toUpperCase() : 'HOT'}</span>
+              </div>
+              <p class="editor-copy">${escapeHtml(story.description)}</p>
+              <div class="editor-meta">
+                <div style="flex:1;">
+                  <div class="progress-track"><div class="progress-fill" style="width:${community}%"></div></div>
+                </div>
+                <span class="small-meta">${story.chapters} chương · ${story.badge === 'full' ? 'Hoàn thành' : 'Đang cập nhật'}</span>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('') : '<div class="empty">Chưa có truyện đề cử phù hợp.</div>';
+    }
+
+    function renderCategories() {
+      const counter = {};
+      allStoriesMerged().forEach((story) => {
+        const key = story.genreKey;
+        if (!key || key === 'all') return;
+        if (!counter[key]) counter[key] = { key, label: story.genre, emoji: story.emoji, count: 0 };
+        counter[key].count += 1;
+      });
+      const tiles = Object.values(counter).slice(0, 12);
+      refs.categoryGrid.innerHTML = tiles.length ? tiles.map((genre) => `
+        <article class="genre-tile" onclick="selectGenre('${genre.key}')">
+          <div class="category-icon-wrap">${genre.emoji}</div>
+          <div class="category-name">${escapeHtml(genre.label)}</div>
+          <div class="genre-count">${genre.count} truyện</div>
+        </article>
+      `).join('') : '<div class="empty" style="grid-column:1/-1;">Chưa có dữ liệu thể loại.</div>';
+    }
+
+    function renderAll() {
+      renderTrendingStrip();
+      renderHero();
+      renderGenreStrip();
+      renderContinue();
+      renderRanking();
+      renderStoryRow(refs.trendingRow, state.datasets.filtered.trending.slice(0, 10), 'Không có truyện thịnh hành phù hợp.');
+      renderStoryRow(refs.newRow, state.datasets.filtered.newest.slice(0, 10), 'Không có truyện mới phù hợp.');
+      renderFeatured();
+      renderCategories();
+      renderStoryRow(refs.completeRow, state.datasets.filtered.completed.slice(0, 10), 'Không có truyện hoàn thành phù hợp.');
+    }
+
+    function setHero(index) {
+      const slides = refs.heroSection.querySelectorAll('.hero-slide');
+      if (!slides.length) return;
+      state.activeHero = index % slides.length;
+      renderHero();
+    }
+
+    function startHeroAutoplay() {
+      clearInterval(state.heroTimer);
+      state.heroTimer = setInterval(() => {
+        const total = (state.datasets.filtered.trending.length ? state.datasets.filtered.trending : state.datasets.trending).slice(0, 4).length;
+        if (!total) return;
+        state.activeHero = (state.activeHero + 1) % total;
+        renderHero();
+      }, 5000);
+    }
+
+    function selectGenre(key) {
+      state.selectedGenre = key;
+      applyFilters();
+      renderAll();
+      startHeroAutoplay();
+    }
+
+    function updatePlayerUI() {
+      refs.currentTime.textContent = fmtTime(state.progress);
+      refs.durationTime.textContent = fmtTime(state.duration);
+      refs.progressFill.style.width = ((state.progress / state.duration) * 100) + '%';
+      refs.playBtn.textContent = state.isPlaying ? '❚❚' : '▶';
+      refs.mobilePlayBtn.textContent = state.isPlaying ? '❚❚' : '▶';
+      refs.miniPlayer.classList.toggle('playing', state.isPlaying);
+    }
+
+    function startPlayback() {
+      clearInterval(state.playerTimer);
+      if (!state.isPlaying) return;
+      state.playerTimer = setInterval(() => {
+        state.progress += 1 * state.speeds[state.speedIndex];
+        if (state.progress >= state.duration) {
+          state.progress = state.duration;
+          state.isPlaying = false;
+          clearInterval(state.playerTimer);
+        }
+        updatePlayerUI();
+      }, 1000);
+    }
+
+    function playStory(title, chapter, emoji, color) {
+      refs.playerTitle.textContent = title;
+      refs.playerChapter.textContent = chapter;
+      refs.playerCover.dataset.emoji = emoji || '🎧';
+      refs.playerCover.style.background = buildGradient(color || '#2F3548');
+      refs.miniPlayer.classList.add('visible');
+      state.progress = 0;
+      state.duration = 173 + Math.floor(Math.random() * 80);
+      state.isPlaying = true;
+      updatePlayerUI();
+      startPlayback();
+    }
+
+    function playStoryById(id, source) {
+      const list = state.datasets[source] || [];
+      const story = list.find((item) => item.id === id);
+      if (!story) return;
+      playStory(story.title, 'Chương 1: Mở đầu', story.emoji, story.bgColor);
+    }
+
+    function togglePlay() {
+      if (!refs.miniPlayer.classList.contains('visible')) return;
+      state.isPlaying = !state.isPlaying;
+      updatePlayerUI();
+      startPlayback();
+    }
+
+    window.setHero = setHero;
+    window.selectGenre = selectGenre;
+    window.playStory = playStory;
+    window.playStoryById = playStoryById;
+
+    refs.themeToggle.addEventListener('click', () => {
+      document.documentElement.classList.toggle('light');
+      state.theme = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+      localStorage.setItem('theme', state.theme);
+    });
+
+    refs.searchInput.addEventListener('input', () => {
+      applyFilters();
+      renderAll();
+      startHeroAutoplay();
+    });
+
+    refs.playBtn.addEventListener('click', togglePlay);
+    refs.mobilePlayBtn.addEventListener('click', togglePlay);
+    refs.prevBtn.addEventListener('click', () => { state.progress = Math.max(0, state.progress - 15); updatePlayerUI(); });
+    refs.nextBtn.addEventListener('click', () => { state.progress = Math.min(state.duration, state.progress + 15); updatePlayerUI(); });
+
+    refs.progressBar.addEventListener('click', (event) => {
+      const rect = refs.progressBar.getBoundingClientRect();
+      const ratio = (event.clientX - rect.left) / rect.width;
+      state.progress = Math.max(0, Math.min(state.duration, ratio * state.duration));
+      updatePlayerUI();
+    });
+
+    refs.volumeBar.addEventListener('click', (event) => {
+      const rect = refs.volumeBar.getBoundingClientRect();
+      state.volume = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+      refs.volumeFill.style.width = (state.volume * 100) + '%';
+    });
+
+    refs.speedBtn.addEventListener('click', () => {
+      state.speedIndex = (state.speedIndex + 1) % state.speeds.length;
+      refs.speedBtn.textContent = state.speeds[state.speedIndex].toFixed(2).replace('.00', '.0') + 'x';
+      if (state.isPlaying) startPlayback();
+    });
+
+    updatePlayerUI();
+    loadData();
+  </script>
+</body>
+</html>

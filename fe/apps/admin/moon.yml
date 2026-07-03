@@ -1,0 +1,54 @@
+type: 'application'
+language: 'typescript'
+
+dependsOn:
+  - 'shared'
+  - 'ui'
+  - 'apiClient'
+
+tasks:
+  dev:
+    command: 'next'
+    args:
+      - 'dev'
+      - '-p'
+      - '3002'
+      - '-H'
+      - '0.0.0.0'
+    platform: 'node'
+    options:
+      mergeArgs: 'replace'
+    local: true
+  start:
+    command: 'next'
+    args:
+      - 'start'
+      - '-p'
+      - '3002'
+    platform: 'node'
+    options:
+      mergeArgs: 'replace'
+    local: true
+  build:
+    command: 'next'
+    args:
+      - 'build'
+    platform: 'node'
+    options:
+      mergeArgs: 'replace'
+    deps:
+      - '^:build'
+  typecheck:
+    command: 'tsc'
+    args:
+      - '--noEmit'
+    platform: 'node'
+    options:
+      mergeArgs: 'replace'
+  lint:
+    command: 'eslint'
+    args:
+      - '.'
+    platform: 'node'
+    options:
+      mergeArgs: 'replace'

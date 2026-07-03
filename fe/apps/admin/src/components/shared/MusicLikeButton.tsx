@@ -1,0 +1,159 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Heart, Loader2 } from "lucide-react";
+
+import { fetchMusicLikeStatus, toggleMusicLike } from "@/lib/music/music-interactions";
+import { formatCompactCount } from "@/lib/music/normalize-music";
+import { useAuthModalStore } from "@/stores/auth-modal-store";
+import { useUserStore } from "@/stores/user-store";
+
+const likeStatusCache = new Map<string, boolean>();
+
+type MusicLikeButtonProps = {
+  musicId: string;
+  initialLiked?: boolean;
+  likeCount: number;
+  /** compact icon-only mode (no label, smaller) */
+  compact?: boolean;
+  showCount?: boolean;
+  label?: string;
+  className?: string;
+  onLikeChanged?: (liked: boolean, newCount: number) => void;
+};
+
+export default function MusicLikeButton({
+  musicId,
+  initialLiked = false,
+  likeCount,
+  compact = false,
+  showCount = true,
+  label,
+  className = "",
+  onLikeChanged,
+}: MusicLikeButtonProps) {
+  const accessToken = useUserStore((state) => state.accessToken);
+  const openLogin = useAuthModalStore((state) => state.openLogin);
+
+  const [isLiked, setIsLiked] = useState(initialLiked);
+  const [count, setCount] = useState(likeCount);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLiked(initialLiked);
+  }, [initialLiked, musicId]);
+
+  useEffect(() => {
+    setCount(likeCount);
+  }, [likeCount, musicId]);
+
+  useEffect(() => {
+    if (!musicId) return;
+
+    if (!accessToken) {
+      setIsLiked(initialLiked);
+      return;
+    }
+
+    const cached = likeStatusCache.get(musicId);
+    if (typeof cached === "boolean") {
+      setIsLiked(cached);
+      return;
+    }
+
+    let active = true;
+
+    void fetchMusicLikeStatus(musicId)
+      .then((liked) => {
+        likeStatusCache.set(musicId, liked);
+        if (active) {
+          setIsLiked(liked);
+        }
+      })
+      .catch(() => {
+        // Keep current optimistic state when status check fails.
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken, initialLiked, musicId]);
+
+  const handleClick = async (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!accessToken) {
+      openLogin();
+      return;
+    }
+
+    if (isLoading) return;
+
+    setIsLoading(true);
+
+    try {
+      const result = await toggleMusicLike(musicId, isLiked);
+      const nextLiked = result.liked;
+      const nextCount =
+        typeof result.likeCount === "number"
+          ? result.likeCount
+          : nextLiked
+            ? count + 1
+            : Math.max(0, count - 1);
+
+      setIsLiked(nextLiked);
+      setCount(nextCount);
+      likeStatusCache.set(musicId, nextLiked);
+      onLikeChanged?.(nextLiked, nextCount);
+    } catch {
+      // Keep UI stable on failure.
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (compact) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => void handleClick(e)}
+        disabled={isLoading}
+        className={`inline-flex items-center gap-1 text-xs font-semibold transition disabled:opacity-60 ${
+          isLiked
+            ? "text-pink-600 dark:text-pink-300"
+            : "text-slate-500 hover:text-pink-600 dark:text-zinc-400 dark:hover:text-pink-300"
+        } ${className}`}
+        aria-label={isLiked ? "Unlike" : "Like"}
+      >
+        {isLoading ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Heart className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`} />
+        )}
+        {showCount ? <span>{formatCompactCount(count)}</span> : null}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={(e) => void handleClick(e)}
+      disabled={isLoading}
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-md font-black transition disabled:opacity-60 ${
+        isLiked
+          ? "border-pink-300 bg-pink-50 text-pink-700 dark:border-pink-900/50 dark:bg-pink-950/30 dark:text-pink-300"
+          : "border-slate-300 bg-white text-slate-600 hover:border-pink-300 hover:text-pink-600 dark:border-[#3a3a3a] dark:bg-[#1f1f1f] dark:text-zinc-300"
+      } ${className}`}
+      aria-label={isLiked ? "Unlike" : "Like"}
+    >
+      {isLoading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Heart className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`} />
+      )}
+      {showCount ? <span>{formatCompactCount(count)}</span> : label ? <span>{label}</span> : null}
+    </button>
+  );
+}

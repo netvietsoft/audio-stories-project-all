@@ -1,0 +1,23 @@
+type: 'library'
+language: 'typescript'
+
+tasks:
+  typecheck:
+    command: 'tsc'
+    args:
+      - '--noEmit'
+      - '-p'
+      - 'tsconfig.json'
+    platform: 'node'
+    options:
+      inferInputs: false
+      mergeArgs: 'replace'
+  build:
+    command: 'tsc'
+    args:
+      - '-p'
+      - 'tsconfig.json'
+    platform: 'node'
+    options:
+      inferInputs: false
+      mergeArgs: 'replace'

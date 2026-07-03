@@ -1,0 +1,20 @@
+.wslconfig.example
+WSL2-SETUP.md
+WINDOWS-FIREWALL-COMMANDS.ps1
+template-test/
+fe/e2e/chapter-access.spec.ts
+git_log.txt
+git_log_migrations.txt
+audio-mp3-files/
+
+# Secrets / local env (do NOT commit) — chỉ *.env.example được track
+.env
+.env.*
+!.env.example
+*.env
+env/
+
+# Local deps & DB dumps
+node_modules/
+*.sql
+*.sql.gz

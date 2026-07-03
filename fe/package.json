@@ -1,0 +1,41 @@
+{
+  "name": "audio-stories-fe",
+  "private": true,
+  "packageManager": "yarn@4.15.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": "24.16.0"
+  },
+  "scripts": {
+    "moon": "moon",
+    "dev:web": "moon run web:dev",
+    "dev:admin": "moon run admin:dev",
+    "build": "moon run :build",
+    "typecheck": "moon run :typecheck",
+    "lint": "moon run :lint",
+    "test:e2e": "playwright test",
+    "test:e2e:web": "playwright test --project=web",
+    "test:e2e:admin": "playwright test --project=admin",
+    "test:e2e:api": "playwright test --project=api",
+    "test:e2e:report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@moonrepo/cli": "^1.40.5",
+    "@playwright/test": "^1.58.2",
+    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/dompurify": "^3.0.5",
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

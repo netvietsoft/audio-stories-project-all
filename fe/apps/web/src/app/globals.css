@@ -1,0 +1,303 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --app-root-bg: #ffffff;
+  --app-component-bg: #ffffff;
+  --app-navbar-bg: rgba(255, 255, 255, 0.9);
+  --app-button-bg: #f3f4f6;
+  --app-component-radius: 10px;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+.dark {
+  --background: #161616;
+  --foreground: #ededed;
+  --app-root-bg: #161616;
+  --app-component-bg: #242526;
+  --app-navbar-bg: #252628;
+  --app-button-bg: #3a3b3c;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.app-root-surface {
+  background: var(--app-root-bg);
+}
+
+.app-component-surface {
+  background: var(--app-component-bg);
+  border-radius: var(--app-component-radius);
+}
+
+.app-button-surface {
+  background: var(--app-button-bg);
+}
+
+.app-dropdown-surface {
+  background: var(--app-component-bg);
+}
+
+/* Global corner standardization: all non-pill rounded corners use 10px */
+:where(
+  .rounded,
+  .rounded-sm,
+  .rounded-md,
+  .rounded-lg,
+  .rounded-xl,
+  .rounded-2xl,
+  .rounded-3xl,
+  .rounded-4xl,
+  .rounded-\[5px\]
+) {
+  border-radius: 10px !important;
+}
+
+.app-navbar-surface {
+  background: var(--app-navbar-bg);
+}
+
+.dark .app-button-surface {
+  background: var(--app-button-bg);
+}
+
+body.admin-shell table {
+  border-collapse: collapse;
+}
+
+body.admin-shell th,
+body.admin-shell td {
+  border: 1px solid #e5e7eb !important;
+}
+
+body.admin-shell tbody tr:hover {
+  background-color: rgba(249, 250, 251, 0.55) !important;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+@layer utilities {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 40s linear infinite;
+}
+
+.animate-marquee-slow {
+  display: flex;
+  width: max-content;
+  animation: marquee 60s linear infinite;
+}
+
+.pause-on-hover:hover .animate-marquee {
+  animation-play-state: paused;
+}
+
+/* Global rule per UI requirement: disable visible borders site-wide */
+body:not(.admin-shell) *,
+body:not(.admin-shell) *::before,
+body:not(.admin-shell) *::after {
+  border-width: 0 !important;
+  border-style: none !important;
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+
+/* Override for admin form inputs to show borders */
+.admin-input {
+  width: 100% !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: #cbd5e1 !important;
+  border-radius: 10px !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  outline: none !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.admin-input:focus {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12) !important;
+}
+
+.admin-input::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+}
+
+/* Error state helper for admin inputs (used by form components) */
+.admin-input-error {
+  border-color: #ef4444 !important;
+}
+.admin-input-error:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+/* Readonly state for auto-calculated fields */
+.admin-input[readonly],
+.admin-input:read-only {
+  background-color: #f8fafc !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+}
+
+/* Apply to all inputs, textareas, and selects in admin pages */
+[class*="admin"] input[type="text"],
+[class*="admin"] input[type="email"],
+[class*="admin"] input[type="password"],
+[class*="admin"] input[type="number"],
+[class*="admin"] input[type="url"],
+[class*="admin"] input[type="search"],
+[class*="admin"] textarea,
+[class*="admin"] select {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: #cbd5e1 !important;
+  transition: border-color 0.2s ease !important;
+}
+
+[class*="admin"] input[type="text"]:focus,
+[class*="admin"] input[type="email"]:focus,
+[class*="admin"] input[type="password"]:focus,
+[class*="admin"] input[type="number"]:focus,
+[class*="admin"] input[type="url"]:focus,
+[class*="admin"] input[type="search"]:focus,
+[class*="admin"] textarea:focus,
+[class*="admin"] select:focus {
+  border-color: #6366f1 !important;
+}
+
+/* Apply to all inputs with border-slate-300 class (for modals without admin class) */
+input.border-slate-300,
+textarea.border-slate-300,
+select.border-slate-300 {
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: #cbd5e1 !important;
+  transition: border-color 0.2s ease !important;
+}
+
+input.border-slate-300:focus,
+textarea.border-slate-300:focus,
+select.border-slate-300:focus {
+  border-color: #6366f1 !important;
+}
+
+/* Chapter list custom styles: vertical heavy dividers between columns, light horizontal lines between rows.
+   Outer wrapper has rounded corners; individual items are not rounded. Uses CSS variables so colors adapt to dark mode. */
+.chapter-list-wrapper {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  /* defaults for light mode */
+  --chapter-col-border: #db2777; /* pink-600 */
+  --chapter-row-border: #e6edf2; /* light gray */
+}
+
+.dark .chapter-list-wrapper {
+  --chapter-col-border: #fb7185; /* pink-400 for dark */
+  --chapter-row-border: rgba(255,255,255,0.08);
+}
+
+/* Grid and item rules */
+.chapter-grid { position: relative; z-index: 10; }
+.chapter-grid > a { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; text-decoration: none; background: transparent; position: relative; z-index: 10; }
+
+/* Horizontal separators: small top border on rows (light) */
+.chapter-grid > a + a { border-top: 1px solid var(--chapter-row-border) !important; }
+
+/* For md+ grid with 3 columns, only items beyond the first row should have top border (nth-child >= 4) */
+@media (min-width: 768px) {
+  .chapter-grid > a { border-top: none !important; }
+  .chapter-grid > a:nth-child(n+4) { border-top: 1px solid var(--chapter-row-border) !important; }
+}
+
+/* Ensure item hover backgrounds don't fully hide vertical separators: keep separator on top */
+.chapter-item { position: relative; }
+.chapter-item:hover { z-index: 12; }
+
+/* Wave bars animation used for playing thumbnails and list items */
+@keyframes wave {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+
+.wave-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  justify-content: center;
+  height: 100%;
+}
+
+.wave-bar {
+  display: block;
+  width: 3px;
+  height: 14px;
+  background: currentColor;
+  transform-origin: bottom;
+  border-radius: 2px;
+  animation: wave 900ms ease-in-out infinite;
+  will-change: transform;
+  opacity: 0.95;
+}
+
+.wave-bar:nth-child(1) { animation-delay: 0ms; }
+.wave-bar:nth-child(2) { animation-delay: 120ms; }
+.wave-bar:nth-child(3) { animation-delay: 240ms; }
+.wave-bar:nth-child(4) { animation-delay: 360ms; }
+.wave-bar:nth-child(5) { animation-delay: 480ms; }
+
+/* size helpers */
+.wave-bars.small .wave-bar { width: 2px; height: 10px; }
+.wave-bars.large .wave-bar { width: 4px; height: 18px; }

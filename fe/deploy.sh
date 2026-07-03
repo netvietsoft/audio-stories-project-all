@@ -58,8 +58,8 @@ DEFAULT_HOST=72.62.198.196
 read -p "Enter server IP/host (default: $DEFAULT_HOST): " INPUT_HOST
 HOST=$(echo "${INPUT_HOST:-$DEFAULT_HOST}" | tr -d '\r')
 
-read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
-SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
+read -p "Enter SSH User (default: netviet): " SSH_USER
+SSH_USER=$(echo "${SSH_USER:-netviet}" | tr -d '\r')
 
 # Validate the public URLs Next.js inlines at build time are present.
 get_env() { grep "^$1=" "$2" | tail -1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true; }

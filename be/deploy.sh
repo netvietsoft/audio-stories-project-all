@@ -129,8 +129,8 @@ fi
 read -p "Enter server IP/host (default: $HOST): " INPUT_HOST
 HOST=$(echo "${INPUT_HOST:-$HOST}" | tr -d '\r')
 
-read -p "Enter SSH User (default: nguyenvanthanh): " SSH_USER
-SSH_USER=$(echo "${SSH_USER:-nguyenvanthanh}" | tr -d '\r')
+read -p "Enter SSH User (default: netviet): " SSH_USER
+SSH_USER=$(echo "${SSH_USER:-netviet}" | tr -d '\r')
 
 # SSH keepalive options to reduce broken pipe on long-running deploy steps
 SSH_OPTIONS="-o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o TCPKeepAlive=yes -o ConnectTimeout=20"

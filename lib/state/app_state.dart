@@ -336,6 +336,26 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Phát audiobook ĐÃ TẢI OFFLINE (file trên đĩa) — tái dùng luồng phát 1 nguồn
+  /// giống [play], chỉ khác nguồn là file:// (Uri.file) thay vì URL mạng/HLS.
+  Future<void> playLocalAudiobook(Book book, Chapter ch, String filePath) async {
+    _playlistMode = false;
+    _queue = const [];
+    nowPlayingTitle = '${book.title} • Ch.${ch.n}';
+    nowPlayingAuthor = book.author;
+    nowPlayingCover = book.cover;
+    position.value = Duration.zero;
+    notifyListeners();
+    try {
+      await _player.setAudioSource(AudioSource.uri(Uri.file(filePath)));
+      _player.play();
+      playing = true;
+    } catch (_) {
+      playing = false;
+    }
+    notifyListeners();
+  }
+
   Future<void> togglePlay() async {
     if (nowPlayingTitle == null) return;
     if (playing) {

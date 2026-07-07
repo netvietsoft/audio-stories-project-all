@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../api/api_exception.dart';
+import '../../data/offline/download_manager.dart';
+import '../../data/offline/offline_store.dart';
 import '../../data/repositories/audio_repository.dart';
 import '../../data/repositories/stories_repository.dart';
 import '../../state/app_state.dart';
@@ -48,6 +50,16 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         ? chapters.firstWhere((c) => c.id.isNotEmpty)
         : (chapters.isNotEmpty ? chapters.first : null);
     if (ch != null) {
+      // Đã tải offline → phát file trên đĩa, không cần mạng.
+      if (ch.id.isNotEmpty) {
+        final store = context.read<OfflineStore>();
+        final localPath = store.audioPath(book.id, ch.id);
+        if (localPath != null) {
+          await app.playLocalAudiobook(book, ch, localPath);
+          if (context.mounted) context.push('/audiobook');
+          return;
+        }
+      }
       // Ưu tiên HLS Cloudflare (stream + preload 30s); không cần resolve proxy.
       if (ch.hlsUrl.isNotEmpty) {
         app.play('${book.title} • Ch.${ch.n}', book.author, book.cover, ch.hlsUrl);
@@ -177,6 +189,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             ])
           else
             _cta(context, 'Read Now', null, AppPalette.terracotta, () => context.push('/reader/${book.id}')),
+          const SizedBox(height: Gap.sm),
+          _downloadButton(context, book),
           const SizedBox(height: Gap.md),
 
           // ── Bundle: mở khoá toàn bộ (chỉ khi truyện có giá thật) ──
@@ -296,6 +310,41 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           ]),
         ),
       );
+
+  Widget _downloadButton(BuildContext context, Book book) {
+    final pal = context.pal;
+    final dm = context.watch<DownloadManager>();
+    final store = context.read<OfflineStore>();
+    final p = dm.progress[book.id];
+    final rec = store.download(book.id);
+    final done = rec?.kind == 'downloaded' && rec?.status == 'complete';
+
+    if (p != null && p.status == 'downloading') {
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Đang tải ${p.done}/${p.total} chương…', style: AppType.meta(size: 12.5, color: pal.muted)),
+        const SizedBox(height: 6),
+        ClipRRect(borderRadius: rounded(6), child: LinearProgressIndicator(value: p.fraction, color: AppPalette.terracotta, backgroundColor: pal.surf2)),
+      ]);
+    }
+    if (done) {
+      return Row(children: [
+        Icon(Icons.download_done_rounded, size: 18, color: pal.sage),
+        const SizedBox(width: 6),
+        Text('Đã tải offline', style: AppType.item(size: 13, color: pal.sage)),
+        const Spacer(),
+        TextButton(onPressed: () async { await store.deleteStory(book.id); setState(() {}); },
+          child: Text('Xoá', style: AppType.btn(size: 13, color: AppPalette.terracotta))),
+      ]);
+    }
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () => dm.downloadStory(book.id),
+        icon: const Icon(Icons.download_rounded, size: 18),
+        label: const Text('Tải xuống để đọc offline'),
+      ),
+    );
+  }
 
   Widget _bundleCard(BuildContext context, Book book, int locked) {
     final pal = context.pal;

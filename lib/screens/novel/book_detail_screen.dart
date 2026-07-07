@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -30,12 +31,31 @@ class BookDetailScreen extends StatefulWidget {
 class _BookDetailScreenState extends State<BookDetailScreen> {
   bool _allChapters = false;
   late final Future<StoryDetail> _future;
+  final ScrollController _scroll = ScrollController();
+  bool _showCollapseBtn = false;
 
   @override
   void initState() {
     super.initState();
     final repo = context.read<StoriesRepository>();
     _future = _load(repo);
+    _scroll.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scroll.removeListener(_onScroll);
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_allChapters) {
+      if (_showCollapseBtn) setState(() => _showCollapseBtn = false);
+      return;
+    }
+    final up = _scroll.position.userScrollDirection == ScrollDirection.forward;
+    if (up != _showCollapseBtn) setState(() => _showCollapseBtn = up);
   }
 
   /// Nạp chi tiết truyện THẬT từ backend theo slug. Lỗi → FutureBuilder hiện
@@ -122,98 +142,36 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   Widget _body(BuildContext context, Book book, List<Chapter> chapters) {
     final pal = context.pal;
     final app = context.watch<AppState>();
-    final shown = _allChapters ? chapters : chapters.take(5).toList();
+    final count = _allChapters ? chapters.length : (chapters.length < 5 ? chapters.length : 5);
     final locked = chapters.where((c) => c.state == ChapterState.coin || c.state == ChapterState.vip).length;
-    return ListView(
-        padding: const EdgeInsets.fromLTRB(Gap.screenH, 0, Gap.screenH, Gap.xxl),
-        children: [
-          // ── Header: cover + tên + phụ đề + tác giả ──
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(width: 118, child: CoverImage(path: book.cover, title: book.title, radius: Radii.cover)),
-              const SizedBox(width: Gap.lg),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(top: Gap.xs),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(book.title, style: AppType.hero(size: 23, color: pal.ink)),
-                      if (book.subtitle.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Text(book.subtitle, style: AppType.serif(size: 15, height: 1.25, color: pal.muted).copyWith(fontStyle: FontStyle.italic)),
-                      ],
-                      const SizedBox(height: 8),
-                      Text('by ${book.author}', style: AppType.meta(size: 13, color: pal.soft)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+
+    return Stack(children: [
+      CustomScrollView(
+        controller: _scroll,
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(Gap.screenH, 0, Gap.screenH, 0),
+              child: _topSection(context, book, chapters, locked),
+            ),
           ),
-          const SizedBox(height: Gap.lg),
-
-          // ── 4 thẻ chỉ số (Rating / Reads / Chapters / Status) ──
-          Row(children: [
-            Expanded(child: GestureDetector(
-              onTap: () => showRatingSheet(context, book.title),
-              child: _statCard(context, '⭐ ${book.rating}', 'Rating'),
-            )),
-            const SizedBox(width: Gap.sm),
-            Expanded(child: _statCard(context, book.reads, 'Reads')),
-            const SizedBox(width: Gap.sm),
-            Expanded(child: _statCard(context, '${book.chapters}', 'Chapters')),
-            const SizedBox(width: Gap.sm),
-            Expanded(child: _statCard(context, book.status, 'Status', valueColor: pal.sage)),
-          ]),
-          const SizedBox(height: Gap.md),
-
-          // ── Chips thể loại ──
-          Wrap(spacing: Gap.sm, runSpacing: Gap.sm, children: [
-            if (book.genre.isNotEmpty) _genreChip(context, book.genre),
-            if (book.trope.isNotEmpty) _genreChip(context, book.trope),
-          ]),
-          const SizedBox(height: Gap.lg),
-
-          // ── Synopsis ──
-          _synopsis(context, book),
-          const SizedBox(height: Gap.lg),
-
-          // ── CTA Read Now / Listen Now ──
-          if (bookHasAudio(chapters))
-            Row(children: [
-              Expanded(child: _cta(context, 'Read Now', null, AppPalette.terracotta, () => context.push('/reader/${book.id}'))),
-              const SizedBox(width: Gap.md),
-              Expanded(child: _cta(context, 'Listen Now', Icons.play_arrow_rounded, AppPalette.plum, () => _listen(context, book, chapters))),
-            ])
-          else
-            _cta(context, 'Read Now', null, AppPalette.terracotta, () => context.push('/reader/${book.id}')),
-          const SizedBox(height: Gap.sm),
-          _downloadButton(context, book),
-          const SizedBox(height: Gap.md),
-
-          // ── Bundle: mở khoá toàn bộ (chỉ khi truyện có giá thật) ──
-          if (book.unlockPrice > 0) ...[
-            _bundleCard(context, book, locked),
-            const SizedBox(height: Gap.xl),
-          ] else
-            const SizedBox(height: Gap.lg),
-
-          // ── Chapters ──
-          Text('Chapters', style: AppType.hero(size: 20, color: pal.ink)),
-          const SizedBox(height: Gap.md),
-          Container(
-            decoration: BoxDecoration(color: pal.card, borderRadius: rounded(18), border: Border.all(color: pal.line)),
-            clipBehavior: Clip.antiAlias,
-            child: Column(children: [
-              for (var i = 0; i < shown.length; i++) ...[
-                if (i > 0) _divider(pal),
-                _chapterRow(context, book, shown[i], app),
-              ],
-              if (!_allChapters && chapters.length > shown.length) ...[
-                _divider(pal),
-                InkWell(
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: Gap.screenH),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (_, i) => Container(
+                  decoration: BoxDecoration(color: pal.card, border: Border(top: i == 0 ? BorderSide.none : BorderSide(color: pal.line2))),
+                  child: _chapterRow(context, book, chapters[i], app),
+                ),
+                childCount: count,
+              ),
+            ),
+          ),
+          if (!_allChapters && chapters.length > count)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(Gap.screenH, 0, Gap.screenH, Gap.xxl),
+                child: InkWell(
                   onTap: () => setState(() => _allChapters = true),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -226,11 +184,134 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                     ),
                   ),
                 ),
-              ],
-            ]),
-          ),
+              ),
+            )
+          else
+            const SliverToBoxAdapter(child: SizedBox(height: Gap.xxl)),
         ],
-      );
+      ),
+      // Nút "Thu gọn" nổi — chỉ hiện khi đã sổ và người dùng cuộn LÊN.
+      if (_allChapters)
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 200),
+          left: 0,
+          right: 0,
+          bottom: _showCollapseBtn ? 20 : -60,
+          child: Center(
+            child: Material(
+              color: AppPalette.terracotta,
+              borderRadius: rounded(24),
+              elevation: 4,
+              child: InkWell(
+                borderRadius: rounded(24),
+                onTap: () {
+                  setState(() {
+                    _allChapters = false;
+                    _showCollapseBtn = false;
+                  });
+                  _scroll.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.keyboard_arrow_up_rounded, size: 20, color: Colors.white),
+                    SizedBox(width: 4),
+                    Text('Thu gọn', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+        ),
+    ]);
+  }
+
+  /// Phần trên của trang chi tiết (header cover → stats → chips → synopsis →
+  /// CTA → download → bundle → tiêu đề "Chapters"). Tách từ `_body` cũ để
+  /// đưa vào `SliverToBoxAdapter`, nội dung/spacing giữ nguyên.
+  Widget _topSection(BuildContext context, Book book, List<Chapter> chapters, int locked) {
+    final pal = context.pal;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Header: cover + tên + phụ đề + tác giả ──
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: 118, child: CoverImage(path: book.cover, title: book.title, radius: Radii.cover)),
+            const SizedBox(width: Gap.lg),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: Gap.xs),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(book.title, style: AppType.hero(size: 23, color: pal.ink)),
+                    if (book.subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(book.subtitle, style: AppType.serif(size: 15, height: 1.25, color: pal.muted).copyWith(fontStyle: FontStyle.italic)),
+                    ],
+                    const SizedBox(height: 8),
+                    Text('by ${book.author}', style: AppType.meta(size: 13, color: pal.soft)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: Gap.lg),
+
+        // ── 4 thẻ chỉ số (Rating / Reads / Chapters / Status) ──
+        Row(children: [
+          Expanded(child: GestureDetector(
+            onTap: () => showRatingSheet(context, book.title),
+            child: _statCard(context, '⭐ ${book.rating}', 'Rating'),
+          )),
+          const SizedBox(width: Gap.sm),
+          Expanded(child: _statCard(context, book.reads, 'Reads')),
+          const SizedBox(width: Gap.sm),
+          Expanded(child: _statCard(context, '${book.chapters}', 'Chapters')),
+          const SizedBox(width: Gap.sm),
+          Expanded(child: _statCard(context, book.status, 'Status', valueColor: pal.sage)),
+        ]),
+        const SizedBox(height: Gap.md),
+
+        // ── Chips thể loại ──
+        Wrap(spacing: Gap.sm, runSpacing: Gap.sm, children: [
+          if (book.genre.isNotEmpty) _genreChip(context, book.genre),
+          if (book.trope.isNotEmpty) _genreChip(context, book.trope),
+        ]),
+        const SizedBox(height: Gap.lg),
+
+        // ── Synopsis ──
+        _synopsis(context, book),
+        const SizedBox(height: Gap.lg),
+
+        // ── CTA Read Now / Listen Now ──
+        if (bookHasAudio(chapters))
+          Row(children: [
+            Expanded(child: _cta(context, 'Read Now', null, AppPalette.terracotta, () => context.push('/reader/${book.id}'))),
+            const SizedBox(width: Gap.md),
+            Expanded(child: _cta(context, 'Listen Now', Icons.play_arrow_rounded, AppPalette.plum, () => _listen(context, book, chapters))),
+          ])
+        else
+          _cta(context, 'Read Now', null, AppPalette.terracotta, () => context.push('/reader/${book.id}')),
+        const SizedBox(height: Gap.sm),
+        _downloadButton(context, book),
+        const SizedBox(height: Gap.md),
+
+        // ── Bundle: mở khoá toàn bộ (chỉ khi truyện có giá thật) ──
+        if (book.unlockPrice > 0) ...[
+          _bundleCard(context, book, locked),
+          const SizedBox(height: Gap.xl),
+        ] else
+          const SizedBox(height: Gap.lg),
+
+        // ── Chapters ──
+        Text('Chapters', style: AppType.hero(size: 20, color: pal.ink)),
+        const SizedBox(height: Gap.md),
+      ],
+    );
   }
 
   Widget _statCard(BuildContext context, String value, String label, {Color? valueColor}) {
@@ -376,8 +457,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       ),
     );
   }
-
-  Widget _divider(AppPalette pal) => Divider(height: 1, thickness: 1, color: pal.line2);
 
   Widget _chapterRow(BuildContext context, Book book, Chapter c, AppState app) {
     final pal = context.pal;

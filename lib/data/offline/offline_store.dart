@@ -41,6 +41,26 @@ class OfflineStore {
       .where((r) => r.kind == kind)
       .fold(0, (sum, r) => sum + r.totalBytes);
 
+  /// Xoá dần record 'auto' cũ nhất (lastAccess nhỏ nhất) tới khi dưới ngưỡng.
+  Future<void> enforceAutoCacheLimit(int maxBytes) async {
+    var autos = listDownloads().where((r) => r.kind == 'auto').toList()
+      ..sort((a, b) => a.lastAccessAt.compareTo(b.lastAccessAt));
+    var total = autos.fold(0, (s, r) => s + r.totalBytes);
+    for (final r in autos) {
+      if (total <= maxBytes) break;
+      await deleteStory(r.storyId);
+      total -= r.totalBytes;
+    }
+  }
+
+  /// Nâng 1 truyện auto-cache lên 'downloaded' (không bị eviction).
+  Future<void> promoteToDownloaded(String storyId) async {
+    final r = download(storyId);
+    if (r != null && r.kind != 'downloaded') {
+      await upsertDownload(r.copyWith(kind: 'downloaded'));
+    }
+  }
+
   // ── chapters ──
   bool hasChapter(String chapterId) => _chapters.containsKey(chapterId);
 

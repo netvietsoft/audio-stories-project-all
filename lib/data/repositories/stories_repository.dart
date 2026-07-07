@@ -4,6 +4,10 @@ import '../../models/models.dart';
 import '../cache/json_cache.dart';
 import '../mappers/book_mapper.dart';
 import '../mappers/chapter_mapper.dart';
+import '../offline/offline_store.dart';
+import '../offline/offline_models.dart';
+import '../offline/connectivity_service.dart';
+import '../offline/download_manager.dart';
 
 /// Kết quả phân trang truyện.
 class PagedBooks {
@@ -45,10 +49,12 @@ class ChapterContent {
 }
 
 /// Truy xuất truyện từ backend. Ẩn chi tiết API/envelope khỏi UI.
-class StoriesRepository {
-  StoriesRepository(this._api, [this._cache]);
+class StoriesRepository implements StoriesRepositoryLike {
+  StoriesRepository(this._api, [this._cache, this._offline, this._connectivity]);
   final ApiClient _api;
   final JsonCache? _cache;
+  final OfflineStore? _offline;
+  final ConnectivityService? _connectivity;
 
   // Cache TÁCH theo ngôn ngữ nội dung (đổi lang không lẫn data).
   static String _exploreKey(String lang) => 'cache.stories.explore.$lang';
@@ -119,16 +125,50 @@ class StoriesRepository {
   }
 
   /// `GET /chapters/:id/public` — nội dung công khai của chương.
+  /// Local-first: nếu đã có sẵn offline VÀ (truyện đã downloaded HOẶC đang offline) → đọc local.
   Future<ChapterContent> chapterContent(String id) async {
+    final off = _offline;
+    final offline = _connectivity?.isOnline == false;
+    final isDownloaded = off?.download(_storyIdOfChapter(id))?.kind == 'downloaded';
+    if (off != null && off.hasChapter(id) && (isDownloaded || offline)) {
+      final c = off.readChapter(id)!;
+      return ChapterContent(id: c.chapterId, n: c.n, title: c.title, content: c.content);
+    }
     final data = await _api.get(ApiEndpoints.chapterPublic(id));
     final m = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
-    return ChapterContent(
+    final content = ChapterContent(
       id: (m['id'] ?? id).toString(),
       n: _int(m['chapterNumber'], 1),
       title: (m['title'] ?? '').toString(),
       content: (m['content'] ?? '').toString(),
       hlsUrl: m['hlsUrl']?.toString(),
     );
+    // Auto-cache text nếu có offline store (không đụng eviction ở đây — làm khi save audio/AppState).
+    if (off != null && content.content.isNotEmpty) {
+      await off.saveChapter(OfflineChapter(
+        chapterId: content.id, storyId: (m['storyId'] ?? '').toString(),
+        n: content.n, title: content.title, content: content.content, hasAudio: false));
+    }
+    return content;
+  }
+
+  String _storyIdOfChapter(String chapterId) => _offline?.readChapter(chapterId)?.storyId ?? '';
+
+  @override
+  Future<String> chapterText(String chapterId) async => (await chapterContent(chapterId)).content;
+
+  @override
+  Future<StoryDetailData> detailData(String storyIdOrSlug) async {
+    final d = await detail(storyIdOrSlug);
+    return StoryDetailData(
+      storyId: d.book.id, slug: storyIdOrSlug, title: d.book.title, cover: d.book.cover,
+      author: d.book.author, language: 'vi', synopsis: d.book.synopsis, subtitle: d.book.subtitle,
+      status: d.book.status, genre: d.book.genre, trope: d.book.trope,
+      rating: d.book.rating, reads: d.book.reads, unlockPrice: d.book.unlockPrice,
+      discountPercent: d.book.discountPercent,
+      chapters: d.chapters.map((c) => ChapterMeta(
+        chapterId: c.id, n: c.n, title: c.title,
+        state: c.state.name, hasAudio: c.hasAudio)).toList());
   }
 
   static int _int(dynamic v, int fallback) =>

@@ -42,7 +42,7 @@ class Book {
 }
 
 class Chapter {
-  const Chapter({required this.n, required this.title, required this.state, this.price = 15, this.id = '', this.hlsUrl = ''});
+  const Chapter({required this.n, required this.title, required this.state, this.price = 15, this.id = '', this.hlsUrl = '', this.hasAudio = false});
 
   /// ID chương ở backend (rỗng với dữ liệu Demo). Cần để gọi
   /// `/chapters/:id/public` (nội dung) và `/chapters/:id/audio`.
@@ -54,6 +54,9 @@ class Chapter {
 
   /// URL m3u8 (HLS Cloudflare) nếu đã transcode xong — ưu tiên phát.
   final String hlsUrl;
+
+  /// True nếu chương có audiobook (audioDuration>0 hoặc có hlsUrl).
+  final bool hasAudio;
 }
 
 class Song {

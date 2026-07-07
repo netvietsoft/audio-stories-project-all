@@ -7,13 +7,16 @@ import '../../models/models.dart';
 /// `ChapterState.current` là khái niệm UI (chương đang đọc) — KHÔNG có ở BE.
 abstract final class ChapterMapper {
   static Chapter fromJson(Map<String, dynamic> j) {
+    final dur = _asInt(j['audioDuration']);
+    final hls = (j['hlsUrl'] ?? '').toString();
     return Chapter(
       id: (j['id'] ?? '').toString(),
       n: _asInt(j['chapterNumber']),
       title: (j['title'] ?? '').toString(),
       state: accessTypeToState((j['accessType'] ?? 'free').toString()),
       price: _asInt(j['unlockPrice'], fallback: 15),
-      hlsUrl: (j['hlsUrl'] ?? '').toString(),
+      hlsUrl: hls,
+      hasAudio: dur > 0 || hls.isNotEmpty,
     );
   }
 

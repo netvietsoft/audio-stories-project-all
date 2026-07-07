@@ -1,0 +1,36 @@
+{
+  "@@locale": "en",
+  "appName": "NovelVerse",
+  "@appName": { "description": "Tên app" },
+  "tagline": "Read · Listen · Escape",
+  "@tagline": { "description": "Slogan ở splash" },
+
+  "navHome": "Home",
+  "navDiscover": "Discover",
+  "navTrending": "Trending",
+  "navProfile": "Profile",
+  "navListen": "Listen",
+  "navLibrary": "Library",
+  "navCharts": "Charts",
+
+  "modeNovel": "Novel",
+  "modeAudio": "Audio",
+
+  "readNow": "Read Now",
+  "listen": "Listen",
+  "retry": "Retry",
+
+  "signIn": "Sign in",
+  "signOut": "Sign out",
+
+  "settingsLanguage": "Language",
+  "displayLanguage": "Display language",
+  "displayLanguageHint": "Language of menus & interface",
+  "contentLanguage": "Content language",
+  "contentLanguageHint": "Only show stories/genres in this language",
+
+  "sectionForYou": "For You",
+  "sectionHotRanking": "Hot Ranking",
+  "sectionNewTrending": "New & Trending",
+  "sectionContinueReading": "Continue Reading"
+}

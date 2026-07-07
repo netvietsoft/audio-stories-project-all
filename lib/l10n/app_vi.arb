@@ -1,0 +1,34 @@
+{
+  "@@locale": "vi",
+  "appName": "NovelVerse",
+  "tagline": "Đọc · Nghe · Phiêu",
+
+  "navHome": "Trang chủ",
+  "navDiscover": "Khám phá",
+  "navTrending": "Xu hướng",
+  "navProfile": "Cá nhân",
+  "navListen": "Nghe",
+  "navLibrary": "Thư viện",
+  "navCharts": "Bảng xếp hạng",
+
+  "modeNovel": "Truyện",
+  "modeAudio": "Nghe",
+
+  "readNow": "Đọc ngay",
+  "listen": "Nghe",
+  "retry": "Thử lại",
+
+  "signIn": "Đăng nhập",
+  "signOut": "Đăng xuất",
+
+  "settingsLanguage": "Ngôn ngữ",
+  "displayLanguage": "Ngôn ngữ hiển thị",
+  "displayLanguageHint": "Ngôn ngữ menu & giao diện",
+  "contentLanguage": "Ngôn ngữ nội dung",
+  "contentLanguageHint": "Chỉ hiện truyện/thể loại thuộc ngôn ngữ này",
+
+  "sectionForYou": "Dành cho bạn",
+  "sectionHotRanking": "Bảng xếp hạng hot",
+  "sectionNewTrending": "Mới & Xu hướng",
+  "sectionContinueReading": "Đọc tiếp"
+}

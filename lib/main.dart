@@ -1,0 +1,112 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'l10n/gen/app_localizations.dart';
+
+import 'api/api_client.dart';
+import 'api/token_store.dart';
+import 'data/cache/json_cache.dart';
+import 'data/repositories/audio_repository.dart';
+import 'data/repositories/categories_repository.dart';
+import 'data/repositories/auth_repository.dart';
+import 'data/repositories/music_repository.dart';
+import 'data/repositories/stories_repository.dart';
+import 'router.dart';
+import 'state/app_state.dart';
+import 'state/auth_notifier.dart';
+import 'state/music_notifier.dart';
+import 'state/stories_notifier.dart';
+import 'theme/app_theme.dart';
+
+Future<void> main() async {
+  // Cần cho gọi plugin (shared_preferences) trước runApp.
+  WidgetsFlutterBinding.ensureInitialized();
+  // Khóa app CHỈ ở chế độ DỌC (portrait) — không cho xoay ngang.
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  final appState = AppState();
+  // Nạp state đã lưu trước frame đầu → theme/mode/coin đúng ngay, không nháy.
+  await appState.init();
+
+  // Tầng dữ liệu (data layer). 1 ApiClient dùng chung cho mọi repository.
+  // JsonCache (prefs) cho stale-while-revalidate danh sách stories/music.
+  final cache = JsonCache(await SharedPreferences.getInstance());
+  final apiClient = ApiClient();
+  final storiesRepo = StoriesRepository(apiClient, cache);
+  final musicRepo = MusicRepository(apiClient, cache);
+  final categoriesRepo = CategoriesRepository(apiClient, cache);
+  final audioRepo = AudioRepository(apiClient);
+  final authRepo = AuthRepository(apiClient, TokenStore());
+  // Auto-refresh access token khi 401 (ApiClient gọi lại refresh của auth).
+  apiClient.refreshCallback = authRepo.refresh;
+
+  // Cho AppState lấy token để gắn Bearer vào request HLS (key/segment trả phí).
+  appState.tokenProvider = () => apiClient.accessToken;
+
+  final authNotifier = AuthNotifier(authRepo);
+  // Khôi phục phiên trong nền (splash che ~1.1s); không chặn boot.
+  authNotifier.restore();
+
+  runApp(NovelVerseApp(
+    appState: appState,
+    storiesRepo: storiesRepo,
+    musicRepo: musicRepo,
+    categoriesRepo: categoriesRepo,
+    audioRepo: audioRepo,
+    authNotifier: authNotifier,
+  ));
+}
+
+class NovelVerseApp extends StatelessWidget {
+  const NovelVerseApp({
+    super.key,
+    required this.appState,
+    required this.storiesRepo,
+    required this.musicRepo,
+    required this.categoriesRepo,
+    required this.audioRepo,
+    required this.authNotifier,
+  });
+
+  final AppState appState;
+  final StoriesRepository storiesRepo;
+  final MusicRepository musicRepo;
+  final CategoriesRepository categoriesRepo;
+  final AudioRepository audioRepo;
+  final AuthNotifier authNotifier;
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: appState),
+        ChangeNotifierProvider.value(value: authNotifier),
+        Provider.value(value: storiesRepo),
+        Provider.value(value: musicRepo),
+        Provider.value(value: categoriesRepo),
+        Provider.value(value: audioRepo),
+        ChangeNotifierProvider(create: (_) => StoriesNotifier(storiesRepo)),
+        ChangeNotifierProvider(create: (_) => MusicNotifier(musicRepo)),
+      ],
+      // Chỉ MaterialApp lắng nghe themeMode của AppState (select) để rebuild khi đổi theme.
+      child: Consumer<AppState>(
+        builder: (context, app, _) => MaterialApp.router(
+          title: 'NovelVerse',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: app.themeMode,
+          // Ngôn ngữ HIỂN THỊ (i18n) — theo AppState.uiLang; đổi là dịch lại UI.
+          locale: Locale(app.uiLang),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          routerConfig: appRouter,
+        ),
+      ),
+    );
+  }
+}

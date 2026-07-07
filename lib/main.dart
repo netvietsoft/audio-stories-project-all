@@ -1,13 +1,21 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:dio/dio.dart';
 
 import 'l10n/gen/app_localizations.dart';
 
 import 'api/api_client.dart';
 import 'api/token_store.dart';
 import 'data/cache/json_cache.dart';
+import 'data/offline/file_store.dart';
+import 'data/offline/offline_store.dart';
+import 'data/offline/connectivity_service.dart';
+import 'data/offline/download_manager.dart';
 import 'data/repositories/audio_repository.dart';
 import 'data/repositories/categories_repository.dart';
 import 'data/repositories/auth_repository.dart';
@@ -36,13 +44,35 @@ Future<void> main() async {
   // JsonCache (prefs) cho stale-while-revalidate danh sách stories/music.
   final cache = JsonCache(await SharedPreferences.getInstance());
   final apiClient = ApiClient();
-  final storiesRepo = StoriesRepository(apiClient, cache);
+
+  // Offline: Hive + FileStore + store + connectivity + download manager.
+  await Hive.initFlutter();
+  final offlineStore = OfflineStore(
+    downloads: await Hive.openBox('downloads'),
+    chapters: await Hive.openBox('chapters'),
+    storyMeta: await Hive.openBox('storyMeta'),
+    files: await FileStore.open(),
+  );
+  final connectivity = ConnectivityService();
+  await connectivity.start();
+
+  final storiesRepo = StoriesRepository(apiClient, cache, offlineStore, connectivity);
   final musicRepo = MusicRepository(apiClient, cache);
   final categoriesRepo = CategoriesRepository(apiClient, cache);
   final audioRepo = AudioRepository(apiClient);
   final authRepo = AuthRepository(apiClient, TokenStore());
   // Auto-refresh access token khi 401 (ApiClient gọi lại refresh của auth).
   apiClient.refreshCallback = authRepo.refresh;
+
+  final dio = Dio();
+  final downloadManager = DownloadManager(
+    storiesRepo, audioRepo, offlineStore,
+    downloader: (url, storyId, chapterId) async {
+      final path = (await FileStore.open()).audioPath(storyId, chapterId);
+      await dio.download(url, path);
+      return File(path).lengthSync();
+    },
+  );
 
   // Cho AppState lấy token để gắn Bearer vào request HLS (key/segment trả phí).
   appState.tokenProvider = () => apiClient.accessToken;
@@ -58,6 +88,9 @@ Future<void> main() async {
     categoriesRepo: categoriesRepo,
     audioRepo: audioRepo,
     authNotifier: authNotifier,
+    offlineStore: offlineStore,
+    connectivity: connectivity,
+    downloadManager: downloadManager,
   ));
 }
 
@@ -70,6 +103,9 @@ class NovelVerseApp extends StatelessWidget {
     required this.categoriesRepo,
     required this.audioRepo,
     required this.authNotifier,
+    required this.offlineStore,
+    required this.connectivity,
+    required this.downloadManager,
   });
 
   final AppState appState;
@@ -78,6 +114,9 @@ class NovelVerseApp extends StatelessWidget {
   final CategoriesRepository categoriesRepo;
   final AudioRepository audioRepo;
   final AuthNotifier authNotifier;
+  final OfflineStore offlineStore;
+  final ConnectivityService connectivity;
+  final DownloadManager downloadManager;
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +128,9 @@ class NovelVerseApp extends StatelessWidget {
         Provider.value(value: musicRepo),
         Provider.value(value: categoriesRepo),
         Provider.value(value: audioRepo),
+        Provider.value(value: offlineStore),
+        ChangeNotifierProvider.value(value: connectivity),
+        ChangeNotifierProvider.value(value: downloadManager),
         ChangeNotifierProvider(create: (_) => StoriesNotifier(storiesRepo)),
         ChangeNotifierProvider(create: (_) => MusicNotifier(musicRepo)),
       ],

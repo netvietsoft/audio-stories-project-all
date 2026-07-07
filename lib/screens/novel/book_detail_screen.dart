@@ -14,6 +14,9 @@ import '../../theme/app_type.dart';
 import '../../widgets/cover_image.dart';
 import '../../widgets/sheets.dart';
 
+/// True nếu truyện có audiobook (ít nhất 1 chương có audio).
+bool bookHasAudio(List<Chapter> chapters) => chapters.any((c) => c.hasAudio);
+
 class BookDetailScreen extends StatefulWidget {
   const BookDetailScreen({super.key, required this.bookId});
   final String bookId;
@@ -166,11 +169,14 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           const SizedBox(height: Gap.lg),
 
           // ── CTA Read Now / Listen Now ──
-          Row(children: [
-            Expanded(child: _cta(context, 'Read Now', null, AppPalette.terracotta, () => context.push('/reader/${book.id}'))),
-            const SizedBox(width: Gap.md),
-            Expanded(child: _cta(context, 'Listen Now', Icons.play_arrow_rounded, AppPalette.plum, () => _listen(context, book, chapters))),
-          ]),
+          if (bookHasAudio(chapters))
+            Row(children: [
+              Expanded(child: _cta(context, 'Read Now', null, AppPalette.terracotta, () => context.push('/reader/${book.id}'))),
+              const SizedBox(width: Gap.md),
+              Expanded(child: _cta(context, 'Listen Now', Icons.play_arrow_rounded, AppPalette.plum, () => _listen(context, book, chapters))),
+            ])
+          else
+            _cta(context, 'Read Now', null, AppPalette.terracotta, () => context.push('/reader/${book.id}')),
           const SizedBox(height: Gap.md),
 
           // ── Bundle: mở khoá toàn bộ (chỉ khi truyện có giá thật) ──

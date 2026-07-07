@@ -43,6 +43,10 @@ dependencies:
   just_audio: ^0.9.42
   shared_preferences: ^2.3.2
   dio: ^5.7.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.4
+  connectivity_plus: ^6.0.5
   flutter_secure_storage: ^9.2.2
   cached_network_image: ^3.4.1
 

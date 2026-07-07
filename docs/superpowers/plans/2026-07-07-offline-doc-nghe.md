@@ -1637,7 +1637,7 @@ const int kMaxAutoCacheBytes = 200 * 1024 * 1024;
 ```dart
 await offlineStore.enforceAutoCacheLimit(kMaxAutoCacheBytes);
 ```
-> v1: text-only auto-cache (Task 8) chưa tạo record `downloads`; eviction chỉ ý nghĩa khi audio auto-cache tồn tại. Nếu chưa làm audio auto-cache trong phạm vi này, để hook sẵn ở chỗ AppState lưu audio và ghi chú "auto audio-cache = phase sau". (Giữ đúng YAGNI — đừng ép record auto rỗng.)
+> Eviction có ý nghĩa nhờ record `auto` do **Task 15 (auto-cache audio)** tạo. `enforceAutoCacheLimit` cũng được gọi ngay trong `autoCacheAudio` (Task 15); hằng số `kMaxAutoCacheBytes` khai ở đây để dùng chung.
 
 - [ ] **Step 3: Viết `offline_banner.dart`**
 ```dart
@@ -1679,7 +1679,117 @@ git commit -m "feat(offline): auto-cache eviction hook + offline banner"
 
 ---
 
-## Task 15: Full test + phân tích + build
+## Task 15: Auto-cache audio khi nghe online
+
+**Files:**
+- Modify: `lib/data/offline/download_manager.dart` (thêm `autoCacheAudio`)
+- Modify: `lib/state/app_state.dart` (gọi sau khi phát audiobook từ URL mạng thành công)
+- Test: `test/offline/auto_cache_audio_test.dart`
+
+**Interfaces:**
+- Produces (thêm vào `DownloadManager`):
+  - `Future<void> autoCacheAudio({required String storyId, required String slug, required String title, required String cover, required String author, required String language, required String chapterId, required int n, required String chapterTitle, required String audioUrl, required int nowMs});`
+  - Hành vi: nếu chương chưa có audio local → tải file, lưu `OfflineChapter(audioFile, hasAudio:true)`; upsert/cập nhật record `downloads` (nếu chưa có → tạo `kind:'auto'`; nếu đã `downloaded` → giữ nguyên kind); cộng `bytesAudio`; rồi `enforceAutoCacheLimit(kMaxAutoCacheBytes)`.
+
+- [ ] **Step 1: Viết test thất bại**
+
+```dart
+import 'dart:io';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hive/hive.dart';
+import 'package:novelverse/data/offline/file_store.dart';
+import 'package:novelverse/data/offline/offline_store.dart';
+import 'package:novelverse/data/offline/download_manager.dart';
+import 'package:novelverse/data/repositories/stories_repository.dart';
+import 'package:novelverse/data/offline/offline_models.dart';
+
+class _Stories implements StoriesRepositoryLike {
+  @override Future<StoryDetailData> detailData(String id) async => throw UnimplementedError();
+  @override Future<String> chapterText(String id) async => throw UnimplementedError();
+}
+class _Audio implements AudioUrlResolver {
+  @override Future<String?> chapterAudioUrl(String id, {String? variantId}) async => null;
+}
+
+void main() {
+  late Directory tmp; late OfflineStore store; late DownloadManager dm;
+  setUp(() async {
+    tmp = await Directory.systemTemp.createTemp('ac_test');
+    Hive.init('${tmp.path}/hive');
+    store = OfflineStore(
+      downloads: await Hive.openBox('downloads'),
+      chapters: await Hive.openBox('chapters'),
+      storyMeta: await Hive.openBox('storyMeta'),
+      files: FileStore(tmp));
+    dm = DownloadManager(_Stories(), _Audio(), store, downloader: (u, s, c) async => 700, nowMs: () => 5);
+  });
+  tearDown(() async { await Hive.close(); await tmp.delete(recursive: true); });
+
+  test('autoCacheAudio lưu file + tạo record auto', () async {
+    await dm.autoCacheAudio(storyId: 's1', slug: 's1', title: 'S', cover: '', author: 'A',
+      language: 'vi', chapterId: 'c1', n: 1, chapterTitle: 'C1', audioUrl: 'http://x/c1.mp3', nowMs: 5);
+    expect(store.readChapter('c1')!.audioFile, 'c1.mp3');
+    expect(store.readChapter('c1')!.hasAudio, true);
+    final r = store.download('s1')!;
+    expect(r.kind, 'auto');
+    expect(r.bytesAudio, 700);
+  });
+}
+```
+
+- [ ] **Step 2: Chạy test → FAIL**
+
+Run: `flutter test test/offline/auto_cache_audio_test.dart`
+Expected: FAIL (`autoCacheAudio` chưa có).
+
+- [ ] **Step 3: Thêm `autoCacheAudio` vào `download_manager.dart`**
+
+```dart
+  Future<void> autoCacheAudio({
+    required String storyId, required String slug, required String title,
+    required String cover, required String author, required String language,
+    required String chapterId, required int n, required String chapterTitle,
+    required String audioUrl, required int nowMs,
+  }) async {
+    final existing = _store.readChapter(chapterId);
+    if (existing?.audioFile != null) { await _store.touch(storyId, nowMs); return; }
+    final bytes = await _download(audioUrl, storyId, chapterId);
+    await _store.saveChapter(OfflineChapter(
+      chapterId: chapterId, storyId: storyId, n: n, title: chapterTitle,
+      content: existing?.content ?? '', hasAudio: true, audioFile: '$chapterId.mp3'));
+    final rec = _store.download(storyId);
+    if (rec == null) {
+      await _store.upsertDownload(DownloadRecord(
+        storyId: storyId, slug: slug, title: title, cover: cover, author: author,
+        language: language, kind: 'auto', status: 'complete', totalChapters: 0,
+        savedChapters: 1, bytesText: 0, bytesAudio: bytes, createdAt: nowMs, lastAccessAt: nowMs));
+    } else {
+      await _store.upsertDownload(rec.copyWith(
+        savedChapters: rec.savedChapters + 1, bytesAudio: rec.bytesAudio + bytes, lastAccessAt: nowMs));
+    }
+    await _store.enforceAutoCacheLimit(kMaxAutoCacheBytes);
+  }
+```
+> Import `offline_store.dart` cho `kMaxAutoCacheBytes` (đã ở cùng thư mục; thêm nếu thiếu).
+
+- [ ] **Step 4: Gọi từ `AppState`** — sau khi phát audiobook từ **URL mạng** thành công (không phải file local), gọi `downloadManager.autoCacheAudio(...)` trong nền (không await chặn UI). Vì `AppState` không giữ `DownloadManager`, truyền callback qua field: thêm `AppState.onAudioPlayed` được `main.dart` gán = `(storyId, chapter, url) => downloadManager.autoCacheAudio(...)`. Trong `_listen` của BookDetail (Task 11) khi resolve URL mạng thành công, gọi callback này.
+> Giữ đơn giản: đặt hook ở nơi có đủ `Book`+`Chapter`+`url` (BookDetail `_listen`), gọi `context.read<DownloadManager>().autoCacheAudio(...)` sau khi bắt đầu phát. Không cần sửa `AppState` nếu hook đặt ở `_listen`.
+
+- [ ] **Step 5: Chạy test → PASS**
+
+Run: `flutter test test/offline/auto_cache_audio_test.dart`
+Expected: PASS.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add lib/data/offline/download_manager.dart lib/state/app_state.dart lib/screens/novel/book_detail_screen.dart test/offline/auto_cache_audio_test.dart
+git commit -m "feat(offline): auto-cache audio on online playback"
+```
+
+---
+
+## Task 16: Full test + phân tích + build
 
 **Files:** (không sửa — kiểm thử toàn bộ)
 
@@ -1709,6 +1819,6 @@ git add -A && git commit -m "test(offline): full suite green + manual offline ve
 
 ## Ghi chú
 - **Git:** novelverse hiện chưa là git repo. Nếu muốn theo dõi phiên bản + commit theo plan: chạy `git init` một lần ở `D:\SetupC\Projects\NovelApp\novelverse` (thêm `.gitignore` Flutter chuẩn) trước Task 1. Nếu không, bỏ mọi bước `git commit`.
-- **Auto-cache audio** (ghi file audio khi user nghe online) có thể để phase sau nếu muốn thu hẹp: v1 tối thiểu = auto-cache **text** (Task 8) + **download cả truyện** (text+audio, Task 6/11). Eviction hook (Task 14) chỉ kích hoạt khi có record `auto`.
+- **Auto-cache audio** đã đưa vào v1 (Task 15): ghi file audio + tạo record `auto` khi user nghe online. Cùng với auto-cache text (Task 8) và download cả truyện (Task 6/11).
 - **detail() theo id vs slug:** DownloadManager/adapter dùng `detail(storyIdOrSlug)` đúng như `reader_screen`/`book_detail` đang gọi; nếu BE phân biệt, truyền đúng định danh mà BookDetail đang dùng (`book.id`).
 - **Ngưỡng 200MB** và reveal-on-scroll-up chỉnh sau khi dùng thử.

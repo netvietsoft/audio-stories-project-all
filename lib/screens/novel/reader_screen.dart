@@ -37,6 +37,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   bool _chromeVisible = true; // menu dưới hiện/ẩn theo hướng cuộn
   Timer? _saveDebounce;
   bool _resumed = false;
+  double? _pendingJumpOffset;
 
   // ── tuỳ chỉnh đọc (set trang.png) ──
   int _bg = 0; // 0 Cream · 1 White · 2 Sepia · 3 Dark · 4 OLED
@@ -155,6 +156,13 @@ class _ReaderScreenState extends State<ReaderScreen> {
           }
         });
       }
+    }
+    if (_pendingJumpOffset != null) {
+      final target = _pendingJumpOffset!;
+      _pendingJumpOffset = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scroll.hasClients) _scroll.jumpTo(target.clamp(0, _scroll.position.maxScrollExtent));
+      });
     }
   }
 
@@ -570,11 +578,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     onPressed: () { _reader.removeBookmark(widget.bookId, b.savedAt); Navigator.pop(c); _openChapterList(chapters); },
                   ),
                   onTap: () {
+                    _pendingJumpOffset = b.offset;
                     Navigator.pop(c);
                     _goChapter(b.chapter, chapters);
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (_scroll.hasClients) _scroll.jumpTo(b.offset.clamp(0, _scroll.position.maxScrollExtent));
-                    });
                   },
                 ),
               const Divider(height: 12),

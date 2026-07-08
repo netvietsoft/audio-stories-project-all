@@ -438,7 +438,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
               Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.item(size: 14, color: ink)),
               Text('Ch ${ch.n}/${chapters.length} · ${ch.title}', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.meta(size: 11, color: ink.withValues(alpha: 0.6))),
             ])),
-            IconButton(tooltip: 'Nghe', icon: Icon(Icons.headphones_outlined, color: ink), onPressed: locked ? null : () => _playChapterAudio(book, ch)),
+            if (chapters.any((c) => c.hasAudio))
+              IconButton(tooltip: 'Nghe', icon: Icon(Icons.headphones_outlined, color: ink), onPressed: locked ? null : () => _playChapterAudio(book, ch)),
             IconButton(tooltip: 'Đánh dấu', icon: Icon(_isBookmarkedHere ? Icons.bookmark : Icons.bookmark_border, color: ink), onPressed: _toggleBookmark),
             IconButton(tooltip: 'Tuỳ chỉnh đọc', icon: Text('Aa', style: AppType.serif(size: 18, w: FontWeight.w700, color: ink)), onPressed: _openSettings),
             IconButton(tooltip: 'Danh sách chương', icon: Icon(Icons.menu, color: ink), onPressed: () => _openChapterList(chapters)),

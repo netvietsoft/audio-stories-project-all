@@ -81,7 +81,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final b = _reader.readBrightness();
     if (b >= 0) {
       _brightness = b;
-      try { ScreenBrightness().setApplicationScreenBrightness(b); } catch (_) {}
+      ScreenBrightness().setApplicationScreenBrightness(b).catchError((_) {});
     }
     _scroll.addListener(_onScroll);
     _init();
@@ -91,7 +91,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   @override
   void dispose() {
     WakelockPlus.disable();
-    try { ScreenBrightness().resetApplicationScreenBrightness(); } catch (_) {}
+    ScreenBrightness().resetApplicationScreenBrightness().catchError((_) {});
     _saveDebounce?.cancel();
     if (_scroll.hasClients) _reader.savePosition(widget.bookId, _chapter, _scroll.offset);
     _scroll.dispose();

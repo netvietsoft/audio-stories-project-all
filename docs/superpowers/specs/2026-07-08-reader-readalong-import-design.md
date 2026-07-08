@@ -10,7 +10,7 @@ Kèm 1 bổ sung top-bar Reader: **icon tai nghe chỉ hiện khi truyện có a
 
 ## 2. Phạm vi
 **Trong:**
-- BE: nhận `timingRaw`+`timingFormat` trong DTO tạo/sửa chương → parse (SRT/VTT/LRC) → match vào `content` → lưu `Chapter.timingJson` (+ `ChapterVariant.timingJson`); serve trong `/chapters/:id/public`. Báo `matched/total` cho admin.
+- BE: nhận `timingRaw`+`timingFormat` trong DTO tạo/sửa chương → parse (SRT/VTT/LRC) → match vào `content` → lưu `Chapter.timingJson`; serve trong `/chapters/:id/public`. Báo `matched/total` cho admin. (`ChapterVariant.timingJson` **hoãn** — xem "Ngoài phạm vi".)
 - Admin (Next.js web admin): ô chọn file timing cạnh ô audio trong form chương.
 - App: fetch cues; toggle read-along (persist ReaderStore); tô sáng câu active tại chỗ + auto-scroll; icon tai nghe top-bar theo mức truyện.
 
@@ -19,6 +19,7 @@ Kèm 1 bổ sung top-bar Reader: **icon tai nghe chỉ hiện khi truyện có a
 - Read-along **offline** (chương đã tải chưa lưu cues) — follow-up nhỏ.
 - Read-along trên **web** (StoryReader.tsx) — ngoài phạm vi.
 - Highlight mức **từ** (chỉ mức **câu/dòng** theo cue của file).
+- **`ChapterVariant.timingJson` (timing cho nhánh interactive) — HOÃN sang follow-up** (quyết định 2026-07-08). v1 chỉ làm mức `Chapter` (use-case chính). Khi làm variant: mirror y hệt đường Chapter (schema+migration cột `chapter_variants.timing_json`, timingRaw/timingFormat vào variant DTO, wiring `buildTimingJson` trong `chapter-variants.service`, thêm `timing` vào select/serve variant của `findPublicDetail`).
 
 ## 3. Kiến trúc & luồng
 ```
@@ -39,7 +40,7 @@ ADMIN: upload file timing (SRT/VTT/LRC) KÈM audio trong form chương
 **Lưu ở BE:** cột `Chapter.timingJson Json?` (import nhẹ, không async → không cần bảng/worker như HLS).
 
 ## 4. Backend
-**DTO tạo/sửa chương** (`create-chapter.dto`, `update-chapter.dto`) + variant: thêm tuỳ chọn
+**DTO tạo/sửa chương** (`create-chapter.dto`, `update-chapter.dto`): thêm tuỳ chọn (variant DTO: hoãn)
 - `timingRaw?: string` (nội dung file), `timingFormat?: 'srt'|'vtt'|'lrc'|'auto'` (default 'auto').
 
 **Parser** (`timing-parser` util thuần):
@@ -54,7 +55,7 @@ ADMIN: upload file timing (SRT/VTT/LRC) KÈM audio trong form chương
 - Con trỏ chạy dọc content; mỗi cue tìm text kế tiếp so khớp **chuẩn hoá whitespace** (+ dung sai dấu câu nhẹ) → `paraIndex`, `charStart`, `charEnd` (offset trong đoạn).
 - Cue không khớp → `paraIndex=-1` (giữ start/end). Trả `{cues, matched, total}`.
 
-**Persist:** migration thêm `Chapter.timingJson Json?` + `ChapterVariant.timingJson Json?`. Set trong create/update khi có `timingRaw` (parse+match rồi lưu). Trả `{matched,total}` trong response admin.
+**Persist:** migration thêm `Chapter.timingJson Json?` (variant: hoãn). Set trong create/update khi có `timingRaw` (parse+match rồi lưu). Trả `{matched,total}` trong response admin.
 
 **Serve:** `findPublicDetail` (`/chapters/:id/public`) thêm field `timing: chapter.timingJson` (null nếu chưa có). Không endpoint mới; không đụng entitlement.
 
@@ -94,7 +95,7 @@ ADMIN: upload file timing (SRT/VTT/LRC) KÈM audio trong form chương
 **Gói mới:** không cần (parser tự viết; app dùng `Text.rich`/`ensureVisible` sẵn có).
 
 ## 8. File dự kiến
-**BE:** `src/chapters/dto/create-chapter.dto.ts`, `update-chapter.dto.ts` (+variant dto); util `src/chapters/timing/timing-parser.ts` + `timing-matcher.ts`; `chapters.service.ts` (parse+match+lưu), `findPublicDetail`; migration + `schema.prisma` (Chapter/ChapterVariant `timingJson`).
+**BE:** `src/chapters/dto/create-chapter.dto.ts`, `update-chapter.dto.ts`; util `src/chapters/timing/timing-parser.ts` + `timing-matcher.ts`; `chapters.service.ts` (parse+match+lưu), `findPublicDetail`; migration + `schema.prisma` (Chapter `timingJson`). (variant dto + `ChapterVariant.timingJson`: hoãn.)
 **Admin FE:** form chương (thêm input file timing + gửi timingRaw).
 **App:** `lib/data/reader/reader_models.dart`/`reader_store.dart` (readAlong bool), `lib/data/repositories/stories_repository.dart` (ChapterContent.cues + TimingCue + mapper), `lib/screens/novel/reader_screen.dart` (activeCue, Text.rich highlight, auto-scroll, toggle in settings, top-bar icon gate).
 
@@ -105,3 +106,5 @@ BE (parse/match/store/serve) + admin upload → App (consume/highlight/toggle/ic
 - Highlight mức **câu** (theo cue file), không mức từ.
 - Read-along offline (lưu cues vào OfflineChapter) = follow-up nếu cần.
 - Icon tai nghe: mức **truyện** (`chapters.any hasAudio`).
+- **ChapterVariant timing = follow-up** (hoãn 2026-07-08, xem §2). v1 chỉ mức `Chapter`.
+- **Matcher chuẩn hoá**: v1 coi mọi ký tự không phải chữ/số (`[^\p{L}\p{N}]`) là dấu tách mềm (whitespace + dấu câu) → dung sai dấu câu. Cue vắt qua ranh giới đoạn (`\n\s*\n`) → **không** khớp (giữ `p=-1`, không tính `matched`), tránh cắt cụt highlight.

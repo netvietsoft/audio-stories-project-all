@@ -12,6 +12,7 @@ class ReaderStore {
 
   static const _kSettings = 'reader.settings';
   static const _kBrightness = 'reader.brightness';
+  static const _kReadAlong = 'reader.readalong';
   static String _posKey(String bookId) => 'reader.pos.$bookId';
   static String _bmKey(String bookId) => 'reader.bm.$bookId';
 
@@ -68,4 +69,8 @@ class ReaderStore {
   // ── brightness ──
   double readBrightness() => _prefs.getDouble(_kBrightness) ?? -1;
   Future<void> saveBrightness(double v) => _prefs.setDouble(_kBrightness, v);
+
+  // ── read-along ──
+  bool readReadAlong() => _prefs.getBool(_kReadAlong) ?? false;
+  Future<void> saveReadAlong(bool v) => _prefs.setBool(_kReadAlong, v);
 }

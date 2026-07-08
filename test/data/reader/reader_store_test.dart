@@ -43,6 +43,12 @@ void main() {
     expect(store.readBrightness(), 0.6);
   });
 
+  test('readAlong default false, round-trip', () async {
+    expect(store.readReadAlong(), false);
+    await store.saveReadAlong(true);
+    expect(store.readReadAlong(), true);
+  });
+
   test('JSON hỏng → trả mặc định, không throw', () async {
     SharedPreferences.setMockInitialValues({'reader.settings': 'not-json', 'reader.pos.b1': '{bad'});
     final s2 = ReaderStore(await SharedPreferences.getInstance());

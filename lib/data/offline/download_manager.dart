@@ -122,4 +122,33 @@ class DownloadManager extends ChangeNotifier {
     _progress[storyId] = p;
     notifyListeners();
   }
+
+  /// Tự động cache audio khi nghe online: nếu chương chưa có file local → tải
+  /// về + tạo/cập nhật record 'downloads' (kind mặc định 'auto', giữ nguyên
+  /// nếu đã 'downloaded'), rồi enforce giới hạn dung lượng auto-cache. Nếu đã
+  /// có sẵn → chỉ touch lastAccess (không tải lại).
+  Future<void> autoCacheAudio({
+    required String storyId, required String slug, required String title,
+    required String cover, required String author, required String language,
+    required String chapterId, required int n, required String chapterTitle,
+    required String audioUrl, required int nowMs,
+  }) async {
+    final existing = _store.readChapter(chapterId);
+    if (existing?.audioFile != null) { await _store.touch(storyId, nowMs); return; }
+    final bytes = await _download(audioUrl, storyId, chapterId);
+    await _store.saveChapter(OfflineChapter(
+      chapterId: chapterId, storyId: storyId, n: n, title: chapterTitle,
+      content: existing?.content ?? '', hasAudio: true, audioFile: '$chapterId.mp3'));
+    final rec = _store.download(storyId);
+    if (rec == null) {
+      await _store.upsertDownload(DownloadRecord(
+        storyId: storyId, slug: slug, title: title, cover: cover, author: author,
+        language: language, kind: 'auto', status: 'complete', totalChapters: 0,
+        savedChapters: 1, bytesText: 0, bytesAudio: bytes, createdAt: nowMs, lastAccessAt: nowMs));
+    } else {
+      await _store.upsertDownload(rec.copyWith(
+        savedChapters: rec.savedChapters + 1, bytesAudio: rec.bytesAudio + bytes, lastAccessAt: nowMs));
+    }
+    await _store.enforceAutoCacheLimit(kMaxAutoCacheBytes);
+  }
 }

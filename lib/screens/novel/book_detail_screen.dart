@@ -93,6 +93,13 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
           if (url != null && url.isNotEmpty) {
             app.play('${book.title} • Ch.${ch.n}', book.author, book.cover, url);
             context.push('/audiobook');
+            // Nghe online → tự cache audio nền, không chặn phát nhạc.
+            context.read<DownloadManager>().autoCacheAudio(
+              storyId: book.id, slug: widget.bookId, title: book.title, cover: book.cover,
+              author: book.author, language: 'vi', chapterId: ch.id, n: ch.n,
+              chapterTitle: ch.title, audioUrl: url,
+              nowMs: DateTime.now().millisecondsSinceEpoch,
+            );
             return;
           }
         } on ApiException catch (e) {

@@ -13,6 +13,7 @@ import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ChapterQueryDto } from './dto/chapter-query.dto';
 import { Prisma } from '@prisma/client';
 import { handlePrismaError } from '@/common/utils/error-handler.util';
+import { buildTimingJson } from './timing/build-timing';
 
 @Injectable()
 export class ChaptersService {
@@ -235,6 +236,7 @@ export class ChaptersService {
         unlocksAt: true,
         createdAt: true,
         updatedAt: true,
+        timingJson: true,
         variants: {
           where: { deletedAt: null },
           orderBy: { orderIndex: 'asc' },
@@ -274,6 +276,7 @@ export class ChaptersService {
     return {
       ...chapter,
       hlsUrl: chapterMap.get(chapter.id) ?? null,
+      timing: chapter.timingJson ?? null,
       variants: (chapter.variants ?? []).map((variant) => ({
         ...variant,
         hlsUrl: variantMap.get(variant.id) ?? null,
@@ -792,6 +795,15 @@ export class ChaptersService {
 
     console.log('Creating chapter with data:', data);
     const normalizedData = this.normalizeChapterFlatPayload(data as any);
+    const timing = buildTimingJson(
+      (data as any).content,
+      (data as any).timingRaw,
+      (data as any).timingFormat,
+      (data as any).audioDuration,
+    );
+    if (timing) (normalizedData as any).timingJson = timing;
+    delete (normalizedData as any).timingRaw;
+    delete (normalizedData as any).timingFormat;
     const createData: Prisma.ChapterCreateInput = {
       ...(normalizedData as Prisma.ChapterCreateInput),
       story: {
@@ -831,6 +843,15 @@ export class ChaptersService {
     const { storyId, ...chapterData } = data;
 
     const normalizedData = this.normalizeChapterFlatPayload(chapterData as any);
+    const standaloneTiming = buildTimingJson(
+      (chapterData as any).content,
+      (chapterData as any).timingRaw,
+      (chapterData as any).timingFormat,
+      (chapterData as any).audioDuration,
+    );
+    if (standaloneTiming) (normalizedData as any).timingJson = standaloneTiming;
+    delete (normalizedData as any).timingRaw;
+    delete (normalizedData as any).timingFormat;
     const createData: Prisma.ChapterCreateInput = {
       ...(normalizedData as Prisma.ChapterCreateInput),
       ...(storyId ? { story: { connect: { id: storyId } } } : {}),
@@ -931,6 +952,18 @@ export class ChaptersService {
           updateData.chapterNumber = chapterNumber;
         }
 
+        if (data.timingRaw !== undefined) {
+          updateData.timingJson =
+            buildTimingJson(
+              data.content ?? chapter.content,
+              data.timingRaw,
+              data.timingFormat,
+              data.audioDuration ?? chapter.audioDuration ?? undefined,
+            ) ?? Prisma.JsonNull;
+        }
+        delete updateData.timingRaw;
+        delete updateData.timingFormat;
+
         console.log('Final update data:', updateData);
 
         const updates: any[] = [
@@ -980,6 +1013,17 @@ export class ChaptersService {
 
       // Normal update without storyId change
       const normalizedData = this.normalizeChapterFlatPayload(data as any);
+      if (data.timingRaw !== undefined) {
+        (normalizedData as any).timingJson =
+          buildTimingJson(
+            data.content ?? chapter.content,
+            data.timingRaw,
+            data.timingFormat,
+            data.audioDuration ?? chapter.audioDuration ?? undefined,
+          ) ?? Prisma.JsonNull;
+      }
+      delete (normalizedData as any).timingRaw;
+      delete (normalizedData as any).timingFormat;
       console.log('Normalized data:', normalizedData);
 
       const updatedChapter = await this.prisma.chapter.update({

@@ -68,6 +68,8 @@ const chapterSchema = z.object({
     ),
     unlocksAt: z.string().optional(),
     unlockAdId: z.string().optional(),
+    timingRaw: z.string().optional(),
+    timingFormat: z.enum(['srt', 'vtt', 'lrc', 'auto']).optional(),
 });
 
 export type ChapterFormValues = {
@@ -90,6 +92,8 @@ export type ChapterFormValues = {
     unlocksAt?: string;
     storyId?: string;
     unlockAdId?: string;
+    timingRaw?: string;
+    timingFormat?: 'srt' | 'vtt' | 'lrc' | 'auto';
 };
 
 export type ChapterSubmitPayload = {
@@ -108,6 +112,8 @@ export type ChapterSubmitPayload = {
     language?: string;
     unlocksAt?: string;
     unlockAdId?: string;
+    timingRaw?: string;
+    timingFormat?: 'srt' | 'vtt' | 'lrc' | 'auto';
 };
 
 interface ChapterFormProps {
@@ -289,6 +295,8 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             storyId: safeString(initialData?.storyId),
             unlocksAt: safeString(initialData?.unlocksAt),
             unlockAdId: safeString((initialData as { unlockAdId?: unknown } | undefined)?.unlockAdId),
+            timingRaw: safeString(initialData?.timingRaw),
+            timingFormat: initialData?.timingFormat,
         },
     });
 
@@ -316,6 +324,8 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             storyId: safeString(initialData?.storyId),
             unlocksAt: safeString(initialData?.unlocksAt),
             unlockAdId: safeString((initialData as { unlockAdId?: unknown } | undefined)?.unlockAdId),
+            timingRaw: safeString(initialData?.timingRaw),
+            timingFormat: initialData?.timingFormat,
         });
     }, [initialData, reset]);
 
@@ -435,6 +445,16 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             if (lang === 'vi') setIsUploadingAudioVi(false);
             if (lang === 'en') setIsUploadingAudioEn(false);
         }
+    };
+
+    // Đọc file timing (SRT/VTT/LRC) làm text thô cho đọc-cùng, tự nhận diện định dạng theo phần mở rộng.
+    const handleTimingFileSelect = async (file: File | null | undefined) => {
+        if (!file) return;
+        const text = await file.text();
+        const name = file.name.toLowerCase();
+        const fmt = name.endsWith('.vtt') ? 'vtt' : name.endsWith('.lrc') ? 'lrc' : name.endsWith('.srt') ? 'srt' : 'auto';
+        setValue('timingRaw', text, { shouldDirty: true });
+        setValue('timingFormat', fmt, { shouldDirty: true });
     };
 
     const extractYoutubeId = (url: string) => {
@@ -825,6 +845,8 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
             language: selectedLanguage,
             unlocksAt: values.accessType === 'timed' ? cleanText(values.unlocksAt) : undefined,
             unlockAdId: values.accessType === 'ads' ? cleanText(values.unlockAdId) : undefined,
+            timingRaw: cleanText(values.timingRaw) ?? undefined,
+            timingFormat: values.timingFormat ?? undefined,
         };
 
         try {
@@ -1103,6 +1125,25 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             {errors[audioField as keyof ChapterFormValues] && (
                                 <p className="text-red-500 text-xs mt-1">{(errors[audioField as keyof ChapterFormValues]?.message as string) || ''}</p>
                             )}
+                        </div>
+
+                        {/* Timing File Upload (SRT/VTT/LRC cho đọc-cùng) */}
+                        <div className="flex flex-col space-y-1.5 md:col-span-2">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
+                                File Timing Đọc Cùng (SRT/VTT/LRC)
+                            </label>
+                            <input
+                                type="file"
+                                accept=".srt,.vtt,.lrc"
+                                onChange={(e) => {
+                                    void handleTimingFileSelect(e.target.files?.[0]);
+                                    e.target.value = '';
+                                }}
+                                className="block w-full text-sm text-slate-500 file:mr-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-bold file:text-indigo-600 hover:file:bg-indigo-100"
+                            />
+                            {watch('timingRaw') ? (
+                                <p className="text-xs text-emerald-600 mt-1">Đã nạp file timing ({(watch('timingFormat') || 'auto').toUpperCase()}).</p>
+                            ) : null}
                         </div>
 
                         {/* Thumbnail Upload */}

@@ -309,40 +309,24 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: bg,
-        elevation: 0,
-        iconTheme: IconThemeData(color: ink),
-        titleSpacing: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.item(size: 14, color: ink)),
-            Text('Ch ${ch.n}/${chapters.length} · ${ch.title}',
-                maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.meta(size: 11, color: ink.withValues(alpha: 0.6))),
-          ],
-        ),
-        actions: [
-          IconButton(tooltip: 'Nghe', icon: Icon(Icons.headphones_outlined, color: ink), onPressed: locked ? null : () => _playChapterAudio(book, ch)),
-          IconButton(tooltip: 'Đánh dấu', icon: Icon(_isBookmarkedHere ? Icons.bookmark : Icons.bookmark_border, color: ink), onPressed: _toggleBookmark),
-          IconButton(tooltip: 'Tuỳ chỉnh đọc', icon: Text('Aa', style: AppType.serif(size: 18, w: FontWeight.w700, color: ink)), onPressed: _openSettings),
-          IconButton(tooltip: 'Danh sách chương', icon: Icon(Icons.menu, color: ink), onPressed: () => _openChapterList(chapters)),
-        ],
-      ),
       body: Stack(
         children: [
           locked
               ? _lockedPanel(context, book, ch, ink)
-              : ListView(
-                  controller: _scroll,
-                  padding: EdgeInsets.fromLTRB(_marginH, 8, _marginH, 120),
-                  children: [
-                    Center(child: Text(ch.title, textAlign: TextAlign.center, style: AppType.hero(size: 26, color: ink))),
-                    const SizedBox(height: Gap.xl),
-                    _body(ink),
-                    const SizedBox(height: Gap.xl),
-                    _endOfChapter(context, book, ink, chapters),
-                  ],
+              : GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () => setState(() => _chromeVisible = !_chromeVisible),
+                  child: ListView(
+                    controller: _scroll,
+                    padding: EdgeInsets.fromLTRB(_marginH, 60, _marginH, 120),
+                    children: [
+                      Center(child: Text(ch.title, textAlign: TextAlign.center, style: AppType.hero(size: 26, color: ink))),
+                      const SizedBox(height: Gap.xl),
+                      _body(ink),
+                      const SizedBox(height: Gap.xl),
+                      _endOfChapter(context, book, ink, chapters),
+                    ],
+                  ),
                 ),
           // Menu dưới auto-hide + thanh read-along (khi nghe).
           Positioned(
@@ -358,7 +342,41 @@ class _ReaderScreenState extends State<ReaderScreen> {
               ]),
             ),
           ),
+          // Top bar trượt (thay AppBar) — vẫn hiện khi khoá chương.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 220),
+              offset: _chromeVisible ? Offset.zero : const Offset(0, -1),
+              child: _topBar(context, book, ch, chapters, locked, bg, ink),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _topBar(BuildContext context, Book book, Chapter ch, List<Chapter> chapters, bool locked, Color bg, Color ink) {
+    return Container(
+      color: bg,
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: 52,
+          child: Row(children: [
+            IconButton(icon: Icon(Icons.arrow_back, color: ink), onPressed: () => context.pop()),
+            Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.item(size: 14, color: ink)),
+              Text('Ch ${ch.n}/${chapters.length} · ${ch.title}', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.meta(size: 11, color: ink.withValues(alpha: 0.6))),
+            ])),
+            IconButton(tooltip: 'Nghe', icon: Icon(Icons.headphones_outlined, color: ink), onPressed: locked ? null : () => _playChapterAudio(book, ch)),
+            IconButton(tooltip: 'Đánh dấu', icon: Icon(_isBookmarkedHere ? Icons.bookmark : Icons.bookmark_border, color: ink), onPressed: _toggleBookmark),
+            IconButton(tooltip: 'Tuỳ chỉnh đọc', icon: Text('Aa', style: AppType.serif(size: 18, w: FontWeight.w700, color: ink)), onPressed: _openSettings),
+            IconButton(tooltip: 'Danh sách chương', icon: Icon(Icons.menu, color: ink), onPressed: () => _openChapterList(chapters)),
+          ]),
+        ),
       ),
     );
   }

@@ -57,6 +57,7 @@ class DownloadManager extends ChangeNotifier {
 
   final Map<String, DownloadProgress> _progress = {};
   final Set<String> _cancelled = {};
+  final Set<String> _caching = {};
   Map<String, DownloadProgress> get progress => Map.unmodifiable(_progress);
 
   void cancel(String storyId) => _cancelled.add(storyId);
@@ -133,22 +134,33 @@ class DownloadManager extends ChangeNotifier {
     required String chapterId, required int n, required String chapterTitle,
     required String audioUrl, required int nowMs,
   }) async {
-    final existing = _store.readChapter(chapterId);
-    if (existing?.audioFile != null) { await _store.touch(storyId, nowMs); return; }
-    final bytes = await _download(audioUrl, storyId, chapterId);
-    await _store.saveChapter(OfflineChapter(
-      chapterId: chapterId, storyId: storyId, n: n, title: chapterTitle,
-      content: existing?.content ?? '', hasAudio: true, audioFile: '$chapterId.mp3'));
-    final rec = _store.download(storyId);
-    if (rec == null) {
-      await _store.upsertDownload(DownloadRecord(
-        storyId: storyId, slug: slug, title: title, cover: cover, author: author,
-        language: language, kind: 'auto', status: 'complete', totalChapters: 0,
-        savedChapters: 1, bytesText: 0, bytesAudio: bytes, createdAt: nowMs, lastAccessAt: nowMs));
-    } else {
-      await _store.upsertDownload(rec.copyWith(
-        savedChapters: rec.savedChapters + 1, bytesAudio: rec.bytesAudio + bytes, lastAccessAt: nowMs));
+    if (_caching.contains(chapterId)) return;
+    _caching.add(chapterId);
+    try {
+      final existing = _store.readChapter(chapterId);
+      if (existing?.audioFile != null) { await _store.touch(storyId, nowMs); return; }
+      final bytes = await _download(audioUrl, storyId, chapterId);
+      await _store.saveChapter(OfflineChapter(
+        chapterId: chapterId, storyId: storyId, n: n, title: chapterTitle,
+        content: existing?.content ?? '', hasAudio: true, audioFile: '$chapterId.mp3'));
+      final rec = _store.download(storyId);
+      if (rec == null) {
+        await _store.upsertDownload(DownloadRecord(
+          storyId: storyId, slug: slug, title: title, cover: cover, author: author,
+          language: language, kind: 'auto', status: 'complete', totalChapters: 0,
+          savedChapters: 1, bytesText: 0, bytesAudio: bytes, createdAt: nowMs, lastAccessAt: nowMs));
+      } else {
+        // M4: không cho savedChapters vượt totalChapters (nếu đã biết totalChapters).
+        final canIncrement = rec.savedChapters < rec.totalChapters || rec.totalChapters == 0;
+        await _store.upsertDownload(rec.copyWith(
+          savedChapters: canIncrement ? rec.savedChapters + 1 : rec.savedChapters,
+          bytesAudio: rec.bytesAudio + bytes, lastAccessAt: nowMs));
+      }
+      await _store.enforceAutoCacheLimit(kMaxAutoCacheBytes);
+    } catch (_) {
+      // swallow: best-effort cache, không được làm crash luồng nghe.
+    } finally {
+      _caching.remove(chapterId);
     }
-    await _store.enforceAutoCacheLimit(kMaxAutoCacheBytes);
   }
 }

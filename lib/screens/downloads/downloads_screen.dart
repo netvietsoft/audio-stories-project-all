@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/offline/download_manager.dart';
@@ -38,22 +39,25 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
               children: [
                 Text('Đã tải ${_mb(totalDl)}  ·  Tự lưu ${_mb(totalAuto)}', style: AppType.meta(size: 12.5, color: pal.muted)),
                 const SizedBox(height: Gap.md),
-                for (final r in items) Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: Row(children: [
-                    SizedBox(width: 54, child: CoverImage(path: r.cover, title: r.title, radius: 10)),
-                    const SizedBox(width: 12),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.item(size: 15, color: pal.ink)),
-                      const SizedBox(height: 3),
-                      Text('${r.savedChapters}/${r.totalChapters} chương · ${_mb(r.totalBytes)}${r.kind == 'auto' ? ' · tự lưu' : ''}',
-                          style: AppType.meta(size: 12, color: pal.muted)),
-                    ])),
-                    IconButton(
-                      icon: Icon(Icons.delete_outline, color: pal.muted),
-                      onPressed: () async { await store.deleteStory(r.storyId); setState(() {}); },
-                    ),
-                  ]),
+                for (final r in items) InkWell(
+                  onTap: () => context.push('/book/${r.storyId}'),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: Row(children: [
+                      SizedBox(width: 54, child: CoverImage(path: r.cover, title: r.title, radius: 10)),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(r.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.item(size: 15, color: pal.ink)),
+                        const SizedBox(height: 3),
+                        Text('${r.savedChapters}/${r.totalChapters} chương · ${_mb(r.totalBytes)}${r.kind == 'auto' ? ' · tự lưu' : ''}',
+                            style: AppType.meta(size: 12, color: pal.muted)),
+                      ])),
+                      IconButton(
+                        icon: Icon(Icons.delete_outline, color: pal.muted),
+                        onPressed: () async { await store.deleteStory(r.storyId); setState(() {}); },
+                      ),
+                    ]),
+                  ),
                 ),
               ],
             ),

@@ -4,8 +4,6 @@ import 'package:hive/hive.dart';
 import 'package:novelverse/data/offline/file_store.dart';
 import 'package:novelverse/data/offline/offline_store.dart';
 import 'package:novelverse/data/offline/download_manager.dart';
-import 'package:novelverse/data/repositories/stories_repository.dart';
-import 'package:novelverse/data/offline/offline_models.dart';
 
 class _Stories implements StoriesRepositoryLike {
   @override Future<StoryDetailData> detailData(String id) async => throw UnimplementedError();

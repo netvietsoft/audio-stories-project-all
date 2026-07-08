@@ -105,7 +105,7 @@ class OfflineChapter {
         title: (map['title'] ?? '').toString(),
         content: (map['content'] ?? '').toString(),
         hasAudio: map['hasAudio'] == true,
-        audioFile: map['audioFile'] as String?,
+        audioFile: map['audioFile']?.toString(),
       );
 }
 

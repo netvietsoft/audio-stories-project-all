@@ -113,15 +113,74 @@ class StoriesRepository implements StoriesRepositoryLike {
   }
 
   /// `GET /stories/:slug` — chi tiết + danh sách chương (`chapters[]`).
+  /// Local-first: nếu đang offline HOẶC truyện đã downloaded VÀ có meta local
+  /// → dựng từ local, KHÔNG gọi API. Online mà API lỗi → fallback về meta local nếu có.
   Future<StoryDetail> detail(String slug) async {
-    final data = await _api.get(ApiEndpoints.storyBySlug(slug));
-    final map = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
-    final rawChapters = map['chapters'];
-    final chapters = (rawChapters is List ? rawChapters : const [])
-        .whereType<Map>()
-        .map((c) => ChapterMapper.fromJson(Map<String, dynamic>.from(c)))
-        .toList();
-    return StoryDetail(book: BookMapper.fromJson(map), chapters: chapters);
+    final off = _offline;
+    final offline = _connectivity?.isOnline == false;
+    final downloaded = off?.download(slug)?.kind == 'downloaded';
+    if (off != null && (offline || downloaded)) {
+      final meta = off.readStoryMeta(slug);
+      if (meta != null) return _detailFromMeta(slug, meta);
+    }
+    try {
+      final data = await _api.get(ApiEndpoints.storyBySlug(slug));
+      final map = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+      final rawChapters = map['chapters'];
+      final chapters = (rawChapters is List ? rawChapters : const [])
+          .whereType<Map>()
+          .map((c) => ChapterMapper.fromJson(Map<String, dynamic>.from(c)))
+          .toList();
+      return StoryDetail(book: BookMapper.fromJson(map), chapters: chapters);
+    } catch (_) {
+      final meta = off?.readStoryMeta(slug);
+      if (meta != null) return _detailFromMeta(slug, meta);
+      rethrow;
+    }
+  }
+
+  /// Dựng [StoryDetail] từ meta + record local (không gọi API).
+  StoryDetail _detailFromMeta(String storyId, OfflineStoryMeta meta) {
+    final rec = _offline!.download(storyId);
+    final book = Book(
+      id: storyId,
+      title: rec?.title ?? '',
+      author: meta.author,
+      genre: meta.genre,
+      cover: meta.cover,
+      trope: meta.trope,
+      rating: meta.rating,
+      reads: meta.reads,
+      status: meta.status,
+      chapters: meta.totalChapters,
+      subtitle: meta.subtitle,
+      synopsis: meta.synopsis,
+      unlockPrice: meta.unlockPrice,
+      discountPercent: meta.discountPercent,
+    );
+    final chapters = meta.chapters.map((c) => Chapter(
+          n: _int(c['n'], 0),
+          title: (c['title'] ?? '').toString(),
+          state: _stateFromName((c['state'] ?? '').toString()),
+          id: (c['chapterId'] ?? '').toString(),
+          hasAudio: c['hasAudio'] == true,
+        )).toList();
+    return StoryDetail(book: book, chapters: chapters);
+  }
+
+  /// `ChapterState.name` (lưu lúc download) → enum. Ngược với [ChapterMapper.accessTypeToState].
+  static ChapterState _stateFromName(String name) {
+    switch (name) {
+      case 'coin':
+        return ChapterState.coin;
+      case 'vip':
+        return ChapterState.vip;
+      case 'current':
+        return ChapterState.current;
+      case 'free':
+      default:
+        return ChapterState.free;
+    }
   }
 
   /// `GET /chapters/:id/public` — nội dung công khai của chương.
@@ -144,10 +203,14 @@ class StoriesRepository implements StoriesRepositoryLike {
       hlsUrl: m['hlsUrl']?.toString(),
     );
     // Auto-cache text nếu có offline store (không đụng eviction ở đây — làm khi save audio/AppState).
+    // MERGE với bản ghi cũ để không xoá mất audioFile đã auto-cache trước đó.
     if (off != null && content.content.isNotEmpty) {
+      final existing = off.readChapter(content.id);
       await off.saveChapter(OfflineChapter(
-        chapterId: content.id, storyId: (m['storyId'] ?? '').toString(),
-        n: content.n, title: content.title, content: content.content, hasAudio: false));
+        chapterId: content.id,
+        storyId: existing?.storyId.isNotEmpty == true ? existing!.storyId : (m['storyId'] ?? '').toString(),
+        n: content.n, title: content.title, content: content.content,
+        hasAudio: existing?.hasAudio ?? false, audioFile: existing?.audioFile));
     }
     return content;
   }

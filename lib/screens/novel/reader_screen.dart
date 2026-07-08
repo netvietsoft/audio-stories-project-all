@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:go_router/go_router.dart';
@@ -34,6 +36,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
   bool _error = false; // tải chi tiết thất bại
   final _scroll = ScrollController();
   bool _chromeVisible = true; // menu dưới hiện/ẩn theo hướng cuộn
+  Timer? _saveDebounce;
+  bool _resumed = false;
 
   // ── tuỳ chỉnh đọc (set trang.png) ──
   int _bg = 0; // 0 Cream · 1 White · 2 Sepia · 3 Dark · 4 OLED
@@ -76,6 +80,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   void dispose() {
+    _saveDebounce?.cancel();
+    if (_scroll.hasClients) _reader.savePosition(widget.bookId, _chapter, _scroll.offset);
     _scroll.dispose();
     super.dispose();
   }
@@ -88,6 +94,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
     } else if (dir == ScrollDirection.forward && !_chromeVisible) {
       setState(() => _chromeVisible = true);
     }
+    _saveDebounce?.cancel();
+    _saveDebounce = Timer(const Duration(seconds: 1), () {
+      if (_scroll.hasClients) _reader.savePosition(widget.bookId, _chapter, _scroll.offset);
+    });
   }
 
   Future<void> _init() async {
@@ -96,6 +106,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (!mounted) return;
       final nums = detail.chapters.map((c) => c.n).toList();
       if (nums.isNotEmpty && !nums.contains(_chapter)) _chapter = nums.first;
+      if (widget.initialChapter == null) {
+        final saved = _reader.position(widget.bookId);
+        if (saved != null && detail.chapters.any((c) => c.n == saved.chapter)) {
+          _chapter = saved.chapter;
+        }
+      }
       setState(() {
         _detail = detail;
         _loading = false;
@@ -129,6 +145,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
       if (mounted) setState(() => _loadingContent = false);
     } else {
       _setContent('');
+    }
+    if (!_resumed) {
+      _resumed = true;
+      final saved = _reader.position(widget.bookId);
+      if (saved != null && saved.chapter == _chapter && saved.offset > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scroll.hasClients) {
+            _scroll.jumpTo(saved.offset.clamp(0, _scroll.position.maxScrollExtent));
+          }
+        });
+      }
     }
   }
 

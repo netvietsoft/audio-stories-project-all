@@ -12,6 +12,7 @@ import 'l10n/gen/app_localizations.dart';
 import 'api/api_client.dart';
 import 'api/token_store.dart';
 import 'data/cache/json_cache.dart';
+import 'data/reader/reader_store.dart';
 import 'data/offline/file_store.dart';
 import 'data/offline/offline_store.dart';
 import 'data/offline/connectivity_service.dart';
@@ -42,7 +43,9 @@ Future<void> main() async {
 
   // Tầng dữ liệu (data layer). 1 ApiClient dùng chung cho mọi repository.
   // JsonCache (prefs) cho stale-while-revalidate danh sách stories/music.
-  final cache = JsonCache(await SharedPreferences.getInstance());
+  final prefs = await SharedPreferences.getInstance();
+  final cache = JsonCache(prefs);
+  final readerStore = ReaderStore(prefs);
   final apiClient = ApiClient();
 
   // Offline: Hive + FileStore + store + connectivity + download manager.
@@ -92,6 +95,7 @@ Future<void> main() async {
     offlineStore: offlineStore,
     connectivity: connectivity,
     downloadManager: downloadManager,
+    readerStore: readerStore,
   ));
 }
 
@@ -107,6 +111,7 @@ class NovelVerseApp extends StatelessWidget {
     required this.offlineStore,
     required this.connectivity,
     required this.downloadManager,
+    required this.readerStore,
   });
 
   final AppState appState;
@@ -118,6 +123,7 @@ class NovelVerseApp extends StatelessWidget {
   final OfflineStore offlineStore;
   final ConnectivityService connectivity;
   final DownloadManager downloadManager;
+  final ReaderStore readerStore;
 
   @override
   Widget build(BuildContext context) {
@@ -132,6 +138,7 @@ class NovelVerseApp extends StatelessWidget {
         Provider.value(value: offlineStore),
         ChangeNotifierProvider.value(value: connectivity),
         ChangeNotifierProvider.value(value: downloadManager),
+        Provider.value(value: readerStore),
         ChangeNotifierProvider(create: (_) => StoriesNotifier(storiesRepo)),
         ChangeNotifierProvider(create: (_) => MusicNotifier(musicRepo)),
       ],

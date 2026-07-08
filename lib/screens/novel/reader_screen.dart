@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../api/api_exception.dart';
+import '../../data/reader/reader_store.dart';
+import '../../data/reader/reader_models.dart';
 import '../../data/repositories/audio_repository.dart';
 import '../../data/repositories/stories_repository.dart';
 import '../../l10n/l10n_ext.dart';
@@ -43,6 +45,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   // ── dữ liệu ──
   late final StoriesRepository _repo;
+  late final ReaderStore _reader;
   StoryDetail? _detail;
   String _content = '';
   bool _loading = true;
@@ -59,6 +62,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
   void initState() {
     super.initState();
     _repo = context.read<StoriesRepository>();
+    _reader = context.read<ReaderStore>();
+    final s = _reader.readSettings();
+    _bg = s.bg;
+    _textColor = s.textColor == null ? null : Color(s.textColor!);
+    _fontSize = s.fontSize;
+    _font = s.font;
+    _lineHeight = s.lineHeight;
+    _margin = s.margin;
     _scroll.addListener(_onScroll);
     _init();
   }
@@ -182,6 +193,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   double get _marginH => _margin == 'narrow' ? 14 : (_margin == 'wide' ? 34 : 20);
+
+  void _persistSettings() {
+    _reader.saveSettings(ReaderSettings(
+      bg: _bg,
+      textColor: _textColor?.toARGB32(),
+      fontSize: _fontSize,
+      font: _font,
+      lineHeight: _lineHeight,
+      margin: _margin,
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -515,6 +537,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           void upd(VoidCallback fn) {
             setSheet(fn);
             setState(fn);
+            _persistSettings();
           }
 
           Widget label(String t) => Padding(

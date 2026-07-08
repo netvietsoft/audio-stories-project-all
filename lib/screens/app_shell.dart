@@ -5,6 +5,7 @@ import '../l10n/l10n_ext.dart';
 import '../state/app_state.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_type.dart';
+import '../widgets/offline_banner.dart';
 import 'audio/audio_charts_screen.dart';
 import 'audio/audio_home_screen.dart';
 import 'audio/audio_library_screen.dart';
@@ -37,7 +38,12 @@ class _AppShellState extends State<AppShell> {
         : const [AudioHomeScreen(), AudioLibraryScreen(), AudioChartsScreen(), ProfileScreen()];
 
     return Scaffold(
-      body: IndexedStack(index: index, children: pages),
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(child: IndexedStack(index: index, children: pages)),
+        ],
+      ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

@@ -3,6 +3,9 @@ import 'package:hive/hive.dart';
 import 'file_store.dart';
 import 'offline_models.dart';
 
+/// Ngưỡng dung lượng tối đa cho các bản ghi auto-cache (dùng bởi Task 15's autoCacheAudio).
+const int kMaxAutoCacheBytes = 200 * 1024 * 1024;
+
 /// Facade lưu trữ offline: metadata + text (Hive) và file audio (FileStore).
 class OfflineStore {
   OfflineStore({

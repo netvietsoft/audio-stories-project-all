@@ -38,6 +38,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   Timer? _saveDebounce;
   bool _resumed = false;
   double? _pendingJumpOffset;
+  final ValueNotifier<double> _progress = ValueNotifier(0);
 
   // ── tuỳ chỉnh đọc (set trang.png) ──
   int _bg = 0; // 0 Cream · 1 White · 2 Sepia · 3 Dark · 4 OLED
@@ -83,11 +84,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _saveDebounce?.cancel();
     if (_scroll.hasClients) _reader.savePosition(widget.bookId, _chapter, _scroll.offset);
     _scroll.dispose();
+    _progress.dispose();
     super.dispose();
   }
 
   // Cuộn xuống (đọc tiếp) → ẩn menu; cuộn lên → hiện.
   void _onScroll() {
+    if (_scroll.hasClients && _scroll.position.maxScrollExtent > 0) {
+      _progress.value = (_scroll.offset / _scroll.position.maxScrollExtent).clamp(0.0, 1.0);
+    }
     final dir = _scroll.position.userScrollDirection;
     if (dir == ScrollDirection.reverse && _chromeVisible) {
       setState(() => _chromeVisible = false);
@@ -214,6 +219,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       _chromeVisible = true;
     });
     if (_scroll.hasClients) _scroll.jumpTo(0);
+    _progress.value = 0;
     _loadContent();
   }
 
@@ -312,7 +318,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.item(size: 14, color: ink)),
-            Text('Chapter ${ch.n} · ${ch.title}',
+            Text('Ch ${ch.n}/${chapters.length} · ${ch.title}',
                 maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.meta(size: 11, color: ink.withValues(alpha: 0.6))),
           ],
         ),
@@ -390,28 +396,36 @@ class _ReaderScreenState extends State<ReaderScreen> {
     ];
     return Container(
       decoration: BoxDecoration(color: bg, border: Border(top: BorderSide(color: ink.withValues(alpha: 0.12)))),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 60,
-          child: Row(children: [
-            for (final it in items)
-              Expanded(
-                child: InkWell(
-                  onTap: () {
-                    context.read<AppState>().setShellTab(it.$3);
-                    context.go('/home');
-                  },
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(it.$1, size: 21, color: ink.withValues(alpha: 0.75)),
-                    const SizedBox(height: 3),
-                    Text(it.$2, style: AppType.tabLabel(color: ink.withValues(alpha: 0.75))),
-                  ]),
-                ),
-              ),
-          ]),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        ValueListenableBuilder<double>(
+          valueListenable: _progress,
+          builder: (_, v, __) => LinearProgressIndicator(
+            value: v, minHeight: 2.5,
+            backgroundColor: ink.withValues(alpha: 0.10), color: AppPalette.terracotta),
         ),
-      ),
+        SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 60,
+            child: Row(children: [
+              for (final it in items)
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      context.read<AppState>().setShellTab(it.$3);
+                      context.go('/home');
+                    },
+                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(it.$1, size: 21, color: ink.withValues(alpha: 0.75)),
+                      const SizedBox(height: 3),
+                      Text(it.$2, style: AppType.tabLabel(color: ink.withValues(alpha: 0.75))),
+                    ]),
+                  ),
+                ),
+            ]),
+          ),
+        ),
+      ]),
     );
   }
 

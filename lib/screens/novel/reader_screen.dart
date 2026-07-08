@@ -32,7 +32,6 @@ class ReaderScreen extends StatefulWidget {
 
 class _ReaderScreenState extends State<ReaderScreen> {
   late int _chapter = widget.initialChapter ?? 1;
-  bool _bookmarked = false;
   bool _error = false; // tải chi tiết thất bại
   final _scroll = ScrollController();
   bool _chromeVisible = true; // menu dưới hiện/ẩn theo hướng cuộn
@@ -221,6 +220,38 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   double get _marginH => _margin == 'narrow' ? 14 : (_margin == 'wide' ? 34 : 20);
 
+  String _snippetAtOffset() {
+    final paras = _content.split(RegExp(r'\n\s*\n')).map((p) => p.trim()).where((p) => p.isNotEmpty).toList();
+    if (paras.isEmpty) return '';
+    // ước lượng đoạn theo tỉ lệ cuộn (đủ để nhận diện trong danh sách)
+    final frac = (_scroll.hasClients && _scroll.position.maxScrollExtent > 0)
+        ? (_scroll.offset / _scroll.position.maxScrollExtent).clamp(0.0, 1.0)
+        : 0.0;
+    final idx = (frac * (paras.length - 1)).round().clamp(0, paras.length - 1);
+    final s = paras[idx];
+    return s.length <= 60 ? s : '${s.substring(0, 60)}…';
+  }
+
+  void _toggleBookmark() {
+    final list = _reader.bookmarks(widget.bookId);
+    // Nếu đang ~trùng một bookmark (cùng chương, |offset| < 40) → xoá; ngược lại thêm.
+    final off = _scroll.hasClients ? _scroll.offset : 0.0;
+    final near = list.where((b) => b.chapter == _chapter && (b.offset - off).abs() < 40).toList();
+    if (near.isNotEmpty) {
+      _reader.removeBookmark(widget.bookId, near.first.savedAt);
+    } else {
+      _reader.addBookmark(widget.bookId, Bookmark(
+        chapter: _chapter, offset: off, snippet: _snippetAtOffset(),
+        savedAt: DateTime.now().millisecondsSinceEpoch));
+    }
+    setState(() {});
+  }
+
+  bool get _isBookmarkedHere {
+    final off = _scroll.hasClients ? _scroll.offset : 0.0;
+    return _reader.bookmarks(widget.bookId).any((b) => b.chapter == _chapter && (b.offset - off).abs() < 40);
+  }
+
   void _persistSettings() {
     _reader.saveSettings(ReaderSettings(
       bg: _bg,
@@ -279,7 +310,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         ),
         actions: [
           IconButton(tooltip: 'Nghe', icon: Icon(Icons.headphones_outlined, color: ink), onPressed: locked ? null : () => _playChapterAudio(book, ch)),
-          IconButton(tooltip: 'Đánh dấu', icon: Icon(_bookmarked ? Icons.bookmark : Icons.bookmark_border, color: ink), onPressed: () => setState(() => _bookmarked = !_bookmarked)),
+          IconButton(tooltip: 'Đánh dấu', icon: Icon(_isBookmarkedHere ? Icons.bookmark : Icons.bookmark_border, color: ink), onPressed: _toggleBookmark),
           IconButton(tooltip: 'Tuỳ chỉnh đọc', icon: Text('Aa', style: AppType.serif(size: 18, w: FontWeight.w700, color: ink)), onPressed: _openSettings),
           IconButton(tooltip: 'Danh sách chương', icon: Icon(Icons.menu, color: ink), onPressed: () => _openChapterList(chapters)),
         ],
@@ -521,6 +552,34 @@ class _ReaderScreenState extends State<ReaderScreen> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           const SizedBox(height: 10),
           Container(width: 38, height: 4, decoration: BoxDecoration(color: pal.line, borderRadius: rounded(2))),
+          Builder(builder: (_) {
+            final bms = _reader.bookmarks(widget.bookId);
+            if (bms.isEmpty) return const SizedBox.shrink();
+            return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.sm, Gap.xl, 4),
+                child: Text('Bookmarks', style: AppType.section(color: pal.ink)),
+              ),
+              for (final b in bms)
+                ListTile(
+                  dense: true,
+                  leading: Icon(Icons.bookmark, size: 18, color: AppPalette.terracotta),
+                  title: Text('Ch ${b.chapter} · ${b.snippet}', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.body(size: 13.5, color: pal.ink)),
+                  trailing: IconButton(
+                    icon: Icon(Icons.close, size: 16, color: pal.muted),
+                    onPressed: () { _reader.removeBookmark(widget.bookId, b.savedAt); Navigator.pop(c); _openChapterList(chapters); },
+                  ),
+                  onTap: () {
+                    Navigator.pop(c);
+                    _goChapter(b.chapter, chapters);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (_scroll.hasClients) _scroll.jumpTo(b.offset.clamp(0, _scroll.position.maxScrollExtent));
+                    });
+                  },
+                ),
+              const Divider(height: 12),
+            ]);
+          }),
           Padding(
             padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.md, Gap.xl, Gap.sm),
             child: Row(children: [Text('Chapters', style: AppType.section(color: pal.ink)), const Spacer(), Text('${chapters.length}', style: AppType.meta(color: pal.muted))]),

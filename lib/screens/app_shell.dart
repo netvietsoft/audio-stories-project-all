@@ -38,11 +38,15 @@ class _AppShellState extends State<AppShell> {
         : const [AudioHomeScreen(), AudioLibraryScreen(), AudioChartsScreen(), ProfileScreen()];
 
     return Scaffold(
-      body: Column(
-        children: [
-          const OfflineBanner(),
-          Expanded(child: IndexedStack(index: index, children: pages)),
-        ],
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: Column(
+          children: [
+            const OfflineBanner(),
+            Expanded(child: IndexedStack(index: index, children: pages)),
+          ],
+        ),
       ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,

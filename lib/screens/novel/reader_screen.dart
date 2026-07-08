@@ -64,6 +64,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   List<TimingCue> _cues = const [];
   final ValueNotifier<int> _activeCue = ValueNotifier(-1);
   final Map<int, GlobalKey> _paraKeys = {};
+  bool _playingThis = false; // audio của ĐÚNG chương đang hiển thị có đang phát không
 
   static const _bgs = [Color(0xFFFBF3E3), Color(0xFFFFFFFF), Color(0xFFF4E7CC), Color(0xFF15110C), Color(0xFF000000)];
   static const _inks = [Color(0xFF2A2118), Color(0xFF2A2118), Color(0xFF3A2E1C), Color(0xFFE8DCC4), Color(0xFFD8CCB4)];
@@ -213,10 +214,14 @@ class _ReaderScreenState extends State<ReaderScreen> {
         );
   }
 
+  /// Title dùng cho AppState.play — PHẢI khớp với _playingThis ở build() để xác định
+  /// đúng "đang phát audio của CHƯƠNG này" (không chỉ đúng sách).
+  String _audioTitle(Book book, Chapter ch) => '${book.title} • Ch.${ch.n}';
+
   Future<void> _playChapterAudio(Book book, Chapter ch) async {
     final app = context.read<AppState>();
     if (ch.hlsUrl.isNotEmpty) {
-      app.play('${book.title} • Ch.${ch.n}', book.author, book.cover, ch.hlsUrl);
+      app.play(_audioTitle(book, ch), book.author, book.cover, ch.hlsUrl);
       return;
     }
     if (ch.id.isNotEmpty) {
@@ -224,7 +229,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         final url = await context.read<AudioRepository>().chapterAudioUrl(ch.id);
         if (!mounted) return;
         if (url != null && url.isNotEmpty) {
-          app.play('${book.title} • Ch.${ch.n}', book.author, book.cover, url);
+          app.play(_audioTitle(book, ch), book.author, book.cover, url);
           return;
         }
       } on ApiException catch (e) {
@@ -305,7 +310,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     ));
   }
 
-  bool get _readAlongActive => _readAlong && _cues.isNotEmpty;
+  bool get _readAlongActive => _readAlong && _cues.isNotEmpty && _playingThis;
 
   void _syncActiveCue(AppState app) {
     if (!_readAlongActive) {
@@ -363,7 +368,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
     final chapters = _detail!.chapters;
     final ch = chapters.firstWhere((c) => c.n == _chapter, orElse: () => chapters.first);
     final locked = _locked(app, ch);
-    final playingThis = app.nowPlayingTitle != null && app.nowPlayingTitle!.startsWith(book.title);
+    // Chỉ true khi audio ĐANG PHÁT là của ĐÚNG chương đang hiển thị (không chỉ đúng sách).
+    final playingThis = app.nowPlayingTitle == _audioTitle(book, ch);
+    _playingThis = playingThis;
 
     return Scaffold(
       backgroundColor: bg,

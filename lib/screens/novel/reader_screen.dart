@@ -59,6 +59,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
   bool _loading = true;
   bool _loadingContent = false;
 
+  // ── read-along ──
+  bool _readAlong = false;
+  List<TimingCue> _cues = const [];
+  final ValueNotifier<int> _activeCue = ValueNotifier(-1);
+  final Map<int, GlobalKey> _paraKeys = {};
+
   static const _bgs = [Color(0xFFFBF3E3), Color(0xFFFFFFFF), Color(0xFFF4E7CC), Color(0xFF15110C), Color(0xFF000000)];
   static const _inks = [Color(0xFF2A2118), Color(0xFF2A2118), Color(0xFF3A2E1C), Color(0xFFE8DCC4), Color(0xFFD8CCB4)];
   static const _bgLabels = ['Cream', 'White', 'Sepia', 'Dark', 'OLED'];
@@ -78,6 +84,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _font = s.font;
     _lineHeight = s.lineHeight;
     _margin = s.margin;
+    _readAlong = _reader.readReadAlong();
     final b = _reader.readBrightness();
     if (b >= 0) {
       _brightness = b;
@@ -96,6 +103,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     if (_scroll.hasClients) _reader.savePosition(widget.bookId, _chapter, _scroll.offset);
     _scroll.dispose();
     _progress.dispose();
+    _activeCue.dispose();
     super.dispose();
   }
 
@@ -160,6 +168,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         final c = await _repo.chapterContent(ch.id);
         if (!mounted) return;
         _setContent(c.content.trim());
+        _cues = c.cues;
       } catch (_) {
         if (!mounted) return;
         _setContent('');
@@ -237,6 +246,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
     });
     if (_scroll.hasClients) _scroll.jumpTo(0);
     _progress.value = 0;
+    _activeCue.value = -1;
+    _paraKeys.clear();
     _loadContent();
   }
 
@@ -294,6 +305,26 @@ class _ReaderScreenState extends State<ReaderScreen> {
     ));
   }
 
+  bool get _readAlongActive => _readAlong && _cues.isNotEmpty;
+
+  void _syncActiveCue(AppState app) {
+    if (!_readAlongActive) { if (_activeCue.value != -1) _activeCue.value = -1; return; }
+    final idx = activeCueIndex(_cues, app.position.value.inMilliseconds) ?? -1;
+    if (idx != _activeCue.value) {
+      _activeCue.value = idx;
+      // auto-scroll tới đoạn của cue (nếu có key)
+      if (idx >= 0 && _cues[idx].paraIndex >= 0) _scrollToPara(_cues[idx].paraIndex);
+    }
+  }
+
+  void _scrollToPara(int i) {
+    final key = _paraKeys[i];
+    final ctx = key?.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(ctx, alignment: 0.3, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bg = _bgs[_bg];
@@ -345,6 +376,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     ],
                   ),
                 ),
+          // Nghe app.position khi đang phát chương này → đồng bộ activeCue (không setState).
+          if (playingThis)
+            ValueListenableBuilder<Duration>(
+              valueListenable: app.position,
+              builder: (_, __, ___) {
+                _syncActiveCue(app);
+                return const SizedBox.shrink();
+              },
+            ),
           // Menu dưới auto-hide + thanh read-along (khi nghe).
           Positioned(
             left: 0,
@@ -414,10 +454,36 @@ class _ReaderScreenState extends State<ReaderScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (var i = 0; i < paras.length; i++) ...[
-          Text(paras[i], style: base),
+          _paragraph(i, paras[i], base, ink, _paraKey(i)),
           if (i < paras.length - 1) const SizedBox(height: Gap.lg),
         ],
       ],
+    );
+  }
+
+  GlobalKey _paraKey(int i) => _paraKeys.putIfAbsent(i, () => GlobalKey());
+
+  Widget _paragraph(int i, String text, TextStyle base, Color ink, GlobalKey? key) {
+    return ValueListenableBuilder<int>(
+      valueListenable: _activeCue,
+      builder: (_, active, __) {
+        final cue = (active >= 0 && active < _cues.length) ? _cues[active] : null;
+        if (!_readAlongActive || cue == null || cue.paraIndex != i || cue.paraIndex < 0) {
+          return Text(text, key: key, style: base);
+        }
+        final cs = cue.charStart.clamp(0, text.length);
+        final ce = cue.charEnd.clamp(cs, text.length);
+        return Text.rich(
+          key: key,
+          TextSpan(style: base, children: [
+            TextSpan(text: text.substring(0, cs)),
+            TextSpan(text: text.substring(cs, ce), style: base.copyWith(
+              backgroundColor: AppPalette.terracotta.withValues(alpha: 0.25),
+              fontWeight: FontWeight.w600)),
+            TextSpan(text: text.substring(ce)),
+          ]),
+        );
+      },
     );
   }
 
@@ -822,6 +888,17 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     onChangeEnd: (v) => _applyBrightness(v),
                   )),
                   Icon(Icons.brightness_high, size: 18, color: pal.muted),
+                ]),
+
+                // READ-ALONG
+                label('READ-ALONG'),
+                Row(children: [
+                  Expanded(child: Text('Tô sáng câu theo audio', style: AppType.body(size: 13.5, color: pal.ink))),
+                  Switch(
+                    value: _readAlong,
+                    activeThumbColor: AppPalette.terracotta,
+                    onChanged: (v) { upd(() => _readAlong = v); _reader.saveReadAlong(v); },
+                  ),
                 ]),
               ]),
             ),

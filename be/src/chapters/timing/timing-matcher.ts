@@ -24,17 +24,17 @@ function splitParas(content: string): { text: string; start: number }[] {
   return out;
 }
 
-// Chuẩn hoá lowercase + gộp whitespace; trả chuỗi norm + map[norm i] -> original index.
+// Chuẩn hoá lowercase + gộp whitespace/dấu câu (dung sai dấu câu nhẹ); trả chuỗi norm + map[norm i] -> original index.
 function normalizeWithMap(s: string): { norm: string; map: number[] } {
   let norm = '';
   const map: number[] = [];
-  let prevSpace = false;
+  let prevSep = false;
   for (let i = 0; i < s.length; i++) {
     const ch = s[i];
-    if (/\s/.test(ch)) {
-      if (!prevSpace && norm.length > 0) { norm += ' '; map.push(i); prevSpace = true; }
+    if (/[\p{L}\p{N}]/u.test(ch)) {
+      norm += ch.toLowerCase(); map.push(i); prevSep = false;
     } else {
-      norm += ch.toLowerCase(); map.push(i); prevSpace = false;
+      if (!prevSep && norm.length > 0) { norm += ' '; map.push(i); prevSep = true; }
     }
   }
   // bỏ space cuối
@@ -43,7 +43,7 @@ function normalizeWithMap(s: string): { norm: string; map: number[] } {
 }
 
 function normalizeText(s: string): string {
-  return s.replace(/\s+/g, ' ').trim().toLowerCase();
+  return s.replace(/[^\p{L}\p{N}]+/gu, ' ').trim().toLowerCase();
 }
 
 export function matchCues(content: string, cues: RawCue[]): ChapterTiming {
@@ -62,10 +62,13 @@ export function matchCues(content: string, cues: RawCue[]): ChapterTiming {
         cursor = idx + nt.length;
         const pi = paras.findIndex((pp) => origStart >= pp.start && origStart < pp.start + pp.text.length);
         if (pi >= 0) {
-          p = pi;
-          cs = origStart - paras[pi].start;
-          ce = Math.min(origEnd - paras[pi].start, paras[pi].text.length);
-          matched++;
+          const pEnd = paras[pi].start + paras[pi].text.length;
+          if (origEnd <= pEnd) {
+            p = pi;
+            cs = origStart - paras[pi].start;
+            ce = Math.min(origEnd - paras[pi].start, paras[pi].text.length);
+            matched++;
+          }
         }
       }
     }

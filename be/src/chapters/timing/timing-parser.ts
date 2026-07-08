@@ -48,7 +48,12 @@ function parseLrc(raw: string, audioDurationSec?: number): RawCue[] {
   tmp.sort((a, b) => a.startMs - b.startMs);
   return tmp.map((c, i) => ({
     startMs: c.startMs,
-    endMs: i + 1 < tmp.length ? tmp[i + 1].startMs : (audioDurationSec ? audioDurationSec * 1000 : c.startMs + 3000),
+    endMs:
+      i + 1 < tmp.length
+        ? tmp[i + 1].startMs
+        : audioDurationSec && audioDurationSec * 1000 > c.startMs
+          ? audioDurationSec * 1000
+          : c.startMs + 3000,
     text: c.text,
   }));
 }

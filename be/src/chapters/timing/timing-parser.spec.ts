@@ -33,4 +33,12 @@ describe('parseTiming', () => {
     expect(parseTiming('', 'auto')).toEqual([]);
     expect(parseTiming('not a timing file', 'srt')).toEqual([]);
   });
+
+  it('LRC last cue endMs must be after its own startMs even with stale audioDurationSec', () => {
+    const lrc = `[00:01.00]Dòng một\n[03:25.00]Dòng cuối`;
+    const cues = parseTiming(lrc, 'lrc', 200); // stale: 200s <= last startMs 205s
+    const last = cues[cues.length - 1];
+    expect(last.startMs).toBe(205000);
+    expect(last.endMs).toBe(208000);
+  });
 });

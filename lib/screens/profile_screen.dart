@@ -88,6 +88,8 @@ class ProfileScreen extends StatelessWidget {
                 _divider(pal),
                 _row(context, Icons.account_balance_wallet_outlined, 'Wallet & Rewards', 'Coin · gói · nhiệm vụ', 'Open', () => context.push('/wallet')),
                 _divider(pal),
+                _row(context, Icons.download_done_rounded, 'Đã tải', 'Truyện đã lưu offline', 'Open', () => context.push('/downloads')),
+                _divider(pal),
                 _row(context, Icons.star_border, 'Rate app', 'Đánh giá ứng dụng', 'Rate', () => showRatingSheet(context, 'NovelVerse')),
                 _divider(pal),
                 _row(context, Icons.brush_outlined, 'Become an Author', 'Xuất bản & kiếm tiền', 'Open', () => context.push('/become-author')),

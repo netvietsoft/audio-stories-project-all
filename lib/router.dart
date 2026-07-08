@@ -7,6 +7,7 @@ import 'screens/audio/album_detail_screen.dart';
 import 'screens/audio/audiobook_player_screen.dart';
 import 'screens/audio/favourites_screen.dart';
 import 'screens/audio/music_player_screen.dart';
+import 'screens/downloads/downloads_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/money/coin_store_screen.dart';
 import 'screens/money/subscription_screen.dart';
@@ -43,6 +44,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/subscription', builder: (_, __) => const SubscriptionScreen()),
     GoRoute(path: '/wallet', builder: (_, __) => const WalletScreen()),
     GoRoute(path: '/favourites', builder: (_, __) => const FavouritesScreen()),
+    GoRoute(path: '/downloads', builder: (_, __) => const DownloadsScreen()),
     GoRoute(
       path: '/album/:i',
       builder: (_, s) => AlbumDetailScreen(index: int.tryParse(s.pathParameters['i'] ?? '0') ?? 0),

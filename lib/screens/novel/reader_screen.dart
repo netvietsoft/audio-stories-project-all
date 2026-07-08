@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:screen_brightness/screen_brightness.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../api/api_exception.dart';
 import '../../data/reader/reader_store.dart';
@@ -47,6 +49,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   String _font = 'serif'; // serif · sans · dyslexia
   double _lineHeight = 1.6;
   String _margin = 'medium'; // narrow · medium · wide
+  double _brightness = 1.0;
 
   // ── dữ liệu ──
   late final StoriesRepository _repo;
@@ -75,17 +78,31 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _font = s.font;
     _lineHeight = s.lineHeight;
     _margin = s.margin;
+    final b = _reader.readBrightness();
+    if (b >= 0) {
+      _brightness = b;
+      try { ScreenBrightness().setApplicationScreenBrightness(b); } catch (_) {}
+    }
     _scroll.addListener(_onScroll);
     _init();
+    WakelockPlus.enable();
   }
 
   @override
   void dispose() {
+    WakelockPlus.disable();
+    try { ScreenBrightness().resetApplicationScreenBrightness(); } catch (_) {}
     _saveDebounce?.cancel();
     if (_scroll.hasClients) _reader.savePosition(widget.bookId, _chapter, _scroll.offset);
     _scroll.dispose();
     _progress.dispose();
     super.dispose();
+  }
+
+  Future<void> _applyBrightness(double v) async {
+    _brightness = v;
+    try { await ScreenBrightness().setApplicationScreenBrightness(v); } catch (_) {}
+    _reader.saveBrightness(v);
   }
 
   // Cuộn xuống (đọc tiếp) → ẩn menu; cuộn lên → hiện.
@@ -789,6 +806,19 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   Expanded(child: pill('Medium', _margin == 'medium', () => upd(() => _margin = 'medium'))),
                   const SizedBox(width: Gap.sm),
                   Expanded(child: pill('Wide', _margin == 'wide', () => upd(() => _margin = 'wide'))),
+                ]),
+
+                // BRIGHTNESS
+                label('BRIGHTNESS'),
+                Row(children: [
+                  Icon(Icons.brightness_low, size: 18, color: pal.muted),
+                  Expanded(child: Slider(
+                    value: _brightness.clamp(0.0, 1.0),
+                    activeColor: AppPalette.terracotta,
+                    onChanged: (v) => setSheet(() => _brightness = v),
+                    onChangeEnd: (v) => _applyBrightness(v),
+                  )),
+                  Icon(Icons.brightness_high, size: 18, color: pal.muted),
                 ]),
               ]),
             ),

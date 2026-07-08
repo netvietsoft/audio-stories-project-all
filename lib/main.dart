@@ -47,11 +47,12 @@ Future<void> main() async {
 
   // Offline: Hive + FileStore + store + connectivity + download manager.
   await Hive.initFlutter();
+  final fileStore = await FileStore.open();
   final offlineStore = OfflineStore(
     downloads: await Hive.openBox('downloads'),
     chapters: await Hive.openBox('chapters'),
     storyMeta: await Hive.openBox('storyMeta'),
-    files: await FileStore.open(),
+    files: fileStore,
   );
   final connectivity = ConnectivityService();
   await connectivity.start();
@@ -68,7 +69,7 @@ Future<void> main() async {
   final downloadManager = DownloadManager(
     storiesRepo, audioRepo, offlineStore,
     downloader: (url, storyId, chapterId) async {
-      final path = (await FileStore.open()).audioPath(storyId, chapterId);
+      final path = fileStore.audioPath(storyId, chapterId);
       await dio.download(url, path);
       return File(path).lengthSync();
     },

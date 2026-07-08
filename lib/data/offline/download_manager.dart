@@ -44,6 +44,9 @@ class DownloadProgress {
 }
 
 class DownloadManager extends ChangeNotifier {
+  /// Số chương tải song song tối đa khi tải cả truyện (cân bằng tốc độ vs số kết nối).
+  static const int _downloadConcurrency = 4;
+
   DownloadManager(this._stories, this._audio, this._store,
       {required FileDownloader downloader, int Function()? nowMs})
       : _download = downloader,
@@ -82,36 +85,52 @@ class DownloadManager extends ChangeNotifier {
         bytesText: 0, bytesAudio: 0, createdAt: _now(), lastAccessAt: _now());
     await _store.upsertDownload(record);
 
-    var saved = 0, bytesText = 0, bytesAudio = 0, failed = 0;
-    for (final ch in detail.chapters) {
-      if (_cancelled.contains(storyId)) {
-        await _store.deleteStory(storyId);
-        _progress.remove(storyId);
-        notifyListeners();
-        return;
-      }
-      try {
-        final text = await _stories.chapterText(ch.chapterId);
-        String? audioFile;
-        if (ch.hasAudio) {
-          final url = await _audio.chapterAudioUrl(ch.chapterId);
-          if (url != null && url.isNotEmpty) {
-            final n = await _download(url, detail.storyId, ch.chapterId);
-            bytesAudio += n;
-            audioFile = '${ch.chapterId}.mp3';
+    // Tải song song CÓ GIỚI HẠN: [_downloadConcurrency] worker cùng rút chương
+    // từ hàng đợi → nhanh hơn tuần tự nhiều lần (phần lớn thời gian là chờ mạng),
+    // nhưng không mở quá nhiều kết nối một lúc. Bộ đếm dùng chung an toàn vì Dart
+    // đơn luồng: mỗi worker đọc+tăng `next` đồng bộ trước mọi `await`.
+    var saved = 0, bytesText = 0, bytesAudio = 0, failed = 0, next = 0;
+
+    Future<void> worker() async {
+      while (true) {
+        if (_cancelled.contains(storyId)) return;
+        final i = next++;
+        if (i >= detail.chapters.length) return;
+        final ch = detail.chapters[i];
+        try {
+          final text = await _stories.chapterText(ch.chapterId);
+          String? audioFile;
+          if (ch.hasAudio) {
+            final url = await _audio.chapterAudioUrl(ch.chapterId);
+            if (url != null && url.isNotEmpty) {
+              final n = await _download(url, detail.storyId, ch.chapterId);
+              bytesAudio += n;
+              audioFile = '${ch.chapterId}.mp3';
+            }
           }
+          bytesText += text.length;
+          await _store.saveChapter(OfflineChapter(
+              chapterId: ch.chapterId, storyId: detail.storyId, n: ch.n, title: ch.title,
+              content: text, hasAudio: ch.hasAudio, audioFile: audioFile));
+          saved++;
+        } catch (_) {
+          failed++;
         }
-        bytesText += text.length;
-        await _store.saveChapter(OfflineChapter(
-            chapterId: ch.chapterId, storyId: detail.storyId, n: ch.n, title: ch.title,
-            content: text, hasAudio: ch.hasAudio, audioFile: audioFile));
-        saved++;
-      } catch (_) {
-        failed++;
+        record = record.copyWith(savedChapters: saved, bytesText: bytesText, bytesAudio: bytesAudio);
+        await _store.upsertDownload(record);
+        _set(storyId, DownloadProgress(saved, total, 'downloading'));
       }
-      record = record.copyWith(savedChapters: saved, bytesText: bytesText, bytesAudio: bytesAudio);
-      await _store.upsertDownload(record);
-      _set(storyId, DownloadProgress(saved, total, 'downloading'));
+    }
+
+    await Future.wait(
+      List.generate(_downloadConcurrency, (_) => worker()),
+    );
+
+    if (_cancelled.contains(storyId)) {
+      await _store.deleteStory(storyId);
+      _progress.remove(storyId);
+      notifyListeners();
+      return;
     }
 
     final status = failed == 0 ? 'complete' : 'failed';

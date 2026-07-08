@@ -30,6 +30,31 @@ class StoryDetail {
   final List<Chapter> chapters;
 }
 
+/// 1 câu timing read-along (ms + vị trí ký tự trong đoạn `paraIndex`).
+class TimingCue {
+  const TimingCue({
+    required this.startMs, required this.endMs,
+    required this.paraIndex, required this.charStart, required this.charEnd,
+  });
+  final int startMs, endMs, paraIndex, charStart, charEnd;
+
+  factory TimingCue.fromMap(Map m) {
+    int i(dynamic v) => v is num ? v.toInt() : int.tryParse('${v ?? ''}') ?? 0;
+    return TimingCue(
+      startMs: i(m['s']), endMs: i(m['e']), paraIndex: m['p'] is num ? (m['p'] as num).toInt() : -1,
+      charStart: i(m['cs']), charEnd: i(m['ce']),
+    );
+  }
+}
+
+/// Index cue đang phát (startMs<=pos<endMs), hoặc null. cues giả định sắp theo startMs.
+int? activeCueIndex(List<TimingCue> cues, int posMs) {
+  for (var i = 0; i < cues.length; i++) {
+    if (posMs >= cues[i].startMs && posMs < cues[i].endMs) return i;
+  }
+  return null;
+}
+
 /// Nội dung một chương (cho Reader).
 class ChapterContent {
   const ChapterContent({
@@ -38,6 +63,7 @@ class ChapterContent {
     required this.title,
     required this.content,
     this.hlsUrl,
+    this.cues = const [],
   });
   final String id;
   final int n;
@@ -46,6 +72,7 @@ class ChapterContent {
   /// Text nội dung. Có thể rỗng với chương chỉ có audio (audiobook).
   final String content;
   final String? hlsUrl;
+  final List<TimingCue> cues;
 }
 
 /// Truy xuất truyện từ backend. Ẩn chi tiết API/envelope khỏi UI.
@@ -195,12 +222,17 @@ class StoriesRepository implements StoriesRepositoryLike {
     }
     final data = await _api.get(ApiEndpoints.chapterPublic(id));
     final m = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+    final timingMap = m['timing'];
+    final cues = (timingMap is Map && timingMap['cues'] is List)
+        ? (timingMap['cues'] as List).whereType<Map>().map(TimingCue.fromMap).toList()
+        : <TimingCue>[];
     final content = ChapterContent(
       id: (m['id'] ?? id).toString(),
       n: _int(m['chapterNumber'], 1),
       title: (m['title'] ?? '').toString(),
       content: (m['content'] ?? '').toString(),
       hlsUrl: m['hlsUrl']?.toString(),
+      cues: cues,
     );
     // Auto-cache text nếu có offline store (không đụng eviction ở đây — làm khi save audio/AppState).
     // MERGE với bản ghi cũ để không xoá mất audioFile đã auto-cache trước đó.

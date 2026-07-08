@@ -61,81 +61,116 @@ class DownloadManager extends ChangeNotifier {
   final Map<String, DownloadProgress> _progress = {};
   final Set<String> _cancelled = {};
   final Set<String> _caching = {};
+  final Set<String> _active = {}; // truyện đang tải (chống chạy trùng: tap lại / auto-resume)
   Map<String, DownloadProgress> get progress => Map.unmodifiable(_progress);
 
   void cancel(String storyId) => _cancelled.add(storyId);
 
+  /// Tải/RESUME cả truyện. Hai pha:
+  ///  1) TEXT trước — hiện tiến độ; xong là truyện ĐỌC được offline.
+  ///  2) AUDIO tải NỀN (không hiện tiến độ) cho tới khi hết.
+  /// Idempotent + resume: bỏ qua chương đã có text/audio local. Chống chạy trùng
+  /// qua [_active] (tap lại hoặc auto-resume không tạo tiến trình chồng nhau).
   Future<void> downloadStory(String storyId) async {
+    if (_active.contains(storyId)) return;
+    _active.add(storyId);
     _cancelled.remove(storyId);
-    final detail = await _stories.detailData(storyId);
-    final total = detail.chapters.length;
-    _set(storyId, DownloadProgress(0, total, 'downloading'));
+    try {
+      final detail = await _stories.detailData(storyId);
+      final total = detail.chapters.length;
 
-    await _store.saveStoryMeta(OfflineStoryMeta(
-        storyId: detail.storyId, synopsis: detail.synopsis, cover: detail.cover,
-        author: detail.author, subtitle: detail.subtitle, status: detail.status,
-        genre: detail.genre, trope: detail.trope, rating: detail.rating, reads: detail.reads,
-        unlockPrice: detail.unlockPrice, discountPercent: detail.discountPercent,
-        totalChapters: total, chapters: detail.chapters.map((c) => c.toMap()).toList()));
+      await _store.saveStoryMeta(OfflineStoryMeta(
+          storyId: detail.storyId, synopsis: detail.synopsis, cover: detail.cover,
+          author: detail.author, subtitle: detail.subtitle, status: detail.status,
+          genre: detail.genre, trope: detail.trope, rating: detail.rating, reads: detail.reads,
+          unlockPrice: detail.unlockPrice, discountPercent: detail.discountPercent,
+          totalChapters: total, chapters: detail.chapters.map((c) => c.toMap()).toList()));
 
-    var record = DownloadRecord(
-        storyId: detail.storyId, slug: detail.slug, title: detail.title, cover: detail.cover,
-        author: detail.author, language: detail.language, kind: 'downloaded',
-        status: 'downloading', totalChapters: total, savedChapters: 0,
-        bytesText: 0, bytesAudio: 0, createdAt: _now(), lastAccessAt: _now());
-    await _store.upsertDownload(record);
+      // Resume: khởi từ record cũ nếu có (giữ bytes/kind/createdAt), không reset về 0.
+      final prev = _store.download(storyId);
+      var record = (prev ??
+              DownloadRecord(
+                  storyId: detail.storyId, slug: detail.slug, title: detail.title,
+                  cover: detail.cover, author: detail.author, language: detail.language,
+                  kind: 'downloaded', status: 'downloading', totalChapters: total,
+                  savedChapters: 0, bytesText: 0, bytesAudio: 0,
+                  createdAt: _now(), lastAccessAt: _now()))
+          .copyWith(status: 'downloading', totalChapters: total);
+      await _store.upsertDownload(record);
 
-    // Tải song song CÓ GIỚI HẠN: [_downloadConcurrency] worker cùng rút chương
-    // từ hàng đợi → nhanh hơn tuần tự nhiều lần (phần lớn thời gian là chờ mạng),
-    // nhưng không mở quá nhiều kết nối một lúc. Bộ đếm dùng chung an toàn vì Dart
-    // đơn luồng: mỗi worker đọc+tăng `next` đồng bộ trước mọi `await`.
-    var saved = 0, bytesText = 0, bytesAudio = 0, failed = 0, next = 0;
+      bool hasText(ChapterMeta c) => (_store.readChapter(c.chapterId)?.content ?? '').isNotEmpty;
+      bool hasAudioFile(ChapterMeta c) => _store.readChapter(c.chapterId)?.audioFile != null;
 
-    Future<void> worker() async {
-      while (true) {
-        if (_cancelled.contains(storyId)) return;
-        final i = next++;
-        if (i >= detail.chapters.length) return;
-        final ch = detail.chapters[i];
-        try {
-          final text = await _stories.chapterText(ch.chapterId);
-          String? audioFile;
-          if (ch.hasAudio) {
+      // ── PHA 1: TEXT (hiện tiến độ) ── (đếm cả chương đã có sẵn khi resume)
+      var textDone = detail.chapters.where(hasText).length;
+      var bytesText = record.bytesText;
+      _set(storyId, DownloadProgress(textDone, total, 'downloading'));
+
+      final textTodo = detail.chapters.where((c) => !hasText(c)).toList();
+      var ti = 0;
+      Future<void> textWorker() async {
+        while (true) {
+          if (_cancelled.contains(storyId)) return;
+          final i = ti++;
+          if (i >= textTodo.length) return;
+          final ch = textTodo[i];
+          try {
+            final text = await _stories.chapterText(ch.chapterId);
+            final existing = _store.readChapter(ch.chapterId);
+            await _store.saveChapter(OfflineChapter(
+                chapterId: ch.chapterId, storyId: detail.storyId, n: ch.n, title: ch.title,
+                content: text, hasAudio: ch.hasAudio, audioFile: existing?.audioFile));
+            bytesText += text.length;
+            textDone++;
+          } catch (_) {/* chương lỗi → để lần resume sau */}
+          record = record.copyWith(savedChapters: textDone, bytesText: bytesText);
+          await _store.upsertDownload(record);
+          _set(storyId, DownloadProgress(textDone, total, 'downloading'));
+        }
+      }
+      await Future.wait(List.generate(_downloadConcurrency, (_) => textWorker()));
+
+      if (_cancelled.contains(storyId)) {
+        await _store.deleteStory(storyId);
+        _progress.remove(storyId);
+        notifyListeners();
+        return;
+      }
+
+      // Text xong → ĐỌC được offline. Đánh dấu complete + ẩn tiến độ (progress='complete').
+      record = record.copyWith(savedChapters: textDone, status: 'complete', lastAccessAt: _now());
+      await _store.upsertDownload(record);
+      _set(storyId, DownloadProgress(textDone, total, 'complete'));
+
+      // ── PHA 2: AUDIO (tải NỀN, KHÔNG _set → không hiện tiến độ) ──
+      final audioTodo = detail.chapters.where((c) => c.hasAudio && !hasAudioFile(c)).toList();
+      var ai = 0;
+      var bytesAudio = record.bytesAudio;
+      Future<void> audioWorker() async {
+        while (true) {
+          if (_cancelled.contains(storyId)) return;
+          final i = ai++;
+          if (i >= audioTodo.length) return;
+          final ch = audioTodo[i];
+          try {
             final url = await _audio.chapterAudioUrl(ch.chapterId);
             if (url != null && url.isNotEmpty) {
               final n = await _download(url, detail.storyId, ch.chapterId);
+              final existing = _store.readChapter(ch.chapterId);
+              if (existing != null) {
+                await _store.saveChapter(existing.copyWith(audioFile: '${ch.chapterId}.mp3'));
+              }
               bytesAudio += n;
-              audioFile = '${ch.chapterId}.mp3';
+              record = record.copyWith(bytesAudio: bytesAudio, lastAccessAt: _now());
+              await _store.upsertDownload(record); // cập nhật ngầm, không _set
             }
-          }
-          bytesText += text.length;
-          await _store.saveChapter(OfflineChapter(
-              chapterId: ch.chapterId, storyId: detail.storyId, n: ch.n, title: ch.title,
-              content: text, hasAudio: ch.hasAudio, audioFile: audioFile));
-          saved++;
-        } catch (_) {
-          failed++;
+          } catch (_) {/* audio lỗi → lần sau resume tải nốt */}
         }
-        record = record.copyWith(savedChapters: saved, bytesText: bytesText, bytesAudio: bytesAudio);
-        await _store.upsertDownload(record);
-        _set(storyId, DownloadProgress(saved, total, 'downloading'));
       }
+      await Future.wait(List.generate(_downloadConcurrency, (_) => audioWorker()));
+    } finally {
+      _active.remove(storyId);
     }
-
-    await Future.wait(
-      List.generate(_downloadConcurrency, (_) => worker()),
-    );
-
-    if (_cancelled.contains(storyId)) {
-      await _store.deleteStory(storyId);
-      _progress.remove(storyId);
-      notifyListeners();
-      return;
-    }
-
-    final status = failed == 0 ? 'complete' : 'failed';
-    await _store.upsertDownload(record.copyWith(status: status, lastAccessAt: _now()));
-    _set(storyId, DownloadProgress(saved, total, status));
   }
 
   void _set(String storyId, DownloadProgress p) {

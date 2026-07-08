@@ -40,6 +40,22 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     final repo = context.read<StoriesRepository>();
     _future = _load(repo);
     _scroll.addListener(_onScroll);
+    _resumeAudioIfNeeded();
+  }
+
+  /// Nếu truyện đã tải text (đọc offline được) nhưng còn chương thiếu file audio
+  /// (vd app bị đóng giữa lúc tải audio nền) → âm thầm resume tải nốt audio.
+  void _resumeAudioIfNeeded() {
+    _future.then((detail) {
+      if (!mounted) return;
+      final store = context.read<OfflineStore>();
+      final rec = store.download(detail.book.id);
+      final readable = rec != null && rec.totalChapters > 0 && rec.savedChapters >= rec.totalChapters;
+      if (!readable) return;
+      final missingAudio = detail.chapters.any((c) =>
+          c.id.isNotEmpty && c.hasAudio && store.audioPath(detail.book.id, c.id) == null);
+      if (missingAudio) context.read<DownloadManager>().downloadStory(detail.book.id);
+    }).catchError((_) {});
   }
 
   @override
@@ -405,8 +421,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     final store = context.read<OfflineStore>();
     final p = dm.progress[book.id];
     final rec = store.download(book.id);
-    final done = rec?.kind == 'downloaded' && rec?.status == 'complete';
 
+    // 1) Đang tải TEXT → hiện tiến độ (audio tải nền, không tính vào đây).
     if (p != null && p.status == 'downloading') {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('Đang tải ${p.done}/${p.total} chương…', style: AppType.meta(size: 12.5, color: pal.muted)),
@@ -414,16 +430,37 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         ClipRRect(borderRadius: rounded(6), child: LinearProgressIndicator(value: p.fraction, color: AppPalette.terracotta, backgroundColor: pal.surf2)),
       ]);
     }
-    if (done) {
+
+    // Nút xoá dùng chung.
+    Widget deleteBtn() => TextButton(
+        onPressed: () async { await store.deleteStory(book.id); setState(() {}); },
+        child: Text('Xoá', style: AppType.btn(size: 13, color: AppPalette.terracotta)));
+
+    if (rec != null && rec.totalChapters > 0) {
+      final textDone = rec.savedChapters >= rec.totalChapters;
+      // 2) Text đủ → đọc offline được ("Đã tải"). Audio có thể vẫn tải nền — không hiển thị.
+      if (textDone) {
+        return Row(children: [
+          Icon(Icons.download_done_rounded, size: 18, color: pal.sage),
+          const SizedBox(width: 6),
+          Text('Đã tải offline', style: AppType.item(size: 13, color: pal.sage)),
+          const Spacer(),
+          deleteBtn(),
+        ]);
+      }
+      // 3) Tải dở (thoát/khởi động lại giữa chừng) → cho TIẾP TỤC (resume, không tải lại từ đầu).
       return Row(children: [
-        Icon(Icons.download_done_rounded, size: 18, color: pal.sage),
-        const SizedBox(width: 6),
-        Text('Đã tải offline', style: AppType.item(size: 13, color: pal.sage)),
-        const Spacer(),
-        TextButton(onPressed: () async { await store.deleteStory(book.id); setState(() {}); },
-          child: Text('Xoá', style: AppType.btn(size: 13, color: AppPalette.terracotta))),
+        Expanded(child: OutlinedButton.icon(
+          onPressed: () => dm.downloadStory(book.id),
+          icon: const Icon(Icons.download_rounded, size: 18),
+          label: Text('Tải tiếp ${rec.savedChapters}/${rec.totalChapters} chương'),
+        )),
+        const SizedBox(width: 8),
+        deleteBtn(),
       ]);
     }
+
+    // 4) Chưa tải.
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(

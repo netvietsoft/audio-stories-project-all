@@ -21,7 +21,7 @@ import '../../theme/app_type.dart';
 import '../../widgets/sheets.dart';
 
 /// Màn ĐỌC truyện (thiết kế readding/set trang/nghe truyện/cuoi trang).
-/// AppBar: nghe / bookmark / Aa (settings chi tiết) / danh sách chương.
+/// Top bar tuỳ chỉnh (không phải AppBar) trượt ẩn/hiện: nghe / bookmark / Aa (settings chi tiết) / danh sách chương.
 /// Menu dưới 4 tab tự ẩn khi cuộn xuống, hiện khi cuộn lên; thanh read-along khi nghe.
 class ReaderScreen extends StatefulWidget {
   const ReaderScreen({super.key, required this.bookId, this.initialChapter});
@@ -85,12 +85,12 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
     _scroll.addListener(_onScroll);
     _init();
-    WakelockPlus.enable();
+    WakelockPlus.enable().catchError((_) {});
   }
 
   @override
   void dispose() {
-    WakelockPlus.disable();
+    WakelockPlus.disable().catchError((_) {});
     ScreenBrightness().resetApplicationScreenBrightness().catchError((_) {});
     _saveDebounce?.cancel();
     if (_scroll.hasClients) _reader.savePosition(widget.bookId, _chapter, _scroll.offset);
@@ -168,7 +168,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     } else {
       _setContent('');
     }
-    if (!_resumed) {
+    if (!_resumed && !locked) {
       _resumed = true;
       final saved = _reader.position(widget.bookId);
       if (saved != null && saved.chapter == _chapter && saved.offset > 0) {
@@ -230,7 +230,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _goChapter(int n, List<Chapter> chapters) {
-    if (!chapters.any((c) => c.n == n)) return;
+    if (!chapters.any((c) => c.n == n)) { _pendingJumpOffset = null; return; }
     setState(() {
       _chapter = n;
       _chromeVisible = true;
@@ -335,7 +335,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   onTap: () => setState(() => _chromeVisible = !_chromeVisible),
                   child: ListView(
                     controller: _scroll,
-                    padding: EdgeInsets.fromLTRB(_marginH, 60, _marginH, 120),
+                    padding: EdgeInsets.fromLTRB(_marginH, MediaQuery.paddingOf(context).top + 60, _marginH, 120),
                     children: [
                       Center(child: Text(ch.title, textAlign: TextAlign.center, style: AppType.hero(size: 26, color: ink))),
                       const SizedBox(height: Gap.xl),
@@ -508,36 +508,39 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   Widget _lockedPanel(BuildContext context, Book book, Chapter ch, Color ink) {
     final isVip = ch.state == ChapterState.vip;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(Gap.xxl),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.lock_outline, size: 54, color: ink.withValues(alpha: 0.5)),
-          const SizedBox(height: Gap.lg),
-          Text('Chapter ${ch.n} is locked', style: AppType.hero(size: 20, color: ink)),
-          const SizedBox(height: 6),
-          Text(isVip ? 'VIP chapter — subscribe or unlock with coins' : 'Unlock this chapter to keep reading',
-              textAlign: TextAlign.center, style: AppType.body(size: 14, color: ink.withValues(alpha: 0.7))),
-          const SizedBox(height: Gap.xl),
-          SizedBox(
-            width: double.infinity,
-            child: TextButton(
-              style: TextButton.styleFrom(backgroundColor: AppPalette.terracotta, padding: const EdgeInsets.symmetric(vertical: 14)),
-              onPressed: () async {
-                final ok = await showUnlockSheet(context, book, ch);
-                if (ok && mounted) {
-                  setState(() {});
-                  _loadContent();
-                }
-              },
-              child: Text(isVip ? 'Unlock VIP chapter' : 'Unlock for ${ch.price} coins', style: AppType.btn(color: Colors.white)),
+    return Padding(
+      padding: EdgeInsets.only(top: MediaQuery.paddingOf(context).top + 52),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(Gap.xxl),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.lock_outline, size: 54, color: ink.withValues(alpha: 0.5)),
+            const SizedBox(height: Gap.lg),
+            Text('Chapter ${ch.n} is locked', style: AppType.hero(size: 20, color: ink)),
+            const SizedBox(height: 6),
+            Text(isVip ? 'VIP chapter — subscribe or unlock with coins' : 'Unlock this chapter to keep reading',
+                textAlign: TextAlign.center, style: AppType.body(size: 14, color: ink.withValues(alpha: 0.7))),
+            const SizedBox(height: Gap.xl),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                style: TextButton.styleFrom(backgroundColor: AppPalette.terracotta, padding: const EdgeInsets.symmetric(vertical: 14)),
+                onPressed: () async {
+                  final ok = await showUnlockSheet(context, book, ch);
+                  if (ok && mounted) {
+                    setState(() {});
+                    _loadContent();
+                  }
+                },
+                child: Text(isVip ? 'Unlock VIP chapter' : 'Unlock for ${ch.price} coins', style: AppType.btn(color: Colors.white)),
+              ),
             ),
-          ),
-          if (isVip) ...[
-            const SizedBox(height: Gap.sm),
-            TextButton(onPressed: () => context.push('/subscription'), child: Text('See VIP plans', style: AppType.btn(size: 13, color: AppPalette.plum))),
-          ],
-        ]),
+            if (isVip) ...[
+              const SizedBox(height: Gap.sm),
+              TextButton(onPressed: () => context.push('/subscription'), child: Text('See VIP plans', style: AppType.btn(size: 13, color: AppPalette.plum))),
+            ],
+          ]),
+        ),
       ),
     );
   }

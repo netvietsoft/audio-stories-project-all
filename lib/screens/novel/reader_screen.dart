@@ -308,12 +308,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
   bool get _readAlongActive => _readAlong && _cues.isNotEmpty;
 
   void _syncActiveCue(AppState app) {
-    if (!_readAlongActive) { if (_activeCue.value != -1) _activeCue.value = -1; return; }
+    if (!_readAlongActive) {
+      if (_activeCue.value != -1) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _activeCue.value = -1;
+        });
+      }
+      return;
+    }
     final idx = activeCueIndex(_cues, app.position.value.inMilliseconds) ?? -1;
     if (idx != _activeCue.value) {
-      _activeCue.value = idx;
-      // auto-scroll tới đoạn của cue (nếu có key)
-      if (idx >= 0 && _cues[idx].paraIndex >= 0) _scrollToPara(_cues[idx].paraIndex);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _activeCue.value = idx;
+        // auto-scroll tới đoạn của cue (nếu có key)
+        if (idx >= 0 && _cues[idx].paraIndex >= 0) _scrollToPara(_cues[idx].paraIndex);
+      });
     }
   }
 

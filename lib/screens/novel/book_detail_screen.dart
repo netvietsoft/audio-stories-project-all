@@ -50,11 +50,12 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       if (!mounted) return;
       final store = context.read<OfflineStore>();
       final rec = store.download(detail.book.id);
+      final dm = context.read<DownloadManager>();
       final readable = rec != null && rec.totalChapters > 0 && rec.savedChapters >= rec.totalChapters;
-      if (!readable) return;
+      if (!readable || dm.isDownloading(detail.book.id)) return;
       final missingAudio = detail.chapters.any((c) =>
           c.id.isNotEmpty && c.hasAudio && store.audioPath(detail.book.id, c.id) == null);
-      if (missingAudio) context.read<DownloadManager>().downloadStory(detail.book.id);
+      if (missingAudio) dm.downloadStory(detail.book.id);
     }).catchError((_) {});
   }
 
@@ -431,9 +432,14 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       ]);
     }
 
-    // Nút xoá dùng chung.
+    // Nút xoá dùng chung: HUỶ tải nền (nếu đang chạy) rồi xoá toàn bộ data
+    // (text + file audio) → coi như hết session. Tải lại sau = session mới.
     Widget deleteBtn() => TextButton(
-        onPressed: () async { await store.deleteStory(book.id); setState(() {}); },
+        onPressed: () async {
+          dm.cancel(book.id);
+          await store.deleteStory(book.id);
+          setState(() {});
+        },
         child: Text('Xoá', style: AppType.btn(size: 13, color: AppPalette.terracotta)));
 
     if (rec != null && rec.totalChapters > 0) {

@@ -23,7 +23,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
   @override
   Widget build(BuildContext context) {
     final pal = context.pal;
-    context.watch<DownloadManager>(); // rebuild khi tải xong
+    final dm = context.watch<DownloadManager>(); // rebuild khi tải xong
     final store = context.read<OfflineStore>();
     final items = store.listDownloads()..sort((a, b) => b.lastAccessAt.compareTo(a.lastAccessAt));
     final totalDl = store.totalBytes('downloaded');
@@ -54,7 +54,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       ])),
                       IconButton(
                         icon: Icon(Icons.delete_outline, color: pal.muted),
-                        onPressed: () async { await store.deleteStory(r.storyId); setState(() {}); },
+                        onPressed: () async { dm.cancel(r.storyId); await store.deleteStory(r.storyId); setState(() {}); },
                       ),
                     ]),
                   ),

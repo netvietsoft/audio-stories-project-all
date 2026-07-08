@@ -59,12 +59,24 @@ class DownloadManager extends ChangeNotifier {
   final int Function() _now;
 
   final Map<String, DownloadProgress> _progress = {};
-  final Set<String> _cancelled = {};
   final Set<String> _caching = {};
-  final Set<String> _active = {}; // truyện đang tải (chống chạy trùng: tap lại / auto-resume)
+  // "Thế hệ" (epoch) tải mỗi truyện: mỗi lần gọi downloadStory tăng epoch. Run cũ
+  // (bị huỷ, hoặc bị thay bởi run mới) sẽ thấy epoch đổi → tự dừng và KHÔNG ghi thêm
+  // → không hồi sinh data sau khi Xoá, và luôn cho phép bắt đầu phiên tải mới.
+  final Map<String, int> _epoch = {};
+  final Set<String> _running = {};
   Map<String, DownloadProgress> get progress => Map.unmodifiable(_progress);
 
-  void cancel(String storyId) => _cancelled.add(storyId);
+  /// Đang có phiên tải chạy cho truyện này?
+  bool isDownloading(String storyId) => _running.contains(storyId);
+
+  /// Huỷ phiên tải hiện tại: bump epoch → worker đang chạy dừng + không ghi thêm;
+  /// ẩn tiến độ. (UI gọi kèm deleteStory để xoá data → coi như hết session.)
+  void cancel(String storyId) {
+    _epoch[storyId] = (_epoch[storyId] ?? 0) + 1;
+    _progress.remove(storyId);
+    notifyListeners();
+  }
 
   /// Tải/RESUME cả truyện. Hai pha:
   ///  1) TEXT trước — hiện tiến độ; xong là truyện ĐỌC được offline.
@@ -72,11 +84,13 @@ class DownloadManager extends ChangeNotifier {
   /// Idempotent + resume: bỏ qua chương đã có text/audio local. Chống chạy trùng
   /// qua [_active] (tap lại hoặc auto-resume không tạo tiến trình chồng nhau).
   Future<void> downloadStory(String storyId) async {
-    if (_active.contains(storyId)) return;
-    _active.add(storyId);
-    _cancelled.remove(storyId);
+    final myEpoch = (_epoch[storyId] ?? 0) + 1; // mở phiên mới (thay/huỷ phiên cũ)
+    _epoch[storyId] = myEpoch;
+    _running.add(storyId);
+    bool stale() => _epoch[storyId] != myEpoch; // bị huỷ hoặc bị phiên mới thay
     try {
       final detail = await _stories.detailData(storyId);
+      if (stale()) return;
       final total = detail.chapters.length;
 
       await _store.saveStoryMeta(OfflineStoryMeta(
@@ -85,8 +99,9 @@ class DownloadManager extends ChangeNotifier {
           genre: detail.genre, trope: detail.trope, rating: detail.rating, reads: detail.reads,
           unlockPrice: detail.unlockPrice, discountPercent: detail.discountPercent,
           totalChapters: total, chapters: detail.chapters.map((c) => c.toMap()).toList()));
+      if (stale()) return;
 
-      // Resume: khởi từ record cũ nếu có (giữ bytes/kind/createdAt), không reset về 0.
+      // Resume: khởi từ record cũ nếu có (giữ bytes/createdAt), không reset về 0.
       final prev = _store.download(storyId);
       var record = (prev ??
               DownloadRecord(
@@ -97,6 +112,7 @@ class DownloadManager extends ChangeNotifier {
                   createdAt: _now(), lastAccessAt: _now()))
           .copyWith(status: 'downloading', totalChapters: total);
       await _store.upsertDownload(record);
+      if (stale()) return;
 
       bool hasText(ChapterMeta c) => (_store.readChapter(c.chapterId)?.content ?? '').isNotEmpty;
       bool hasAudioFile(ChapterMeta c) => _store.readChapter(c.chapterId)?.audioFile != null;
@@ -110,37 +126,35 @@ class DownloadManager extends ChangeNotifier {
       var ti = 0;
       Future<void> textWorker() async {
         while (true) {
-          if (_cancelled.contains(storyId)) return;
+          if (stale()) return;
           final i = ti++;
           if (i >= textTodo.length) return;
           final ch = textTodo[i];
           try {
             final text = await _stories.chapterText(ch.chapterId);
+            if (stale()) return; // huỷ/thay phiên trong lúc tải → KHÔNG ghi
             final existing = _store.readChapter(ch.chapterId);
             await _store.saveChapter(OfflineChapter(
                 chapterId: ch.chapterId, storyId: detail.storyId, n: ch.n, title: ch.title,
                 content: text, hasAudio: ch.hasAudio, audioFile: existing?.audioFile));
             bytesText += text.length;
             textDone++;
+            record = record.copyWith(savedChapters: textDone, bytesText: bytesText);
+            await _store.upsertDownload(record);
+            _set(storyId, DownloadProgress(textDone, total, 'downloading'));
           } catch (_) {/* chương lỗi → để lần resume sau */}
-          record = record.copyWith(savedChapters: textDone, bytesText: bytesText);
-          await _store.upsertDownload(record);
-          _set(storyId, DownloadProgress(textDone, total, 'downloading'));
         }
       }
       await Future.wait(List.generate(_downloadConcurrency, (_) => textWorker()));
+      if (stale()) return;
 
-      if (_cancelled.contains(storyId)) {
-        await _store.deleteStory(storyId);
-        _progress.remove(storyId);
-        notifyListeners();
-        return;
-      }
-
-      // Text xong → ĐỌC được offline. Đánh dấu complete + ẩn tiến độ (progress='complete').
-      record = record.copyWith(savedChapters: textDone, status: 'complete', lastAccessAt: _now());
+      // Text đủ → ĐỌC được offline (complete). Nếu còn thiếu (chương lỗi) → để "Tải tiếp".
+      final allText = textDone >= total;
+      record = record.copyWith(
+          savedChapters: textDone, status: allText ? 'complete' : 'downloading', lastAccessAt: _now());
       await _store.upsertDownload(record);
-      _set(storyId, DownloadProgress(textDone, total, 'complete'));
+      _set(storyId, DownloadProgress(textDone, total, allText ? 'complete' : 'failed'));
+      if (!allText) return;
 
       // ── PHA 2: AUDIO (tải NỀN, KHÔNG _set → không hiện tiến độ) ──
       final audioTodo = detail.chapters.where((c) => c.hasAudio && !hasAudioFile(c)).toList();
@@ -148,28 +162,29 @@ class DownloadManager extends ChangeNotifier {
       var bytesAudio = record.bytesAudio;
       Future<void> audioWorker() async {
         while (true) {
-          if (_cancelled.contains(storyId)) return;
+          if (stale()) return;
           final i = ai++;
           if (i >= audioTodo.length) return;
           final ch = audioTodo[i];
           try {
             final url = await _audio.chapterAudioUrl(ch.chapterId);
-            if (url != null && url.isNotEmpty) {
-              final n = await _download(url, detail.storyId, ch.chapterId);
-              final existing = _store.readChapter(ch.chapterId);
-              if (existing != null) {
-                await _store.saveChapter(existing.copyWith(audioFile: '${ch.chapterId}.mp3'));
-              }
-              bytesAudio += n;
-              record = record.copyWith(bytesAudio: bytesAudio, lastAccessAt: _now());
-              await _store.upsertDownload(record); // cập nhật ngầm, không _set
+            if (stale()) return;
+            if (url == null || url.isEmpty) continue;
+            final n = await _download(url, detail.storyId, ch.chapterId);
+            if (stale()) return; // huỷ giữa lúc tải audio → KHÔNG ghi (không hồi sinh data)
+            final existing = _store.readChapter(ch.chapterId);
+            if (existing != null) {
+              await _store.saveChapter(existing.copyWith(audioFile: '${ch.chapterId}.mp3'));
             }
+            bytesAudio += n;
+            record = record.copyWith(bytesAudio: bytesAudio, lastAccessAt: _now());
+            await _store.upsertDownload(record); // cập nhật ngầm, không _set
           } catch (_) {/* audio lỗi → lần sau resume tải nốt */}
         }
       }
       await Future.wait(List.generate(_downloadConcurrency, (_) => audioWorker()));
     } finally {
-      _active.remove(storyId);
+      _running.remove(storyId);
     }
   }
 

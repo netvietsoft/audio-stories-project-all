@@ -273,6 +273,7 @@ model Story {
   heroBanners            HeroBanner[]
   storyUnlocks           UserStoryUnlock[]
   storyViewDaily         StoryViewDaily[]
+  storyCountryDaily      StoryCountryDaily[]
 
   @@unique([slug, languageId])
   @@index([title])
@@ -297,6 +298,21 @@ model StoryViewDaily {
   @@id([storyId, date])
   @@index([date])
   @@map("story_view_daily")
+}
+
+model StoryCountryDaily {
+  storyId String   @map("story_id") @db.VarChar(36)
+  country String   @db.Char(2)
+  date    DateTime @db.Date
+  kind    String   @db.VarChar(10)
+  count   Int      @default(0) @db.UnsignedInt
+
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@id([storyId, country, date, kind])
+  @@index([kind, country])
+  @@index([kind, storyId])
+  @@map("story_country_daily")
 }
 
 model HeroBanner {

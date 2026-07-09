@@ -253,11 +253,90 @@ export class StatsService {
         return { data: ranked };
     }
 
-    // Placeholder replaced in Task 4.
     private async getTopStoriesAggregated(
-        _metric: TopStoryMetric, _limit: number, _language?: string,
-    ): Promise<Array<{ rank: number; storyId: string; title: string; slug: string; thumbnailUrl: string | null; value: number }>> {
-        return [];
+        metric: TopStoryMetric, limit: number, language?: string,
+    ) {
+        const langFrag = language
+            ? Prisma.sql`AND s.language_id = (SELECT id FROM languages WHERE \`key\` = ${language})`
+            : Prisma.empty;
+
+        let rows: Array<{ id: string; value: any }> = [];
+
+        if (metric === TopStoryMetric.comments) {
+            rows = await this.prisma.$queryRaw<Array<{ id: string; value: bigint }>>`
+                SELECT s.id AS id, COUNT(cc.id) AS value
+                FROM stories s
+                JOIN chapter_comments cc ON cc.story_id = s.id AND cc.is_hidden = 0
+                WHERE s.deleted_at IS NULL ${langFrag}
+                GROUP BY s.id
+                ORDER BY value DESC
+                LIMIT ${limit}`;
+        } else if (metric === TopStoryMetric.audio) {
+            rows = await this.prisma.$queryRaw<Array<{ id: string; value: bigint }>>`
+                SELECT s.id AS id, COUNT(DISTINCT lh.user_id) AS value
+                FROM stories s
+                JOIN listening_history lh ON lh.story_id = s.id
+                WHERE s.deleted_at IS NULL ${langFrag}
+                GROUP BY s.id
+                ORDER BY value DESC
+                LIMIT ${limit}`;
+        } else if (metric === TopStoryMetric.revenue) {
+            rows = await this.prisma.$queryRaw<Array<{ id: string; value: any }>>`
+                SELECT s.id AS id,
+                       (s.total_gifts + COALESCE(su.p, 0) + COALESCE(cu.p, 0)) AS value
+                FROM stories s
+                LEFT JOIN (SELECT story_id, SUM(pulse_amount) AS p FROM user_story_unlocks GROUP BY story_id) su
+                  ON su.story_id = s.id
+                LEFT JOIN (SELECT c.story_id AS sid, SUM(u.pulse_amount) AS p
+                           FROM user_chapter_unlocks u JOIN chapters c ON c.id = u.chapter_id
+                           GROUP BY c.story_id) cu
+                  ON cu.sid = s.id
+                WHERE s.deleted_at IS NULL ${langFrag}
+                ORDER BY value DESC
+                LIMIT ${limit}`;
+        } else if (metric === TopStoryMetric.trending) {
+            rows = await this.prisma.$queryRaw<Array<{ id: string; value: any }>>`
+                SELECT s.id AS id,
+                       SUM(svd.views * POW(0.9, DATEDIFF(UTC_DATE(), svd.date))) AS value
+                FROM stories s
+                JOIN story_view_daily svd ON svd.story_id = s.id
+                WHERE svd.date >= DATE_SUB(UTC_DATE(), INTERVAL 29 DAY)
+                  AND s.deleted_at IS NULL ${langFrag}
+                GROUP BY s.id
+                ORDER BY value DESC
+                LIMIT ${limit}`;
+        } else if (metric === TopStoryMetric.rating) {
+            const m = 10;
+            rows = await this.prisma.$queryRaw<Array<{ id: string; value: any }>>`
+                SELECT s.id AS id,
+                       ((s.rating_count / (s.rating_count + ${m})) * s.average_rating)
+                     + ((${m} / (s.rating_count + ${m})) *
+                        (SELECT AVG(average_rating) FROM stories WHERE rating_count > 0 AND deleted_at IS NULL)) AS value
+                FROM stories s
+                WHERE s.deleted_at IS NULL AND s.rating_count > 0 ${langFrag}
+                ORDER BY value DESC
+                LIMIT ${limit}`;
+        }
+
+        if (rows.length === 0) return [];
+
+        const ids = rows.map((r) => r.id);
+        const stories = await this.prisma.story.findMany({
+            where: { id: { in: ids } },
+            select: { id: true, title: true, slug: true, thumbnailUrl: true },
+        });
+        const byId = new Map(stories.map((s) => [s.id, s]));
+        return rows.map((r, i) => {
+            const s = byId.get(r.id);
+            return {
+                rank: i + 1,
+                storyId: r.id,
+                title: s?.title ?? '',
+                slug: s?.slug ?? '',
+                thumbnailUrl: s?.thumbnailUrl ?? null,
+                value: Number(r.value ?? 0),
+            };
+        });
     }
 
 }

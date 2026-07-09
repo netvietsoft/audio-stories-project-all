@@ -79,14 +79,16 @@ export class StoriesService {
       throw new BadRequestException('Title must be provided');
     }
 
-    const { categoryIds, chapters, chapterIds, language, authorId, ...storyData } = data;
+    const { categoryIds, chapters, chapterIds, language, authorId, labelId, labelDurationDaysOverride, ...storyData } = data;
 
     const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
+    const labelFields = labelId !== undefined ? await this.computeLabelFields(labelId, labelDurationDaysOverride) : {};
 
     try {
       const story = await this.prisma.story.create({
         data: {
           ...normalizedStoryData,
+          ...labelFields,
           author: {
             connect: { id: authorId },
           },
@@ -121,6 +123,7 @@ export class StoriesService {
               category: { select: { name: true } },
             },
           },
+          label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
         },
       });
 
@@ -155,32 +158,38 @@ export class StoriesService {
 
 
   private serializeStory(story: any) {
-    const badge = this.computeBadge(story);
+    const label = this.activeLabel(story);
+    const { label: _rawLabel, labelAssignedAt: _a, labelExpiresAt: _e, ...rest } = story;
     return {
-      ...story,
-      ...(badge ? { badge } : {}),
+      ...rest,
+      label,
       language: this.extractLanguageKey(story.language) ?? story.language,
       totalViews: typeof story.totalViews === 'bigint' ? Number(story.totalViews) : story.totalViews,
     };
   }
 
-  /**
-   * Suy ra badge hiển thị trên bìa (mobile home): NEW / TOP / HOT / VIP.
-   * DB không có cột badge → suy từ cờ có sẵn của Story. Ưu tiên (chọn 1):
-   *   NEW (mới ≤ 30 ngày) > TOP (isFeatured) > HOT (isRecommended) > VIP (unlockPrice > 0).
-   * Trả undefined nếu không đạt tiêu chí nào → client tự ẩn badge.
-   * An toàn khi thiếu field (select rút gọn): field vắng coi như false/none.
-   */
-  private computeBadge(story: any): 'NEW' | 'TOP' | 'HOT' | 'VIP' | undefined {
-    const created = story?.publishedAt ?? story?.createdAt;
-    if (created) {
-      const ageDays = (Date.now() - new Date(created).getTime()) / 86_400_000;
-      if (ageDays >= 0 && ageDays <= 30) return 'NEW';
+  private activeLabel(story: any):
+    | { id: number; name: string; text: string; color: string; textColor: string | null; icon: string | null }
+    | null {
+    if (!story?.labelId || !story?.label) return null;
+    if (story.labelExpiresAt) {
+      const exp = new Date(story.labelExpiresAt).getTime();
+      if (Date.now() >= exp) return null;
     }
-    if (story?.isFeatured) return 'TOP';
-    if (story?.isRecommended) return 'HOT';
-    if (typeof story?.unlockPrice === 'number' && story.unlockPrice > 0) return 'VIP';
-    return undefined;
+    const l = story.label;
+    return { id: l.id, name: l.name, text: l.text, color: l.color, textColor: l.textColor ?? null, icon: l.icon ?? null };
+  }
+
+  private async computeLabelFields(labelId: number | null, override?: number | null) {
+    if (labelId == null) return { labelId: null, labelAssignedAt: null, labelExpiresAt: null };
+    let days = override ?? null;
+    if (days == null) {
+      const lbl = await this.prisma.label.findUnique({ where: { id: labelId }, select: { defaultDurationDays: true } });
+      days = lbl?.defaultDurationDays ?? null;
+    }
+    const now = new Date();
+    const labelExpiresAt = days && days > 0 ? new Date(now.getTime() + days * 86_400_000) : null;
+    return { labelId, labelAssignedAt: now, labelExpiresAt };
   }
 
   async getHomeStories() {
@@ -210,6 +219,7 @@ export class StoriesService {
           key: true,
         },
       },
+      label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
     } satisfies Prisma.StoryInclude;
 
     const [trending, newest, featured] = await Promise.all([
@@ -393,8 +403,8 @@ export class StoriesService {
           status: true,
           totalViews: true,
           isInteractive: true,
-          isFeatured: true, // cho computeBadge (TOP)
-          isRecommended: true, // cho computeBadge (HOT)
+          isFeatured: true,
+          isRecommended: true,
           averageRating: true,
           unlockPrice: true,
           discountPercent: true,
@@ -421,6 +431,9 @@ export class StoriesService {
               category: { select: { id: true, name: true, slug: true } as any },
             },
           },
+          labelId: true,
+          labelExpiresAt: true,
+          label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
         } as any, // Cast the entire select object to any
       }),
     ]);
@@ -631,6 +644,7 @@ export class StoriesService {
           _count: {
             select: { chapters: true },
           },
+          label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
         },
       }),
       this.prisma.story.aggregate({
@@ -673,6 +687,7 @@ export class StoriesService {
             category: { select: { id: true, name: true, slug: true } as any },
           },
         },
+        label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
       },
     });
 
@@ -693,8 +708,9 @@ export class StoriesService {
       throw new NotFoundException('Story not found');
     }
 
-    const { categoryIds, language, ...storyData } = data;
+    const { categoryIds, language, authorId, labelId, labelDurationDaysOverride, ...storyData } = data;
     const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
+    const labelFields = labelId !== undefined ? await this.computeLabelFields(labelId, labelDurationDaysOverride) : {};
 
     if (categoryIds) {
       await this.prisma.storyCategory.deleteMany({ where: { storyId: id } });
@@ -713,6 +729,12 @@ export class StoriesService {
       where: { id },
       data: {
         ...normalizedStoryData,
+        ...labelFields,
+        ...(authorId ? {
+          author: {
+            connect: { id: authorId },
+          },
+        } : {}),
         ...(language ? {
           language: {
             connect: {
@@ -736,6 +758,7 @@ export class StoriesService {
             category: { select: { id: true, name: true, slug: true } as any },
           },
         },
+        label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
       },
     });
 
@@ -765,6 +788,7 @@ export class StoriesService {
             },
           },
         },
+        label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
         chapters: {
           where: { deletedAt: null },
           orderBy: { chapterNumber: 'asc' },

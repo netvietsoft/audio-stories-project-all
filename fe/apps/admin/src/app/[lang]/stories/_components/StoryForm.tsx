@@ -41,6 +41,8 @@ const storySchema = z.object({
     authorId: z.string().uuid('Vui lòng chọn tác giả'),
     status: z.enum(['ongoing', 'completed']),
     categoryIds: z.array(z.number()).min(1, 'Chọn ít nhất một thể loại'),
+    labelId: z.number().nullable().optional(),
+    labelDurationDaysOverride: z.coerce.number().int().min(0).optional(),
     audioUrl: z.string().optional().nullable(),
     isRecommended: z.boolean().optional(),
     isInteractive: z.boolean().optional(),
@@ -63,6 +65,13 @@ const storySchema = z.object({
 
 export type StoryFormValues = z.infer<typeof storySchema>;
 
+interface Label {
+    id: number;
+    name: string;
+    text: string;
+    color: string;
+}
+
 interface StoryFormProps {
     initialData?: Partial<StoryFormValues> & { id?: string };
     selectedLocale?: string;
@@ -74,6 +83,7 @@ interface StoryFormProps {
 export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCancel, isLoading }: StoryFormProps) => {
     const { languages } = useAdminLanguages();
     const [categories, setCategories] = useState<Category[]>([]);
+    const [labels, setLabels] = useState<Label[]>([]);
     const [authors, setAuthors] = useState<Author[]>([]);
     const [isFetchingMeta, setIsFetchingMeta] = useState(true);
     const [isUploadingThumbnail, setIsUploadingThumbnail] = useState(false);
@@ -123,6 +133,8 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
             thumbnailUrl: '',
             status: 'ongoing',
             categoryIds: [],
+            labelId: null,
+            labelDurationDaysOverride: undefined,
             isRecommended: false,
             isInteractive: false,
             unlockPrice: 0,
@@ -139,6 +151,8 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     authorId: initialData.authorId,
                     status: initialData.status,
                     categoryIds: initialData.categoryIds,
+                    labelId: initialData.labelId ?? null,
+                    labelDurationDaysOverride: undefined,
                     audioUrl: initialData.audioUrl,
                     isRecommended: initialData.isRecommended,
                     isInteractive: initialData.isInteractive,
@@ -186,6 +200,18 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
         };
         fetchMetadata();
     }, [initialData?.id, selectedLanguage]);
+
+    useEffect(() => {
+        const fetchLabels = async () => {
+            try {
+                const labelsRes = await apiClient.get('/labels?limit=100');
+                setLabels(unwrapList<Label>(labelsRes.data));
+            } catch (error) {
+                console.error('Failed to fetch labels:', error);
+            }
+        };
+        fetchLabels();
+    }, []);
 
     useEffect(() => {
         if (initialData?.id) return;
@@ -294,7 +320,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
             }
         }
 
-        const finalData: StorySubmitPayload = {
+        const finalData: StorySubmitPayload & { labelId?: number | null; labelDurationDaysOverride?: number } = {
             title,
             slug: values.slug?.trim(),
             description,
@@ -302,6 +328,9 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
             authorId: values.authorId,
             status: values.status,
             categoryIds: values.categoryIds,
+            labelId: values.labelId ?? null,
+            ...(values.labelDurationDaysOverride != null && !Number.isNaN(values.labelDurationDaysOverride)
+                ? { labelDurationDaysOverride: values.labelDurationDaysOverride } : {}),
             audioUrl: values.audioUrl || undefined,
             isRecommended: values.isRecommended,
             isInteractive: values.isInteractive,
@@ -749,6 +778,28 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             )}
                         </div>
                         {errors.categoryIds && <p className="text-red-500 text-xs mt-1">{errors.categoryIds.message}</p>}
+                    </div>
+
+                    {/* Label (Hot/New...) + số ngày gim override */}
+                    <div className="space-y-2">
+                        <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Label (Hot/New…)</label>
+                        <select
+                            value={watch('labelId') ?? ''}
+                            onChange={(e) => setValue('labelId', e.target.value === '' ? null : Number(e.target.value), { shouldDirty: true })}
+                            className="admin-input w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-bold text-slate-700 cursor-pointer transition-all focus:ring-4 focus:ring-indigo-500/10 shadow-sm"
+                        >
+                            <option value="">— Không label —</option>
+                            {labels.map((l) => (
+                                <option key={l.id} value={l.id}>{l.name} ({l.text})</option>
+                            ))}
+                        </select>
+                        <input
+                            type="number"
+                            min={0}
+                            placeholder="Số ngày gim (để trống = mặc định của label)"
+                            {...register('labelDurationDaysOverride', { valueAsNumber: true })}
+                            className="admin-input w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-medium transition-all focus:ring-4 focus:ring-indigo-500/10 shadow-sm"
+                        />
                     </div>
 
                     {/* Hàng 5: Quản lý chương */}

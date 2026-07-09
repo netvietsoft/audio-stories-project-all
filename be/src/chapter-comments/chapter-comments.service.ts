@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CommentReactionType, Prisma } from '@prisma/client';
 
+import { GeoService } from '@/common/geo/geo.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ChapterCommentScope, CreateChapterCommentDto } from './dto/create-chapter-comment.dto';
 import { ChapterCommentSortType, ListChapterCommentsDto } from './dto/list-chapter-comments.dto';
@@ -10,7 +11,10 @@ import { UpdateCommentReportDto } from './dto/update-comment-report.dto';
 
 @Injectable()
 export class ChapterCommentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly geo: GeoService,
+  ) {}
 
   private async getReactionMap(commentIds: string[]) {
     if (!commentIds.length) {
@@ -222,7 +226,7 @@ export class ChapterCommentsService {
     };
   }
 
-  async create(userId: string, chapterId: string, dto: CreateChapterCommentDto) {
+  async create(userId: string, chapterId: string, dto: CreateChapterCommentDto, ip?: string) {
     const chapter = await this.prisma.chapter.findUnique({
       where: { id: chapterId },
       select: {
@@ -280,6 +284,8 @@ export class ChapterCommentsService {
         },
       },
     });
+
+    void this.geo.record(chapter.storyId, ip, 'comment', 1);
 
     const reactionMap = await this.getReactionMap([created.id]);
 

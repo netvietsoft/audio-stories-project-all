@@ -704,7 +704,7 @@ export class StoriesService {
   async updateStory(id: string, data: UpdateStoryDto) {
     const existing = await this.prisma.story.findUnique({
       where: { id },
-      select: { id: true, deletedAt: true },
+      select: { id: true, deletedAt: true, labelId: true },
     });
 
     if (!existing) {
@@ -713,7 +713,15 @@ export class StoriesService {
 
     const { categoryIds, language, authorId, labelId, labelDurationDaysOverride, ...storyData } = data;
     const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
-    const labelFields = labelId !== undefined ? await this.computeLabelFields(labelId, labelDurationDaysOverride) : {};
+    let labelFields: { labelId?: number | null; labelAssignedAt?: Date | null; labelExpiresAt?: Date | null } = {};
+    if (labelDurationDaysOverride !== undefined) {
+      // explicit override → (re)pin using the given duration
+      labelFields = await this.computeLabelFields(labelId ?? existing.labelId ?? null, labelDurationDaysOverride);
+    } else if (labelId !== undefined && labelId !== existing.labelId) {
+      // label assignment changed (assigned a different one, or cleared) → recompute
+      labelFields = await this.computeLabelFields(labelId);
+    }
+    // else: labelId unchanged and no override → leave labelAssignedAt/labelExpiresAt untouched
 
     if (categoryIds) {
       await this.prisma.storyCategory.deleteMany({ where: { storyId: id } });

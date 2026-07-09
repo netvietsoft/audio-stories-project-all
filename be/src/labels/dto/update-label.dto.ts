@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsHexColor, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class UpdateLabelDto {
   @IsOptional() @IsString() @MaxLength(60)
@@ -7,10 +7,10 @@ export class UpdateLabelDto {
   @IsOptional() @IsString() @MaxLength(40)
   text?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional() @IsString() @IsHexColor()
   color?: string;
 
-  @IsOptional() @IsString()
+  @IsOptional() @IsString() @IsHexColor()
   textColor?: string;
 
   @IsOptional() @IsString() @MaxLength(60)

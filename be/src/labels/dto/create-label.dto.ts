@@ -7,10 +7,10 @@ export class CreateLabelDto {
   @IsString() @IsNotEmpty() @MaxLength(40)
   text: string;
 
-  @IsString() @IsNotEmpty()
+  @IsString() @IsNotEmpty() @IsHexColor()
   color: string;
 
-  @IsOptional() @IsString()
+  @IsOptional() @IsString() @IsHexColor()
   textColor?: string;
 
   @IsOptional() @IsString() @MaxLength(60)

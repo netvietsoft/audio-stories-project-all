@@ -1,8 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Request } from 'express';
 
 import { Account } from '@/auth/decorators/account.decorator';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
+import { clientIp } from '@/common/geo/geo.util';
 import { ExploreQueryDto } from '@/stories/dto/explore-query.dto';
 import { HistoryQueryDto } from './dto/history-query.dto';
 import { SyncHistoryDto } from './dto/sync-history.dto';
@@ -21,8 +23,8 @@ export class UserFeaturesController {
 
   @ApiOperation({ summary: 'Bật/tắt yêu thích truyện' })
   @Post('favorites/toggle')
-  toggleFavorite(@Account() account: any, @Body() dto: ToggleFavoriteDto) {
-    return this.userFeaturesService.toggleFavorite(this.userIdFromAccount(account), dto.storyId);
+  toggleFavorite(@Account() account: any, @Body() dto: ToggleFavoriteDto, @Req() req: Request) {
+    return this.userFeaturesService.toggleFavorite(this.userIdFromAccount(account), dto.storyId, clientIp(req));
   }
 
   @ApiOperation({ summary: 'Lấy danh sách truyện yêu thích' })
@@ -45,8 +47,8 @@ export class UserFeaturesController {
 
   @ApiOperation({ summary: 'Đồng bộ lịch sử đọc' })
   @Post('history/sync')
-  syncHistory(@Account() account: any, @Body() dto: SyncHistoryDto) {
-    return this.userFeaturesService.syncHistory(this.userIdFromAccount(account), dto);
+  syncHistory(@Account() account: any, @Body() dto: SyncHistoryDto, @Req() req: Request) {
+    return this.userFeaturesService.syncHistory(this.userIdFromAccount(account), dto, clientIp(req));
   }
 
   @ApiOperation({ summary: 'Lấy lịch sử đọc' })

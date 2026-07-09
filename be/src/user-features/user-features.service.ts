@@ -6,6 +6,7 @@ import Redis from 'ioredis';
 
 import { StoriesService } from '@/stories/stories.service';
 
+import { GeoService } from '@/common/geo/geo.service';
 import { MailService } from '@/mail/mail.service';
 import { NotificationsService } from '@/notifications/notifications.service';
 import { ExploreQueryDto } from '@/stories/dto/explore-query.dto';
@@ -55,6 +56,7 @@ export class UserFeaturesService {
     private readonly mailService: MailService,
     @Inject(forwardRef(() => StoriesService))
     private readonly storiesService: StoriesService,
+    private readonly geo: GeoService,
   ) {
     const redisUrl = this.configService.get<string>('REDIS_URL');
     if (!redisUrl) {
@@ -194,7 +196,7 @@ export class UserFeaturesService {
     }
   }
 
-  async toggleFavorite(userId: string, storyId: string) {
+  async toggleFavorite(userId: string, storyId: string, ip?: string) {
     const existing = await this.prisma.userFavorite.findUnique({
       where: {
         userId_storyId: {
@@ -234,6 +236,7 @@ export class UserFeaturesService {
       data: { favoritesCount: { increment: 1 } },
     });
     await this.storiesService.invalidateExploreCache();
+    void this.geo.record(storyId, ip, 'favorite', 1);
 
     return { isFavorite: true };
   }
@@ -456,7 +459,9 @@ export class UserFeaturesService {
     };
   }
 
-  async syncHistory(userId: string, dto: SyncHistoryDto) {
+  async syncHistory(userId: string, dto: SyncHistoryDto, ip?: string) {
+    void this.geo.record(dto.storyId, ip, 'listen', 1);
+
     const payload: PendingHistoryPayload = {
       storyId: dto.storyId,
       chapterId: dto.chapterId,

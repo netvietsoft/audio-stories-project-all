@@ -285,25 +285,31 @@ export class TrackingService {
         writes.push(this.prisma.storyViewDaily.upsert(buildDailyViewUpsertArgs(storyId, count, today)));
       }
 
-      const geoKeys = await this.scanKeys(`${this.STORY_GEO_PREFIX}*`);
-      for (const key of geoKeys) {
-        const rest = key.slice(this.STORY_GEO_PREFIX.length); // "<kind>:<storyId>:<country>"
-        const [kind, storyId, country] = rest.split(':');
-        if (!kind || !storyId || !country) continue;
-        const processingKey = `${key}:processing:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
-        try {
-          await this.redis.rename(key, processingKey);
-        } catch {
-          continue;
+      try {
+        const geoKeys = await this.scanKeys(`${this.STORY_GEO_PREFIX}*`);
+        for (const key of geoKeys) {
+          const rest = key.slice(this.STORY_GEO_PREFIX.length); // "<kind>:<storyId>:<country>"
+          const [kind, storyId, country] = rest.split(':');
+          if (!kind || !storyId || !country) continue;
+          const processingKey = `${key}:processing:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+          try {
+            await this.redis.rename(key, processingKey);
+          } catch {
+            continue;
+          }
+          const countStr = await this.redis.get(processingKey);
+          const count = Number.parseInt(countStr || '0', 10);
+          if (!Number.isFinite(count) || count <= 0) {
+            await this.redis.del(processingKey);
+            continue;
+          }
+          processingEntries.push({ originalKey: key, processingKey, count });
+          writes.push(this.prisma.storyCountryDaily.upsert(buildStoryCountryUpsertArgs(storyId, country, kind, count, today)));
         }
-        const countStr = await this.redis.get(processingKey);
-        const count = Number.parseInt(countStr || '0', 10);
-        if (!Number.isFinite(count) || count <= 0) {
-          await this.redis.del(processingKey);
-          continue;
-        }
-        processingEntries.push({ originalKey: key, processingKey, count });
-        writes.push(this.prisma.storyCountryDaily.upsert(buildStoryCountryUpsertArgs(storyId, country, kind, count, today)));
+      } catch (geoError) {
+        this.logger.warn(
+          `[Tracking BE] Failed to process geo counters: ${geoError?.message || geoError}. Skipping geo for this cycle; view/chapter writes still proceed.`,
+        );
       }
 
       if (writes.length > 0) {

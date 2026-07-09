@@ -297,6 +297,20 @@ async function main() {
     }
   }
 
+  console.log('Seeding labels...');
+  const labelsData = [
+    { name: 'Hot', text: 'HOT', color: '#E4572E', defaultDurationDays: 7 },
+    { name: 'New', text: 'NEW', color: '#2E86E4', defaultDurationDays: 14 },
+    { name: "Editor's Choice", text: 'EDITOR', color: '#7C3AED', defaultDurationDays: null },
+  ];
+  for (const lb of labelsData) {
+    await prisma.label.upsert({
+      where: { name: lb.name },
+      update: { text: lb.text, color: lb.color, defaultDurationDays: lb.defaultDurationDays },
+      create: lb,
+    });
+  }
+
   console.log('Seeding authors...');
 
   const authorNames = ['Thần Đồng', 'Thiên Tàm Thổ Đậu', 'Dương Gia Tam Thiếu', 'Mộng Nhập Thần Cơ', 'Ngã Cật Tây Hồng Thị'];

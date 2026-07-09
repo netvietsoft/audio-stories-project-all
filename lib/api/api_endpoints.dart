@@ -40,4 +40,7 @@ class ApiEndpoints {
   // ── Khác ──
   static const banners = '/banners';
   static const notifications = '/notifications';
+
+  // ── Tracking ──
+  static const trackSearchOpen = '/tracking/search-open';
 }

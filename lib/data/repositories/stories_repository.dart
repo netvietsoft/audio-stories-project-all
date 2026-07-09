@@ -268,4 +268,12 @@ class StoriesRepository implements StoriesRepositoryLike {
 
   static int _int(dynamic v, int fallback) =>
       v is int ? v : (v is num ? v.toInt() : int.tryParse('${v ?? ''}') ?? fallback);
+
+  /// `POST /tracking/search-open` — ghi nhận user mở truyện từ kết quả tìm kiếm.
+  /// Fire-and-forget: lỗi (mạng/BE) bị nuốt, không ảnh hưởng luồng chính.
+  Future<void> trackSearchOpen(String storyId, String deviceId) async {
+    try {
+      await _api.post(ApiEndpoints.trackSearchOpen, body: {'storyId': storyId, 'deviceId': deviceId});
+    } catch (_) { /* fire-and-forget */ }
+  }
 }

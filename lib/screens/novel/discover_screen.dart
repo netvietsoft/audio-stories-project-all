@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/device_id.dart';
 import '../../data/repositories/categories_repository.dart';
 import '../../data/repositories/stories_repository.dart';
 import '../../models/models.dart';
@@ -204,10 +205,20 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: GestureDetector(
-        onTap: () => context.push('/book/${b.id}'),
+        onTap: () {
+          _trackSearchOpen(b);
+          context.push('/book/${b.id}');
+        },
         child: CoverImage(path: b.cover, title: b.title, radius: 16, aspect: 16 / 9),
       ),
     );
+  }
+
+  /// Ghi nhận mở truyện từ kết quả tìm kiếm (chỉ khi đang search) — fire-and-forget,
+  /// KHÔNG chặn navigation.
+  void _trackSearchOpen(Book b) {
+    if (_searchCtrl.text.trim().isEmpty) return;
+    getOrCreateDeviceId().then((d) => _repo.trackSearchOpen(b.id, d));
   }
 
   /// Dòng kết quả (thiết kế anh/New folder/search.png): bìa + tên + thể loại +
@@ -215,7 +226,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   Widget _resultRow(BuildContext context, Book b) {
     final pal = context.pal;
     return InkWell(
-      onTap: () => context.push('/book/${b.id}'),
+      onTap: () {
+        _trackSearchOpen(b);
+        context.push('/book/${b.id}');
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [

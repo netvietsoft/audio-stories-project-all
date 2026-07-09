@@ -4,6 +4,7 @@ import { Request } from 'express';
 
 import { clientIp } from '@/common/geo/geo.util';
 import { TrackEventDto } from './dto/track-event.dto';
+import { SearchOpenDto } from './dto/search-open.dto';
 import { TrackingService } from './tracking.service';
 
 @ApiTags('Tracking')
@@ -21,5 +22,11 @@ export class TrackingController {
   @Post('listen')
   trackListen(@Body() dto: TrackEventDto) {
     return this.trackingService.trackListen(dto);
+  }
+
+  @ApiOperation({ summary: 'Ghi nhận mở truyện từ tìm kiếm' })
+  @Post('search-open')
+  trackSearchOpen(@Body() dto: SearchOpenDto, @Req() req: Request) {
+    return this.trackingService.trackSearchOpen(dto, clientIp(req));
   }
 }

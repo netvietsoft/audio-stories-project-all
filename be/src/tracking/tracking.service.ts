@@ -6,6 +6,7 @@ import Redis from 'ioredis';
 import { PrismaService } from '@/prisma/prisma.service';
 import { resolveCountry } from '@/common/geo/geo.util';
 import { TrackEventDto } from './dto/track-event.dto';
+import { SearchOpenDto } from './dto/search-open.dto';
 
 type TrackKind = 'view' | 'listen';
 
@@ -136,6 +137,25 @@ export class TrackingService {
 
   async trackListen(dto: TrackEventDto) {
     return this.track('listen', dto);
+  }
+
+  async trackSearchOpen(dto: SearchOpenDto, ip?: string) {
+    this.ensureRedisEnabled();
+    const story = await this.prisma.story.findFirst({
+      where: { OR: [{ id: dto.storyId }, { slug: dto.storyId }], deletedAt: null },
+      select: { id: true },
+    });
+    if (!story) return { counted: false, notFound: true };
+
+    const dedupKey = `track:search:${story.id}:${dto.deviceId}`;
+    const created = await this.redis.set(dedupKey, '1', 'EX', this.DEDUP_TTL_SECONDS, 'NX');
+    if (!created) return { counted: false, deduplicated: true };
+
+    const country = resolveCountry(ip);
+    if (country) {
+      await this.redis.incr(`${this.STORY_GEO_PREFIX}search:${story.id}:${country}`);
+    }
+    return { counted: true };
   }
 
   private async scanKeys(pattern: string) {

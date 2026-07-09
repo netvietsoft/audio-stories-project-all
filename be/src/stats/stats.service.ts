@@ -2,6 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { VipChapterAccessFilter, VipChapterSortBy, VipChapterSortOrder, VipChapterStatsQueryDto } from './dto/vip-chapter-stats-query.dto';
+import { TopStoriesQueryDto } from './dto/top-stories-query.dto';
+
+export enum TopStoryMetric {
+  reads = 'reads',
+  rating = 'rating',
+  comments = 'comments',
+  favorites = 'favorites',
+  gifts = 'gifts',
+  trending = 'trending',
+  revenue = 'revenue',
+  audio = 'audio',
+}
 
 @Injectable()
 export class StatsService {
@@ -203,6 +215,49 @@ export class StatsService {
                 totalCredits: rows.reduce((sum, row) => sum + row.totalCredits, 0),
             },
         };
+    }
+
+    async getTopStories(query: TopStoriesQueryDto) {
+        const limit = Math.min(query.limit ?? 100, 100);
+        const language = query.language?.trim();
+        const langWhere = language ? { language: { key: language } } : {};
+
+        const counterColumn: Partial<Record<TopStoryMetric, 'totalViews' | 'favoritesCount' | 'totalGifts'>> = {
+            [TopStoryMetric.reads]: 'totalViews',
+            [TopStoryMetric.favorites]: 'favoritesCount',
+            [TopStoryMetric.gifts]: 'totalGifts',
+        };
+
+        const column = counterColumn[query.metric];
+        if (column) {
+            const stories = await this.prisma.story.findMany({
+                where: { deletedAt: null, ...langWhere },
+                orderBy: { [column]: 'desc' },
+                take: limit,
+                select: { id: true, title: true, slug: true, thumbnailUrl: true, [column]: true } as any,
+            });
+            return {
+                data: stories.map((s: any, i: number) => ({
+                    rank: i + 1,
+                    storyId: s.id,
+                    title: s.title,
+                    slug: s.slug,
+                    thumbnailUrl: s.thumbnailUrl ?? null,
+                    value: Number(s[column] ?? 0),
+                })),
+            };
+        }
+
+        // Raw-SQL metrics (rating/comments/trending/revenue/audio) — implemented in Task 4.
+        const ranked = await this.getTopStoriesAggregated(query.metric, limit, language);
+        return { data: ranked };
+    }
+
+    // Placeholder replaced in Task 4.
+    private async getTopStoriesAggregated(
+        _metric: TopStoryMetric, _limit: number, _language?: string,
+    ): Promise<Array<{ rank: number; storyId: string; title: string; slug: string; thumbnailUrl: string | null; value: number }>> {
+        return [];
     }
 
 }

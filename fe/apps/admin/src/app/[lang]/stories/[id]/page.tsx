@@ -47,6 +47,7 @@ export default function EditStoryPage() {
           authorId: story.author?.id,
           status: story.status || "ongoing",
           categoryIds: (story.categories || []).map((item: { category: { id: number } }) => item.category.id),
+          labelId: story.labelId ?? null,
           audioUrl: story.audioUrl || "",
           isRecommended: !!story.isRecommended,
           isInteractive: !!story.isInteractive,

@@ -414,7 +414,7 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
           children: [
             Stack(children: [
               CoverImage(path: b.cover, title: b.title, radius: Radii.cover),
-              if (b.tag != null) Positioned(left: 6, top: 6, child: _badge(b.tag!)),
+              if (b.label != null) Positioned(left: 6, top: 6, child: _badge(b.label!)),
             ]),
             const SizedBox(height: 6),
             Text(b.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppType.item(size: 13, color: pal.soft)),
@@ -426,12 +426,17 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
     );
   }
 
-  /// Badge góc bìa (nền tối mờ + chữ trắng) — thống nhất cho mọi rail.
-  Widget _badge(String tag) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: rounded(6)),
-        child: Text(tag, style: AppType.tabLabel(color: Colors.white).copyWith(fontSize: 9.5)),
-      );
+  /// Badge góc bìa (nền theo màu label; fallback tối mờ) — thống nhất cho mọi rail.
+  Widget _badge(StoryLabel label) {
+    Color bg = Colors.black.withValues(alpha: 0.55);
+    final hex = label.color.replaceFirst('#', '');
+    if (hex.length == 6) bg = Color(int.parse('FF$hex', radix: 16));
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(color: bg, borderRadius: rounded(6)),
+      child: Text(label.text, style: AppType.tabLabel(color: Colors.white).copyWith(fontSize: 9.5)),
+    );
+  }
 
   // Khoảng cách giữa 2 bìa trong rail (nhỏ hơn để vừa 4 cột).
   static const double _railGap = 10;
@@ -464,7 +469,7 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
             Stack(
               children: [
                 CoverImage(path: b.cover, title: b.title, radius: Radii.cover),
-                if (b.tag != null) Positioned(left: 5, top: 5, child: _badge(b.tag!)),
+                if (b.label != null) Positioned(left: 5, top: 5, child: _badge(b.label!)),
               ],
             ),
             const SizedBox(height: 5),

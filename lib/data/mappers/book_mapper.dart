@@ -26,7 +26,7 @@ abstract final class BookMapper {
       unlockPrice: _asInt(j['unlockPrice']),
       discountPercent: _asInt(j['discountPercent']),
       categoriesLabel: _categoriesLabel(categories),
-      tag: _badge(j['badge']) ?? _demoTag(seed), // badge thật từ BE; thiếu → demo theo seed
+      label: _label(j['label']),
     );
   }
 
@@ -52,16 +52,13 @@ abstract final class BookMapper {
     return '';
   }
 
-  /// Badge thật từ BE (`badge`): chỉ nhận HOT/NEW/VIP/TOP; khác/thiếu → null.
-  static String? _badge(dynamic v) {
-    final s = v?.toString().toUpperCase();
-    return const {'HOT', 'NEW', 'VIP', 'TOP'}.contains(s) ? s : null;
-  }
-
-  /// Badge demo trên bìa (thiết kế home): ~2/3 truyện có nhãn, ổn định theo seed.
-  static String? _demoTag(int seed) {
-    const tags = ['HOT', 'NEW', 'VIP', 'TOP', null, null];
-    return tags[seed % tags.length];
+  /// Label bìa từ BE (`label: {text, color, icon}`); thiếu/thiếu text|color → null.
+  static StoryLabel? _label(dynamic v) {
+    if (v is! Map) return null;
+    final text = (v['text'] ?? '').toString();
+    final color = (v['color'] ?? '').toString();
+    if (text.isEmpty || color.isEmpty) return null;
+    return StoryLabel(text: text, color: color, icon: v['icon']?.toString());
   }
 
   /// Số sao: dùng giá trị thật nếu >= 3.0; nếu thiếu/thấp → demo random 3.0–5.0

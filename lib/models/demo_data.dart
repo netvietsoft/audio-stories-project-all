@@ -4,14 +4,14 @@ import 'models.dart';
 /// nếu chưa có ảnh, UI tự render placeholder gradient (xem CoverImage).
 abstract final class Demo {
   static const books = <Book>[
-    Book(id: 'rom_3', title: "The Billionaire's First Glance", author: 'A. Vermont', genre: 'Romance', cover: 'assets/covers/rom_3.png', rating: '4.8', reads: '8.7M', tag: 'HOT', chapters: 210),
-    Book(id: 'wolf_0', title: 'The Lycan King', author: 'M. Stone', genre: 'Fantasy', cover: 'assets/covers/wolf_0.png', rating: '4.9', reads: '12.1M', tag: 'TOP'),
-    Book(id: 'rom_2', title: "Rose Rain's Revenge", author: 'L. Hart', genre: 'Drama', cover: 'assets/covers/rom_2.png', rating: '4.7', reads: '5.3M', tag: 'NEW'),
+    Book(id: 'rom_3', title: "The Billionaire's First Glance", author: 'A. Vermont', genre: 'Romance', cover: 'assets/covers/rom_3.png', rating: '4.8', reads: '8.7M', label: StoryLabel(text: 'HOT', color: '#E4572E'), chapters: 210),
+    Book(id: 'wolf_0', title: 'The Lycan King', author: 'M. Stone', genre: 'Fantasy', cover: 'assets/covers/wolf_0.png', rating: '4.9', reads: '12.1M', label: StoryLabel(text: 'TOP', color: '#2E86AB')),
+    Book(id: 'rom_2', title: "Rose Rain's Revenge", author: 'L. Hart', genre: 'Drama', cover: 'assets/covers/rom_2.png', rating: '4.7', reads: '5.3M', label: StoryLabel(text: 'NEW', color: '#3AAF64')),
     Book(id: 'wolf_2', title: 'The Beast and the Blessed', author: 'K. Wilde', genre: 'Fantasy', cover: 'assets/covers/wolf_2.png', rating: '4.6', reads: '3.9M'),
-    Book(id: 'love_0', title: "The CEO's Ex-Wife", author: 'S. Lane', genre: 'Romance', cover: 'assets/covers/love_0.png', rating: '4.8', reads: '9.2M', tag: 'VIP'),
+    Book(id: 'love_0', title: "The CEO's Ex-Wife", author: 'S. Lane', genre: 'Romance', cover: 'assets/covers/love_0.png', rating: '4.8', reads: '9.2M', label: StoryLabel(text: 'VIP', color: '#8E44AD')),
     Book(id: 'wolf_3', title: 'The Last Forbidden Bond', author: 'R. Moon', genre: 'Werewolf', cover: 'assets/covers/wolf_3.png', rating: '4.5', reads: '2.7M'),
     Book(id: 'love_4', title: 'Her Forbidden Affair', author: 'E. Frost', genre: 'Romance', cover: 'assets/covers/love_4.png', rating: '4.7', reads: '6.4M'),
-    Book(id: 'love_2', title: 'Forceful Marriage', author: 'J. Reed', genre: 'Drama', cover: 'assets/covers/love_2.png', rating: '4.6', reads: '4.1M', tag: 'HOT'),
+    Book(id: 'love_2', title: 'Forceful Marriage', author: 'J. Reed', genre: 'Drama', cover: 'assets/covers/love_2.png', rating: '4.6', reads: '4.1M', label: StoryLabel(text: 'HOT', color: '#E4572E')),
   ];
 
   /// 100 chương: 1–10 free; chương 24 = current; bội số 25 = VIP; còn lại = coin.

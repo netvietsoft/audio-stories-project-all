@@ -4,6 +4,13 @@
 
 enum ChapterState { free, coin, vip, current }
 
+class StoryLabel {
+  const StoryLabel({required this.text, required this.color, this.icon});
+  final String text;
+  final String color; // hex, e.g. "#E4572E"
+  final String? icon;
+}
+
 class Book {
   const Book({
     required this.id,
@@ -16,7 +23,7 @@ class Book {
     this.reads = '1.2M',
     this.status = 'Ongoing',
     this.chapters = 100,
-    this.tag,
+    this.label,
     this.subtitle = '',
     this.synopsis = '',
     this.unlockPrice = 0,
@@ -26,7 +33,7 @@ class Book {
 
   final String id, title, author, genre, cover, trope, rating, reads, status;
   final int chapters;
-  final String? tag; // VIP | HOT | TOP | NEW
+  final StoryLabel? label;
 
   /// Chuỗi thể loại gộp tối đa 3 mục ("Romance · Revenge · Rebirth") — cho list search.
   final String categoriesLabel;

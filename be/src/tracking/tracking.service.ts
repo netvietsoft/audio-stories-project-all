@@ -4,6 +4,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import Redis from 'ioredis';
 
 import { PrismaService } from '@/prisma/prisma.service';
+import { resolveCountry } from '@/common/geo/geo.util';
 import { TrackEventDto } from './dto/track-event.dto';
 
 type TrackKind = 'view' | 'listen';
@@ -16,6 +17,14 @@ export function buildDailyViewUpsertArgs(storyId: string, count: number, day: Da
   };
 }
 
+export function buildStoryCountryUpsertArgs(storyId: string, country: string, kind: string, count: number, day: Date) {
+  return {
+    where: { storyId_country_date_kind: { storyId, country, date: day, kind } },
+    create: { storyId, country, date: day, kind, count },
+    update: { count: { increment: count } },
+  };
+}
+
 @Injectable()
 export class TrackingService {
   private readonly logger = new Logger(TrackingService.name);
@@ -25,6 +34,7 @@ export class TrackingService {
   private readonly DEDUP_TTL_SECONDS = 3600;
   private readonly STORY_VIEWS_PREFIX = 'story:views:';
   private readonly CHAPTER_VIEWS_PREFIX = 'chapter:views:';
+  private readonly STORY_GEO_PREFIX = 'story:geo:';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -92,7 +102,7 @@ export class TrackingService {
     return `track:${kind}:${storyId}:${chapterId}:${deviceId}`;
   }
 
-  private async track(kind: TrackKind, dto: TrackEventDto) {
+  private async track(kind: TrackKind, dto: TrackEventDto, ip?: string) {
     this.ensureRedisEnabled();
 
     const dedupKey = this.dedupKey(kind, dto.storyId, dto.chapterId, dto.deviceId);
@@ -111,11 +121,17 @@ export class TrackingService {
     this.logger.log(
       `[Tracking BE] +1 Tam thoi (Redis) - Loai: ${kind}, Story: ${dto.storyId}, Chapter: ${dto.chapterId}`,
     );
+
+    const country = resolveCountry(ip);
+    if (country) {
+      await this.redis.incr(`${this.STORY_GEO_PREFIX}${kind}:${dto.storyId}:${country}`);
+    }
+
     return { counted: true, deduplicated: false };
   }
 
-  async trackView(dto: TrackEventDto) {
-    return this.track('view', dto);
+  async trackView(dto: TrackEventDto, ip?: string) {
+    return this.track('view', dto, ip);
   }
 
   async trackListen(dto: TrackEventDto) {
@@ -247,6 +263,27 @@ export class TrackingService {
       today.setUTCHours(0, 0, 0, 0);
       for (const { storyId, count } of storyViewDeltas) {
         writes.push(this.prisma.storyViewDaily.upsert(buildDailyViewUpsertArgs(storyId, count, today)));
+      }
+
+      const geoKeys = await this.scanKeys(`${this.STORY_GEO_PREFIX}*`);
+      for (const key of geoKeys) {
+        const rest = key.slice(this.STORY_GEO_PREFIX.length); // "<kind>:<storyId>:<country>"
+        const [kind, storyId, country] = rest.split(':');
+        if (!kind || !storyId || !country) continue;
+        const processingKey = `${key}:processing:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+        try {
+          await this.redis.rename(key, processingKey);
+        } catch {
+          continue;
+        }
+        const countStr = await this.redis.get(processingKey);
+        const count = Number.parseInt(countStr || '0', 10);
+        if (!Number.isFinite(count) || count <= 0) {
+          await this.redis.del(processingKey);
+          continue;
+        }
+        processingEntries.push({ originalKey: key, processingKey, count });
+        writes.push(this.prisma.storyCountryDaily.upsert(buildStoryCountryUpsertArgs(storyId, country, kind, count, today)));
       }
 
       if (writes.length > 0) {

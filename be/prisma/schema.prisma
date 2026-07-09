@@ -196,6 +196,22 @@ model Category {
   @@map("categories")
 }
 
+model Label {
+  id                  Int      @id @default(autoincrement()) @db.UnsignedInt
+  name                String   @unique @db.VarChar(60)
+  text                String   @db.VarChar(40)
+  color               String   @db.VarChar(20)
+  textColor           String?  @map("text_color") @db.VarChar(20)
+  icon                String?  @db.VarChar(60)
+  defaultDurationDays Int?     @map("default_duration_days") @db.UnsignedInt
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  stories Story[]
+
+  @@map("labels")
+}
+
 enum StoryStatus {
   ongoing
   completed
@@ -235,12 +251,16 @@ model Story {
   audioUrl       String?     @map("audio_url") @db.Text
   unlockPrice    Int         @default(0) @map("unlock_price") @db.UnsignedInt
   discountPercent Int        @default(0) @map("discount_percent") @db.UnsignedInt
+  labelId         Int?      @map("label_id") @db.UnsignedInt
+  labelAssignedAt DateTime? @map("label_assigned_at")
+  labelExpiresAt  DateTime? @map("label_expires_at")
   createdAt      DateTime    @default(now()) @map("created_at")
   updatedAt      DateTime    @updatedAt @map("updated_at")
   deletedAt      DateTime?   @map("deleted_at")
 
   author                 Author                  @relation(fields: [authorId], references: [id])
   language               Language                @relation(fields: [languageId], references: [id])
+  label                  Label?                  @relation(fields: [labelId], references: [id], onDelete: SetNull)
   categories             StoryCategory[]
   chapters               Chapter[]
   userFavorites          UserFavorite[]
@@ -262,6 +282,7 @@ model Story {
   @@index([isRecommended, updatedAt])
   @@index([isInteractive])
   @@index([languageId])
+  @@index([labelId])
   @@map("stories")
 }
 

@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
+import { GeoService } from '@/common/geo/geo.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { CreateReviewReplyDto } from './dto/create-review-reply.dto';
@@ -9,7 +10,10 @@ import { ListReviewsDto, ReviewSortType } from './dto/list-reviews.dto';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly geo: GeoService,
+  ) {}
 
   private normalizeReview(row: any, currentUserId?: string) {
     const likedByMe = currentUserId
@@ -200,7 +204,7 @@ export class ReviewsService {
     };
   }
 
-  async upsertReview(storyIdOrSlug: string, userId: string, dto: CreateReviewDto) {
+  async upsertReview(storyIdOrSlug: string, userId: string, dto: CreateReviewDto, ip?: string) {
     const storyId = await this.resolveStoryId(storyIdOrSlug);
 
     if (!Number.isInteger(dto.rating) || dto.rating < 1 || dto.rating > 5) {
@@ -234,6 +238,8 @@ export class ReviewsService {
         },
       },
     });
+
+    void this.geo.record(storyId, ip, 'rating', 1);
 
     await this.syncStoryRating(storyId);
 

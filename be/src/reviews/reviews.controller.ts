@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Request } from 'express';
 
 import { Account } from '@/auth/decorators/account.decorator';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
+import { clientIp } from '@/common/geo/geo.util';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { CreateReviewReplyDto } from './dto/create-review-reply.dto';
 import { ListReviewRepliesDto } from './dto/list-review-replies.dto';
@@ -33,8 +35,13 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Tạo hoặc cập nhật đánh giá truyện' })
   @Post('reviews')
   @UseGuards(JwtAccessGuard)
-  upsertReview(@Param('storyId') storyId: string, @Account() account: any, @Body() dto: CreateReviewDto) {
-    return this.reviewsService.upsertReview(storyId, this.userIdFromAccount(account), dto);
+  upsertReview(
+    @Param('storyId') storyId: string,
+    @Account() account: any,
+    @Body() dto: CreateReviewDto,
+    @Req() req: Request,
+  ) {
+    return this.reviewsService.upsertReview(storyId, this.userIdFromAccount(account), dto, clientIp(req));
   }
 
   @ApiOperation({ summary: 'Bật/tắt thích đánh giá' })

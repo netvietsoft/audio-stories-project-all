@@ -27,6 +27,7 @@ type StoryItem = {
   latestChapterNumber?: number | null;
   author?: { name: string };
   categories?: Array<{ category: { id: number; name: string; slug: string } }>;
+  label?: { text: string; color: string; icon?: string | null } | null;
 };
 
 type StoryGridCardProps = {
@@ -131,6 +132,14 @@ export default function StoryGridCard({
           className="aspect-[2/3] h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        {story.label ? (
+          <span
+            className="absolute left-2 top-2 rounded-md px-2 py-0.5 text-[10px] font-bold"
+            style={{ backgroundColor: story.label.color, color: story.label.icon ? undefined : "#fff" }}
+          >
+            {story.label.text}
+          </span>
+        ) : null}
       </div>
 
       {/* Content - Right Side */}

@@ -18,6 +18,7 @@ type StoryItem = {
   createdAt?: string;
   author?: { name: string };
   categories?: Array<{ category: { id: number; name: string; slug: string } }>;
+  label?: { text: string; color: string; icon?: string | null } | null;
 };
 
 type ExploreResponse = {

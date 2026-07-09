@@ -13,6 +13,7 @@ export enum TopStoryMetric {
   trending = 'trending',
   revenue = 'revenue',
   audio = 'audio',
+  search = 'search',
 }
 
 @Injectable()
@@ -316,6 +317,12 @@ export class StatsService {
                 WHERE s.deleted_at IS NULL AND s.rating_count > 0 ${langFrag}
                 ORDER BY value DESC
                 LIMIT ${limit}`;
+        } else if (metric === TopStoryMetric.search) {
+            rows = await this.prisma.$queryRaw<Array<{ id: string; value: bigint }>>`
+                SELECT s.id AS id, SUM(scd.count) AS value
+                FROM stories s JOIN story_country_daily scd ON scd.story_id = s.id AND scd.kind = 'search'
+                WHERE s.deleted_at IS NULL ${langFrag}
+                GROUP BY s.id ORDER BY value DESC LIMIT ${limit}`;
         }
 
         if (rows.length === 0) return [];
@@ -337,6 +344,36 @@ export class StatsService {
                 value: Number(r.value ?? 0),
             };
         });
+    }
+
+    async getTopCountries(q: { metric: string; limit?: number }) {
+        const limit = Math.min(q.limit ?? 20, 100);
+        const rows = await this.prisma.$queryRaw<Array<{ country: string; value: bigint }>>`
+            SELECT country, SUM(count) AS value FROM story_country_daily
+            WHERE kind = ${q.metric} GROUP BY country ORDER BY value DESC LIMIT ${limit}`;
+        return { data: rows.map((r, i) => ({ rank: i + 1, country: r.country, value: Number(r.value ?? 0) })) };
+    }
+
+    async getTopStoriesByCountry(q: { country: string; metric: string; limit?: number }) {
+        const limit = Math.min(q.limit ?? 100, 100);
+        const rows = await this.prisma.$queryRaw<Array<{ id: string; value: bigint }>>`
+            SELECT scd.story_id AS id, SUM(scd.count) AS value
+            FROM story_country_daily scd JOIN stories s ON s.id = scd.story_id
+            WHERE scd.kind = ${q.metric} AND scd.country = ${q.country} AND s.deleted_at IS NULL
+            GROUP BY scd.story_id ORDER BY value DESC LIMIT ${limit}`;
+        if (!rows.length) return { data: [] };
+        const stories = await this.prisma.story.findMany({ where: { id: { in: rows.map((r) => r.id) } }, select: { id: true, title: true, slug: true, thumbnailUrl: true } });
+        const byId = new Map(stories.map((s) => [s.id, s]));
+        return { data: rows.map((r, i) => { const s = byId.get(r.id); return { rank: i + 1, storyId: r.id, title: s?.title ?? '', slug: s?.slug ?? '', thumbnailUrl: s?.thumbnailUrl ?? null, value: Number(r.value ?? 0) }; }) };
+    }
+
+    async getStoryTopCountries(q: { storyId: string; metric?: string; limit?: number }) {
+        const limit = Math.min(q.limit ?? 5, 50);
+        const kind = q.metric ?? 'view';
+        const rows = await this.prisma.$queryRaw<Array<{ country: string; value: bigint }>>`
+            SELECT country, SUM(count) AS value FROM story_country_daily
+            WHERE story_id = ${q.storyId} AND kind = ${kind} GROUP BY country ORDER BY value DESC LIMIT ${limit}`;
+        return { data: rows.map((r) => ({ country: r.country, value: Number(r.value ?? 0) })) };
     }
 
 }

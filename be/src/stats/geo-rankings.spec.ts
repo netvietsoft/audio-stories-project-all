@@ -1,0 +1,42 @@
+import { StatsService } from './stats.service';
+
+describe('geo rankings', () => {
+  it('getTopCountries returns ranked {country,value}', async () => {
+    const $queryRaw = jest.fn().mockResolvedValue([{ country: 'VN', value: 9n }, { country: 'US', value: 4n }]);
+    const svc: any = new StatsService({ $queryRaw } as any);
+    const res = await svc.getTopCountries({ metric: 'view', limit: 20 });
+    expect(res.data).toEqual([{ rank: 1, country: 'VN', value: 9 }, { rank: 2, country: 'US', value: 4 }]);
+  });
+
+  it('getTopStoriesByCountry: ranks by raw-SQL result, hydrates story info in SQL order', async () => {
+    const queryRaw = jest.fn().mockResolvedValue([{ id: 'x', value: 7n }, { id: 'y', value: 3n }]);
+    const findMany = jest.fn().mockResolvedValue([
+      { id: 'y', title: 'Y', slug: 'y', thumbnailUrl: null },
+      { id: 'x', title: 'X', slug: 'x', thumbnailUrl: 't' },
+    ]);
+    const prisma: any = { $queryRaw: queryRaw, story: { findMany } };
+    const svc = new StatsService(prisma);
+    const res = await svc.getTopStoriesByCountry({ country: 'VN', metric: 'view', limit: 100 });
+    expect(res.data).toEqual([
+      { rank: 1, storyId: 'x', title: 'X', slug: 'x', thumbnailUrl: 't', value: 7 },
+      { rank: 2, storyId: 'y', title: 'Y', slug: 'y', thumbnailUrl: null, value: 3 },
+    ]);
+  });
+
+  it('getTopStoriesByCountry: returns empty data without hydrating when no rows', async () => {
+    const queryRaw = jest.fn().mockResolvedValue([]);
+    const findMany = jest.fn();
+    const prisma: any = { $queryRaw: queryRaw, story: { findMany } };
+    const svc = new StatsService(prisma);
+    const res = await svc.getTopStoriesByCountry({ country: 'VN', metric: 'view', limit: 100 });
+    expect(res.data).toEqual([]);
+    expect(findMany).not.toHaveBeenCalled();
+  });
+
+  it('getStoryTopCountries returns ranked {country,value}', async () => {
+    const $queryRaw = jest.fn().mockResolvedValue([{ country: 'VN', value: 5n }, { country: 'JP', value: 2n }]);
+    const svc: any = new StatsService({ $queryRaw } as any);
+    const res = await svc.getStoryTopCountries({ storyId: 's1', metric: 'view', limit: 5 });
+    expect(res.data).toEqual([{ country: 'VN', value: 5 }, { country: 'JP', value: 2 }]);
+  });
+});

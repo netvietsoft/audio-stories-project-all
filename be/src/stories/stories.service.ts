@@ -298,9 +298,12 @@ export class StoriesService {
             name: true,
           },
         },
+          labelId: true,
+          labelExpiresAt: true,
+          label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
       } as any,
     });
-    
+
     // Shuffle and take only the requested amount
     const shuffled = stories.sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, safeLimit);
@@ -1078,6 +1081,7 @@ export class StoriesService {
             name: true,
           },
         },
+        label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
       },
     });
 

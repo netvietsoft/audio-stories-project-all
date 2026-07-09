@@ -797,9 +797,12 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                             type="number"
                             min={0}
                             placeholder="Số ngày gim (để trống = mặc định của label)"
-                            {...register('labelDurationDaysOverride', { valueAsNumber: true })}
+                            {...register('labelDurationDaysOverride', {
+                                setValueAs: (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+                            })}
                             className="admin-input w-full bg-white border border-slate-200 rounded-2xl py-4 px-6 text-sm font-medium transition-all focus:ring-4 focus:ring-indigo-500/10 shadow-sm"
                         />
+                        {errors.labelDurationDaysOverride && <p className="text-red-500 text-xs mt-1">{errors.labelDurationDaysOverride.message}</p>}
                     </div>
 
                     {/* Hàng 5: Quản lý chương */}

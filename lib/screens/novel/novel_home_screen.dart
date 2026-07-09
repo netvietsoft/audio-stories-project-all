@@ -430,7 +430,10 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
   Widget _badge(StoryLabel label) {
     Color bg = Colors.black.withValues(alpha: 0.55);
     final hex = label.color.replaceFirst('#', '');
-    if (hex.length == 6) bg = Color(int.parse('FF$hex', radix: 16));
+    if (hex.length == 6) {
+      final v = int.tryParse('FF$hex', radix: 16);
+      if (v != null) bg = Color(v);
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(color: bg, borderRadius: rounded(6)),

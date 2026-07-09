@@ -8,6 +8,13 @@ describe('geo rankings', () => {
     expect(res.data).toEqual([{ rank: 1, country: 'VN', value: 9 }, { rank: 2, country: 'US', value: 4 }]);
   });
 
+  it('getTopCountries accepts a new user-action metric (favorite) and returns shaped rows', async () => {
+    const $queryRaw = jest.fn().mockResolvedValue([{ country: 'VN', value: 6n }, { country: 'US', value: 2n }]);
+    const svc: any = new StatsService({ $queryRaw } as any);
+    const res = await svc.getTopCountries({ metric: 'favorite', limit: 20 });
+    expect(res.data).toEqual([{ rank: 1, country: 'VN', value: 6 }, { rank: 2, country: 'US', value: 2 }]);
+  });
+
   it('getTopStoriesByCountry: ranks by raw-SQL result, hydrates story info in SQL order', async () => {
     const queryRaw = jest.fn().mockResolvedValue([{ id: 'x', value: 7n }, { id: 'y', value: 3n }]);
     const findMany = jest.fn().mockResolvedValue([

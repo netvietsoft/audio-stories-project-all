@@ -5,8 +5,8 @@ export class StoryTopCountriesQueryDto {
   @IsString()
   storyId: string;
 
-  @IsOptional() @IsIn(['view', 'search'])
-  metric?: 'view' | 'search' = 'view';
+  @IsOptional() @IsIn(['view', 'search', 'favorite', 'comment', 'rating', 'gift', 'revenue', 'listen'])
+  metric?: 'view' | 'search' | 'favorite' | 'comment' | 'rating' | 'gift' | 'revenue' | 'listen' = 'view';
 
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100)
   limit?: number = 5;

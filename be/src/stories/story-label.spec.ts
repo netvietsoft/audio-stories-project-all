@@ -3,7 +3,7 @@ import { StoriesService } from './stories.service';
 function makeService() {
   const prisma: any = { label: { findUnique: jest.fn() } };
   // Only the helpers under test are exercised; other deps unused.
-  return new StoriesService(prisma, {} as any);
+  return new StoriesService(prisma, {} as any, {} as any);
 }
 
 describe('story label helpers', () => {

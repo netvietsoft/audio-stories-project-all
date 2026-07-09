@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards, UseInterceptors } from '@nestjs/common';
 import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Request } from 'express';
 
 import { ExploreQueryDto } from './dto/explore-query.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
@@ -11,6 +12,7 @@ import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { Account } from '@/auth/decorators/account.decorator';
+import { clientIp } from '@/common/geo/geo.util';
 
 @ApiTags('Stories')
 @Controller('stories')
@@ -145,15 +147,15 @@ export class StoriesController {
   @ApiOperation({ summary: 'Tặng Pulse cho truyện' })
   @Post(':id/gift')
   @UseGuards(JwtAccessGuard)
-  giftPulse(@Param('id') id: string, @Body() dto: { amount: number; message?: string; chapterId?: string }, @Account() user: any) {
-    return this.storiesService.giftPulse(id, user.sub, dto.amount, dto.message, dto.chapterId);
+  giftPulse(@Param('id') id: string, @Body() dto: { amount: number; message?: string; chapterId?: string }, @Account() user: any, @Req() req: Request) {
+    return this.storiesService.giftPulse(id, user.sub, dto.amount, dto.message, dto.chapterId, clientIp(req));
   }
 
   @ApiOperation({ summary: 'Mở khóa truyện bằng Pulse' })
   @Post(':id/unlock')
   @UseGuards(JwtAccessGuard)
-  unlockStory(@Param('id') id: string, @Account() user: any) {
-    return this.storiesService.unlockStoryByPulse(id, user.sub);
+  unlockStory(@Param('id') id: string, @Account() user: any, @Req() req: Request) {
+    return this.storiesService.unlockStoryByPulse(id, user.sub, clientIp(req));
   }
 
   // IMPORTANT: This must be LAST because it's a catch-all route

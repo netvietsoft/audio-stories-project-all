@@ -12,6 +12,7 @@ import {
 
 import { clearAuthCookies, setAuthCookies } from "@/lib/auth/cookies";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData } from "@/lib/api/unwrap";
 import { useUserStore, type UserProfile } from "@/stores/user-store";
 
 type LoginPayload = {
@@ -79,7 +80,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const refreshProfile = useCallback(async () => {
     try {
       const profile = await apiClient.get<BackendMeResponse>("/auth/me");
-      setUser(normalizeUserProfile(profile.data));
+      const profileData = unwrapData<BackendMeResponse>(profile.data);
+      if (profileData) {
+        setUser(normalizeUserProfile(profileData));
+      }
     } catch (error: any) {
       if (error?.response?.status === 401) {
         logout();
@@ -92,13 +96,13 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const login = useCallback(
     async (payload: LoginPayload) => {
       const response = await apiClient.post<LoginResponse>("/auth/login", payload);
-      const { access_token } = response.data;
+      const { access_token } = unwrapData<LoginResponse>(response.data) || ({} as LoginResponse);
       const profile = await apiClient.get<BackendMeResponse>("/auth/me", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
       });
-      const nextUser = normalizeUserProfile(profile.data);
+      const nextUser = normalizeUserProfile(unwrapData<BackendMeResponse>(profile.data) || ({} as BackendMeResponse));
 
       setAuth({
         accessToken: access_token,

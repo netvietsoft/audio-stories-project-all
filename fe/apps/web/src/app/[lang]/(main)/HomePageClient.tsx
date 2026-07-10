@@ -17,6 +17,7 @@ import InteractiveStoriesSection from "../../../components/story/InteractiveStor
 import { InteractiveStoryShelf, TopContributorsLeaderboard } from "@/components/shared/StoryDiscoveryBoard";
 import TrendingKeywords from "@/components/shared/TrendingKeywords";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
 import { getLocalizedValue } from "@/lib/story-localization";
 import { useUserStore } from "@/stores/user-store";
@@ -274,31 +275,31 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
           bannersRes,
         ] = await Promise.allSettled([
           fetchExploreCached<ExploreResponse>({ limit: NEW_LIMIT, lang, sort: "latest" }),
-          apiClient.get("/chapters/latest", { params: { limit: 12, lang } }).then((r) => r.data || []).catch(() => []),
+          apiClient.get("/chapters/latest", { params: { limit: 12, lang } }).then((r) => unwrapList(r.data)).catch(() => []),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "rating" }),
           fetchExploreCached<ExploreResponse>({ limit: 14, lang, sort: "rating", status: "completed" }),
           fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, sort: "views", trendWindow: "week" }),
           apiClient
             .get<{ data: CategoryItem[] }>("/stories/categories/top", { params: { limit: 20, lang, _t: Date.now() } })
-            .then((r) => r.data?.data || [])
+            .then((r) => unwrapList<CategoryItem>(r.data))
             .catch(() => []),
           apiClient
             .get<Array<{ id: number; name: string; slug: string }>>("/stories/categories", {
               params: { language: lang, _t: Date.now() }
             })
-            .then((r) => r.data || [])
+            .then((r) => unwrapList<{ id: number; name: string; slug: string }>(r.data))
             .catch(() => []),
           apiClient
             .get<AuthorItem[]>("/stories/authors")
-            .then((r) => r.data || [])
+            .then((r) => unwrapList<AuthorItem>(r.data))
             .catch(() => []),
           apiClient
             .get<HallResponse>("/stories/hall-of-fame", { params: { limit: 6 } })
-            .then((r) => r.data?.data || [])
+            .then((r) => unwrapList<HallContributor>(r.data))
             .catch(() => []),
           apiClient
             .get<BannerResponse>("/banners", { params: { active: true, lang } })
-            .then((r) => r.data?.data || [])
+            .then((r) => unwrapList<BannerItem>(r.data))
             .catch(() => []),
         ]);
 
@@ -403,8 +404,8 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
           return;
         }
 
-        const nextFavorites = favoriteRes.status === "fulfilled" ? (favoriteRes.value.data.data || []) : [];
-        const nextHistory = historyRes.status === "fulfilled" ? (historyRes.value.data.data || []) : [];
+        const nextFavorites = favoriteRes.status === "fulfilled" ? unwrapList<FavoriteItem>(favoriteRes.value.data) : [];
+        const nextHistory = historyRes.status === "fulfilled" ? unwrapList<HistoryItem>(historyRes.value.data) : [];
 
         setFavoriteStories(nextFavorites);
         setHistoryItems(nextHistory);

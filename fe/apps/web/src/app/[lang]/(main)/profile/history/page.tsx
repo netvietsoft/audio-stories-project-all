@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { History, PlayCircle, Trash2 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { getLocalizedValue } from "@/lib/story-localization";
 import { cleanChapterTitle, formatChapterTitle } from "@/lib/formatChapterTitle";
 import { useTranslations as useChapterTranslations } from "next-intl";
@@ -73,7 +74,7 @@ export default function ProfileHistoryPage() {
           limit: 50,
         },
       });
-      setItems(response.data.data || []);
+      setItems(unwrapList<HistoryItem>(response.data));
     } finally {
       setIsLoading(false);
     }

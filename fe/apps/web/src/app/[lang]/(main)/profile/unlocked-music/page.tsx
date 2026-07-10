@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Coins, LockOpen, Music2 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { useUserStore } from "@/stores/user-store";
 
 type UnlockedMusicItem = {
@@ -69,7 +70,7 @@ export default function ProfileUnlockedMusicPage() {
           limit: 50,
         },
       });
-      setItems(response.data.data || []);
+      setItems(unwrapList<UnlockedMusicItem>(response.data));
     } catch {
       setItems([]);
     } finally {

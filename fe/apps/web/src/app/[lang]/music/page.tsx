@@ -31,6 +31,7 @@ import { interleaveAds } from "@/lib/ads/interleave-ads";
 import { useActiveAdvertisements } from "@/hooks/use-active-advertisements";
 import { useDebounce } from "@/hooks/useDebounce";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { fetchMusicAccessStatus, registerMusicPlayback } from "@/lib/music/music-interactions";
 import {
   formatCompactCount,
@@ -123,7 +124,7 @@ export default function MusicPage() {
           },
         });
 
-        const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+        const rows = unwrapList<MusicApiItem>(response.data);
         const mappedRows = rows
           .map((item, index) => normalizeMusicItem(item, (targetPage - 1) * PAGE_SIZE + index))
           .filter((item) => Boolean(item.audioUrl));

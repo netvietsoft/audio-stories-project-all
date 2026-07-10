@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { BookOpen, Coins, LockOpen } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { getLocalizedValue } from "@/lib/story-localization";
 import { cleanChapterTitle, formatChapterTitle } from "@/lib/formatChapterTitle";
 import { useUserStore } from "@/stores/user-store";
@@ -75,7 +76,7 @@ export default function ProfileUnlockedStoriesPage() {
           limit: 50,
         },
       });
-      setItems(response.data.data || []);
+      setItems(unwrapList<UnlockedStoryItem>(response.data));
     } catch {
       setItems([]);
     } finally {

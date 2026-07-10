@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData } from "@/lib/api/unwrap";
 import { useAuthModalStore } from "@/stores/auth-modal-store";
 import { useUserStore } from "@/stores/user-store";
 
@@ -38,7 +39,7 @@ export default function StoryUpdateSubscriptionButton({ storyId, className = "",
       .get<{ isSubscribed: boolean }>(`/story-subscriptions/${storyId}/status`)
       .then((response) => {
         if (!active) return;
-        setIsSubscribed(Boolean(response.data.isSubscribed));
+        setIsSubscribed(Boolean(unwrapData<{ isSubscribed: boolean }>(response.data)?.isSubscribed));
       })
       .catch(() => {
         if (!active) return;
@@ -65,7 +66,7 @@ export default function StoryUpdateSubscriptionButton({ storyId, className = "",
     setIsLoading(true);
     try {
       const response = await apiClient.post<{ isSubscribed: boolean }>(`/story-subscriptions/${storyId}/toggle`);
-      setIsSubscribed(Boolean(response.data.isSubscribed));
+      setIsSubscribed(Boolean(unwrapData<{ isSubscribed: boolean }>(response.data)?.isSubscribed));
     } finally {
       setIsLoading(false);
     }

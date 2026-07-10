@@ -21,6 +21,7 @@ import PulseIcon from "@/components/icons/PulseIcon";
 
 import AvatarUpload from "@/components/profile/AvatarUpload";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { useUserStore } from "@/stores/user-store";
 
 type FavoritesResponse = {
@@ -77,9 +78,10 @@ export default function ProfilePage() {
                     }),
                 ]);
 
-                setHistoryItems(historyRes.data.data || []);
-                setFavoriteTotal(favoriteRes.data.meta?.total ?? (favoriteRes.data.data || []).length);
-                setListenedTotal(historyRes.data.meta?.total ?? (historyRes.data.data || []).length);
+                const historyRows = unwrapList<HistoryItem>(historyRes.data);
+                setHistoryItems(historyRows);
+                setFavoriteTotal(favoriteRes.data.meta?.total ?? unwrapList(favoriteRes.data).length);
+                setListenedTotal(historyRes.data.meta?.total ?? historyRows.length);
             } finally {
                 setIsLoadingData(false);
             }

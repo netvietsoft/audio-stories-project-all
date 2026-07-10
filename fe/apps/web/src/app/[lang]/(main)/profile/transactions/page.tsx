@@ -21,6 +21,7 @@ type TransactionsResponse = {
 };
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 
 export default function ProfileTransactionsPage() {
   const t = useTranslations("ProfileTransactionsPage");
@@ -34,7 +35,7 @@ export default function ProfileTransactionsPage() {
         const response = await apiClient.get<TransactionsResponse>("/transactions/my", {
           params: { page: 1, limit: 30 },
         });
-        setRows(response.data.data || []);
+        setRows(unwrapList<TransactionRow>(response.data));
       } finally {
         setLoading(false);
       }

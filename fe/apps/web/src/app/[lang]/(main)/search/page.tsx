@@ -7,6 +7,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import StoryCard from "@/components/shared/StoryCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { useDebounce } from "@/hooks/useDebounce";
 import { getOrCreateDeviceId } from "@/lib/tracking/device-id";
 
@@ -79,8 +80,8 @@ function SearchPageContent() {
         apiClient.get<Category[]>("/stories/categories"),
         apiClient.get<Author[]>("/stories/authors"),
       ]);
-      setCategories(catRes.data || []);
-      setAuthors(authorRes.data || []);
+      setCategories(unwrapList<Category>(catRes.data));
+      setAuthors(unwrapList<Author>(authorRes.data));
     };
 
     void loadOptions();
@@ -112,7 +113,7 @@ function SearchPageContent() {
           sort: appliedFilters.sort,
         },
       });
-      setStories(res.data.data || []);
+      setStories(unwrapList<StoryItem>(res.data));
       setLastPage(res.data.meta?.lastPage || 1);
     };
 
@@ -134,7 +135,7 @@ function SearchPageContent() {
           sort: appliedFilters.sort,
         },
       });
-      setStories(res.data.data || []);
+      setStories(unwrapList<StoryItem>(res.data));
       setLastPage(res.data.meta?.lastPage || 1);
     };
     void loadStories();

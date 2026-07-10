@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import StoryCard from "@/components/shared/StoryCard";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { useUserStore } from "@/stores/user-store";
 
 type StoryItem = {
@@ -60,7 +61,8 @@ export default function FavoriteStoriesPage() {
       });
       setPage(response.data.meta.page);
       setLastPage(response.data.meta.lastPage);
-      setStories((prev) => (replace ? response.data.data : [...prev, ...response.data.data]));
+      const rows = unwrapList<StoryItem>(response.data);
+      setStories((prev) => (replace ? rows : [...prev, ...rows]));
     } finally {
       setIsLoading(false);
     }

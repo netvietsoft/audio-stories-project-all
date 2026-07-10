@@ -6,6 +6,7 @@ import { useLocale } from "next-intl";
 import { locales } from "@/i18n";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData } from "@/lib/api/unwrap";
 import { setAuthCookies } from "@/lib/auth/cookies";
 import { useUserStore } from "@/stores/user-store";
 
@@ -45,16 +46,18 @@ export default function GoogleCallbackHandler() {
           },
         });
 
+        const me = unwrapData<MeResponse>(meRes.data) || ({} as MeResponse);
+
         setAuth({
           user: {
-            id: meRes.data.sub,
-            email: meRes.data.email,
-            name: meRes.data.name ?? undefined,
-            avatarUrl: meRes.data.avatar_url ?? undefined,
-            roles: meRes.data.roles ?? [],
-            vipTier: meRes.data.vip_tier,
-            vipExpirationDate: meRes.data.premium_expires_at,
-            pulseBalance: meRes.data.pulse_balance ?? meRes.data.credits ?? 0,
+            id: me.sub,
+            email: me.email,
+            name: me.name ?? undefined,
+            avatarUrl: me.avatar_url ?? undefined,
+            roles: me.roles ?? [],
+            vipTier: me.vip_tier,
+            vipExpirationDate: me.premium_expires_at,
+            pulseBalance: me.pulse_balance ?? me.credits ?? 0,
           },
           accessToken,
         });

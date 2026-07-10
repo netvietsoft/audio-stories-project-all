@@ -9,6 +9,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { getLocalizedValue } from "@/lib/story-localization";
 
 type CategoryItem = {
@@ -85,14 +86,15 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
       const res = await apiClient.get<{ data: CategoryItem[] }>("/stories/categories-with-count", {
         params: { language: locale, _t: Date.now() }
       });
-      const totalCount = (res.data.data || []).reduce((sum, cat) => sum + cat.storiesCount, 0);
-      setCategories([{ id: 0, name: t("allCategories"), slug: "all", storiesCount: totalCount }, ...(res.data.data || [])]);
+      const categoriesData = unwrapList<CategoryItem>(res.data);
+      const totalCount = categoriesData.reduce((sum, cat) => sum + cat.storiesCount, 0);
+      setCategories([{ id: 0, name: t("allCategories"), slug: "all", storiesCount: totalCount }, ...categoriesData]);
     };
     
     const loadAuthors = async () => {
       try {
         const res = await apiClient.get<AuthorItem[]>("/stories/authors");
-        setAuthors(res.data || []);
+        setAuthors(unwrapList<AuthorItem>(res.data));
       } catch (error) {
         console.error(error);
       }
@@ -158,7 +160,7 @@ export default function CategoriesClient({ initialSlug }: { initialSlug?: string
           ...(author ? { authorId: author } : {}), // Assuming backend supports author search via authorId or similar query
         },
       });
-      setStories((res.data.data || []).map((story) => ({
+      setStories(unwrapList<StoryItem>(res.data).map((story) => ({
         ...story,
         title: getLocalizedValue(locale, story.titleVi, story.titleEn, story.title),
       })));

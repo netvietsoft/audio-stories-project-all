@@ -87,7 +87,7 @@ export default async function Footer() {
               </li>
               <li>
                 <Link
-                  href={withLang("/hall-of-fame")}
+                  href={withLang("/vinh-danh")}
                   className="text-sm text-gray-600 dark:text-gray-400 hover:text-pink-600 dark:hover:text-pink-400 transition-colors"
                 >
                   {t("hallOfFame")}

@@ -28,6 +28,7 @@ import {
 
 import Image from "next/image";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData, unwrapList } from "@/lib/api/unwrap";
 import StoryEngagementActions from "@/components/shared/StoryEngagementActions";
 import { getLocaleLabel, getLocalizedValue, getRequestedLocaleValue } from "@/lib/story-localization";
 import { cleanChapterTitle, formatChapterTitle } from "@/lib/formatChapterTitle";
@@ -351,7 +352,7 @@ export default function StoryChapterClient() {
         const reviewsRes = await apiClient.get<ReviewsResponse>(`/stories/${storyIdOrSlug}/reviews`, {
           params: { page, limit: 5, sort },
         });
-        const rows = reviewsRes.data?.data || [];
+        const rows = unwrapList<ReviewItem>(reviewsRes.data);
         setReviews((prev) => (append ? [...prev, ...rows] : rows));
         setReviewPage(reviewsRes.data?.meta?.page || page);
         setReviewLastPage(reviewsRes.data?.meta?.lastPage || 1);
@@ -368,7 +369,7 @@ export default function StoryChapterClient() {
         apiClient.get<RatingStatsResponse>(`/stories/${storyIdOrSlug}/rating-stats`),
         loadReviews(storyIdOrSlug, sort, 1, false),
       ]);
-      setRatingStats(statsRes.data.data);
+      setRatingStats(unwrapData<RatingStatsResponse["data"]>(statsRes.data));
     },
     [loadReviews, reviewSort],
   );
@@ -461,15 +462,18 @@ export default function StoryChapterClient() {
 
         const detailRes = detailResult.value;
         const recommendedData =
-          recommendedResult.status === "fulfilled" ? recommendedResult.value.data?.data || [] : [];
+          recommendedResult.status === "fulfilled" ? unwrapList<StoryListItem>(recommendedResult.value.data) : [];
         const fetchedRatingStats =
-          ratingResult.status === "fulfilled" ? ratingResult.value.data?.data || null : null;
+          ratingResult.status === "fulfilled" ? unwrapData<RatingStatsResponse["data"]>(ratingResult.value.data) : null;
         const fetchedReviews =
-          reviewsResult.status === "fulfilled" ? reviewsResult.value.data?.data || [] : [];
+          reviewsResult.status === "fulfilled" ? unwrapList<ReviewItem>(reviewsResult.value.data) : [];
         const fetchedReviewsMeta =
           reviewsResult.status === "fulfilled" ? reviewsResult.value.data?.meta : undefined;
 
-        const detail = detailRes.data;
+        const detail = unwrapData<StoryDetail>(detailRes.data);
+        if (!detail) {
+          throw new Error("Story detail not found");
+        }
         const normalizedDetail: StoryDetail = {
           ...detail,
           isInteractive: detail.isInteractive,
@@ -489,14 +493,14 @@ export default function StoryChapterClient() {
         (async () => {
           try {
             const resp1 = await apiClient.get(`/settings/unlock_ad_reappearance_minutes`);
-            setUnlockAdReappearMinutes(Number(resp1?.data?.value) || 15);
+            setUnlockAdReappearMinutes(Number(unwrapData<{ value?: unknown }>(resp1?.data)?.value) || 15);
           } catch (e) {
             setUnlockAdReappearMinutes(15);
           }
 
           try {
             const resp2 = await apiClient.get(`/settings/unlock_ad_countdown_seconds`);
-            setUnlockAdCountdownSeconds(Number(resp2?.data?.value) || 5);
+            setUnlockAdCountdownSeconds(Number(unwrapData<{ value?: unknown }>(resp2?.data)?.value) || 5);
           } catch (e) {
             setUnlockAdCountdownSeconds(5);
           }
@@ -562,7 +566,7 @@ export default function StoryChapterClient() {
         const response = await apiClient.get(`/chapters/${selectedChapterId}/public`);
         if (cancelled) return;
 
-        const normalizedChapter = normalizeChapter(response.data);
+        const normalizedChapter = normalizeChapter(unwrapData(response.data));
         hydratedChapterIdsRef.current.add(selectedChapterId);
 
         setStory((prev) => {
@@ -615,7 +619,7 @@ export default function StoryChapterClient() {
     const fetchUnlocked = async () => {
       try {
         const res = await apiClient.get<string[]>(`/chapters/${selectedChapterId}/unlocked-variants`);
-        setUnlockedVariantIds(res.data || []);
+        setUnlockedVariantIds(unwrapList<string>(res.data));
       } catch (error) {
         console.error("Failed to fetch unlocked variants:", error);
       }
@@ -799,7 +803,7 @@ export default function StoryChapterClient() {
     const fetchUnlockState = async () => {
       try {
         const res = await apiClient.get(`/chapters/${selectedChapter.id}/unlock-status`);
-        setChapterUnlockState(res.data || null);
+        setChapterUnlockState(unwrapData(res.data));
       } catch {
         setChapterUnlockState(null);
       }
@@ -942,7 +946,7 @@ export default function StoryChapterClient() {
           },
         });
 
-        const historyItem = response.data?.data?.[0];
+        const historyItem = unwrapList<{ progressSeconds: number }>(response.data)[0];
         const resumeSeconds = Math.max(0, Math.floor(historyItem?.progressSeconds || 0));
 
         if (!resumeSeconds) {
@@ -1386,7 +1390,7 @@ export default function StoryChapterClient() {
       }
       try {
         const statusRes = await apiClient.get(`/chapters/${selectedChapter.id}/unlock-status`);
-        setChapterUnlockState(statusRes.data || null);
+        setChapterUnlockState(unwrapData(statusRes.data));
       } catch {
         // ignore
       }

@@ -11,6 +11,7 @@ import "swiper/css";
 
 import Link from "@/components/shared/LocalizedLink";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { getLocalizedValue } from "@/lib/story-localization";
 
 type StoryItem = {
@@ -81,7 +82,7 @@ export default function InteractiveStoriesSection() {
         });
 
         const unique = Array.from(
-          new Map((response.data?.data || []).map((story) => [story.id, story])).values(),
+          new Map(unwrapList<StoryItem>(response.data).map((story) => [story.id, story])).values(),
         );
 
         const sorted = unique

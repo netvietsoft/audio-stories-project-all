@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Loader2, CheckCircle, XCircle, Clock, Copy, Check, Download } from 'lucide-react';
 import { apiClient } from '@/lib/api/api-client';
+import { unwrapData } from '@/lib/api/unwrap';
 
 interface VietQRPaymentProps {
   orderId: string;
@@ -43,8 +44,8 @@ export default function VietQRPayment({
     const checkPayment = async () => {
       try {
         const response = await apiClient.get(`/billing/vietqr/order/${orderId}/status`);
-        const data = response.data;
-        
+        const data = unwrapData<{ status?: string; is_expired?: boolean }>(response.data) || {};
+
         if (data.status === 'SUCCESS') {
           setStatus('success');
           setTimeout(() => onSuccess(), 1500);
@@ -231,8 +232,8 @@ export default function VietQRPayment({
             setStatus('checking');
             try {
               const response = await apiClient.get(`/billing/vietqr/order/${orderId}/status`);
-              const data = response.data;
-              
+              const data = unwrapData<{ status?: string; is_expired?: boolean }>(response.data) || {};
+
               if (data.status === 'SUCCESS') {
                 setStatus('success');
                 setTimeout(() => onSuccess(), 1000);

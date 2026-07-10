@@ -8,6 +8,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Check, ListMusic, Loader2, Plus, X } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { useUserStore } from "@/stores/user-store";
 
 type PersonalPlaylist = {
@@ -75,7 +76,7 @@ export default function ProfilePlaylistsPage() {
     setIsLoading(true);
     try {
       const response = await apiClient.get<PersonalPlaylistListResponse>("/personal-playlists");
-      const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+      const rows = unwrapList<PersonalPlaylist>(response.data);
       setItems(rows);
     } catch {
       setItems([]);

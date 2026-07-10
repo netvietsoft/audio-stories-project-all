@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import StoryGridCard from "@/components/shared/StoryGridCard";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 
 type StoryItem = {
   id: string;
@@ -58,7 +59,7 @@ export default function CategoryStoriesPage() {
         const allCategories = await apiClient.get<Category[]>("/stories/categories", {
           params: { language: locale === "en" ? "en" : "vi" },
         });
-        const found = allCategories.data?.find((cat) => cat.slug === categorySlug);
+        const found = unwrapList<Category>(allCategories.data).find((cat) => cat.slug === categorySlug);
         if (found) {
           setCategory(found);
           setCategoryId(found.id);
@@ -85,7 +86,7 @@ export default function CategoryStoriesPage() {
             categoryId,
           },
         });
-        setStories(res.data.data || []);
+        setStories(unwrapList<StoryItem>(res.data));
         setLastPage(res.data.meta?.lastPage || 1);
       } catch (error) {
         console.error("Failed to load stories:", error);

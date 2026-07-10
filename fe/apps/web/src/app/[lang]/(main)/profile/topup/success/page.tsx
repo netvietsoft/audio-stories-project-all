@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { CheckCircle, Coins, ArrowRight, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api/api-client';
+import { unwrapData } from '@/lib/api/unwrap';
 import { useAuth } from '@/auth/auth-provider';
 
 export default function TopupSuccessPage() {
@@ -30,7 +31,7 @@ export default function TopupSuccessPage() {
     const fetchUserData = async () => {
         try {
             const res = await apiClient.get('/auth/me');
-            setUserData(res.data);
+            setUserData(unwrapData(res.data));
             // Update global user store with latest credits
             void refreshProfile();
         } catch (error) {

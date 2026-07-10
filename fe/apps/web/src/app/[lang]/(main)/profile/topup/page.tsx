@@ -14,6 +14,7 @@ import {
     Zap,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api/api-client';
+import { unwrapData, unwrapList } from '@/lib/api/unwrap';
 import { useAuth } from '@/auth/auth-provider';
 import PaymentMethodSelector from '@/components/payment/PaymentMethodSelector';
 import type { PaymentMethod } from '@/components/payment/PaymentMethodSelector';
@@ -71,7 +72,7 @@ export default function TopupPage() {
         setIsLoading(true);
         try {
             const res = await apiClient.get(`/packages?lang=${currentLocale}`);
-            const activePackages = res.data
+            const activePackages = unwrapList<PaymentPackage>(res.data)
                 .filter((pkg: PaymentPackage) => pkg.isActive)
                 .filter((pkg: PaymentPackage) => {
                     // Filter packages by locale - only show packages matching current locale
@@ -184,7 +185,7 @@ export default function TopupPage() {
                 const res = await apiClient.post('/billing/vietqr/create-order', {
                     package_code: selectedPackage.code,
                 });
-                setVietqrData(res.data);
+                setVietqrData(unwrapData(res.data));
                 setShowPaymentModal(true);
             } else if (paymentMethod === 'stripe') {
                 const res = await apiClient.post('/billing/create-checkout-session', {
@@ -193,8 +194,9 @@ export default function TopupPage() {
                     success_url: `${window.location.origin}/${locale}/profile/topup/success`,
                     cancel_url: `${window.location.origin}/${locale}/profile/topup`,
                 });
-                if (res.data.url) {
-                    window.location.href = res.data.url;
+                const checkoutUrl = unwrapData<{ url?: string }>(res.data)?.url;
+                if (checkoutUrl) {
+                    window.location.href = checkoutUrl;
                 }
             }
         } catch (error: any) {

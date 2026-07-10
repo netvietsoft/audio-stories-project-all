@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData } from "@/lib/api/unwrap";
 
 export type MusicLikeStatusResponse = {
   data: {
@@ -48,7 +49,7 @@ export const registerMusicPlayback = async (musicId: string, withHistory: boolea
 
 export const fetchMusicLikeStatus = async (musicId: string): Promise<boolean> => {
   const response = await apiClient.get<MusicLikeStatusResponse>(`/music/interactions/${musicId}/liked`);
-  return Boolean(response.data?.data?.liked);
+  return Boolean(unwrapData<MusicLikeStatusResponse["data"]>(response.data)?.liked);
 };
 
 export const toggleMusicLike = async (
@@ -57,25 +58,27 @@ export const toggleMusicLike = async (
 ): Promise<{ liked: boolean; likeCount: number | null }> => {
   if (isCurrentlyLiked) {
     const response = await apiClient.delete<MusicLikeActionResponse>(`/music/interactions/${musicId}/like`);
+    const result = unwrapData<MusicLikeActionResponse["data"]>(response.data);
     return {
       liked: false,
-      likeCount: typeof response.data?.data?.likeCount === "number" ? response.data.data.likeCount : null,
+      likeCount: typeof result?.likeCount === "number" ? result.likeCount : null,
     };
   }
 
   const response = await apiClient.post<MusicLikeActionResponse>(`/music/interactions/${musicId}/like`);
+  const result = unwrapData<MusicLikeActionResponse["data"]>(response.data);
   return {
     liked: true,
-    likeCount: typeof response.data?.data?.likeCount === "number" ? response.data.data.likeCount : null,
+    likeCount: typeof result?.likeCount === "number" ? result.likeCount : null,
   };
 };
 
 export const fetchMusicAccessStatus = async (musicId: string) => {
   const response = await apiClient.get<MusicAccessStatusResponse>(`/music/interactions/${musicId}/access`);
-  return response.data?.data;
+  return unwrapData<MusicAccessStatusResponse["data"]>(response.data);
 };
 
 export const unlockMusicItem = async (musicId: string) => {
   const response = await apiClient.post<UnlockMusicResponse>(`/music/interactions/${musicId}/unlock`);
-  return response.data?.data;
+  return unwrapData<UnlockMusicResponse["data"]>(response.data);
 };

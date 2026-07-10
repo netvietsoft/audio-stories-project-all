@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { BellRing, ArrowLeft } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +34,7 @@ export default function NotificationsPage() {
       const response = await apiClient.get<NotificationsResponse>("/notifications", {
         params: { page: 1, limit: 50 },
       });
-      setItems(response.data.data || []);
+      setItems(unwrapList<NotificationItem>(response.data));
     } finally {
       setLoading(false);
     }

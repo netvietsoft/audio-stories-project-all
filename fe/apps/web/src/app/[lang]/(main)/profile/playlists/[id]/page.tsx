@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import { ArrowLeft, Check, Loader2, Pause, Pencil, Play, Trash2, X } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData } from "@/lib/api/unwrap";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
 
@@ -127,7 +128,7 @@ export default function PlaylistDetailPage() {
 
     try {
       const response = await apiClient.get<PlaylistDetailResponse>(`/personal-playlists/${playlistId}`);
-      const data = response.data?.data;
+      const data = unwrapData<PlaylistDetail>(response.data);
       if (!data) {
         throw new Error("No data");
       }
@@ -199,7 +200,7 @@ export default function PlaylistDetailPage() {
         title: nextTitle,
       });
 
-      const updatedTitle = response.data?.data?.title?.trim() || nextTitle;
+      const updatedTitle = unwrapData<{ title?: string }>(response.data)?.title?.trim() || nextTitle;
 
       setPlaylist((prev) =>
         prev

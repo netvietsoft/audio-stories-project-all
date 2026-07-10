@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { BookOpen, ChevronDown, Clock3, Facebook, Globe, Headphones, ListMusic, Lock, Play, PlayCircle, Star, Zap } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData, unwrapList } from "@/lib/api/unwrap";
 import FavoriteButton from "@/components/shared/FavoriteButton";
 import StoryUpdateSubscriptionButton from "@/components/shared/StoryUpdateSubscriptionButton";
 import ShareActionButton from "@/components/shared/ShareActionButton";
@@ -98,11 +99,11 @@ export default function StoryDetailClient() {
     const fetchDetail = async () => {
       try {
         const response = await apiClient.get<StoryDetail>(`/stories/${slug}`);
-        setStory(response.data);
+        setStory(unwrapData<StoryDetail>(response.data));
         // fetch site social links (public)
         try {
           const siteRes = await apiClient.get('/settings/site');
-          setSiteSocial(siteRes.data);
+          setSiteSocial(unwrapData<Record<string, string | null>>(siteRes.data));
         } catch (e) {
           setSiteSocial(null);
         }
@@ -114,7 +115,7 @@ export default function StoryDetailClient() {
               lang: locale,
             },
           });
-          setRecommendedStories(recommendedRes.data.data || []);
+          setRecommendedStories(unwrapList<StoryDetail>(recommendedRes.data));
         } catch (e) {
           setRecommendedStories([]);
         }
@@ -128,7 +129,7 @@ export default function StoryDetailClient() {
               lang: locale,
             },
           });
-          setNewStories(newRes.data.data || []);
+          setNewStories(unwrapList<StoryDetail>(newRes.data));
         } catch (e) {
           setNewStories([]);
         }

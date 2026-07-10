@@ -1,6 +1,7 @@
 import type { AxiosProgressEvent } from 'axios';
 
 import { apiClient } from '@/lib/api/api-client';
+import { unwrapData } from '@/lib/api/unwrap';
 
 export type UploadAudioResponse = {
   url: string;
@@ -25,5 +26,5 @@ export const uploadAudioToR2 = async (
     },
   });
 
-  return response.data.url;
+  return unwrapData<UploadAudioResponse>(response.data)?.url || '';
 };

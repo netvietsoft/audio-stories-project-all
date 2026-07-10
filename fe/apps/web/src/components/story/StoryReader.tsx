@@ -6,6 +6,7 @@ import DOMPurify from "dompurify";
 import { useLocale } from "next-intl";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData } from "@/lib/api/unwrap";
 import { useUserStore } from "@/stores/user-store";
 import { useAuthModalStore } from "@/stores/auth-modal-store";
 import SegmentCommentButton from "@/components/story/SegmentCommentButton";
@@ -556,7 +557,7 @@ export default function StoryReader({
           sort: commentSort,
         },
       });
-      const rawComments = response?.data?.data?.comments || response?.data?.comments || [];
+      const rawComments = unwrapData<ParagraphCommentsResponse>(response?.data)?.comments || [];
       const normalized = normalizeComments(rawComments);
 
       setParagraphComments((prev) => ({

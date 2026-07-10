@@ -34,6 +34,7 @@ import PlayNextButton from "@/components/shared/PlayNextButton";
 import ShareActionButton from "@/components/shared/ShareActionButton";
 import Link from "@/components/shared/LocalizedLink";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { fetchMusicAccessStatus, fetchMusicLikeStatus, unlockMusicItem } from "@/lib/music/music-interactions";
 import {
   type MusicComment,
@@ -346,7 +347,7 @@ export default function MusicDetailPage() {
         const normalized = normalizeMusicItem(detailRes.data.data);
         setTrack(normalized);
 
-        const normalizedRelated = (relatedRes.data?.data || [])
+        const normalizedRelated = unwrapList<MusicApiItem>(relatedRes.data)
           .map((item, index) => normalizeMusicItem(item, index))
           .filter((item) => Boolean(item.audioUrl))
           .slice(0, 5);
@@ -434,13 +435,7 @@ export default function MusicDetailPage() {
 
     try {
       const response = await apiClient.get("/packages");
-      const responseData = response.data as unknown;
-
-      const rawPackages: TopupPackage[] = Array.isArray(responseData)
-        ? responseData as TopupPackage[]
-        : Array.isArray((responseData as { data?: unknown[] })?.data)
-          ? ((responseData as { data: unknown[] }).data as TopupPackage[])
-          : [];
+      const rawPackages: TopupPackage[] = unwrapList<TopupPackage>(response.data);
 
       const filteredPackages = rawPackages
         .filter((pkg) => (pkg.isActive ?? true) && typeof pkg.credits === "number" && Number.isFinite(pkg.credits) && pkg.credits > 0)

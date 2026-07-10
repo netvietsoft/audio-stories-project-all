@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import StoryGridCard from "@/components/shared/StoryGridCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 
 type StoryItem = {
   id: string;
@@ -54,8 +55,8 @@ export default function NewStoriesPage() {
         apiClient.get<Category[]>("/stories/categories").catch(() => ({ data: [] })),
         apiClient.get<Author[]>("/stories/authors").catch(() => ({ data: [] })),
       ]);
-      setCategories(catRes.data || []);
-      setAuthors(authorRes.data || []);
+      setCategories(unwrapList<Category>(catRes.data));
+      setAuthors(unwrapList<Author>(authorRes.data));
     };
     void loadData();
   }, []);
@@ -73,7 +74,7 @@ export default function NewStoriesPage() {
           ...(filter.status ? { status: filter.status } : {}),
         },
       });
-      setStories(res.data.data || []);
+      setStories(unwrapList<StoryItem>(res.data));
       setLastPage(res.data.meta?.lastPage || 1);
     };
 

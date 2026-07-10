@@ -17,6 +17,7 @@ import PulseIcon from "@/components/icons/PulseIcon";
 import { ACCESS_TOKEN_KEY } from "@/constants/auth";
 import { clearAuthCookies } from "@/lib/auth/cookies";
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { useUserStore } from "@/stores/user-store";
 import { useAuthModalStore } from "@/stores/auth-modal-store";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -208,7 +209,7 @@ export default function Navbar() {
             limit: 5,
           },
         });
-        const rows = response.data.data || [];
+        const rows = unwrapList<NotificationItem>(response.data);
         setNotifs(rows);
         setUnreadNotifs(response.data.meta?.unreadCount ?? rows.filter((row) => !row.isRead).length);
       } catch {
@@ -230,7 +231,7 @@ export default function Navbar() {
         const response = await apiClient.get<{ data: TopCategoryItem[] }>("/stories/categories/top", {
           params: { limit: 6, lang: currentLang, _t: Date.now() },
         });
-        setTopCategories(response.data.data || []);
+        setTopCategories(unwrapList<TopCategoryItem>(response.data));
       } catch {
         setTopCategories([]);
       }
@@ -249,11 +250,7 @@ export default function Navbar() {
           },
         });
 
-        const rows = Array.isArray(response.data)
-          ? response.data
-          : Array.isArray(response.data?.data)
-            ? response.data.data
-            : [];
+        const rows = unwrapList<LanguageItem>(response.data);
 
         const normalized = rows
           .filter((item): item is LanguageItem => Boolean(item?.key && item?.name))
@@ -325,7 +322,7 @@ export default function Navbar() {
             },
           });
 
-          const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+          const rows = unwrapList<Record<string, unknown>>(response.data);
           setSearchResults(
             rows.map((item, index) => ({
               id: String(item.id || `music-${index}`),
@@ -346,7 +343,7 @@ export default function Navbar() {
               lang: currentLang,
             },
           });
-          setSearchResults(response.data.data || []);
+          setSearchResults(unwrapList<SearchResultItem>(response.data));
         }
 
         setShowSearchDropdown(true);

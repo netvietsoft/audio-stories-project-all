@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData, unwrapList } from "@/lib/api/unwrap";
 
 type FavoriteStory = {
   id: string;
@@ -39,7 +40,7 @@ export const useFavoriteStore = create<FavoriteStore>((set, get) => ({
         },
       });
       set({
-        favoriteIds: unique((response.data.data || []).map((item) => item.id)),
+        favoriteIds: unique(unwrapList<FavoriteStory>(response.data).map((item) => item.id)),
         isHydrated: true,
         isLoading: false,
       });
@@ -60,7 +61,7 @@ export const useFavoriteStore = create<FavoriteStore>((set, get) => ({
       const response = await apiClient.post<{ isFavorite: boolean }>("/favorites/toggle", {
         storyId,
       });
-      const isFavorite = Boolean(response.data.isFavorite);
+      const isFavorite = Boolean(unwrapData<{ isFavorite: boolean }>(response.data)?.isFavorite);
       const next = get().favoriteIds;
       set({
         favoriteIds: isFavorite

@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Clock3, Headphones, Music2, PlayCircle, Trash2 } from "lucide-react";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import { formatMusicDuration, formatCompactCount } from "@/lib/music/normalize-music";
 import { useAudioStore } from "@/stores/audio-store";
 import { useUserStore } from "@/stores/user-store";
@@ -182,7 +183,7 @@ export default function ProfileMusicHistoryPage() {
           limit: 50,
         },
       });
-      setItems(response.data.data || []);
+      setItems(unwrapList<MusicHistoryItem>(response.data));
     } catch {
       setItems([]);
     } finally {

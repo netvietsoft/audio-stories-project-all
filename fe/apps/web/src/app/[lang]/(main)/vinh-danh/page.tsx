@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 
 type HallMember = {
   id: string;
@@ -23,7 +24,7 @@ export default function HallOfFamePage() {
       const res = await apiClient.get<{ data: HallMember[] }>("/stories/hall-of-fame", {
         params: { limit: 20 },
       });
-      setMembers(res.data.data || []);
+      setMembers(unwrapList<HallMember>(res.data));
     };
 
     void load();

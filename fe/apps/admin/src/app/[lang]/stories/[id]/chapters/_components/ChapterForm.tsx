@@ -996,7 +996,8 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         </div>
                     </div>
 
-                    {/* Chapter Number */}
+                    {/* Chapter Number + Ngôn ngữ (cùng 1 hàng) */}
+                    <div className="grid grid-cols-2 gap-4">
                     <div className="flex flex-col space-y-1.5">
                         <label className="text-sm font-black text-slate-700 uppercase tracking-wider">Số chương</label>
                         <input
@@ -1025,6 +1026,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                         </div>
                         {errors.language && <p className="text-red-500 text-xs mt-1">{errors.language.message}</p>}
+                    </div>
                     </div>
 
                     {/* Title */}
@@ -1074,61 +1076,78 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center justify-between">
                                 <span>File Audio <span className="text-indigo-500 lowercase text-xs">({lang})</span></span>
                             </label>
-                            <div className="relative group">
-                                <input
-                                    ref={lang === 'vi' ? audioInputViRef : audioInputEnRef}
-                                    type="file"
-                                    accept="audio/*"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        void handleAudioFileSelect(lang, file);
-                                        // Reset để có thể chọn lại cùng một file
-                                        e.target.value = '';
-                                    }}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => (lang === 'vi' ? audioInputViRef : audioInputEnRef).current?.click()}
-                                    disabled={isUploadingAudio}
-                                    className="w-full min-h-[100px] bg-white border-2 border-dashed border-slate-300 rounded-[20px] flex flex-col items-center justify-center gap-2 text-slate-500 hover:border-indigo-300 transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                                >
-                                    {(lang === 'vi' ? isUploadingAudioVi : isUploadingAudioEn) ? (
-                                        <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-                                    ) : (
-                                        <span className="text-xs font-bold text-slate-500 uppercase">Tải lên Audio</span>
-                                    )}
-                                </button>
-                            </div>
-                            {audioValue && (
-                                <div className="p-3 bg-white border border-indigo-100 rounded-xl flex items-center gap-3 shadow-sm">
-                                    <audio controls src={audioValue} className="w-full h-10" />
-                                    <button
-                                        type="button"
-                                        onClick={async () => {
-                                            await deleteOldAudio(audioValue);
-                                            handleI18nChange('audioUrl', lang, '');
+                            <div className="flex flex-col gap-3 md:flex-row md:items-start">
+                                {/* Vùng upload — hiển thị player khi đã có audio */}
+                                <div className="md:flex-1">
+                                    <input
+                                        ref={lang === 'vi' ? audioInputViRef : audioInputEnRef}
+                                        type="file"
+                                        accept="audio/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            void handleAudioFileSelect(lang, file);
+                                            // Reset để có thể chọn lại cùng một file
+                                            e.target.value = '';
                                         }}
-                                        className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all shrink-0"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
+                                    />
+                                    <div className="w-full min-h-[100px] bg-white border-2 border-dashed border-slate-300 rounded-[20px] flex flex-col items-center justify-center gap-2 p-3 transition-all">
+                                        {(lang === 'vi' ? isUploadingAudioVi : isUploadingAudioEn) ? (
+                                            <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                                        ) : audioValue ? (
+                                            <>
+                                                <div className="w-full flex items-center gap-2">
+                                                    <audio controls src={audioValue} className="w-full h-10" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            await deleteOldAudio(audioValue);
+                                                            handleI18nChange('audioUrl', lang, '');
+                                                        }}
+                                                        className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-all shrink-0"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => (lang === 'vi' ? audioInputViRef : audioInputEnRef).current?.click()}
+                                                    disabled={isUploadingAudio}
+                                                    className="text-xs font-bold text-indigo-500 hover:text-indigo-700 uppercase disabled:opacity-70"
+                                                >
+                                                    Đổi file
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => (lang === 'vi' ? audioInputViRef : audioInputEnRef).current?.click()}
+                                                disabled={isUploadingAudio}
+                                                className="w-full flex-1 flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-indigo-500 transition-all cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                                            >
+                                                <span className="text-xs font-bold uppercase">Tải lên Audio</span>
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
-                            )}
-                            <input
-                                type="text"
-                                value={audioValue}
-                                onChange={(e) => handleI18nChange('audioUrl', lang, e.target.value)}
-                                placeholder="Hoặc dán URL audio (R2)..."
-                                className={`admin-input ${errors[audioField as keyof ChapterFormValues] ? 'admin-input-error' : ''}`}
-                            />
-                            {errors[audioField as keyof ChapterFormValues] && (
-                                <p className="text-red-500 text-xs mt-1">{(errors[audioField as keyof ChapterFormValues]?.message as string) || ''}</p>
-                            )}
+                                {/* Ô URL — cùng 1 hàng với player/vùng upload */}
+                                <div className="md:flex-1 flex flex-col space-y-1.5">
+                                    <input
+                                        type="text"
+                                        value={audioValue}
+                                        onChange={(e) => handleI18nChange('audioUrl', lang, e.target.value)}
+                                        placeholder="Hoặc dán URL audio (R2)..."
+                                        className={`admin-input ${errors[audioField as keyof ChapterFormValues] ? 'admin-input-error' : ''}`}
+                                    />
+                                    {errors[audioField as keyof ChapterFormValues] && (
+                                        <p className="text-red-500 text-xs mt-1">{(errors[audioField as keyof ChapterFormValues]?.message as string) || ''}</p>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Timing File Upload (SRT/VTT/LRC cho đọc-cùng) */}
-                        <div className="flex flex-col space-y-1.5 md:col-span-2">
+                        {/* Timing File (SRT/VTT/LRC) + Thời lượng — cùng 1 hàng */}
+                        <div className="flex flex-col space-y-1.5">
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider">
                                 File Timing Đọc Cùng (SRT/VTT/LRC)
                             </label>
@@ -1146,7 +1165,22 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             ) : null}
                         </div>
 
-                        {/* Thumbnail Upload */}
+                        {/* Audio Duration — cùng hàng với File Timing */}
+                        <div className="flex flex-col space-y-1.5">
+                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-slate-400" /> Thời lượng (s)
+                            </label>
+                            <input
+                                type="number"
+                                {...register('audioDuration')}
+                                readOnly
+                                tabIndex={-1}
+                                className={`admin-input ${errors.audioDuration ? 'admin-input-error' : ''}`}
+                            />
+                            {errors.audioDuration && <p className="text-red-500 text-xs mt-1">{errors.audioDuration.message}</p>}
+                        </div>
+
+                        {/* Thumbnail Upload — 1 cột */}
                         <div className="flex flex-col space-y-1.5 text-center">
                             <label className="text-sm font-black text-slate-700 uppercase tracking-wider text-left block">Ảnh Thumbnail</label>
                             <div className="relative group flex flex-col items-center">
@@ -1202,24 +1236,8 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                             </div>
                         </div>
 
-                        {/* Audio Duration */}
-                        <div className="flex flex-col space-y-1.5">
-                            <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                                <Clock className="w-4 h-4 text-slate-400" /> Thời lượng (s)
-
-                            </label>
-                            <input
-                                type="number"
-                                {...register('audioDuration')}
-                                readOnly
-                                tabIndex={-1}
-                                className={`admin-input ${errors.audioDuration ? 'admin-input-error' : ''}`}
-                            />
-                            {errors.audioDuration && <p className="text-red-500 text-xs mt-1">{errors.audioDuration.message}</p>}
-                        </div>
-
-                        {/* Access Type & Unlock Time */}
-                        <div className="flex flex-col space-y-4 md:col-span-2 mt-2">
+                        {/* Access Type & YouTube — 1 cột (cạnh thumbnail) */}
+                        <div className="flex flex-col space-y-4 mt-2">
                             <div className="flex flex-col space-y-1.5">
                                 <label className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
                                     <Lock className="w-4 h-4 text-amber-500" /> Phân quyền

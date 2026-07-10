@@ -72,6 +72,7 @@ export default function GlobalPlayer() {
   const playbackRate = useAudioStore((state) => state.playbackRate);
   const currentTime = useAudioStore((state) => state.currentTime);
   const duration = useAudioStore((state) => state.duration);
+  const bufferedTime = useAudioStore((state) => state.bufferedTime);
   const isShuffle = useAudioStore((state) => state.isShuffle);
   const repeatMode = useAudioStore((state) => state.repeatMode);
   const seekTarget = useAudioStore((state) => state.seekTarget);
@@ -83,6 +84,7 @@ export default function GlobalPlayer() {
   const clearSeekTarget = useAudioStore((state) => state.clearSeekTarget);
   const setCurrentTime = useAudioStore((state) => state.setCurrentTime);
   const setDuration = useAudioStore((state) => state.setDuration);
+  const setBufferedTime = useAudioStore((state) => state.setBufferedTime);
   const setVolume = useAudioStore((state) => state.setVolume);
   const setPlaybackRate = useAudioStore((state) => state.setPlaybackRate);
   const toggleMute = useAudioStore((state) => state.toggleMute);
@@ -159,7 +161,7 @@ export default function GlobalPlayer() {
 
   useEffect(() => {
     const audio = new Audio();
-    audio.preload = "metadata";
+    audio.preload = "auto";
     audioRef.current = audio;
 
     const handleTimeUpdate = () => {
@@ -180,18 +182,30 @@ export default function GlobalPlayer() {
       playNext();
     };
 
+    // Track how much audio the browser has buffered ahead (for the preload indicator).
+    const handleProgress = () => {
+      try {
+        const buffered = audio.buffered;
+        if (buffered.length) setBufferedTime(buffered.end(buffered.length - 1));
+      } catch {
+        /* audio.buffered can throw before media is ready */
+      }
+    };
+
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("loadedmetadata", handleLoadedMetadata);
     audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("progress", handleProgress);
 
     return () => {
       audio.pause();
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
       audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("progress", handleProgress);
       audioRef.current = null;
     };
-  }, [playNext, setCurrentTime, setDuration]);
+  }, [playNext, setCurrentTime, setDuration, setBufferedTime]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -200,8 +214,9 @@ export default function GlobalPlayer() {
     if (audio.src !== currentTrack.audioUrl) {
       audio.src = currentTrack.audioUrl;
       audio.load();
+      setBufferedTime(0);
     }
-  }, [currentTrack]);
+  }, [currentTrack, setBufferedTime]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -437,6 +452,10 @@ export default function GlobalPlayer() {
 
   const accentRgb = "236 72 153";
   const progressPercent = hasTrack ? progress : 0;
+  const bufferedPercent =
+    hasTrack && safeDuration > 0
+      ? Math.min(100, Math.max(progressPercent, (bufferedTime / safeDuration) * 100))
+      : 0;
 
   const shellClass = "bg-pink-50/95 border-t border-pink-200/80 dark:bg-[#2a1720]/95 dark:border-pink-900/40";
   const hoverToneClass = "hover:bg-pink-100/70 dark:hover:bg-pink-900/20";
@@ -556,7 +575,7 @@ export default function GlobalPlayer() {
             style={{
               WebkitAppearance: "none",
               appearance: "none",
-              background: `linear-gradient(to right, rgb(${accentRgb}) 0%, rgb(${accentRgb}) ${progressPercent}%, var(--time-slider-track) ${progressPercent}%, var(--time-slider-track) 100%)`,
+              background: `linear-gradient(to right, rgb(${accentRgb}) 0%, rgb(${accentRgb}) ${progressPercent}%, rgb(${accentRgb} / 0.35) ${progressPercent}%, rgb(${accentRgb} / 0.35) ${bufferedPercent}%, var(--time-slider-track) ${bufferedPercent}%, var(--time-slider-track) 100%)`,
             }}
             aria-label={t("audioProgress")}
           />
@@ -606,8 +625,9 @@ export default function GlobalPlayer() {
       </div>
 
       {!isExpandedMobile ? (
-        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#3a3b3c] md:hidden">
-          <div className="h-full transition-all" style={{ width: `${progressPercent}%`, backgroundColor: `rgb(${accentRgb})` }} />
+        <div className="relative mt-2 h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-[#3a3b3c] md:hidden">
+          <div className="absolute inset-y-0 left-0 h-full transition-all" style={{ width: `${bufferedPercent}%`, backgroundColor: `rgb(${accentRgb} / 0.35)` }} />
+          <div className="absolute inset-y-0 left-0 h-full transition-all" style={{ width: `${progressPercent}%`, backgroundColor: `rgb(${accentRgb})` }} />
         </div>
       ) : null}
 

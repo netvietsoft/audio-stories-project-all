@@ -44,6 +44,7 @@ type AudioState = {
   volume: number;
   currentTime: number;
   duration: number;
+  bufferedTime: number;
   playbackRate: number;
   isMuted: boolean;
   isShuffle: boolean;
@@ -73,6 +74,7 @@ type AudioState = {
   setVolume: (volume: number) => void;
   setCurrentTime: (currentTime: number) => void;
   setDuration: (duration: number) => void;
+  setBufferedTime: (bufferedTime: number) => void;
   setPlaybackRate: (playbackRate: number) => void;
   toggleMute: (isMuted?: boolean) => void;
   resetPlayer: () => void;
@@ -85,6 +87,7 @@ const initialState = {
   volume: 1,
   currentTime: 0,
   duration: 0,
+  bufferedTime: 0,
   playbackRate: 1,
   isMuted: false,
   isShuffle: false,
@@ -392,6 +395,7 @@ export const useAudioStore = create<AudioState>()(
       setVolume: (volume) => set({ volume: Math.max(0, Math.min(1, volume)) }),
       setCurrentTime: (currentTime) => set({ currentTime }),
       setDuration: (duration) => set({ duration }),
+      setBufferedTime: (bufferedTime) => set({ bufferedTime }),
       setPlaybackRate: (playbackRate) => set({ playbackRate }),
       toggleMute: (isMuted) => set((state) => ({ isMuted: isMuted ?? !state.isMuted })),
       resetPlayer: () => set(initialState),

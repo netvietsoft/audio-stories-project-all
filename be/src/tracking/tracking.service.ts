@@ -8,6 +8,14 @@ import { TrackEventDto } from './dto/track-event.dto';
 
 type TrackKind = 'view' | 'listen';
 
+export function buildDailyViewUpsertArgs(storyId: string, count: number, day: Date) {
+  return {
+    where: { storyId_date: { storyId, date: day } },
+    create: { storyId, date: day, views: count },
+    update: { views: { increment: count } },
+  };
+}
+
 @Injectable()
 export class TrackingService {
   private readonly logger = new Logger(TrackingService.name);
@@ -163,6 +171,7 @@ export class TrackingService {
         count: number;
       }> = [];
       const writes: any[] = [];
+      const storyViewDeltas: Array<{ storyId: string; count: number }> = [];
 
       const collectByPrefix = async (
         keys: string[],
@@ -219,12 +228,13 @@ export class TrackingService {
         }
       };
 
-      await collectByPrefix(storyKeys, this.STORY_VIEWS_PREFIX, (storyId, count) =>
-        this.prisma.story.updateMany({
+      await collectByPrefix(storyKeys, this.STORY_VIEWS_PREFIX, (storyId, count) => {
+        storyViewDeltas.push({ storyId, count });
+        return this.prisma.story.updateMany({
           where: { id: storyId },
           data: { totalViews: { increment: count } },
-        }),
-      );
+        });
+      });
 
       await collectByPrefix(chapterKeys, this.CHAPTER_VIEWS_PREFIX, (chapterId, count) =>
         this.prisma.chapter.updateMany({
@@ -232,6 +242,12 @@ export class TrackingService {
           data: { viewCount: { increment: count } },
         }),
       );
+
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      for (const { storyId, count } of storyViewDeltas) {
+        writes.push(this.prisma.storyViewDaily.upsert(buildDailyViewUpsertArgs(storyId, count, today)));
+      }
 
       if (writes.length > 0) {
         try {

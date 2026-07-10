@@ -4,6 +4,7 @@ import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { StatsService } from './stats.service';
 import { VipChapterStatsQueryDto } from './dto/vip-chapter-stats-query.dto';
+import { TopStoriesQueryDto } from './dto/top-stories-query.dto';
 
 @Controller('stats')
 export class StatsController {
@@ -21,5 +22,12 @@ export class StatsController {
     @Roles('ADMIN')
     async getVipChapterStats(@Query() query: VipChapterStatsQueryDto) {
         return this.statsService.getVipChapterStats(query);
+    }
+
+    @Get('top-stories')
+    @UseGuards(JwtAccessGuard, RolesGuard)
+    @Roles('ADMIN')
+    async getTopStories(@Query() query: TopStoriesQueryDto) {
+        return this.statsService.getTopStories(query);
     }
 }

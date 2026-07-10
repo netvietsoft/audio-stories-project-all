@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { JsonLd } from "@/components/seo/JsonLd";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import StoryDetailClient from "./_components/StoryDetailClient";
+import { unwrapData } from "@/lib/api/unwrap";
 
 type StoryMeta = {
   title: string;
@@ -31,7 +32,7 @@ async function fetchStoryMeta(slug: string): Promise<StoryMeta | null> {
       next: { revalidate: 3600 },
     });
     if (!res.ok) return null;
-    return res.json() as Promise<StoryMeta>;
+    return unwrapData<StoryMeta>(await res.json());
   } catch {
     return null;
   }

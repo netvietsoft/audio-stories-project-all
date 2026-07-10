@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unwrapList } from "@/lib/api/unwrap";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://netvietaudio.com";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
@@ -15,7 +16,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             next: { revalidate: 86400 },
         });
 
-        const categories: { slug: string; name: string; description?: string }[] = res.ok ? await res.json() : [];
+        const categories = res.ok
+            ? unwrapList<{ slug: string; name: string; description?: string }>(await res.json())
+            : [];
         const cat = categories.find((c) => c.slug === slug);
 
         if (!cat) throw new Error("Not found");

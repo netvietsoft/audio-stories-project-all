@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unwrapList } from "@/lib/api/unwrap";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://netvietaudio.com";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
@@ -35,7 +36,7 @@ async function getTopCategories() {
             });
         if (!res.ok) return [];
         const data = await res.json();
-        return data?.data || [];
+        return unwrapList(data);
     } catch {
         return [];
     }

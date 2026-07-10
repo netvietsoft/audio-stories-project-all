@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { unwrapList } from "@/lib/api/unwrap";
 
 // Static pages
 const staticRoutes: { url: string; priority: number; changeFrequency: MetadataRoute.Sitemap[0]["changeFrequency"] }[] = [
@@ -41,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     if (storiesRes.status === "fulfilled" && storiesRes.value.ok) {
       const data = await storiesRes.value.json();
-      const stories: { slug: string; updatedAt?: string }[] = data?.data || [];
+      const stories = unwrapList<{ slug: string; updatedAt?: string }>(data);
       storyEntries = stories.map((story) => ({
         url: `${siteUrl}/story/${story.slug}`,
         lastModified: story.updatedAt ? new Date(story.updatedAt) : now,
@@ -51,8 +52,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     if (categoriesRes.status === "fulfilled" && categoriesRes.value.ok) {
-      const cats: { slug: string }[] = await categoriesRes.value.json();
-      categoryEntries = (cats || []).map((cat) => ({
+      const catsData = await categoriesRes.value.json();
+      const cats = unwrapList<{ slug: string }>(catsData);
+      categoryEntries = cats.map((cat) => ({
         url: `${siteUrl}/story/categories/${cat.slug}`,
         lastModified: now,
         changeFrequency: "weekly" as const,

@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import StoryGridCard from "@/components/shared/StoryGridCard";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
+import { unwrapList } from "@/lib/api/unwrap";
 
 type StoryItem = {
   id: string;
@@ -47,8 +48,8 @@ export default function InteractiveStoriesPage() {
           isInteractive: "true",
           lang,
         });
-        setStories(res.data || []);
-        setLastPage(res.meta?.lastPage || 1);
+        setStories(unwrapList<StoryItem>(res));
+        setLastPage((res.data as any)?.meta?.lastPage ?? res.meta?.lastPage ?? 1);
       } catch (error) {
         console.error("Failed to load interactive stories:", error);
       } finally {

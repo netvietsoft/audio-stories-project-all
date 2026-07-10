@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unwrapData } from "@/lib/api/unwrap";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://netvietaudio.com";
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
@@ -17,7 +18,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
         if (!res.ok) throw new Error("Not found");
 
-        const story = await res.json();
+        const story = unwrapData<any>(await res.json());
+        if (!story) throw new Error("Not found");
 
         const title = story.title || "Truyện Audio";
         const description = story.description

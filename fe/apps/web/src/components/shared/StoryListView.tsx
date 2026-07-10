@@ -70,7 +70,7 @@ export default function StoryListView({ chapters, isLoading, tone = "default" }:
     );
   }
 
-  const validChapters = (chapters || []).filter((chapter) => chapter?.story?.slug);
+  const validChapters = (Array.isArray(chapters) ? chapters : []).filter((chapter) => chapter?.story?.slug);
 
   if (!validChapters.length) {
     return (

@@ -8,6 +8,7 @@ import StoryCard from "@/components/shared/StoryCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
 import { fetchExploreCached } from "@/lib/api/public-story-cache";
+import { unwrapList } from "@/lib/api/unwrap";
 
 type StoryItem = {
   id: string;
@@ -88,9 +89,10 @@ function ExploreContent() {
         sort: appliedFilters.sort,
       });
 
-      setPage(response.meta.page);
-      setLastPage(response.meta.lastPage);
-      setStories((prev) => (replace ? response.data : [...prev, ...response.data]));
+      const nextStories = unwrapList<StoryItem>(response);
+      setPage((response.data as any)?.meta?.page ?? response.meta?.page ?? nextPage);
+      setLastPage((response.data as any)?.meta?.lastPage ?? response.meta?.lastPage ?? 1);
+      setStories((prev) => (replace ? nextStories : [...prev, ...nextStories]));
     } finally {
       setIsLoading(false);
     }
@@ -104,8 +106,8 @@ function ExploreContent() {
       apiClient.get<AuthorOption[]>("/stories/authors"),
     ]);
 
-    setCategories(categoryRes.data);
-    setAuthors(authorRes.data);
+    setCategories(unwrapList<CategoryOption>(categoryRes.data));
+    setAuthors(unwrapList<AuthorOption>(authorRes.data));
   };
 
   useEffect(() => {

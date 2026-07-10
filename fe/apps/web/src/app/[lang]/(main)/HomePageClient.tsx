@@ -303,11 +303,11 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
             .catch(() => []),
         ]);
 
-        setNewestStories(newestRes.status === "fulfilled" ? (newestRes.value.data || []) : []);
+        setNewestStories(newestRes.status === "fulfilled" ? unwrapList<StoryItem>(newestRes.value) : []);
         setNewestChapters(newestChaptersRes.status === "fulfilled" ? newestChaptersRes.value : []);
-        setPopularStories(popularRes.status === "fulfilled" ? (popularRes.value.data || []) : []);
-        setCompletedStories(completedRes.status === "fulfilled" ? (completedRes.value.data || []) : []);
-        setTrendingStories(trendingRes.status === "fulfilled" ? (trendingRes.value.data || []) : []);
+        setPopularStories(popularRes.status === "fulfilled" ? unwrapList<StoryItem>(popularRes.value) : []);
+        setCompletedStories(completedRes.status === "fulfilled" ? unwrapList<StoryItem>(completedRes.value) : []);
+        setTrendingStories(trendingRes.status === "fulfilled" ? unwrapList<StoryItem>(trendingRes.value) : []);
 
         const catTop = catTopRes.status === "fulfilled" ? catTopRes.value : [];
         const catFb = catFallbackRes.status === "fulfilled"
@@ -331,10 +331,10 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
           tienHiepId ? fetchExploreCached<ExploreResponse>({ limit: POPULAR_LIMIT, lang, categoryId: tienHiepId }) : Promise.resolve({ data: [] }),
         ]);
 
-        setActionStories(actionRes.status === "fulfilled" ? (actionRes.value.data || []) : []);
-        setXuyenKhongStories(xuyenKhongRes.status === "fulfilled" ? (xuyenKhongRes.value.data || []) : []);
-        setShounenStories(shounenRes.status === "fulfilled" ? (shounenRes.value.data || []) : []);
-        setTienHiepStories(tienHiepRes.status === "fulfilled" ? (tienHiepRes.value.data || []) : []);
+        setActionStories(actionRes.status === "fulfilled" ? unwrapList<StoryItem>(actionRes.value) : []);
+        setXuyenKhongStories(xuyenKhongRes.status === "fulfilled" ? unwrapList<StoryItem>(xuyenKhongRes.value) : []);
+        setShounenStories(shounenRes.status === "fulfilled" ? unwrapList<StoryItem>(shounenRes.value) : []);
+        setTienHiepStories(tienHiepRes.status === "fulfilled" ? unwrapList<StoryItem>(tienHiepRes.value) : []);
 
         // Keep category order stable from API response and only exclude tabs categories.
         const excludedSlugs = ['action', 'xuyen-khong', 'shounen', 'tien-hiep'];
@@ -354,7 +354,7 @@ export default function HomePageClient({ initialData }: { initialData: HomePageI
         selectedCategories.forEach((cat, index) => {
           const result = displayCategoryResults[index];
           if (result && result.status === "fulfilled") {
-            storiesMap[cat.id] = result.value.data || [];
+            storiesMap[cat.id] = unwrapList<StoryItem>(result.value);
           } else {
             storiesMap[cat.id] = [];
           }

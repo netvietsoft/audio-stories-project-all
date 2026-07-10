@@ -75,4 +75,13 @@ export class CreateChapterDto {
     @IsString()
     @MaxLength(10)
     language?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(2000000)
+    timingRaw?: string;
+
+    @IsOptional()
+    @IsEnum(['srt', 'vtt', 'lrc', 'auto'] as any)
+    timingFormat?: 'srt' | 'vtt' | 'lrc' | 'auto';
 }

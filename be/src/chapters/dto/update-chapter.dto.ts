@@ -79,4 +79,13 @@ export class UpdateChapterDto {
     @IsOptional()
     @IsDateString()
     unlocksAt?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(2000000)
+    timingRaw?: string;
+
+    @IsOptional()
+    @IsEnum(['srt', 'vtt', 'lrc', 'auto'] as any)
+    timingFormat?: 'srt' | 'vtt' | 'lrc' | 'auto';
 }

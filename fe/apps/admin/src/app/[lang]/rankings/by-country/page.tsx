@@ -26,12 +26,13 @@ export default function StoriesByCountryRankingPage() {
     apiClient
       .get(`/stats/top-countries?metric=view&limit=100`)
       .then((res) => {
-        const list = unwrapList<{ country: string }>(res.data)
+        const raw = unwrapList<{ country: string }>(res.data); // BE trả theo value desc (nhiều view nhất trước)
+        const list = raw
           .map((r) => ({ code: r.country, name: countryName(r.country) }))
           .sort((a, b) => a.name.localeCompare(b.name, 'vi'));
         if (!cancelled) {
           setCountryOptions(list);
-          if (list.length > 0) setCountry((cur) => cur || list[0].code);
+          if (raw.length > 0) setCountry((cur) => cur || raw[0].country); // mặc định = quốc gia nhiều view nhất
         }
       })
       .catch(() => { if (!cancelled) setCountryOptions([]); })

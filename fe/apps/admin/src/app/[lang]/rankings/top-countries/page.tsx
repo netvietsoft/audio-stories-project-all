@@ -55,7 +55,7 @@ export default function TopCountriesRankingPage() {
               </div>
               <div className="shrink-0 text-right">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{metric.label}</p>
-                <p className="text-lg font-black text-pink-600">{formatMetricValue(metric, row.value)}</p>
+                <p className="text-lg font-black text-pink-600">{formatMetricValue(metric, row.value, true)}</p>
               </div>
             </div>
           ))}

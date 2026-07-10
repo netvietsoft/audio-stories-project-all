@@ -62,7 +62,7 @@ export default function TopStoriesRankingPage() {
         <div className="flex flex-wrap gap-2">
           {state.countries.map((c) => (
             <span key={c.country} className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
-              {countryName(c.country)}: {formatMetricValue(metric, c.value)}
+              {countryName(c.country)}: {formatMetricValue(metric, c.value, true)}
             </span>
           ))}
         </div>

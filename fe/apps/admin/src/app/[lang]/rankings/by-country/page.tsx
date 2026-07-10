@@ -91,7 +91,7 @@ export default function StoriesByCountryRankingPage() {
       ) : loading ? (
         <div className="rounded-[32px] border border-dashed border-slate-200 bg-white p-10 text-center text-sm font-medium text-slate-500 shadow-sm">Đang tải dữ liệu…</div>
       ) : (
-        <RankingTable rows={rows} metricLabel={metric.label} formatValue={(v) => formatMetricValue(metric, v)} />
+        <RankingTable rows={rows} metricLabel={metric.label} formatValue={(v) => formatMetricValue(metric, v, true)} />
       )}
     </div>
   );

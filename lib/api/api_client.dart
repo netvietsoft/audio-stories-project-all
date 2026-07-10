@@ -60,8 +60,10 @@ class ApiClient {
         },
       );
 
-  Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
-      _send(() => _dio.get(path, queryParameters: query, options: _opts));
+  /// GET envelope. `raw:true` trả nguyên body `{data,meta}` (KHÔNG bóc envelope) —
+  /// dùng khi cần đọc `meta` phân trang (vd /stories/explore); vẫn qua refresh-retry.
+  Future<dynamic> get(String path, {Map<String, dynamic>? query, bool raw = false}) =>
+      _send(() => _dio.get(path, queryParameters: query, options: _opts), raw: raw);
 
   /// GET nhưng KHÔNG follow redirect — trả `Location` của 302 (dùng cho
   /// `/chapters/:id/audio`: BE 302 tới URL audio thật sau khi kiểm entitlement).
@@ -87,7 +89,8 @@ class ApiClient {
   Future<dynamic> post(String path, {Object? body}) =>
       _send(() => _dio.post(path, data: body, options: _opts));
 
-  Future<dynamic> _send(Future<Response<dynamic>> Function() run, {bool allowRetry = true}) async {
+  Future<dynamic> _send(Future<Response<dynamic>> Function() run,
+      {bool allowRetry = true, bool raw = false}) async {
     try {
       final res = await run();
       // 401 → thử refresh 1 lần rồi chạy lại (thunk `run` đọc lại token mới qua _opts).
@@ -95,14 +98,14 @@ class ApiClient {
         final newToken = await refreshCallback!();
         if (newToken != null && newToken.isNotEmpty) {
           _accessToken = newToken;
-          return _send(run, allowRetry: false);
+          return _send(run, allowRetry: false, raw: raw);
         }
       }
       final body = res.data;
       if (res.statusCode != null && res.statusCode! >= 400) {
         throw _fromErrorBody(body, res.statusCode);
       }
-      return _unwrap(body);
+      return raw ? body : _unwrap(body);
     } on DioException catch (e) {
       throw _fromDio(e);
     }
@@ -143,8 +146,8 @@ class ApiClient {
   }
 }
 
-/// Lấy MẢNG từ body đã bóc 1 lớp — bóc tiếp các lớp `{data:...}` lồng nhau
-/// (phòng thủ với endpoint bọc 2 lớp). Trả [] nếu không phải list.
+/// Lấy MẢNG từ body — bóc tiếp các lớp `{data:...}` lồng nhau (phòng thủ với
+/// endpoint bọc 2 lớp cũ lẫn single-wrap mới). Trả [] nếu không phải list.
 List<dynamic> unwrapList(dynamic body) {
   var x = body;
   var guard = 0;
@@ -153,4 +156,24 @@ List<dynamic> unwrapList(dynamic body) {
     guard++;
   }
   return x is List ? x : const [];
+}
+
+/// Lấy MAP `meta` phân trang từ body RAW (chưa bóc envelope). Bóc các lớp
+/// `{data,meta}` lồng nhau và trả `meta` ở lớp mà `data` là List — chịu được cả
+/// single-wrap mới `{data:[],meta}` lẫn double-wrap cũ `{data:{data:[],meta}}`.
+/// Null nếu không tìm thấy meta phân trang.
+Map<String, dynamic>? unwrapMeta(dynamic body) {
+  var x = body;
+  var guard = 0;
+  while (x is Map && guard < 3) {
+    if (x['data'] is List) {
+      final m = x['meta'];
+      return m is Map ? Map<String, dynamic>.from(m) : null;
+    }
+    final next = x['data'];
+    if (next == null) return null;
+    x = next;
+    guard++;
+  }
+  return null;
 }

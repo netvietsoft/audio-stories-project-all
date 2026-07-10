@@ -86,8 +86,9 @@ class StoriesRepository implements StoriesRepositoryLike {
   // Cache TÁCH theo ngôn ngữ nội dung (đổi lang không lẫn data).
   static String _exploreKey(String lang) => 'cache.stories.explore.$lang';
 
-  /// `GET /stories/explore` — trả `{data:{data:[story],meta:{total,page,lastPage}}}`.
-  /// Sau khi ApiClient bóc 1 lớp còn `{data:[story],meta}`.
+  /// `GET /stories/explore` — trả envelope `{data:[story], meta:{total,page,lastPage}}`.
+  /// Đọc RAW (raw:true) để giữ `meta` phân trang — `ApiClient._unwrap` bóc lớp `data`
+  /// và làm mất `meta`. `unwrapList`/`unwrapMeta` chịu được cả shape 2 lớp cũ.
   Future<PagedBooks> explore({
     int page = 1,
     int limit = 20,
@@ -97,7 +98,7 @@ class StoriesRepository implements StoriesRepositoryLike {
     String? trendWindow,
     String lang = 'en',
   }) async {
-    final inner = await _api.get(ApiEndpoints.storiesExplore, query: {
+    final body = await _api.get(ApiEndpoints.storiesExplore, raw: true, query: {
       'page': page,
       'limit': limit,
       // lang rỗng → KHÔNG gửi (BE trả mọi ngôn ngữ) — dùng cho Discover tìm toàn bộ.
@@ -109,8 +110,8 @@ class StoriesRepository implements StoriesRepositoryLike {
       if (trendWindow != null && trendWindow.isNotEmpty) 'trendWindow': trendWindow,
     });
 
-    final list = unwrapList(inner);
-    final meta = inner is Map ? inner['meta'] : null;
+    final list = unwrapList(body);
+    final meta = unwrapMeta(body);
 
     // Cache feed mặc định (không search/category/sort) theo ngôn ngữ.
     if ((search == null || search.isEmpty) && categoryId == null && (sort == null || sort.isEmpty) && page == 1) {

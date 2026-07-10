@@ -7,6 +7,7 @@ import { ChevronLeft, Loader2, Share2 } from 'lucide-react';
 import Link from '@/components/shared/LocalizedLink';
 
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapData } from '@/lib/api/unwrap';
 import SocialLinkForm, { type SocialLinkFormValues } from '../_components/SocialLinkForm';
 
 type SocialLinkDetail = SocialLinkFormValues & { id: string };
@@ -30,7 +31,7 @@ export default function EditSocialLinkPage() {
       try {
         const safeId = encodeURIComponent(normalizedId);
         const response = await apiClient.get(`/social-links/${safeId}`);
-        const data = (response.data?.data ?? response.data) as SocialLinkDetail;
+        const data = unwrapData<SocialLinkDetail>(response.data);
 
         if (!data) {
           throw new Error('Social link not found.');

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { formatChapterTitle, cleanChapterTitle } from "@/lib/formatChapterTitle";
 import { useRouter, useParams } from "next/navigation";
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
+import { unwrapData } from "@/lib/api/unwrap";
 import { VariantForm, type VariantFormValues } from "../../stories/[id]/chapters/_components/VariantForm";
 import { ChevronLeft, Loader2, Layers } from "lucide-react";
 
@@ -26,12 +27,12 @@ export default function EditVariantPage() {
     const fetchData = async () => {
       try {
         const variantRes = await apiClient.get(`/chapter-variants/${variantId}`);
-        const variantData = variantRes.data;
+        const variantData = unwrapData(variantRes.data);
         setVariant(variantData);
 
-        if (variantData.chapterId) {
+        if (variantData?.chapterId) {
           const chapterRes = await apiClient.get(`/chapters/${variantData.chapterId}`);
-          setChapter(chapterRes.data);
+          setChapter(unwrapData(chapterRes.data));
         }
       } catch (error) {
         console.error("Failed to fetch variant data:", error);

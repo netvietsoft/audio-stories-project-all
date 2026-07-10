@@ -6,6 +6,7 @@ import { ChevronLeft, Image as ImageIcon, Loader2 } from 'lucide-react';
 import Link from '@/components/shared/LocalizedLink';
 
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapData } from '@/lib/api/unwrap';
 import BannerForm, { type BannerFormValues, type BannerSubmitPayload } from '../_components/BannerForm';
 
 type BannerDetail = BannerFormValues & {
@@ -28,7 +29,7 @@ export default function EditBannerPage() {
       setIsPageLoading(true);
       try {
         const response = await apiClient.get(`/banners/admin/${id}`);
-        setInitialData(response.data);
+        setInitialData(unwrapData<BannerDetail>(response.data));
       } catch (error) {
         console.error('Failed to fetch banner detail:', error);
         alert('Không thể tải thông tin banner.');

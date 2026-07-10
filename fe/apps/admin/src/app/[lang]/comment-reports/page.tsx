@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList, unwrapData } from '@/lib/api/unwrap';
 
 type ReportStatus = 'pending' | 'reviewed' | 'resolved' | 'dismissed';
 
@@ -49,16 +50,6 @@ type ReportRow = {
       title: string;
       chapterNumber: number;
     };
-  };
-};
-
-type ReportResponse = {
-  data: ReportRow[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
   };
 };
 
@@ -126,14 +117,14 @@ export default function CommentReportsPage() {
       });
 
       const [listRes, statsRes] = await Promise.all([
-        apiClient.get<ReportResponse>(`/comments/reports?${params.toString()}`),
+        apiClient.get(`/comments/reports?${params.toString()}`),
         apiClient.get<Stats>('/comments/reports/stats'),
       ]);
 
-      setRows(listRes.data.data);
-      setTotal(listRes.data.meta.total);
-      setTotalPages(listRes.data.meta.totalPages || 1);
-      setStats(statsRes.data);
+      setRows(unwrapList<ReportRow>(listRes.data));
+      setTotal((listRes.data?.data?.meta ?? listRes.data?.meta)?.total ?? 0);
+      setTotalPages((listRes.data?.data?.meta ?? listRes.data?.meta)?.totalPages ?? 1);
+      setStats(unwrapData<Stats>(statsRes.data));
     } catch (error) {
       console.error('Failed to fetch comment reports:', error);
     } finally {

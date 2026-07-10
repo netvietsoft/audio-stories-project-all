@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Facebook, Send, MessageCircle, Instagram, Twitter, Youtube, Music } from 'lucide-react';
 import { apiClient } from '@/lib/api/api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 
@@ -97,7 +98,7 @@ export default function SocialLinks() {
     const fetchLinks = async () => {
       try {
         const response = await apiClient.get('/social-links');
-        setLinks(Array.isArray(response.data) ? response.data : []);
+        setLinks(unwrapList<SocialLink>(response.data));
       } catch (error) {
         console.error('Failed to fetch social links:', error);
       }

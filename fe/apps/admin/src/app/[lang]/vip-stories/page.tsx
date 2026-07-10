@@ -15,6 +15,7 @@ import {
     TrendingUp,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 
 type AccessTypeFilter = 'all' | 'vip' | 'timed';
 type SortBy = 'credits' | 'opens';
@@ -104,10 +105,12 @@ export default function VipStoriesStatsPage() {
             });
 
             const res = await apiClient.get<VipStatsResponse>(`/stats/vip-chapters?${params.toString()}`);
-            setRows(res.data.data || []);
-            setSummary(res.data.summary || null);
-            setTotal(res.data.meta.total || 0);
-            setTotalPages(res.data.meta.totalPages || 1);
+            setRows(unwrapList<VipStoryRow>(res.data));
+            const meta = (res.data as any)?.data?.meta ?? res.data?.meta;
+            const summary = (res.data as any)?.data?.summary ?? res.data?.summary;
+            setSummary(summary || null);
+            setTotal(meta?.total || 0);
+            setTotalPages(meta?.totalPages || 1);
         } catch (error) {
             console.error('Failed to fetch VIP chapter stats:', error);
         } finally {

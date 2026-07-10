@@ -6,6 +6,7 @@ import { Check, Loader2, Music2, Plus, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData, unwrapList } from "@/lib/api/unwrap";
 import { useUserStore } from "@/stores/user-store";
 
 type PlaylistSummary = {
@@ -86,7 +87,7 @@ export default function AddToPlaylistModal({
 
     try {
       const response = await apiClient.get<PlaylistListResponse>("/personal-playlists");
-      const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+      const rows = unwrapList<PlaylistSummary>(response.data);
       setPlaylists(rows);
     } catch {
       setPlaylists([]);
@@ -119,7 +120,7 @@ export default function AddToPlaylistModal({
         title,
       });
 
-      const created = response.data?.data;
+      const created = unwrapData<PlaylistSummary>(response.data);
       if (created) {
         setPlaylists((prev) => [created, ...prev]);
         setNewPlaylistTitle("");

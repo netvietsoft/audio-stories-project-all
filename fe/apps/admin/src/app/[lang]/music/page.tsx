@@ -6,6 +6,7 @@ import { Loader2, Music2, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import axios from "axios";
 
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import MusicForm, {
   type MusicFormInitialData,
   type MusicFormSubmitPayload,
@@ -174,7 +175,7 @@ export default function AdminMusicPage() {
         },
       });
 
-      const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+      const rows = unwrapList<MusicItem>(response.data);
       const normalizedRows: MusicItem[] = rows.map((row) => ({
         ...row,
         slug: typeof row.slug === "string" && row.slug.trim() ? row.slug.trim() : row.id,
@@ -189,8 +190,9 @@ export default function AdminMusicPage() {
       }));
 
       setItems(normalizedRows);
-      setTotal(response.data?.meta?.total || 0);
-      setLastPage(Math.max(1, response.data?.meta?.lastPage || 1));
+      const meta = (response.data as any)?.data?.meta ?? response.data?.meta;
+      setTotal(meta?.total || 0);
+      setLastPage(Math.max(1, meta?.lastPage || 1));
     } catch (error) {
       console.error("Failed to fetch music list:", error);
       setItems([]);
@@ -219,7 +221,7 @@ export default function AdminMusicPage() {
 
         if (cancelled) return;
 
-        const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+        const rows = unwrapList<MusicItem>(response.data);
         setTrackOptions(
           rows
             .filter((item) => item.contentType !== "playlist")
@@ -354,7 +356,7 @@ export default function AdminMusicPage() {
         },
       });
 
-      const rows = Array.isArray(nextResponse.data?.data) ? nextResponse.data.data : [];
+      const rows = unwrapList<MusicItem>(nextResponse.data);
       setTrackOptions(
         rows
           .filter((item) => item.contentType !== "playlist")

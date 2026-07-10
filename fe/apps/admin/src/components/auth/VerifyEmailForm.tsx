@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData } from "@/lib/api/unwrap";
 import { setAuthCookies } from "@/lib/auth/cookies";
 import { verifyEmailSchema } from "@/lib/validation/auth";
 import { useUserStore, type UserProfile } from "@/stores/user-store";
@@ -95,7 +96,7 @@ export default function VerifyEmailForm({ token, email: emailProp, onSuccess }: 
         code: data.code,
       });
 
-      const { access_token } = verifyResponse.data;
+      const { access_token } = unwrapData<VerifyCodeResponse>(verifyResponse.data) || ({} as VerifyCodeResponse);
       const profileResponse = await apiClient.get<BackendMeResponse>("/auth/me", {
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -103,7 +104,7 @@ export default function VerifyEmailForm({ token, email: emailProp, onSuccess }: 
       });
 
       setAuth({
-        user: normalizeUserProfile(profileResponse.data),
+        user: normalizeUserProfile(unwrapData<BackendMeResponse>(profileResponse.data) || ({} as BackendMeResponse)),
         accessToken: access_token,
       });
       setAuthCookies(access_token);

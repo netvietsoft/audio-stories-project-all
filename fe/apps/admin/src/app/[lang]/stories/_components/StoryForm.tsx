@@ -20,6 +20,7 @@ import {
 import Link from '@/components/shared/LocalizedLink';
 
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList, unwrapData } from '@/lib/api/unwrap';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import type { Category, Chapter, Author, StorySubmitPayload } from '@/types/admin';
 import { AuthorForm } from '../../authors/_components/AuthorForm';
@@ -159,17 +160,18 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                     apiClient.get('/stories/authors'),
                     apiClient.get(`/chapters?limit=1000&lang=${selectedLanguage}`),
                 ]);
-                setCategories(catsRes.data);
-                setAuthors(authorsRes.data);
-                const fetchedChapters = Array.isArray(allChaptersRes.data?.data) ? allChaptersRes.data.data : [];
+                setCategories(unwrapList<Category>(catsRes.data));
+                setAuthors(unwrapList<Author>(authorsRes.data));
+                const fetchedChapters = unwrapList<Chapter>(allChaptersRes.data);
                 setAvailableChapters(
                     fetchedChapters.filter((chapter: Chapter) => chapter.language === selectedLanguage),
                 );
 
                 if (initialData?.id) {
                     const chapsRes = await apiClient.get(`/stories/${initialData.id}/chapters`);
-                    setChapters(chapsRes.data);
-                    setSelectedChapterIds(chapsRes.data.map((c: Chapter) => c.id));
+                    const fetchedChaps = unwrapList<Chapter>(chapsRes.data);
+                    setChapters(fetchedChaps);
+                    setSelectedChapterIds(fetchedChaps.map((c: Chapter) => c.id));
                 }
             } catch (error) {
                 console.error('Failed to fetch metadata:', error);
@@ -278,7 +280,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
             formData.append('file', selectedFile);
             try {
                 const uploadRes = await apiClient.post('/upload/image', formData);
-                finalThumbnailUrl = uploadRes.data?.url;
+                finalThumbnailUrl = unwrapData(uploadRes.data)?.url;
             } catch (err: any) {
                 console.error('Failed to upload image:', err);
                 setError('thumbnailUrl', { type: 'server', message: 'Lỗi khi tải ảnh lên server. Vui lòng thử lại.' });
@@ -396,7 +398,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
         setIsSubmittingAuthor(true);
         try {
             const res = await apiClient.post('/authors', data);
-            const newAuthor = res.data;
+            const newAuthor = unwrapData<Author>(res.data) as Author;
             setAuthors(prev => [...prev, newAuthor].sort((a, b) => a.name.localeCompare(b.name)));
             setValue('authorId', newAuthor.id);
             setIsAuthorModalOpen(false);
@@ -415,7 +417,7 @@ export const StoryForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCanc
                 ...data,
                 language: selectedLanguage,
             });
-            const newCategory = res.data;
+            const newCategory = unwrapData<Category>(res.data) as Category;
             setCategories(prev => [...prev, newCategory]);
             setValue('categoryIds', [...selectedCategoryIds, newCategory.id]);
             setIsCategoryModalOpen(false);

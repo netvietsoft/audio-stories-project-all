@@ -13,6 +13,7 @@ import {
     UserCircle,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapData, unwrapList } from '@/lib/api/unwrap';
 import { AuthorForm } from './_components/AuthorForm';
 import { useParams } from 'next/navigation';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
@@ -50,7 +51,7 @@ export default function AuthorsPage() {
         setIsLoading(true);
         try {
             const res = await apiClient.get('/authors');
-            setAuthors(res.data);
+            setAuthors(unwrapList<Author>(res.data));
         } catch (error) {
             console.error('Failed to fetch authors:', error);
         } finally {
@@ -85,10 +86,12 @@ export default function AuthorsPage() {
         try {
             if (editingAuthor) {
                 const res = await apiClient.patch(`/authors/${editingAuthor.id}`, data);
-                setAuthors(authors.map(a => a.id === editingAuthor.id ? { ...a, ...res.data } : a));
+                const updated = unwrapData<Author>(res.data);
+                setAuthors(authors.map(a => a.id === editingAuthor.id ? { ...a, ...updated } : a));
             } else {
                 const res = await apiClient.post('/authors', data);
-                setAuthors([...authors, res.data].sort((a, b) => a.name.localeCompare(b.name)));
+                const created = unwrapData<Author>(res.data);
+                setAuthors([...authors, ...(created ? [created] : [])].sort((a, b) => a.name.localeCompare(b.name)));
             }
             setIsModalOpen(false);
         } catch (error: any) {

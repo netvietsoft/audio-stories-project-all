@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 
 export interface AdminLanguage {
   id: number;
@@ -18,11 +19,7 @@ const fallbackLanguages: AdminLanguage[] = [
 ];
 
 const normalizeLanguages = (raw: unknown): AdminLanguage[] => {
-  const list = Array.isArray(raw)
-    ? raw
-    : Array.isArray((raw as { data?: unknown[] })?.data)
-      ? (raw as { data: unknown[] }).data
-      : [];
+  const list = unwrapList<unknown>(raw);
 
   const parsed = list
     .map((item) => {

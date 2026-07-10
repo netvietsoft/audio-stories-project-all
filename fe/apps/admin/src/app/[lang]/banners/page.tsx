@@ -8,6 +8,7 @@ import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 
 type BannerItem = {
   id: string;
@@ -37,7 +38,7 @@ export default function BannersPage() {
     setIsLoading(true);
     try {
       const response = await apiClient.get('/banners/admin');
-      setItems(Array.isArray(response.data?.data) ? response.data.data : []);
+      setItems(unwrapList<BannerItem>(response.data));
     } catch (error) {
       console.error('Failed to fetch banners:', error);
       setItems([]);

@@ -17,6 +17,7 @@ import {
     Check,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 import { CategoryForm } from './_components/CategoryForm';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
@@ -83,8 +84,8 @@ export default function CategoriesPage() {
                 ...(searchTerm ? { search: searchTerm } : {}),
             });
             const res = await apiClient.get(`/categories?${params.toString()}`);
-            setCategories(res.data.data);
-            setTotal(res.data.meta.total);
+            setCategories(unwrapList<Category>(res.data));
+            setTotal((res.data?.data?.meta ?? res.data?.meta)?.total ?? 0);
         } catch (error) {
             console.error('Failed to fetch categories:', error);
         } finally {

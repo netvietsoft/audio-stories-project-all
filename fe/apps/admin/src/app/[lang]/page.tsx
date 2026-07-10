@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, FileText, TrendingUp, Activity, Loader2 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapData } from '@/lib/api/unwrap';
 import useRequireAdmin from '@/hooks/useRequireAdmin';
 
 interface DashboardStats {
@@ -43,7 +44,7 @@ export default function AdminDashboard() {
         const fetchStats = async () => {
             try {
                 const res = await apiClient.get('/auth/admin/stats');
-                setStats(res.data);
+                setStats(unwrapData<DashboardStats>(res.data));
             } catch (error) {
                 console.error('Failed to fetch stats:', error);
             } finally {

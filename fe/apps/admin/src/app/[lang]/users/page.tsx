@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from '@/components/shared/LocalizedLink';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 
 interface User {
     id: string;
@@ -100,7 +101,7 @@ export default function UsersPage() {
         setIsLoading(true);
         try {
             const res = await apiClient.get('/auth/users');
-            setUsers(res.data);
+            setUsers(unwrapList<User>(res.data));
         } catch (error) {
             console.error('Failed to fetch users:', error);
         } finally {

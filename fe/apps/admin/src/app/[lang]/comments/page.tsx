@@ -16,6 +16,7 @@ import {
     Reply,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList, unwrapData } from '@/lib/api/unwrap';
 import { useTranslations } from 'next-intl';
 import { formatChapterTitle, cleanChapterTitle } from '@/lib/formatChapterTitle';
 
@@ -91,9 +92,9 @@ export default function CommentsPage() {
                 ...(hiddenFilter !== '' && { isHidden: hiddenFilter }),
             });
             const res = await apiClient.get(`/comments?${params}`);
-            setComments(res.data.data);
-            setTotal(res.data.meta.total);
-            setTotalPages(res.data.meta.totalPages);
+            setComments(unwrapList<Comment>(res.data));
+            setTotal((res.data?.data?.meta ?? res.data?.meta)?.total ?? 0);
+            setTotalPages((res.data?.data?.meta ?? res.data?.meta)?.totalPages ?? 1);
         } catch (error) {
             console.error('Failed to fetch comments:', error);
         } finally {
@@ -104,7 +105,7 @@ export default function CommentsPage() {
     const fetchStats = async () => {
         try {
             const res = await apiClient.get('/comments/stats');
-            setStats(res.data);
+            setStats(unwrapData<Stats>(res.data));
         } catch (error) {
             console.error('Failed to fetch stats:', error);
         }

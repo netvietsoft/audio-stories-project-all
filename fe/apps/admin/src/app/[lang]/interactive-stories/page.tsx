@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
+import { unwrapList, unwrapData } from '@/lib/api/unwrap';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import { ChapterForm, type ChapterSubmitPayload } from "../stories/[id]/chapters/_components/ChapterForm";
@@ -132,7 +133,7 @@ export default function InteractiveStoriesPage() {
     try {
       // Fetch stories that are explicitly marked as interactive on BE
       const res = await apiClient.get(`/stories/admin?limit=100&isInteractive=true&lang=${selectedLocale}`);
-      setStories(res.data.data || []);
+      setStories(unwrapList<StoryInfo>(res.data));
     } catch (error) {
       console.error("Failed to fetch stories:", error);
     } finally {
@@ -159,8 +160,8 @@ export default function InteractiveStoriesPage() {
     setIsFetchingStoryData(true);
     try {
       const res = await apiClient.get(`/stories/admin/${story.id}`);
-      const data = res.data;
-      
+      const data = unwrapData<any>(res.data) ?? {};
+
       // Extensive mapping to match StoryForm requirements
       const mappedData = {
         ...data,
@@ -211,7 +212,7 @@ export default function InteractiveStoriesPage() {
     setFullChapterData(null);
     try {
       const res = await apiClient.get(`/chapters/${chapter.id}`);
-      setFullChapterData(res.data);
+      setFullChapterData(unwrapData(res.data));
     } catch (error) {
       console.error("Failed to fetch chapter details:", error);
       alert("Không thể tải thông tin chương. Vui lòng thử lại.");
@@ -263,7 +264,7 @@ export default function InteractiveStoriesPage() {
       const res = await apiClient.get(`/chapters/${chapterId}/variants`, {
         params: { parentId: parentId === null ? 'null' : parentId }
       });
-      setVariants(res.data);
+      setVariants(unwrapList<Variant>(res.data));
     } catch (error) {
       console.error("Failed to fetch variants:", error);
     } finally {
@@ -337,7 +338,7 @@ export default function InteractiveStoriesPage() {
     setEditingVariantData(null);
     try {
       const res = await apiClient.get(`/chapter-variants/${variant.id}`);
-      setEditingVariantData(res.data);
+      setEditingVariantData(unwrapData(res.data));
     } catch (error) {
       console.error("Failed to fetch variant details:", error);
       alert("Không thể tải thông tin diễn biến.");
@@ -374,7 +375,7 @@ export default function InteractiveStoriesPage() {
       
       // Refresh chapters
       const res = await apiClient.get(`/chapters?storyId=${storyIdForNewChapter}&limit=100`);
-      const chaptersRaw = res.data.data || res.data || [];
+      const chaptersRaw: any = unwrapList(res.data);
       const chaptersWithVariants: ChapterInfo[] = await Promise.all(
         chaptersRaw.map(async (ch: any) => {
           try {
@@ -383,7 +384,7 @@ export default function InteractiveStoriesPage() {
               id: ch.id,
               title: ch.title || ch.titleVi || ch.titleEn || `Chương ${ch.chapterNumber}`,
               chapterNumber: ch.chapterNumber,
-              variants: varRes.data || [],
+              variants: unwrapList(varRes.data),
             };
           } catch {
             return {
@@ -465,8 +466,8 @@ export default function InteractiveStoriesPage() {
     setLoadingChapters(storyId);
     try {
       const res = await apiClient.get(`/chapters?storyId=${storyId}&limit=100`);
-      const chaptersRaw = res.data.data || res.data || [];
-      
+      const chaptersRaw: any = unwrapList(res.data);
+
       // For each chapter, fetch its variants
       const chaptersWithVariants: ChapterInfo[] = await Promise.all(
         chaptersRaw.map(async (ch: any) => {
@@ -476,7 +477,7 @@ export default function InteractiveStoriesPage() {
               id: ch.id,
               title: ch.title || ch.titleVi || ch.titleEn || `Chương ${ch.chapterNumber}`,
               chapterNumber: ch.chapterNumber,
-              variants: varRes.data || [],
+              variants: unwrapList(varRes.data),
             };
           } catch {
             return {

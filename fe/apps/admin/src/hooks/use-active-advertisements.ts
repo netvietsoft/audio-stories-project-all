@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 import type { AdvertisementItem } from "@/types/advertisement";
 
 type UseActiveAdvertisementsOptions = {
@@ -29,7 +30,7 @@ export function useActiveAdvertisements(options: UseActiveAdvertisementsOptions 
         });
 
         if (cancelled) return;
-        setAds(Array.isArray(response.data?.data) ? response.data.data : []);
+        setAds(unwrapList<AdvertisementItem>(response.data));
       } catch {
         if (cancelled) return;
         setAds([]);

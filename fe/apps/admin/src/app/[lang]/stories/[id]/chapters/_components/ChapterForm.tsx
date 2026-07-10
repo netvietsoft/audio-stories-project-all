@@ -23,6 +23,7 @@ import {
 
 import { UploadButton } from '@/lib/uploadthing';
 import { adminApiClient } from '@/lib/api/admin-api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import dynamic from 'next/dynamic';
 import DOMPurify from 'dompurify';
@@ -433,7 +434,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         // Remove lang filter to show all stories
                     },
                 });
-                const fetchedStories = Array.isArray(res.data) ? res.data : res.data.data || [];
+                const fetchedStories = unwrapList<StoryOption>(res.data);
 
                 // Don't filter by language - show all stories
                 // Users can choose any story regardless of language
@@ -461,7 +462,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
                         routeType: 2,
                     },
                 });
-                const items = Array.isArray(res.data?.data) ? res.data.data : [];
+                const items = unwrapList<UnlockAdOption>(res.data);
                 setUnlockAds(items);
             } catch (error) {
                 console.error('Failed to fetch unlock ads:', error);
@@ -532,7 +533,7 @@ export const ChapterForm = ({ initialData, selectedLocale = 'vi', onSubmit, onCa
 
                 // Fallback: fetch chapters to compute max chapterNumber
                 const res = await adminApiClient.get(`/chapters`, { params: { storyId: selectedStoryId, limit: 100 } });
-                const chaptersRaw = res.data.data || res.data || [];
+                const chaptersRaw = unwrapList(res.data);
                 const maxChapter = chaptersRaw.reduce((m: number, ch: any) => {
                     const num = Number(ch?.chapterNumber ?? 0);
                     return Number.isFinite(num) ? Math.max(m, num) : m;

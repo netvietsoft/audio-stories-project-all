@@ -7,6 +7,7 @@ import { ChevronLeft, Loader2, Megaphone } from 'lucide-react';
 import Link from '@/components/shared/LocalizedLink';
 
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapData } from '@/lib/api/unwrap';
 import AdForm, { type AdFormValues } from '../_components/AdForm';
 
 type EditAdFormValues = AdFormValues & { routeType?: number };
@@ -52,7 +53,7 @@ export default function EditAdPage() {
         for (const endpoint of endpoints) {
           try {
             const response = await apiClient.get(endpoint);
-            data = (response.data?.data ?? response.data) as AdApiDetail;
+            data = unwrapData<AdApiDetail>(response.data);
             break;
           } catch (error) {
             if (!axios.isAxiosError(error) || error.response?.status !== 404) {

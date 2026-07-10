@@ -21,6 +21,7 @@ import {
 
 import { UploadButton } from '@/lib/uploadthing';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 import dynamic from 'next/dynamic';
 import DOMPurify from 'dompurify';
 import 'react-quill-new/dist/quill.snow.css';
@@ -113,7 +114,7 @@ export const VariantForm = ({
             setIsFetchingChapters(true);
             try {
                 const res = await apiClient.get(`/stories/${storyId}/chapters`);
-                setChapters(res.data.filter((c: any) => c.id !== chapterId));
+                setChapters(unwrapList<ChapterOption>(res.data).filter((c: any) => c.id !== chapterId));
             } catch (error) {
                 console.error('Failed to fetch chapters:', error);
             } finally {
@@ -134,7 +135,7 @@ export const VariantForm = ({
             setIsFetchingNextVariants(true);
             try {
                 const res = await apiClient.get(`/chapters/${selectedNextChapterId}/variants`);
-                setNextChapterVariants(res.data);
+                setNextChapterVariants(unwrapList<VariantOption>(res.data));
             } catch (error) {
                 console.error('Failed to fetch next variants:', error);
             } finally {

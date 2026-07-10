@@ -16,6 +16,7 @@ import {
     Check,
 } from 'lucide-react';
 import { adminApiClient as apiClient, ADMIN_ACCESS_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import { useParams, useRouter } from 'next/navigation';
@@ -111,7 +112,7 @@ export default function ChaptersGlobalPage() {
                         all: true,
                     },
                 });
-                setStories(Array.isArray(res.data) ? res.data : res.data.data || []);
+                setStories(unwrapList<StoryOption>(res.data));
             } catch (error) {
                 if (handleAdminAuthError(error)) return;
                 console.error('Failed to fetch stories:', error);
@@ -143,9 +144,9 @@ export default function ChaptersGlobalPage() {
                 ...(filterStoryId !== 'all' && { storyId: filterStoryId }),
             });
             const res = await apiClient.get(`/chapters?${params}`);
-            setChapters(res.data.data);
-            setTotal(res.data.meta.total);
-            setTotalPages(res.data.meta.totalPages);
+            setChapters(unwrapList<Chapter>(res.data));
+            setTotal((res.data?.data?.meta ?? res.data?.meta)?.total ?? 0);
+            setTotalPages((res.data?.data?.meta ?? res.data?.meta)?.totalPages ?? 1);
             setSelectedChapters(new Set()); // Clear selection when fetching new data
         } catch (error) {
             if (handleAdminAuthError(error)) return;

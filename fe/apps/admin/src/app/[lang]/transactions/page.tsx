@@ -14,6 +14,7 @@ import {
     Trash2,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList, unwrapData } from '@/lib/api/unwrap';
 
 interface Payment {
     id: string;
@@ -66,9 +67,10 @@ export default function TransactionsPage() {
                 ...(statusFilter && { status: statusFilter }),
             });
             const res = await apiClient.get(`/transactions/payments?${params}`);
-            setPayments(res.data.data);
-            setTotal(res.data.meta.total);
-            setTotalPages(res.data.meta.totalPages);
+            setPayments(unwrapList<Payment>(res.data));
+            const meta = res.data?.data?.meta ?? res.data?.meta;
+            setTotal(meta?.total ?? 0);
+            setTotalPages(meta?.totalPages ?? 1);
         } catch (error) {
             console.error('Failed to fetch payments:', error);
         } finally {
@@ -79,7 +81,7 @@ export default function TransactionsPage() {
     const fetchStats = async () => {
         try {
             const res = await apiClient.get('/transactions/stats');
-            setStats(res.data);
+            setStats(unwrapData<Stats>(res.data));
         } catch (error) {
             console.error('Failed to fetch stats:', error);
         }

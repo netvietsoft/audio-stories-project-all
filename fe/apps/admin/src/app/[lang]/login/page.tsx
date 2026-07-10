@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Shield, Lock, Mail, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { adminApiClient, ADMIN_ACCESS_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { unwrapData } from '@/lib/api/unwrap';
 import { useAdminStore } from '@/stores/admin-store';
 
 function LoginForm() {
@@ -33,16 +34,17 @@ function LoginForm() {
         try {
             // 1. Call real login API
             const loginRes = await adminApiClient.post('/auth/login', { email, password });
+            const loginData = unwrapData<any>(loginRes.data);
 
-            if (loginRes.data.ok) {
-                const { access_token } = loginRes.data;
+            if (loginData?.ok) {
+                const { access_token } = loginData;
 
                 // 2. Fetch user info to verify role
                 const meRes = await adminApiClient.get('/auth/me', {
                     headers: { Authorization: `Bearer ${access_token}` }
                 });
 
-                const userData = meRes.data;
+                const userData = unwrapData<any>(meRes.data);
 
                 // Check for ADMIN role
                 if (userData.role === 'ADMIN' || userData.roles?.includes('ADMIN')) {

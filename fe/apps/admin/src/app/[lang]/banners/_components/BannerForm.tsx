@@ -9,6 +9,7 @@ import NextImage from 'next/image';
 
 import { UploadButton } from '@/lib/uploadthing';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 
 const bannerSchema = z
   .object({
@@ -93,7 +94,7 @@ export default function BannerForm({ initialData, selectedLocale, isLoading, onS
           },
         });
 
-        const rows = Array.isArray(response.data?.data) ? response.data.data : [];
+        const rows = unwrapList(response.data);
         setStories(
           rows.map((item: any) => ({
             id: item.id,

@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from '@/components/shared/LocalizedLink';
 
 import { adminApiClient as apiClient, ADMIN_ACCESS_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 import { useAdminStore } from '@/stores/admin-store';
 
 type SocialLinkItem = {
@@ -67,7 +68,7 @@ export default function SocialLinksPage() {
     setIsLoading(true);
     try {
       const response = await apiClient.get('/social-links/admin/all');
-      setItems(Array.isArray(response.data) ? response.data : []);
+      setItems(unwrapList<SocialLinkItem>(response.data));
     } catch (error) {
       if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
         handleUnauthorized();

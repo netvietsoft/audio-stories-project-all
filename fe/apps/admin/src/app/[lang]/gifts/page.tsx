@@ -10,6 +10,7 @@ import {
     Filter,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 
 interface GiftTransaction {
     id: string;
@@ -46,9 +47,10 @@ export default function GiftsPage() {
                 ...(searchTerm && { search: searchTerm }),
             });
             const res = await apiClient.get(`/transactions/gifts?${params}`);
-            setGifts(res.data.data);
-            setTotal(res.data.meta.total);
-            setTotalPages(res.data.meta.totalPages);
+            setGifts(unwrapList<GiftTransaction>(res.data));
+            const meta = res.data?.data?.meta ?? res.data?.meta;
+            setTotal(meta?.total ?? 0);
+            setTotalPages(meta?.totalPages ?? 1);
         } catch (error) {
             console.error('Failed to fetch gifts:', error);
         } finally {

@@ -6,6 +6,7 @@ import Link from "@/components/shared/LocalizedLink";
 import { ChevronLeft, Loader2, Newspaper } from "lucide-react";
 
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
+import { unwrapData } from "@/lib/api/unwrap";
 import { revalidateStoriesCache } from "@/app/[lang]/_actions/revalidate";
 import { StoryForm, type StoryFormValues } from "../_components/StoryForm";
 import type { StorySubmitPayload } from "@/types/admin";
@@ -28,7 +29,7 @@ export default function EditStoryPage() {
     const fetchStory = async () => {
       try {
         const storyRes = await apiClient.get(`/stories/admin/${storyId}`);
-        const story = storyRes.data;
+        const story = unwrapData(storyRes.data) ?? {};
 
         // Set locale based on story's language
         if (story.language) {

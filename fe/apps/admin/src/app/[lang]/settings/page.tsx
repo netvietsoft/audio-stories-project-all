@@ -15,6 +15,7 @@ import {
     Code,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapData } from '@/lib/api/unwrap';
 
 interface SettingItem {
     value: any;
@@ -51,17 +52,18 @@ export default function SettingsPage() {
         setIsLoading(true);
         try {
             const res = await apiClient.get('/settings');
-            setSettings(res.data);
-            
+            const data = unwrapData<Settings>(res.data) ?? {};
+            setSettings(data);
+
             const initialData: Record<string, any> = {};
-            Object.entries(res.data).forEach(([key, setting]) => {
+            Object.entries(data).forEach(([key, setting]) => {
                 initialData[key] = (setting as SettingItem).value;
             });
             setFormData(initialData);
-            
+
             // Load custom scripts
-            if (res.data.custom_head_scripts) {
-                setCustomScripts(res.data.custom_head_scripts.value || '');
+            if (data.custom_head_scripts) {
+                setCustomScripts(data.custom_head_scripts.value || '');
             }
         } catch (error) {
             console.error('Failed to fetch settings:', error);

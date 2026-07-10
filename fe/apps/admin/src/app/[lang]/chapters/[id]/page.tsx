@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
+import { unwrapData } from "@/lib/api/unwrap";
 import { ChapterForm, type ChapterSubmitPayload } from "../../stories/[id]/chapters/_components/ChapterForm";
 import { ChevronLeft, Loader2, Music } from "lucide-react";
 
@@ -71,7 +72,7 @@ export default function ChapterEditorPage() {
       try {
         const res = await apiClient.get(`/chapters/${chapterId}`);
         if (cancelled) return;
-        setChapter(res.data as ChapterDetail);
+        setChapter(unwrapData<ChapterDetail>(res.data));
       } catch (error) {
         if (cancelled) return;
         console.error("Failed to fetch chapter:", error);
@@ -107,7 +108,7 @@ export default function ChapterEditorPage() {
         await apiClient.patch(`/chapters/${chapterId}`, payload);
         // Refetch chapter data after successful update
         const res = await apiClient.get(`/chapters/${chapterId}`);
-        setChapter(res.data as ChapterDetail);
+        setChapter(unwrapData<ChapterDetail>(res.data));
       }
 
       router.push(`/${currentLang}/chapters`);

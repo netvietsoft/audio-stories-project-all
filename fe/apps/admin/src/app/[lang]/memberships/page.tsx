@@ -15,6 +15,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList, unwrapData } from '@/lib/api/unwrap';
 
 interface Membership {
     id: string;
@@ -73,9 +74,10 @@ export default function MembershipsPage() {
                 ...(statusFilter && { status: statusFilter }),
             });
             const res = await apiClient.get(`/memberships?${params}`);
-            setMemberships(res.data.data);
-            setTotal(res.data.meta.total);
-            setTotalPages(res.data.meta.totalPages);
+            setMemberships(unwrapList<Membership>(res.data));
+            const meta = res.data?.data?.meta ?? res.data?.meta;
+            setTotal(meta?.total ?? 0);
+            setTotalPages(meta?.totalPages ?? 1);
         } catch (error) {
             console.error('Failed to fetch memberships:', error);
         } finally {
@@ -86,7 +88,7 @@ export default function MembershipsPage() {
     const fetchStats = async () => {
         try {
             const res = await apiClient.get('/memberships/stats');
-            setStats(res.data);
+            setStats(unwrapData<Stats>(res.data));
         } catch (error) {
             console.error('Failed to fetch stats:', error);
         }

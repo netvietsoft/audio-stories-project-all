@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Globe2, Loader2, Plus, Save, Search, Trash2, X, Edit2 } from "lucide-react";
 
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
+import { unwrapList } from "@/lib/api/unwrap";
 
 interface LanguageItem {
   id: number;
@@ -58,8 +59,9 @@ export default function LanguagesPage() {
         },
       });
 
-      setLanguages(Array.isArray(res.data?.data) ? res.data.data : []);
-      setTotal(typeof res.data?.meta?.total === "number" ? res.data.meta.total : 0);
+      setLanguages(unwrapList<LanguageItem>(res.data));
+      const meta = res.data?.data?.meta ?? res.data?.meta;
+      setTotal(typeof meta?.total === "number" ? meta.total : 0);
     } catch (error) {
       console.error("Failed to fetch languages:", error);
     } finally {

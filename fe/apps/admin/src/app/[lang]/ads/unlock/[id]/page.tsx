@@ -6,6 +6,7 @@ import { ChevronLeft, Loader2, Megaphone } from 'lucide-react';
 import Link from '@/components/shared/LocalizedLink';
 
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapData } from '@/lib/api/unwrap';
 import AdForm, { type AdFormValues } from '../../_components/AdForm';
 
 type EditAdFormValues = AdFormValues & { routeType?: number };
@@ -46,7 +47,7 @@ export default function EditUnlockAdPage() {
       try {
         const safeId = encodeURIComponent(normalizedId);
         const response = await apiClient.get(`/ads/${safeId}`);
-        const data = (response.data?.data ?? response.data) as AdApiDetail;
+        const data = unwrapData<AdApiDetail>(response.data) ?? ({} as AdApiDetail);
 
         setInitialData({
           ...data,

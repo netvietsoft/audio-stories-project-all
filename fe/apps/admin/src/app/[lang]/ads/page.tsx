@@ -7,6 +7,7 @@ import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigat
 import Link from '@/components/shared/LocalizedLink';
 
 import { adminApiClient as apiClient, ADMIN_ACCESS_TOKEN_KEY } from '@/lib/api/admin-api-client';
+import { unwrapData, unwrapList } from '@/lib/api/unwrap';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useAdminStore } from '@/stores/admin-store';
 
@@ -114,7 +115,7 @@ export default function AdsPage() {
           ...(sortBy ? { sortBy, sortOrder } : {}),
         },
       });
-      setItems(Array.isArray(response.data?.data) ? response.data.data : []);
+      setItems(unwrapList<AdItem>(response.data));
     } catch (error) {
       if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
         handleUnauthorized();
@@ -138,8 +139,8 @@ export default function AdsPage() {
           apiClient.get('/ads/partners', { params: { routeType: 1 } }),
           apiClient.get('/languages', { params: { all: 'true', active: 'true' } }),
         ]);
-        setPartners(Array.isArray(partnersResponse.data?.data) ? partnersResponse.data.data : []);
-        const rows = Array.isArray(languagesResponse.data?.data) ? languagesResponse.data.data : [];
+        setPartners(unwrapList<string>(partnersResponse.data));
+        const rows = unwrapList<{ key?: string; name?: string }>(languagesResponse.data);
         setLanguages(
           rows
             .map((row: { key?: string; name?: string }) => ({
@@ -167,7 +168,7 @@ export default function AdsPage() {
       setIsLoadingFrequency(true);
       try {
         const response = await apiClient.get('/settings/ad_insertion_frequency');
-        const rawValue = response?.data?.value;
+        const rawValue = unwrapData<{ value?: string | number }>(response.data)?.value;
         const parsed = Number(rawValue);
         setFrequencyValue(Number.isFinite(parsed) && parsed > 0 ? String(Math.floor(parsed)) : '1000');
       } catch (error) {

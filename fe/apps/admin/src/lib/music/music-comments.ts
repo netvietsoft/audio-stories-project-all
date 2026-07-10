@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/api-client";
+import { unwrapData } from "@/lib/api/unwrap";
 
 export type MusicComment = {
   id: string;
@@ -38,7 +39,7 @@ export const listMusicComments = async (
     params,
   });
 
-  return response.data;
+  return (response.data as any).data;
 };
 
 export const createMusicComment = async (musicId: string, content: string): Promise<MusicComment | null> => {
@@ -46,7 +47,7 @@ export const createMusicComment = async (musicId: string, content: string): Prom
     content,
   });
 
-  return response.data?.data || null;
+  return unwrapData<MusicComment>(response.data);
 };
 
 export const replyMusicComment = async (commentId: string, content: string): Promise<MusicComment | null> => {
@@ -54,17 +55,17 @@ export const replyMusicComment = async (commentId: string, content: string): Pro
     content,
   });
 
-  return response.data?.data || null;
+  return unwrapData<MusicComment>(response.data);
 };
 
 export const likeMusicComment = async (commentId: string): Promise<{ liked: boolean }> => {
   const response = await apiClient.post<{ data: { liked: boolean } }>(`/music/comments/${commentId}/like`);
-  return response.data?.data || { liked: true };
+  return unwrapData<{ liked: boolean }>(response.data) || { liked: true };
 };
 
 export const unlikeMusicComment = async (commentId: string): Promise<{ liked: boolean }> => {
   const response = await apiClient.delete<{ data: { liked: boolean } }>(`/music/comments/${commentId}/like`);
-  return response.data?.data || { liked: false };
+  return unwrapData<{ liked: boolean }>(response.data) || { liked: false };
 };
 
 export const updateMusicComment = async (commentId: string, content: string): Promise<MusicComment | null> => {
@@ -72,7 +73,7 @@ export const updateMusicComment = async (commentId: string, content: string): Pr
     content,
   });
 
-  return response.data?.data || null;
+  return unwrapData<MusicComment>(response.data);
 };
 
 export const deleteMusicComment = async (commentId: string): Promise<void> => {

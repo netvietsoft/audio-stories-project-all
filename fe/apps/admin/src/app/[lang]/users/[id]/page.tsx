@@ -27,6 +27,7 @@ import {
     MoreVertical
 } from 'lucide-react';
 import { adminApiClient } from '@/lib/api/admin-api-client';
+import { unwrapData } from '@/lib/api/unwrap';
 import Link from '@/components/shared/LocalizedLink';
 import { useTranslations } from 'next-intl';
 import { formatChapterTitle, cleanChapterTitle } from '@/lib/formatChapterTitle';
@@ -137,8 +138,9 @@ export default function UserDetailsPage() {
         setIsLoading(true);
         try {
             const res = await adminApiClient.get(`/auth/users/${id}`);
-            setUser(res.data);
-            setCreditsInput(String(Math.max(0, Math.floor(res.data?.credits || res.data?.pulseBalance || 0))));
+            const userData = unwrapData<UserDetail>(res.data);
+            setUser(userData);
+            setCreditsInput(String(Math.max(0, Math.floor(userData?.credits || userData?.pulseBalance || 0))));
         } catch (error) {
             console.error('Failed to fetch user:', error);
         } finally {
@@ -165,7 +167,7 @@ export default function UserDetailsPage() {
                 pulseBalance: normalizedPulse,
             });
 
-            const nextPulse = Number(res.data?.data?.pulseBalance ?? normalizedPulse);
+            const nextPulse = Number(unwrapData<{ pulseBalance?: number }>(res.data)?.pulseBalance ?? normalizedPulse);
 
             setUser((prev) => (prev ? { ...prev, credits: nextPulse, pulseBalance: nextPulse } : prev));
             setCreditsInput(String(nextPulse));

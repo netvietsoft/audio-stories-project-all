@@ -28,6 +28,7 @@ import {
 
 import Link from '@/components/shared/LocalizedLink';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList, unwrapData } from '@/lib/api/unwrap';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 import { StoryForm } from './_components/StoryForm';
@@ -274,8 +275,8 @@ export default function StoriesPage() {
             });
 
             const res = await apiClient.get(`/stories/admin?${params.toString()}`);
-            setStories(res.data.data);
-            setTotal(res.data.meta.total);
+            setStories(unwrapList<Story>(res.data));
+            setTotal((res.data?.data?.meta ?? res.data?.meta)?.total ?? 0);
         } catch (error) {
             console.error('Failed to fetch stories:', error);
         } finally {
@@ -329,8 +330,8 @@ export default function StoriesPage() {
         setIsFetchingStoryData(true);
         try {
             const res = await apiClient.get(`/stories/admin/${story.id}`);
-            const data = res.data;
-            
+            const data = unwrapData(res.data) ?? {};
+
             // Extract category IDs from various possible structures
             let categoryIds: number[] = [];
             if (data.categories && Array.isArray(data.categories)) {
@@ -402,7 +403,7 @@ export default function StoriesPage() {
         setLoadingChapters(storyId);
         try {
             const res = await apiClient.get(`/chapters?storyId=${storyId}&limit=100`);
-            const chapters = res.data.data || res.data || [];
+            const chapters = unwrapList(res.data);
             setStoryChapters((prev) => ({ ...prev, [storyId]: sortChaptersByNumber(chapters) }));
         } catch (error) {
             console.error('Failed to fetch chapters:', error);
@@ -419,7 +420,7 @@ export default function StoriesPage() {
             
             // Refetch chapters for this story
             const res = await apiClient.get(`/chapters?storyId=${storyIdForNewChapter}&limit=100`);
-            const chapters = res.data.data || res.data || [];
+            const chapters = unwrapList(res.data);
             setStoryChapters((prev) => ({ ...prev, [storyIdForNewChapter]: sortChaptersByNumber(chapters) }));
             
             // Update UI count
@@ -446,7 +447,7 @@ export default function StoriesPage() {
 
         try {
             const res = await apiClient.get(`/chapters/${chapter.id}`);
-            const fullChapter = res.data || {};
+            const fullChapter = unwrapData(res.data) || {};
 
             setEditingChapterData({
                 ...chapter,

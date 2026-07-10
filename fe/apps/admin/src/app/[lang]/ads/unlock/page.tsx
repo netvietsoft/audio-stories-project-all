@@ -7,6 +7,7 @@ import { Loader2, Megaphone, Pencil, Trash2 } from "lucide-react";
 import Link from "@/components/shared/LocalizedLink";
 
 import { adminApiClient as apiClient, ADMIN_ACCESS_TOKEN_KEY } from "@/lib/api/admin-api-client";
+import { unwrapList, unwrapData } from "@/lib/api/unwrap";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAdminStore } from "@/stores/admin-store";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -103,7 +104,7 @@ export default function AdminAdsUnlockPage() {
           ...(sortBy ? { sortBy, sortOrder } : {}),
         },
       });
-      setAds(Array.isArray(resp.data?.data) ? resp.data.data : []);
+      setAds(unwrapList<UnlockAdItem>(resp.data));
     } catch (e) {
       if (axios.isAxiosError(e) && (e.response?.status === 401 || e.response?.status === 403)) {
         handleUnauthorized();
@@ -127,8 +128,8 @@ export default function AdminAdsUnlockPage() {
           apiClient.get("/ads/partners", { params: { routeType: 2 } }),
           apiClient.get("/languages", { params: { all: "true", active: "true" } }),
         ]);
-        setPartners(Array.isArray(partnersResponse.data?.data) ? partnersResponse.data.data : []);
-        const rows = Array.isArray(languagesResponse.data?.data) ? languagesResponse.data.data : [];
+        setPartners(unwrapList<string>(partnersResponse.data));
+        const rows = unwrapList<{ key?: string; name?: string }>(languagesResponse.data);
         setLanguages(
           rows
             .map((row: { key?: string; name?: string }) => ({
@@ -158,14 +159,14 @@ export default function AdminAdsUnlockPage() {
   async function fetchSettings() {
     try {
       const r1 = await apiClient.get("/settings/unlock_ad_reappearance_minutes");
-      setReappearMinutes(Number(r1?.data?.value ?? r1?.data) || 15);
+      setReappearMinutes(Number(unwrapData<{ value?: number }>(r1?.data)?.value) || 15);
     } catch {
       setReappearMinutes(15);
     }
 
     try {
       const r2 = await apiClient.get("/settings/unlock_ad_countdown_seconds");
-      setCountdownSeconds(Number(r2?.data?.value ?? r2?.data) || 5);
+      setCountdownSeconds(Number(unwrapData<{ value?: number }>(r2?.data)?.value) || 5);
     } catch {
       setCountdownSeconds(5);
     }

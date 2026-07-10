@@ -16,6 +16,7 @@ import {
     EyeOff,
 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
+import { unwrapList } from '@/lib/api/unwrap';
 import AdminLanguageDropdown from '@/components/admin/AdminLanguageDropdown';
 import { useAdminLanguages } from '@/hooks/useAdminLanguages';
 
@@ -72,7 +73,7 @@ export default function PackagesPage() {
         setIsLoading(true);
         try {
             const res = await apiClient.get(`/packages?lang=${selectedLocale}`);
-            setPackages(res.data.sort((a: PaymentPackage, b: PaymentPackage) => a.displayOrder - b.displayOrder));
+            setPackages(unwrapList<PaymentPackage>(res.data).sort((a: PaymentPackage, b: PaymentPackage) => a.displayOrder - b.displayOrder));
         } catch (error) {
             console.error('Failed to fetch packages:', error);
         } finally {

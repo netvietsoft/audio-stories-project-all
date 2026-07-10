@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { adminApiClient as apiClient } from "@/lib/api/admin-api-client";
+import { unwrapList, unwrapData } from "@/lib/api/unwrap";
 import type { Chapter, Variant } from "@/types/admin";
 import { useTranslations } from "next-intl";
 import { formatChapterTitle, cleanChapterTitle } from "@/lib/formatChapterTitle";
@@ -101,9 +102,10 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
         apiClient.get(`/stories/${storyId}/chapters`),
       ]);
       
-      setStoryTitle(storyRes.data.title);
-      setStoryLanguage(storyRes.data.language || null);
-      setChapters(chaptersRes.data);
+      const story = unwrapData(storyRes.data);
+      setStoryTitle(story?.title);
+      setStoryLanguage(story?.language || null);
+      setChapters(unwrapList<Chapter>(chaptersRes.data));
     } catch (error) {
       console.error("Failed to fetch data:", error);
     } finally {
@@ -122,7 +124,7 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
           lang: storyLanguage,
         }
       });
-      setUnassignedChapters(res.data.data || []);
+      setUnassignedChapters(unwrapList<Chapter>(res.data));
     } catch (error) {
       console.error("Failed to search chapters:", error);
     } finally {
@@ -173,7 +175,7 @@ export default function StoryChapterManager({ storyId }: StoryChapterManagerProp
       const res = await apiClient.get(`/chapters/${chapterId}/variants`, {
         params: { parentId: parentId === null ? 'null' : parentId }
       });
-      setVariants(res.data);
+      setVariants(unwrapList<Variant>(res.data));
     } catch (error) {
       console.error("Failed to fetch variants:", error);
     } finally {

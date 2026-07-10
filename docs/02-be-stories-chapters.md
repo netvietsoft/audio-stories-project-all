@@ -1,7 +1,7 @@
 # 02 — BE: Stories + Chapters (truyện / chương / biến thể tương tác)
 
 > Bản đồ vùng "nội dung truyện audio" của backend NestJS (audio-stories monorepo).
-> Đọc CODE THẬT — cập nhật theo source ngày 2026-06-27.
+> Đọc CODE THẬT — cập nhật theo source ngày 2026-07-08.
 > Phạm vi: `be/src/stories`, `be/src/chapters` (+ `chapter-variants`), `be/src/categories`, `be/src/authors`, `be/src/languages`.
 > KHÔNG có global prefix `/api` (bootstrap.ts không gọi `setGlobalPrefix`). Route trong code = route thật. VD `@Controller('stories')` → `/stories`.
 
@@ -24,7 +24,8 @@ Story (id UUID, slug, title, languageId, authorId, status, totalChapters,
        isRecommended, isInteractive, totalGifts, favoritesCount,
        unlockPrice, discountPercent, deletedAt[soft delete])
    ├─ 1-n Chapter (storyId NULLABLE → chương "mồ côi")
-   └─ n-n Category
+   ├─ n-n Category
+   └─ n-1 Label (labelId nullable — badge quản lý qua admin; xem `11-labels-rankings.md`)
 
 Chapter (id UUID, storyId NULLABLE, chapterNumber Float, title, languageId,
          content LongText, audioUrl, r2AudioUrl, youtubeVideoId, audioDuration,
@@ -134,7 +135,7 @@ categories & authors), **Hall of Fame** (truy vấn `user` theo vipTier), Top Ca
   Cache key = JSON các query đã chuẩn hoá. (`exploreStories` tự cache, KHÁC với `CacheInterceptor` của Nest).
 - **`exploreStories`**: lọc theo lang/status/search(title|author)/categoryId/authorId/trendWindow/isInteractive/isRecommended.
   Sort: latest|views|rating|title_asc|chapters_desc|gifts|favorites. Tính `totalBranches` = tổng số variant của các chương.
-- **`serializeStory`**: ép `totalViews` BigInt → Number; làm phẳng `language` object `{key}` → string.
+- **`serializeStory`**: ép `totalViews` BigInt → Number; làm phẳng `language` object `{key}` → string; trả thêm `label: { id, name, text, color, textColor, icon } | null` (label đang active, tính tại thời điểm đọc) — đã thay cho `computeBadge` cũ (NEW/HOT/TOP/VIP, đã bị xoá). Chi tiết field `Story.labelId`/labels module + rankings/geo (`/stats/top-stories`, `story_view_daily`, `story_country_daily`...) xem `11-labels-rankings.md`.
 - **`create`**: nhận `chapters` (nested create), `chapterIds` (gán chương có sẵn qua updateMany),
   `categoryIds` (nested create StoryCategory). Bắt P2002 (trùng slug) → 400.
 - **`giftPulse`**: trừ Pulse user, `totalGifts += amount` trên story, ghi CreditTransaction.
@@ -169,6 +170,29 @@ File: `chapters.controller.ts` (`@Controller()` rỗng — route tự khai báo 
 - **Đổi storyId khi update**: tự tính `chapterNumber` mới = max(chapterNumber của story đích) + 1 để tránh đụng `@@unique([storyId, chapterNumber])`.
 - **`notifyStoryUpdated`**: gọi UserFeaturesService báo "new_chapter"/"chapter_updated" (thông báo người theo dõi). Chỉ bắn khi có storyId.
 - **Soft delete**: lọc `deletedAt: null` ở mọi truy vấn đọc.
+
+### Read-along timing (import SRT/VTT/LRC)
+Tính năng "đọc theo giọng đọc": admin nạp file phụ đề/lyric (SRT/VTT/LRC) kèm audio của
+chương; backend parse + khớp câu vào vị trí ký tự trong `content`, lưu thành `Chapter.timingJson`;
+app highlight câu đang đọc + tự cuộn.
+
+- **DTO** (`create-chapter.dto.ts` + `update-chapter.dto.ts`): thêm 2 field optional
+  `timingRaw?: string` (`@IsString @MaxLength(2000000)`, nội dung thô của file) và
+  `timingFormat?: 'srt'|'vtt'|'lrc'|'auto'` (`@IsEnum`). Cả 2 field này **bị xoá khỏi payload
+  ghi Prisma** (`delete ... .timingRaw/.timingFormat`) — không phải cột DB, chỉ dùng để service tự tính `timingJson`.
+- **Module xử lý** `be/src/chapters/timing/` (`timing-parser.ts` parse SRT/VTT/LRC → cue thô,
+  `timing-matcher.ts` khớp cue vào offset ký tự trong `content`, `build-timing.ts` gộp 2 bước
+  thành `buildTimingJson(content, timingRaw, timingFormat, audioDurationSec)`; trả `null` khi
+  không có `timingRaw`/`content` hoặc parse ra 0 cue).
+- **Cột DB**: `Chapter.timingJson Json? @map("timing_json")` — nullable, chương cũ không có timing vẫn chạy bình thường.
+- **Wiring trong `chapters.service.ts`**: `buildTimingJson(...)` được gọi trong `create`,
+  `createStandalone`, và **cả 2 nhánh** của `update` (update thường + nhánh đổi `storyId`) —
+  ghi kết quả vào `timingJson` trước khi lưu.
+- **`findPublicDetail`**: select thêm `timingJson`, trả về field `timing: chapter.timingJson ?? null` cho `GET /chapters/:id/public`.
+- **Contract JSON** của `timingJson`/`timing`: `{ v: 1, cues: [{ s, e, p, cs, ce }], matched, total }`
+  — `s`/`e` = mốc thời gian bắt đầu/kết thúc (ms), `p` = index đoạn văn trong `content` (`-1` nếu không khớp được),
+  `cs`/`ce` = offset ký tự bắt đầu/kết thúc trong đoạn văn đó. `matched`/`total` chỉ để admin biết
+  khớp được bao nhiêu / tổng bao nhiêu cue (app không dùng 2 field này).
 
 ### TÌNH TRẠNG: **done**.
 

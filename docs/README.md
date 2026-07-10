@@ -26,6 +26,7 @@ những điều phải nhớ, danh sách lỗi cần refactor, quy trình làm v
 | [08-api-list.md](08-api-list.md) | Danh sách ~180 endpoint BE (nhóm theo module, luồng công khai FE hay gọi, ghi chú phân quyền). Trích từ controllers. |
 | [09-audio-pipeline.md](09-audio-pipeline.md) | Luồng audio: upload→R2→DB→serve 302→FE phát; preload; HLS/m3u8 (CHƯA có); điểm cắm server Python ngoài (InternalApiKeyGuard + r2AudioUrl); cấu hình R2/Cloudflare; bản đồ file. |
 | [10-mobile-api.md](10-mobile-api.md) | **Hợp đồng API cho app mobile Flutter** (`../../novelverse`): base URL theo môi trường (dev/VPS), envelope `{data,meta}`, auth (Bearer + refresh header), danh sách endpoint mobile dùng (ánh xạ `lib/api/api_endpoints.dart`), quy ước Pulse/audio. |
+| [11-labels-rankings.md](11-labels-rankings.md) | Label bìa truyện (module `labels`, gắn 1 label/story qua `label_id`/`label_assigned_at`/`label_expires_at`) + Bảng xếp hạng (`/stats/top-stories` 9 metric: reads/rating/comments/favorites/gifts/trending/revenue/audio/search) + geo theo quốc gia (anon IP→country, bảng `story_country_daily`, endpoint `/stats/top-countries`, `/stats/top-stories-by-country`, `/stats/story-top-countries`). |
 
 ## Tài liệu phụ trợ (superpowers)
 

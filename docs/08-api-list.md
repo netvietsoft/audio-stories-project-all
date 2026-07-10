@@ -1,6 +1,6 @@
 # 08 · Danh sách API Backend
 
-> Trích trực tiếp từ `be/src/**/*.controller.ts` (cập nhật 2026-06-29). ~180 endpoint.
+> Trích trực tiếp từ `be/src/**/*.controller.ts` (cập nhật 2026-07-08). ~180 endpoint.
 > **KHÔNG có global prefix `/api`** — route ghi sao là thật vậy (vd `/stories`, `/music`, `/auth/login`).
 > Base local: `http://localhost:3000`. Swagger (dev): `http://localhost:3000/docs`.
 > Mỗi response bọc `{ data, meta }`; list endpoint (explore/music) bọc 2 lớp `{ data: { data, meta } }` → FE unwrap qua `lib/api/unwrap.ts`.
@@ -31,7 +31,14 @@
 ## Chapters — `chapters/chapters.controller.ts` (KHÔNG prefix, path tuyệt đối)
 - `GET /stories/:storyId/chapters` · `POST /stories/:storyId/chapters`
 - `POST /chapters` · `GET /chapters` · `GET /chapters/latest`
+  - `POST /chapters`, `POST /stories/:storyId/chapters` và `PATCH /chapters/:id` nhận thêm 2 field optional
+    (read-along, Spec 2): `timingRaw` (string, timing file gốc dạng text) + `timingFormat`
+    (`'srt'|'vtt'|'lrc'|'auto'`, mặc định `'auto'`) — BE tự parse + match với `content` rồi lưu vào
+    `Chapter.timingJson`, KHÔNG lưu 2 field này thành cột riêng.
 - `GET /chapters/:id/public` — nội dung chương (content) cho người đọc
+  - Response có thêm field `timing`: object `{ v, cues, matched, total }` hoặc `null` nếu chương chưa có
+    timing. Mỗi cue trong `cues` có shape `{ s, e, p, cs, ce }` (s/e = startMs/endMs, p = index đoạn văn,
+    cs/ce = char offset bắt đầu/kết thúc trong đoạn văn đó).
 - `GET /chapters/:id/unlock-status` · `GET /chapters/:id/audio` — proxy audio (302 sau check entitlement)
 - `POST /chapters/:id/unlock-by-ad` · `POST /chapters/:id/unlock-by-pulse`
 - `GET /chapters/:id` · `PATCH /chapters/:id` · `DELETE /chapters/:id`
@@ -94,6 +101,7 @@
 
 ## Danh mục & phụ trợ
 - **Categories** (`/categories`): `GET` · `GET /:id` · `POST` · `PATCH /:id` · `DELETE /:id` · `DELETE /categories/bulk/delete`
+- **Labels** (`/labels`): `GET` · `GET /:id` · `POST` *(ADMIN)* · `PATCH /:id` *(ADMIN)* · `DELETE /:id` *(ADMIN)* · `DELETE /labels/bulk/delete` *(ADMIN)* — badge gắn trên cover truyện (mirror Categories, list KHÔNG cache); `POST /stories` và `PATCH /stories/:id` nhận thêm `labelId?: number|null` + `labelDurationDaysOverride?: number` để gắn/ghim label cho truyện.
 - **Authors** (`/authors`): `GET` · `GET /:id` · `POST` · `PATCH /:id` · `DELETE /:id`
 - **Languages** (`/languages`): `GET` · `GET /:id` · `POST` · `PATCH /:id` · `DELETE /:id`
 - **Notifications** (`/notifications`): `GET` · `PATCH /notifications/:id/read` · `PATCH /notifications/read-all`
@@ -102,8 +110,12 @@
 - **Social links** (`/social-links`): `POST` · `GET` · `GET /social-links/admin/all` · `GET /:id` · `PATCH /:id` · `DELETE /:id`
 - **Upload** (`/upload`): `POST /upload/audio` · `POST /upload/image`
 - **Settings** (`/settings`): `GET` · `GET /settings/site` · `GET /settings/:key` · `POST` · `PATCH /settings/site` · `PATCH /settings/bulk` · `PATCH /settings/:key` · `PATCH /settings/site/:key` · `DELETE /settings/:key`
-- **Stats** (`/stats`): `GET /stats/overview` · `GET /stats/vip-chapters`
-- **Tracking** (`/tracking`): `POST /tracking/view` · `POST /tracking/listen`
+- **Stats** (`/stats`, tất cả ADMIN): `GET /stats/overview` · `GET /stats/vip-chapters`
+  - `GET /stats/top-stories?metric=&limit=&language=` — top truyện theo metric global; `metric` ∈ `reads|rating|comments|favorites|gifts|trending|revenue|audio|search`, `limit` 1-100 (default 100), `language` optional.
+  - `GET /stats/top-countries?metric=&limit=` — top quốc gia theo metric; `metric` ∈ `view|search|favorite|comment|rating|gift|revenue|listen|trending`, `limit` 1-100 (default 20).
+  - `GET /stats/top-stories-by-country?country=XX&metric=&limit=` — top truyện trong 1 quốc gia; `metric` cùng enum trên, `country` CHAR(2), `limit` 1-100 (default 100).
+  - `GET /stats/story-top-countries?storyId=&metric=&limit=` — top quốc gia của 1 truyện; `metric` cùng enum trên (default `view`), `limit` 1-100 (default 5). (`trending` = decay 30 ngày trên kind='view'; các kind khác = SUM(count).)
+- **Tracking** (`/tracking`): `POST /tracking/view` · `POST /tracking/listen` · `POST /tracking/search-open {storyId (slug hoặc uuid), deviceId}` — ghi nhận mở truyện từ kết quả tìm kiếm, dùng để gộp geo-search.
 
 ---
 

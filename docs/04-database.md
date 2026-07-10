@@ -88,11 +88,20 @@ CẢNH BÁO LỚN: schema để trong **một file duy nhất** ~1173 dòng → 
   - Mở khoá: `unlockPrice`, `discountPercent` (mở cả truyện bằng Pulse → `UserStoryUnlock`).
   - `audioUrl` cấp truyện (?) — trùng vai trò với audio cấp chương; xem Cạm bẫy.
   - Soft delete `deletedAt`.
+  - **Label (badge cover)**: `labelId Int? @map("label_id")` (FK → `Label`, `onDelete: SetNull`), `labelAssignedAt @map("label_assigned_at")`, `labelExpiresAt @map("label_expires_at")`. Mỗi truyện gán tối đa 1 label; hết hạn khi `now() > labelExpiresAt` (null = không hết hạn). Thêm bởi migration `20260709103611_add_labels_and_story_label` (cùng lúc tạo bảng `labels`). ⚠ `migration.sql` bị `.gitignore` chặn (`*.sql`) → prod cần tự chạy `prisma migrate deploy` (hoặc `ALTER TABLE` thủ công) để có cột/bảng này.
+- **`Label`** (`labels`) — badge quản trị gắn cho truyện (global, KHÔNG theo ngôn ngữ). `id` (Int autoincrement UnsignedInt), `name` unique, `text` (chữ hiển thị trên badge), `color` (hex), `textColor?`, `icon?`, `defaultDurationDays?` (null/0 = không hết hạn), `createdAt`/`updatedAt`. Quan hệ ngược `stories Story[]`. Cùng migration `20260709103611_add_labels_and_story_label`.
+- **`StoryViewDaily`** (`story_view_daily`) — bucket lượt xem theo ngày cho ranking global (metric `trending`, và nguồn tổng hợp thay cho quét `total_views` theo thời gian). `storyId`, `date` (Date), `views` (Int, default 0). `@@id([storyId, date])` (PK kép) + `@@index([date])`, FK `storyId → Story` (`onDelete: Cascade`). Được ghi bởi cron `flushTrackingCounters` (mỗi 5 phút) song song với việc tăng `stories.total_views`. Migration `20260709140000_add_story_view_daily`.
+- **`StoryCountryDaily`** (`story_country_daily`) — bucket sự kiện theo quốc gia + ngày (chỉ IP phân giải được quốc gia mới có dòng; không ảnh hưởng số liệu global). `storyId`, `country` (Char(2), ISO upper), `date` (Date), `kind` (VarChar(10)), `count` (Int, default 0). `@@id([storyId, country, date, kind])` (PK kép 4 cột) + `@@index([kind, country])`, `@@index([kind, storyId])`, FK `storyId → Story` (`onDelete: Cascade`). Migration `20260709160000_add_story_country_daily`. **`kind` lưu 8 giá trị**: `view`/`search` (B2a) + `favorite`/`comment`/`rating`/`gift`/`revenue`/`listen` (B2b, chỉ thêm chuỗi — KHÔNG migration). Metric `trending` KHÔNG lưu, tính động từ `kind='view'` (decay 0.9 × 30 ngày) khi query (C).
 - **`Chapter`** (`chapters`) — unique `[storyId, chapterNumber]`. `chapterNumber` là **Float** (cho phép chương 1.5).
   - `storyId` **nullable** (chương mồ côi?) → quan hệ Story `onDelete: Cascade` nhưng cột nullable, không nhất quán.
   - Nội dung: `content` (LongText), `audioUrl` / `r2AudioUrl` (Cloudflare R2) / `youtubeVideoId`, `audioDuration`.
   - Truy cập: `accessType` (ChapterAccessType), `unlockPrice`, `discountPercent`, `unlocksAt` (cho `timed`), `unlockAdId` (FK Advertisement, cho `ads`).
   - `isInteractive` + quan hệ `variants`/`incomingVariants` → cốt truyện phân nhánh.
+  - `timingJson Json? @map("timing_json")` — dữ liệu **read-along** (khớp phụ đề/lời với nội dung chương), nullable
+    (chương cũ không có timing vẫn không bị ảnh hưởng). Object dạng `{ v, cues, matched, total }`, mỗi cue trong
+    `cues` có khoá `s`/`e`/`p`/`cs`/`ce`. Thêm bởi migration `20260708000000_add_chapter_timing_json`
+    (`ALTER TABLE chapters ADD COLUMN timing_json JSON NULL`). ⚠ File `migration.sql` bị `.gitignore` chặn
+    (`*.sql` ở root) nên KHÔNG được commit → prod cần tự thêm cột (chạy `prisma migrate deploy` hoặc `ALTER TABLE` thủ công) trước khi tính năng read-along hoạt động.
 - **`ChapterVariant`** (`chapter_variants`) — nhánh cho chương tương tác.
   - Tự tham chiếu cây: `parentId` (relation `VariantHierarchy`, `onDelete: NoAction`), `nextChapterId` (FK Chapter), `nextVariantId` (**chỉ là cột thường, KHÔNG có relation** — xem Cạm bẫy).
   - `isDefault`, `orderIndex`, `unlockPrice`, audio riêng, soft delete `deletedAt`.
@@ -179,6 +188,7 @@ CẢNH BÁO LỚN: schema để trong **một file duy nhất** ~1173 dòng → 
 2. Languages: `vi` (Tiếng Việt), `en` (English).
 3. Users: 1 admin (`ADMIN_EMAIL`/`ADMIN_PASSWORD` env, mặc định `admin@truyen-audio.app` / `admin123`, hash argon2) + 6 demo reader (vip tier/pulse khác nhau).
 4. Categories: 16 (8 cặp vi/en).
+4b. Labels: 3 mặc định (Hot 7 ngày / New 14 ngày / Editor's Choice không hết hạn) — `upsert` theo `name`.
 5. Authors: 5 (tên Hán-Việt, gắn ngôn ngữ vi).
 6. Stories: ~88 (mỗi entry tạo cả bản vi + en), gồm 5 truyện tương tác (`isInteractive`).
    - Mỗi truyện thường: 15 chương; truyện tương tác: 1 chương + variant cây (Path A/B/C, A có sub-variant A.1/A.2).
@@ -206,6 +216,8 @@ Lịch sử migration phản ánh quá trình tiến hoá (theo thứ tự ngày
 - Auth: `replace_token_with_jti` (RefreshToken chuyển sang lưu jti).
 - Tiền ảo: `unify_pulse` (đổi tên logic Credit→Pulse nhưng GIỮ tên cột cũ).
 - Mở khoá: `add_user_chapter_unlocks`, `add_story_unlock_and_discounts`.
+- Read-along: `add_chapter_timing_json` (thêm `chapters.timing_json`) — file `.sql` KHÔNG được commit (xem 2.2), cần tự áp dụng ở môi trường khác.
+- Labels + Rankings (07/2026, sub-project A/B1/B2a/B2b/C): `20260709103611_add_labels_and_story_label` (bảng `labels` + `stories.label_id`/`label_assigned_at`/`label_expires_at`), `20260709140000_add_story_view_daily` (bảng `story_view_daily`), `20260709160000_add_story_country_daily` (bảng `story_country_daily`). Cả 3 file `.sql` đều KHÔNG được commit (cùng lý do `*.sql` ở `.gitignore`) → prod cần `prisma migrate deploy` (hoặc tạo bảng/cột thủ công) trước khi các tính năng này hoạt động. **B2b + C KHÔNG thêm migration** (B2b chỉ thêm giá trị chuỗi `kind`; C thêm trending tính động + UI admin).
 
 `migration_lock.toml` khoá provider = mysql.
 

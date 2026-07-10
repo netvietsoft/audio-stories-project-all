@@ -3,7 +3,7 @@
 > MỤC ĐÍCH: tài liệu **hợp đồng kết nối** giữa app mobile Flutter
 > (`../../novelverse`, thư mục `lib/api/`) và backend NestJS này. Gom mọi thứ cần để
 > "kết nối dễ": base URL theo môi trường, quy ước envelope, auth, và danh sách
-> endpoint mobile dùng. Dựa trên **đọc code thật**. Cập nhật: 2026-06-30.
+> endpoint mobile dùng. Dựa trên **đọc code thật**. Cập nhật: 2026-07-08.
 >
 > Danh sách đầy đủ ~180 endpoint: xem [08-api-list.md](08-api-list.md). File này là
 > **tập con + quy tắc kết nối** cho client mobile, ánh xạ 1-1 với
@@ -102,7 +102,7 @@ Luồng: `register → verify-code → {access}` · `login → {access}` · gọ
 | GET | `/stories/categories` | P | `?language` |
 | GET | `/stories/:slug` | P | chi tiết truyện + chương (có `hlsUrl` nếu sẵn) |
 | POST | `/stories/:id/unlock` | A | mở khoá cả truyện (trừ Pulse) |
-| GET | `/chapters/:id/public` | P | nội dung chương công khai (+ `hlsUrl`) |
+| GET | `/chapters/:id/public` | P | nội dung chương công khai (+ `hlsUrl`, + `timing` cho read-along) |
 | GET | `/chapters/:id/audio` | P/A | **302 redirect** tới audio thật (sau entitlement) |
 
 ### Music
@@ -121,6 +121,11 @@ Luồng: `register → verify-code → {access}` · `login → {access}` · gọ
 | GET | `/banners` | P | banner hero |
 | GET | `/notifications` | A | thông báo (chuông) |
 
+### Tracking
+| Method | Path | | Body / ghi chú |
+|---|---|---|---|
+| POST | `/tracking/search-open` | P | `{ storyId, deviceId }` — gọi khi user mở truyện từ kết quả tìm kiếm. `storyId` được gửi bằng slug (backend tự resolve sang id qua `OR:[{id},{slug}]`); dùng để đếm lượt mở theo quốc gia (geo attribution). |
+
 ═══════════════════════════════════════════════════════════════════════
 ## 5. QUY ƯỚC DỮ LIỆU (đồng bộ mobile)
 ═══════════════════════════════════════════════════════════════════════
@@ -130,10 +135,17 @@ Luồng: `register → verify-code → {access}` · `login → {access}` · gọ
 - **Audio không lộ URL** trong JSON public → phát qua proxy `/chapters/:id/audio` (302)
   hoặc HLS `hlsUrl` (m3u8 + AES-128). Nội dung tính phí: key HLS cần token (hạn chế hiện tại).
 - **Story.thumbnailUrl** = URL ảnh R2 (dùng `Image.network` ở mobile — đã hỗ trợ ở `CoverImage`).
+- **`label` (badge bìa)**: các response trả truyện (`home`, `explore`, `:slug`, …) có field `label: { id, name, text, color, textColor, icon } | null` — thay cho badge tự tính (NEW/HOT/TOP/VIP) trước đây. App render badge trực tiếp từ `label.text` trên `label.color` (không tự suy luận nữa).
 - **Enum trạng thái** là nguồn sự thật ở `be/prisma/schema.prisma` (xem [04-database.md](04-database.md)).
   `PaymentStatus` có cả `SUCCESS` lẫn `SUCCEEDED` — lọc "đã thanh toán" phải tính cả hai.
 - **Tiền tệ là trọng tài ở BE**: mobile KHÔNG tự cộng/trừ Pulse rồi mới gọi API — gọi API,
   cập nhật theo phản hồi (chống double-credit, xem [05-integrations-webhooks.md](05-integrations-webhooks.md)).
+- **`timing` (read-along)**: field mới trong `GET /chapters/:id/public`, optional —
+  `{ v:1, cues:[{ s, e, p, cs, ce }], matched, total }` hoặc `null` nếu chương chưa có timing.
+  `s`/`e` = mốc ms bắt đầu/kết thúc câu, `p` = index đoạn văn (-1 nếu không khớp được), `cs`/`ce`
+  = vị trí ký tự bắt đầu/kết thúc trong đoạn văn gốc `p`. Mobile map trực tiếp từng cue sang
+  `TimingCue` (đọc đúng khoá `s,e,p,cs,ce`) để highlight câu đang đọc; `v`/`matched`/`total` chỉ
+  phục vụ admin, app bỏ qua.
 
 ═══════════════════════════════════════════════════════════════════════
 ## 6. SWAGGER & HEALTH

@@ -12,7 +12,7 @@ tasks:
     args:
       - 'dev'
       - '-p'
-      - '3001'
+      - '9002'
       - '-H'
       - '0.0.0.0'
     platform: 'node'
@@ -24,7 +24,7 @@ tasks:
     args:
       - 'start'
       - '-p'
-      - '3001'
+      - '9002'
     platform: 'node'
     options:
       mergeArgs: 'replace'

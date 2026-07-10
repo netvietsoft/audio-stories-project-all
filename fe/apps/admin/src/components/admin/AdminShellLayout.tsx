@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from '@/components/shared/LocalizedLink';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Shield, LogOut, Loader2, Newspaper, Home, Users, Settings, ChevronLeft, ChevronRight, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift, Zap, Image as ImageIcon, Megaphone, Share2 } from 'lucide-react';
+import { Bell, Shield, LogOut, Loader2, Newspaper, Home, Users, Settings, ChevronLeft, ChevronRight, ChevronDown, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift, Zap, Image as ImageIcon, Megaphone, Share2, Tag, BarChart3 } from 'lucide-react';
 import { ThemeProvider } from 'next-themes';
 
 import { useState, useEffect } from 'react';
@@ -26,6 +26,7 @@ export default function AdminShellLayout({
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         document.body.classList.add('admin-shell');
@@ -87,7 +88,11 @@ export default function AdminShellLayout({
         return <AdminRequireLogin />;
     }
 
-    const navItems = [
+    type NavLeaf = { href: string; label: string; icon: typeof Home };
+    type NavGroup = { label: string; icon: typeof Home; children: NavLeaf[] };
+    type NavEntry = NavLeaf | NavGroup;
+
+    const navItems: NavEntry[] = [
         { href: '/', label: 'Dashboard', icon: Home },
         { href: '/users', label: 'Quản lý Người dùng', icon: Users },
         { href: '/stories', label: 'Quản lý Truyện', icon: Newspaper },
@@ -99,6 +104,7 @@ export default function AdminShellLayout({
         { href: '/interactive-stories', label: 'Truyện Tương Tác', icon: Zap },
 
         { href: '/categories', label: 'Quản lý Danh mục', icon: LayoutGrid },
+        { href: '/labels', label: 'Quản lý Label', icon: Tag },
         { href: '/authors', label: 'Quản lý Tác giả', icon: UserCircle },
         { href: '/memberships', label: 'Quản lý Hội viên', icon: Crown },
         { href: '/packages', label: 'Quản lý Gói thanh toán', icon: Package },
@@ -108,10 +114,92 @@ export default function AdminShellLayout({
         { href: '/gifts', label: 'Lịch sử Tặng quà', icon: Gift },
         { href: '/transactions', label: 'Quản lý Giao dịch', icon: DollarSign },
         { href: '/vip-stories', label: 'Thống kê Truyện VIP', icon: Crown },
+        {
+            label: 'Bảng xếp hạng',
+            icon: BarChart3,
+            children: [
+                { href: '/rankings/top-stories', label: 'Top Truyện', icon: Newspaper },
+                { href: '/rankings/top-countries', label: 'Top Quốc gia', icon: Globe2 },
+                { href: '/rankings/by-country', label: 'Xếp hạng theo quốc gia', icon: Globe2 },
+            ],
+        },
         { href: '/settings', label: 'Cài đặt', icon: Settings },
     ];
 
+    const allLeafHrefs = navItems.flatMap((item) =>
+        'children' in item ? item.children.map((child) => child.href) : [item.href],
+    );
 
+    const hrefMatchesPath = (href: string) => {
+        const normalized = href === '/' ? '/' : href;
+        return pathWithoutLocale === normalized || (normalized !== '/' && pathWithoutLocale.startsWith(`${normalized}/`));
+    };
+    // An item is active only if it matches AND no more-specific sibling (longer href) also matches.
+    // Prevents a parent like /ads from lighting up while on a child route /ads/unlock.
+    const isNavItemActive = (href: string) =>
+        hrefMatchesPath(href) &&
+        !allLeafHrefs.some((other) => other !== href && other.length > href.length && hrefMatchesPath(other));
+
+    const isGroupActive = (group: NavGroup) => group.children.some((child) => isNavItemActive(child.href));
+    const isGroupOpen = (group: NavGroup) => openGroups[group.label] ?? isGroupActive(group);
+
+    const renderLeaf = (item: NavLeaf, collapsed: boolean, onNavigate?: () => void, nested = false) => {
+        const Icon = item.icon;
+        const isActive = isNavItemActive(item.href);
+        return (
+            <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavigate}
+                title={collapsed ? item.label : ''}
+                className={`relative flex items-center overflow-hidden rounded-2xl font-medium transition-all group ${collapsed ? 'justify-center p-3' : `gap-3 px-4 py-3 ${nested ? 'pl-11' : ''}`} ${isActive
+                    ? 'bg-[#ffddef] text-pink-700 shadow-sm'
+                    : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900'
+                    }`}
+            >
+                <Icon className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-pink-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                {!collapsed && <span className="whitespace-nowrap opacity-100 transition-opacity duration-300">{item.label}</span>}
+            </Link>
+        );
+    };
+
+    const renderNavEntries = (collapsed: boolean, onNavigate?: () => void) =>
+        navItems.map((item) => {
+            if (!('children' in item)) {
+                return renderLeaf(item, collapsed, onNavigate);
+            }
+
+            // Collapsed rail: flatten children to icon-only links (accordion makes no sense at w-20)
+            if (collapsed) {
+                return (
+                    <div key={item.label} className="space-y-1.5">
+                        {item.children.map((child) => renderLeaf(child, true, onNavigate))}
+                    </div>
+                );
+            }
+
+            const GroupIcon = item.icon;
+            const groupActive = isGroupActive(item);
+            const open = isGroupOpen(item);
+            return (
+                <div key={item.label}>
+                    <button
+                        type="button"
+                        onClick={() => setOpenGroups((prev) => ({ ...prev, [item.label]: !open }))}
+                        className={`relative flex w-full items-center gap-3 rounded-2xl px-4 py-3 font-medium transition-all group ${groupActive ? 'text-pink-700' : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900'}`}
+                    >
+                        <GroupIcon className={`h-5 w-5 shrink-0 transition-colors ${groupActive ? 'text-pink-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                        <span className="flex-1 whitespace-nowrap text-left">{item.label}</span>
+                        <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                    </button>
+                    {open && (
+                        <div className="mt-1.5 space-y-1.5">
+                            {item.children.map((child) => renderLeaf(child, false, onNavigate, true))}
+                        </div>
+                    )}
+                </div>
+            );
+        });
 
     return (
         <ThemeProvider forcedTheme="light" attribute="class">
@@ -136,28 +224,7 @@ export default function AdminShellLayout({
                 </div>
 
                 <nav className={`flex-1 overflow-y-auto py-6 space-y-1.5 transition-all duration-300 ${isCollapsed ? 'px-2' : 'px-4'}`}>
-                    {navItems.map((item) => {
-                        const Icon = item.icon;
-                        // Remove locale prefix from pathname for comparison
-                        const pathWithoutLocale = pathname?.replace(/^\/(vi|en)/, '') || '/';
-                        const normalizedItemHref = item.href === '/' ? '/' : item.href;
-                        const isActive = pathWithoutLocale === normalizedItemHref || (normalizedItemHref !== '/' && pathWithoutLocale.startsWith(`${normalizedItemHref}/`));
-
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                title={isCollapsed ? item.label : ''}
-                                className={`relative flex items-center overflow-hidden rounded-2xl font-medium transition-all group ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4 py-3'} ${isActive
-                                    ? 'bg-[#ffddef] text-pink-700 shadow-sm'
-                                    : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900'
-                                    }`}
-                            >
-                                <Icon className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-pink-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                                {!isCollapsed && <span className="whitespace-nowrap opacity-100 transition-opacity duration-300">{item.label}</span>}
-                            </Link>
-                        );
-                    })}
+                    {renderNavEntries(isCollapsed)}
                 </nav>
 
                             <div className={`p-4 transition-all duration-300 ${isCollapsed ? 'p-2' : 'p-6'}`}>
@@ -237,27 +304,7 @@ export default function AdminShellLayout({
                             </div>
 
                             <nav className="flex-1 space-y-1.5 overflow-y-auto px-4 py-6">
-                                {navItems.map((item) => {
-                                    const Icon = item.icon;
-                                    // Remove locale prefix from pathname for comparison
-                                    const pathWithoutLocale = pathname?.replace(/^\/(vi|en)/, '') || '';
-                                    const isActive = pathWithoutLocale === item.href || pathname === item.href;
-
-                                    return (
-                                        <Link
-                                            key={item.href}
-                                            href={item.href}
-                                            onClick={() => setIsMobileMenuOpen(false)}
-                                            className={`relative flex items-center overflow-hidden rounded-2xl px-4 py-3 font-medium transition-all group gap-3 ${isActive
-                                                    ? 'bg-[#ffddef] text-pink-700 shadow-sm'
-                                                    : 'text-slate-600 hover:bg-gray-50 hover:text-slate-900'
-                                                    }`}
-                                        >
-                                                <Icon className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-pink-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                                            <span className="whitespace-nowrap">{item.label}</span>
-                                        </Link>
-                                    );
-                                })}
+                                {renderNavEntries(false, () => setIsMobileMenuOpen(false))}
                             </nav>
 
                             <div className="p-6 space-y-4">

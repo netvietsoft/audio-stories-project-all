@@ -8,6 +8,7 @@ import StoryCard from "@/components/shared/StoryCard";
 import StoryFilterBar, { type StoryFilterValue } from "@/components/shared/StoryFilterBar";
 import { apiClient } from "@/lib/api/api-client";
 import { useDebounce } from "@/hooks/useDebounce";
+import { getOrCreateDeviceId } from "@/lib/tracking/device-id";
 
 type StoryItem = {
   id: string;
@@ -165,7 +166,20 @@ function SearchPageContent() {
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {stories.map((story) => (
-          <StoryCard key={story.id} story={story} />
+          <div
+            key={story.id}
+            onClick={() => {
+              const deviceId = getOrCreateDeviceId();
+              if (!deviceId) return;
+              void apiClient
+                .post("/tracking/search-open", { storyId: story.id, deviceId })
+                .catch(() => {
+                  // Tracking must be non-blocking for UX.
+                });
+            }}
+          >
+            <StoryCard story={story} />
+          </div>
         ))}
       </div>
 

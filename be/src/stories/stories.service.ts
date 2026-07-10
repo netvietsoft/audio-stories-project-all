@@ -8,6 +8,7 @@ import { ExploreQueryDto } from './dto/explore-query.dto';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { UpdateStoryDto } from './dto/update-story.dto';
 import { handlePrismaError } from '@/common/utils/error-handler.util';
+import { GeoService } from '@/common/geo/geo.service';
 
 @Injectable()
 export class StoriesService {
@@ -17,6 +18,7 @@ export class StoriesService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly geo: GeoService,
   ) { }
 
   private async getExploreCacheVersion() {
@@ -844,7 +846,7 @@ export class StoriesService {
     return this.serializeStory(story);
   }
 
-  async unlockStoryByPulse(storyId: string, userId: string) {
+  async unlockStoryByPulse(storyId: string, userId: string, ip?: string) {
     const story = await this.prisma.story.findUnique({
       where: { id: storyId },
       select: {
@@ -919,6 +921,8 @@ export class StoriesService {
 
       return nextUser;
     });
+
+    void this.geo.record(storyId, ip, 'revenue', finalPrice);
 
     return {
       success: true,
@@ -1061,7 +1065,7 @@ export class StoriesService {
     return { message: 'Story deleted successfully' };
   }
 
-  async giftPulse(storyId: string, userId: string, amount: number, message?: string, chapterId?: string) {
+  async giftPulse(storyId: string, userId: string, amount: number, message?: string, chapterId?: string, ip?: string) {
     // Validate amount
     if (amount < 1) {
       throw new BadRequestException('Minimum gift amount is 1 Pulse');
@@ -1138,6 +1142,8 @@ export class StoriesService {
         },
       }),
     ]);
+
+    void this.geo.record(storyId, ip, 'gift', numericAmount);
 
     await this.invalidateExploreCache();
 

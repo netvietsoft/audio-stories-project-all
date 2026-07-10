@@ -1,7 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 
 import { Account } from '@/auth/decorators/account.decorator';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
+import { clientIp } from '@/common/geo/geo.util';
 import { ExploreQueryDto } from '@/stories/dto/explore-query.dto';
 import { HistoryQueryDto } from './dto/history-query.dto';
 import { SyncHistoryDto } from './dto/sync-history.dto';
@@ -18,8 +20,8 @@ export class UserFeaturesController {
   }
 
   @Post('favorites/toggle')
-  toggleFavorite(@Account() account: any, @Body() dto: ToggleFavoriteDto) {
-    return this.userFeaturesService.toggleFavorite(this.userIdFromAccount(account), dto.storyId);
+  toggleFavorite(@Account() account: any, @Body() dto: ToggleFavoriteDto, @Req() req: Request) {
+    return this.userFeaturesService.toggleFavorite(this.userIdFromAccount(account), dto.storyId, clientIp(req));
   }
 
   @Get('favorites')
@@ -38,8 +40,8 @@ export class UserFeaturesController {
   }
 
   @Post('history/sync')
-  syncHistory(@Account() account: any, @Body() dto: SyncHistoryDto) {
-    return this.userFeaturesService.syncHistory(this.userIdFromAccount(account), dto);
+  syncHistory(@Account() account: any, @Body() dto: SyncHistoryDto, @Req() req: Request) {
+    return this.userFeaturesService.syncHistory(this.userIdFromAccount(account), dto, clientIp(req));
   }
 
   @Get('history')

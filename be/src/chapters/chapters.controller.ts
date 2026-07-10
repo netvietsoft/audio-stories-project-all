@@ -23,6 +23,7 @@ import { OptionalJwtGuard } from '@/auth/guards/optional-jwt.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { Public } from '@/auth/decorators/public.decorator';
+import { clientIp } from '@/common/geo/geo.util';
 
 @Controller()
 export class ChaptersController {
@@ -122,7 +123,7 @@ export class ChaptersController {
     @Post('chapters/:id/unlock-by-pulse')
     unlockByPulse(@Param('id') id: string, @Req() req: Request) {
         const userId = (req.user as any)?.id;
-        return this.chaptersService.unlockByPulse(id, userId);
+        return this.chaptersService.unlockByPulse(id, userId, clientIp(req));
     }
 
     @Get('chapters/:id')

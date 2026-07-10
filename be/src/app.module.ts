@@ -19,6 +19,7 @@ import { StatsModule } from './stats/stats.module';
 import { StoriesModule } from './stories/stories.module';
 import { CategoriesModule } from './categories/categories.module';
 import { LabelsModule } from './labels/labels.module';
+import { GeoModule } from './common/geo/geo.module';
 import { AuthorsModule } from './authors/authors.module';
 import { ChaptersModule } from './chapters/chapters.module';
 import { TransactionsModule } from './transactions/transactions.module';
@@ -93,6 +94,7 @@ import { buildScheduleImports } from './common/app-role.util';
     StoriesModule,
     CategoriesModule,
     LabelsModule,
+    GeoModule,
     AuthorsModule,
     ChaptersModule,
     TransactionsModule,

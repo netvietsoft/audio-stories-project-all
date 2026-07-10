@@ -1,9 +1,11 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 
 import { Account } from '@/auth/decorators/account.decorator';
 import { Roles } from '@/auth/decorators/roles.decorator';
 import { JwtAccessGuard } from '@/auth/guards/jwt-access.guard';
 import { RolesGuard } from '@/auth/guards/roles.guard';
+import { clientIp } from '@/common/geo/geo.util';
 import { CreateChapterCommentDto } from './dto/create-chapter-comment.dto';
 import { ListRepliesDto } from './dto/list-replies.dto';
 import { ListChapterCommentsDto } from './dto/list-chapter-comments.dto';
@@ -37,8 +39,14 @@ export class ChapterCommentsController {
     @Param('chapterId') chapterId: string,
     @Account() account: any,
     @Body() dto: CreateChapterCommentDto,
+    @Req() req: Request,
   ) {
-    return this.chapterCommentsService.create(this.userIdFromAccount(account), chapterId, dto);
+    return this.chapterCommentsService.create(
+      this.userIdFromAccount(account),
+      chapterId,
+      dto,
+      clientIp(req),
+    );
   }
 
   @Get('comments/:commentId/replies')

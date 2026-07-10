@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { UserFeaturesService } from '@/user-features/user-features.service';
 import { HlsQueueService } from '@/hls/hls-queue.service';
+import { GeoService } from '@/common/geo/geo.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { CreateStandaloneChapterDto } from './dto/create-standalone-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
@@ -21,6 +22,7 @@ export class ChaptersService {
     private readonly prisma: PrismaService,
     private readonly userFeaturesService: UserFeaturesService,
     private readonly hlsQueue: HlsQueueService,
+    private readonly geo: GeoService,
   ) {}
 
   /** Enqueue chapter-level HLS transcode when the chapter has audio (after commit). */
@@ -344,7 +346,7 @@ export class ChaptersService {
     return { isUnlocked: false, unlockSource: null, isTimedFree: false };
   }
 
-  async unlockByPulse(chapterId: string, userId: string) {
+  async unlockByPulse(chapterId: string, userId: string, ip?: string) {
     const chapter = await this.prisma.chapter.findUnique({
       where: { id: chapterId },
       select: {
@@ -498,6 +500,10 @@ export class ChaptersService {
 
       return nextUser;
     });
+
+    if (chapter.storyId) {
+      void this.geo.record(chapter.storyId, ip, 'revenue', finalPrice);
+    }
 
     return {
       success: true,

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from '@/components/shared/LocalizedLink';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, Shield, LogOut, Loader2, Newspaper, Home, Users, Settings, ChevronLeft, ChevronRight, ChevronDown, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift, Zap, Image as ImageIcon, Megaphone, Share2, Tag } from 'lucide-react';
+import { Bell, Shield, LogOut, Loader2, Newspaper, Home, Users, Settings, ChevronLeft, ChevronRight, ChevronDown, LayoutGrid, UserCircle, Music, DollarSign, MessageSquare, Crown, Package, Menu, X, Globe2, Gift, Zap, Image as ImageIcon, Megaphone, Share2, Tag, BarChart3 } from 'lucide-react';
 import { ThemeProvider } from 'next-themes';
 
 import { useState, useEffect } from 'react';
@@ -120,6 +120,15 @@ export default function AdminShellLayout({
         { href: '/gifts', label: 'Lịch sử Tặng quà', icon: Gift },
         { href: '/transactions', label: 'Quản lý Giao dịch', icon: DollarSign },
         { href: '/vip-stories', label: 'Thống kê Truyện VIP', icon: Crown },
+        {
+            label: 'Bảng xếp hạng',
+            icon: BarChart3,
+            children: [
+                { href: '/rankings/top-stories', label: 'Top Truyện', icon: Newspaper },
+                { href: '/rankings/top-countries', label: 'Top Quốc gia', icon: Globe2 },
+                { href: '/rankings/by-country', label: 'Xếp hạng theo quốc gia', icon: Globe2 },
+            ],
+        },
         { href: '/settings', label: 'Cài đặt', icon: Settings },
     ];
 

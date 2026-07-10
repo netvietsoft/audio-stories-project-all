@@ -79,14 +79,16 @@ export class StoriesService {
       throw new BadRequestException('Title must be provided');
     }
 
-    const { categoryIds, chapters, chapterIds, language, authorId, ...storyData } = data;
+    const { categoryIds, chapters, chapterIds, language, authorId, labelId, labelDurationDaysOverride, ...storyData } = data;
 
     const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
+    const labelFields = labelId !== undefined ? await this.computeLabelFields(labelId, labelDurationDaysOverride) : {};
 
     try {
       const story = await this.prisma.story.create({
         data: {
           ...normalizedStoryData,
+          ...labelFields,
           author: {
             connect: { id: authorId },
           },
@@ -121,6 +123,7 @@ export class StoriesService {
               category: { select: { name: true } },
             },
           },
+          label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
         },
       });
 
@@ -155,11 +158,38 @@ export class StoriesService {
 
 
   private serializeStory(story: any) {
+    const label = this.activeLabel(story);
+    const { label: _rawLabel, labelAssignedAt: _a, labelExpiresAt: _e, ...rest } = story;
     return {
-      ...story,
+      ...rest,
+      label,
       language: this.extractLanguageKey(story.language) ?? story.language,
       totalViews: typeof story.totalViews === 'bigint' ? Number(story.totalViews) : story.totalViews,
     };
+  }
+
+  private activeLabel(story: any):
+    | { id: number; name: string; text: string; color: string; textColor: string | null; icon: string | null }
+    | null {
+    if (!story?.labelId || !story?.label) return null;
+    if (story.labelExpiresAt) {
+      const exp = new Date(story.labelExpiresAt).getTime();
+      if (Date.now() >= exp) return null;
+    }
+    const l = story.label;
+    return { id: l.id, name: l.name, text: l.text, color: l.color, textColor: l.textColor ?? null, icon: l.icon ?? null };
+  }
+
+  private async computeLabelFields(labelId: number | null, override?: number | null) {
+    if (labelId == null) return { labelId: null, labelAssignedAt: null, labelExpiresAt: null };
+    let days = override ?? null;
+    if (days == null) {
+      const lbl = await this.prisma.label.findUnique({ where: { id: labelId }, select: { defaultDurationDays: true } });
+      days = lbl?.defaultDurationDays ?? null;
+    }
+    const now = new Date();
+    const labelExpiresAt = days && days > 0 ? new Date(now.getTime() + days * 86_400_000) : null;
+    return { labelId, labelAssignedAt: now, labelExpiresAt };
   }
 
   async getHomeStories() {
@@ -189,6 +219,7 @@ export class StoriesService {
           key: true,
         },
       },
+      label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
     } satisfies Prisma.StoryInclude;
 
     const [trending, newest, featured] = await Promise.all([
@@ -267,9 +298,12 @@ export class StoriesService {
             name: true,
           },
         },
+        labelId: true,
+        labelExpiresAt: true,
+        label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
       } as any,
     });
-    
+
     // Shuffle and take only the requested amount
     const shuffled = stories.sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, safeLimit);
@@ -393,6 +427,9 @@ export class StoriesService {
               category: { select: { id: true, name: true, slug: true } as any },
             },
           },
+          labelId: true,
+          labelExpiresAt: true,
+          label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
         } as any, // Cast the entire select object to any
       }),
     ]);
@@ -603,6 +640,7 @@ export class StoriesService {
           _count: {
             select: { chapters: true },
           },
+          label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
         },
       }),
       this.prisma.story.aggregate({
@@ -645,6 +683,7 @@ export class StoriesService {
             category: { select: { id: true, name: true, slug: true } as any },
           },
         },
+        label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
       },
     });
 
@@ -658,15 +697,24 @@ export class StoriesService {
   async updateStory(id: string, data: UpdateStoryDto) {
     const existing = await this.prisma.story.findUnique({
       where: { id },
-      select: { id: true, deletedAt: true },
+      select: { id: true, deletedAt: true, labelId: true },
     });
 
     if (!existing) {
       throw new NotFoundException('Story not found');
     }
 
-    const { categoryIds, language, ...storyData } = data;
+    const { categoryIds, language, labelId, labelDurationDaysOverride, ...storyData } = data;
     const normalizedStoryData = this.normalizeStoryFlatPayload(storyData);
+    let labelFields: { labelId?: number | null; labelAssignedAt?: Date | null; labelExpiresAt?: Date | null } = {};
+    if (labelDurationDaysOverride !== undefined) {
+      // explicit override → (re)pin using the given duration
+      labelFields = await this.computeLabelFields(labelId ?? existing.labelId ?? null, labelDurationDaysOverride);
+    } else if (labelId !== undefined && labelId !== existing.labelId) {
+      // label assignment changed (assigned a different one, or cleared) → recompute
+      labelFields = await this.computeLabelFields(labelId);
+    }
+    // else: labelId unchanged and no override → leave labelAssignedAt/labelExpiresAt untouched
 
     if (categoryIds) {
       await this.prisma.storyCategory.deleteMany({ where: { storyId: id } });
@@ -685,6 +733,7 @@ export class StoriesService {
       where: { id },
       data: {
         ...normalizedStoryData,
+        ...labelFields,
         ...(language ? {
           language: {
             connect: {
@@ -708,6 +757,7 @@ export class StoriesService {
             category: { select: { id: true, name: true, slug: true } as any },
           },
         },
+        label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
       },
     });
 
@@ -737,6 +787,7 @@ export class StoriesService {
             },
           },
         },
+        label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
         chapters: {
           where: { deletedAt: null },
           orderBy: { chapterNumber: 'asc' },
@@ -976,6 +1027,7 @@ export class StoriesService {
             name: true,
           },
         },
+        label: { select: { id: true, name: true, text: true, color: true, textColor: true, icon: true } },
       },
     });
 

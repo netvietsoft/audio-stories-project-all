@@ -70,4 +70,13 @@ export class CreateStoryDto {
     @IsOptional()
     @IsString()
     language?: string;
+
+    @IsOptional()
+    @IsInt()
+    labelId?: number | null;
+
+    @IsOptional()
+    @IsInt()
+    @Min(0)
+    labelDurationDaysOverride?: number;
 }

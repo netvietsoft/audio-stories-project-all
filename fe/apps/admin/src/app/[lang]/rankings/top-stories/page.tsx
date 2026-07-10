@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { adminApiClient as apiClient } from '@/lib/api/admin-api-client';
 import { unwrapList } from '@/lib/api/unwrap';
@@ -19,6 +19,8 @@ export default function TopStoriesRankingPage() {
   const [expanded, setExpanded] = useState<Record<string, ExpandState>>({});
 
   const metric = getMetric(metricKey);
+  const metricKeyRef = useRef(metricKey);
+  metricKeyRef.current = metricKey;
 
   useEffect(() => {
     let cancelled = false;
@@ -34,14 +36,17 @@ export default function TopStoriesRankingPage() {
 
   const handleExpand = (storyId: string) => {
     if (expanded[storyId]) return; // đã nạp / đang nạp
+    const requested = metricKey;
     setExpanded((prev) => ({ ...prev, [storyId]: { loading: true, countries: [] } }));
     apiClient
       .get(`/stats/story-top-countries?storyId=${encodeURIComponent(storyId)}&metric=${metric.geoKind}&limit=5`)
       .then((res) => {
+        if (metricKeyRef.current !== requested) return; // metric đã đổi giữa chừng -> bỏ qua kết quả cũ
         const list = unwrapList<CountryValue>(res.data);
         setExpanded((prev) => ({ ...prev, [storyId]: { loading: false, countries: list } }));
       })
       .catch(() => {
+        if (metricKeyRef.current !== requested) return;
         setExpanded((prev) => ({ ...prev, [storyId]: { loading: false, countries: [], error: true } }));
       });
   };

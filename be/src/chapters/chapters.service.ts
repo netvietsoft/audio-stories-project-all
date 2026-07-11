@@ -227,8 +227,11 @@ export class ChaptersService {
         description: true,
         content: true,
         thumbnailUrl: true,
-        // audioUrl and r2AudioUrl intentionally omitted from public detail.
-        // Clients must use GET /chapters/:id/audio (entitlement-checked proxy).
+        // audioUrl and r2AudioUrl are selected INTERNALLY only to compute hasAudio;
+        // they are stripped from the response below. Clients must use
+        // GET /chapters/:id/audio (entitlement-checked proxy).
+        audioUrl: true,
+        r2AudioUrl: true,
         youtubeVideoId: true,
         audioDuration: true,
         accessType: true,
@@ -251,7 +254,10 @@ export class ChaptersService {
             title: true,
             description: true,
             content: true,
-            // audioUrl and r2AudioUrl omitted — clients call /chapters/:id/audio?variantId=...
+            // audioUrl and r2AudioUrl selected INTERNALLY only to compute hasAudio;
+            // stripped below. Clients call /chapters/:id/audio?variantId=...
+            audioUrl: true,
+            r2AudioUrl: true,
             audioDuration: true,
             unlockPrice: true,
             orderIndex: true,
@@ -267,7 +273,26 @@ export class ChaptersService {
       throw new NotFoundException(`Chapter with ID ${id} not found`);
     }
 
-    return { ...chapter, timing: chapter.timingJson ?? null };
+    // Strip audioUrl/r2AudioUrl from the response; expose only a computed hasAudio.
+    const { audioUrl, r2AudioUrl, variants, ...chapterRest } = chapter;
+    return {
+      ...chapterRest,
+      hasAudio: Boolean(r2AudioUrl || audioUrl || chapterRest.audioDuration),
+      timing: chapter.timingJson ?? null,
+      variants: variants.map((variant) => {
+        const {
+          audioUrl: variantAudioUrl,
+          r2AudioUrl: variantR2AudioUrl,
+          ...variantRest
+        } = variant;
+        return {
+          ...variantRest,
+          hasAudio: Boolean(
+            variantR2AudioUrl || variantAudioUrl || variantRest.audioDuration,
+          ),
+        };
+      }),
+    };
   }
 
   async getUnlockStatus(chapterId: string, userId?: string) {

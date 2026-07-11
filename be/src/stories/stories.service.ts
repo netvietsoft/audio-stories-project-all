@@ -797,6 +797,9 @@ export class StoriesService {
             id: true,
             title: true,
             youtubeVideoId: true,
+            // audioUrl/r2AudioUrl selected INTERNALLY only to compute hasAudio; stripped below.
+            audioUrl: true,
+            r2AudioUrl: true,
             audioDuration: true,
             chapterNumber: true,
             description: true,
@@ -826,6 +829,9 @@ export class StoriesService {
               select: {
                 id: true,
                 title: true,
+                // audioUrl/r2AudioUrl selected INTERNALLY only to compute hasAudio; stripped below.
+                audioUrl: true,
+                r2AudioUrl: true,
                 audioDuration: true,
                 unlockPrice: true,
                 nextChapterId: true,
@@ -843,7 +849,30 @@ export class StoriesService {
       throw new NotFoundException('Story not found');
     }
 
-    return this.serializeStory(story);
+    const serialized = this.serializeStory(story);
+    // Strip audioUrl/r2AudioUrl from chapters/variants; expose only a computed hasAudio.
+    const chapters = ((serialized.chapters as any[]) ?? []).map((chapter) => {
+      const { audioUrl, r2AudioUrl, variants, ...chapterRest } = chapter;
+      return {
+        ...chapterRest,
+        hasAudio: Boolean(r2AudioUrl || audioUrl || chapterRest.audioDuration),
+        variants: ((variants as any[]) ?? []).map((variant) => {
+          const {
+            audioUrl: variantAudioUrl,
+            r2AudioUrl: variantR2AudioUrl,
+            ...variantRest
+          } = variant;
+          return {
+            ...variantRest,
+            hasAudio: Boolean(
+              variantR2AudioUrl || variantAudioUrl || variantRest.audioDuration,
+            ),
+          };
+        }),
+      };
+    });
+
+    return { ...serialized, chapters };
   }
 
   async unlockStoryByPulse(storyId: string, userId: string, ip?: string) {

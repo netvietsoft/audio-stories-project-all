@@ -60,6 +60,7 @@ type ChapterVariant = {
   audioUrlVi?: string | null;
   audioUrlEn?: string | null;
   audioDuration: number | null;
+  hasAudio?: boolean;
   unlockPrice: number;
   orderIndex: number;
   isDefault: boolean;
@@ -88,6 +89,7 @@ type ChapterItem = {
   audioUrlEn?: string | null;
   youtubeVideoId?: string | null;
   audioDuration: number | null;
+  hasAudio?: boolean;
   accessType: "free" | "timed" | "vip" | "ads";
   unlocksAt: string | null;
   unlockPrice?: number;
@@ -401,6 +403,8 @@ export default function StoryChapterClient() {
         title: getLocalizedValue(locale, variant.titleVi, variant.titleEn, variant.title),
         content: getLocalizedValue(locale, variant.contentVi, variant.contentEn, variant.content || ""),
         audioUrl: rawAudioUrl || proxyUrl,
+        // Prefer the BE-computed flag; fall back to duration for pre-deploy safety.
+        hasAudio: typeof variant.hasAudio === "boolean" ? variant.hasAudio : Number(variant.audioDuration) > 0,
       };
     },
     [locale, accessToken],
@@ -427,6 +431,8 @@ export default function StoryChapterClient() {
         description: getLocalizedValue(locale, chapter.descriptionVi, chapter.descriptionEn, chapter.description || ""),
         content: getLocalizedValue(locale, chapter.contentVi, chapter.contentEn, chapter.content || ""),
         r2AudioUrl: rawAudioUrl || proxyUrl,
+        // Prefer the BE-computed flag; fall back to duration for pre-deploy safety.
+        hasAudio: typeof chapter.hasAudio === "boolean" ? chapter.hasAudio : Number(chapter.audioDuration) > 0,
       };
     },
     [locale, normalizeVariant, accessToken],
@@ -910,7 +916,11 @@ export default function StoryChapterClient() {
     ? `This story does not have an ${localePendingLabel} version for this chapter yet. We will update it as soon as possible.`
     : `Hiện tại truyện này chưa có bản ${localePendingLabel} cho chương này. Chúng tôi sẽ cập nhật sớm nhất có thể.`;
 
-  const hasPlayableAudio = Boolean(selectedChapterAudioUrl);
+  // Real audio presence comes from the BE-computed hasAudio flag (chapter/variant),
+  // not the always-present proxy URL — so text-only chapters hide the player.
+  const hasPlayableAudio =
+    Boolean(selectedChapterAudioUrl) &&
+    (selectedVariant ? Boolean(selectedVariant.hasAudio) : Boolean(selectedChapter?.hasAudio));
   const playerCoverUrl = selectedChapter?.thumbnailUrl || story?.thumbnailUrl || "https://placehold.co/300x300?text=No+Cover";
   const isSelectedChapterTrack = Boolean(
     selectedChapter &&
@@ -1859,7 +1869,8 @@ export default function StoryChapterClient() {
             </div>
           </div>
 
-          {/* Side Panel 2: Audio Player */}
+          {/* Side Panel 2: Audio Player — hidden when the chapter has no audio */}
+          {hasPlayableAudio && (
           <div className="-mx-4 md:mx-0 md:bg-transparent lg:bg-transparent">
             <div className="px-4 md:px-0">
               <StoryAudioPlayerPanel
@@ -1929,6 +1940,7 @@ export default function StoryChapterClient() {
               />
             </div>
           </div>
+          )}
 
           {/* Side Panel 3: YouTube Player */}
           {selectedChapter.youtubeVideoId ? (

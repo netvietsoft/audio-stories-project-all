@@ -77,6 +77,7 @@ type AudioState = {
   setBufferedTime: (bufferedTime: number) => void;
   setPlaybackRate: (playbackRate: number) => void;
   toggleMute: (isMuted?: boolean) => void;
+  dismissPlayer: () => void;
   resetPlayer: () => void;
 };
 
@@ -398,6 +399,19 @@ export const useAudioStore = create<AudioState>()(
       setBufferedTime: (bufferedTime) => set({ bufferedTime }),
       setPlaybackRate: (playbackRate) => set({ playbackRate }),
       toggleMute: (isMuted) => set((state) => ({ isMuted: isMuted ?? !state.isMuted })),
+      // Tắt player: dọn track/queue + dừng phát, GIỮ NGUYÊN cài đặt người dùng
+      // (volume/playbackRate/isMuted/isShuffle/repeatMode).
+      dismissPlayer: () =>
+        set({
+          queue: [],
+          currentTrack: null,
+          isPlaying: false,
+          currentTime: 0,
+          duration: 0,
+          bufferedTime: 0,
+          queuedNextMap: {},
+          seekTarget: null,
+        }),
       resetPlayer: () => set(initialState),
     }),
     {

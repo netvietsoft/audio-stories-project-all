@@ -36,6 +36,7 @@
         "prisma:migrate:deploy:safe": "node scripts/prisma-safe-migrate.cjs",
         "prisma:push": "prisma db push",
         "prisma:seed": "dotenv -e .env -- prisma db seed",
+        "prisma:backfill:paragraph-anchor": "dotenv -e .env -- ts-node prisma/backfill-paragraph-anchor.ts",
         "openapi": "ts-node -r tsconfig-paths/register scripts/generate-openapi.ts"
     },
     "dependencies": {

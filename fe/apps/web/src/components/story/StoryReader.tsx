@@ -21,6 +21,8 @@ type InlineComment = {
   authorName: string;
   createdAt: string;
   authorAvatarUrl?: string | null;
+  paragraphAnchor?: string | null;
+  paragraphIndex?: number | null;
   reactions?: {
     helpful: number;
     like: number;
@@ -47,6 +49,7 @@ type ParagraphItem = {
   id: string;
   index: number;
   content: string;
+  anchor: string;
 };
 
 type ParagraphCommentsResponse = {
@@ -54,6 +57,8 @@ type ParagraphCommentsResponse = {
     id?: string;
     content?: string;
     createdAt?: string;
+    paragraphAnchor?: string | null;
+    paragraphIndex?: number | null;
     user?: {
       displayName?: string;
       name?: string;
@@ -200,11 +205,43 @@ const countWords = (text: string) => {
 const escapeHtml = (text: string) =>
   text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+// Giải mã entity HTML phổ biến để escape lại đúng một lần (tránh &amp;amp;).
+const decodeHtmlEntities = (text: string) =>
+  text
+    .replace(/&#x([0-9a-fA-F]+);/g, (match, hex: string) => {
+      const code = parseInt(hex, 16);
+      return code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+    })
+    .replace(/&#(\d+);/g, (match, dec: string) => {
+      const code = Number(dec);
+      return code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : match;
+    })
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
+
+// Anchor theo nội dung — PHẢI trùng khớp tuyệt đối với backfill phía BE.
+const normFull = (s: string) => s
+  .replace(/<[^>]*>/g, ' ')
+  .replace(/&(#\d+|#x[0-9a-fA-F]+|[a-zA-Z]+);/g, ' ')
+  .replace(/[^\p{L}\p{N}]+/gu, ' ')
+  .trim()
+  .toLowerCase();
+const makeAnchor = (s: string) => normFull(s).slice(0, 100); // anchor lưu = 100 ký tự chuẩn hoá đầu
+
 // Text thuần: gom câu thành đoạn >= minWords, tách ở ranh giới câu cho dễ đọc.
 const chunkTextToParagraphs = (text: string, minWords: number): string[] => {
   const clean = text.replace(/\s+/g, " ").trim();
   if (!clean) return [];
-  const sentences = clean.split(/(?<=[.!?…])\s+/).filter(Boolean);
+  // Tách câu KHÔNG dùng lookbehind (Safari <16.4 / iOS15 báo lỗi cú pháp lúc parse):
+  // đánh dấu khoảng trắng ngay sau dấu kết câu rồi split — giữ nguyên dấu ở cuối câu.
+  const sentences = clean
+    .replace(/([.!?…])(\s+)/gu, "$1\u0000")
+    .split("\u0000")
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
   const chunks: string[] = [];
   let buffer = "";
   let words = 0;
@@ -256,14 +293,30 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
     .filter(hasVisibleContent);
 
   if (parts.length === 0) {
-    // Text thuần (truyện import từ .doc/.pdf): chia theo câu thành đoạn >= 250 từ.
-    const plain = normalizedHtml
-      .replace(/<br\s*\/?>/gi, " ")
-      .replace(/<[^>]*>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-    // Không bọc <p> (block) để icon comment nằm cùng dòng với chữ cuối đoạn.
-    parts = chunkTextToParagraphs(plain, MIN_PARAGRAPH_WORDS).map((text) => escapeHtml(text));
+    // Không có block <p>/<div>. Nếu còn thẻ inline (a/b/i/em/strong) thì GIỮ định dạng
+    // + link như code cũ: tách theo <br>/xuống dòng, bọc lại thành block rồi gộp >= 250 từ
+    // (mergeBlocksByWords không escape nên không double-escape).
+    const hasInlineTags = /<(a|b|i|em|strong)\b/i.test(normalizedHtml);
+    if (hasInlineTags) {
+      const segments = normalizedHtml
+        .split(/\n{2,}|<br\s*\/?>/gi)
+        .map((segment) => segment.trim())
+        .filter(hasVisibleContent)
+        .map((segment) => (/^<(p|div)\b/i.test(segment) ? segment : `<p>${segment}</p>`));
+      parts = mergeBlocksByWords(segments, MIN_PARAGRAPH_WORDS);
+    } else {
+      // Text thuần (truyện import từ .doc/.pdf): chia theo câu thành đoạn >= 250 từ.
+      const plain = normalizedHtml
+        .replace(/<br\s*\/?>/gi, " ")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      // Giải mã entity trước rồi escape đúng MỘT lần (tránh &amp;amp;).
+      // Không bọc <p> (block) để icon comment nằm cùng dòng với chữ cuối đoạn.
+      parts = chunkTextToParagraphs(decodeHtmlEntities(plain), MIN_PARAGRAPH_WORDS).map((text) =>
+        escapeHtml(text),
+      );
+    }
   } else {
     // HTML có sẵn: gộp đoạn nhỏ để mỗi đoạn >= 250 từ.
     parts = mergeBlocksByWords(parts, MIN_PARAGRAPH_WORDS);
@@ -273,6 +326,7 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
     id: `${chapterId}-p-${index}`,
     index,
     content: part,
+    anchor: makeAnchor(part),
   }));
 };
 
@@ -328,9 +382,7 @@ export default function StoryReader({
   const [openParagraphId, setOpenParagraphId] = useState<string | null>(null);
   const [paragraphDrafts, setParagraphDrafts] = useState<Record<string, string>>({});
   const [replyTargetByParagraph, setReplyTargetByParagraph] = useState<Record<string, string | null>>({});
-  const [paragraphComments, setParagraphComments] = useState<Record<string, InlineComment[]>>({});
-  const [paragraphCommentCounts, setParagraphCommentCounts] = useState<Record<number, number>>({});
-  const [loadedParagraphs, setLoadedParagraphs] = useState<Record<string, boolean>>({});
+  const [allParagraphComments, setAllParagraphComments] = useState<InlineComment[]>([]);
   const [isSubmittingParagraph, setIsSubmittingParagraph] = useState(false);
   const [commentSort, setCommentSort] = useState<CommentSort>("newest");
   const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
@@ -352,6 +404,51 @@ export default function StoryReader({
   const renderedParagraphs = useMemo(() => {
     return paragraphs;
   }, [paragraphs]);
+
+  // Nhóm bình luận đã tải (cấp chương) vào từng đoạn theo NỘI DUNG (anchor), fallback index.
+  // Nhờ vậy comment không mất khi đoạn bị chia lại (index đổi) — dùng cho cả popup lẫn badge.
+  // Mỗi comment gán vào TỐI ĐA một đoạn: khớp anchor đầu tiên theo thứ tự tài liệu; nếu không
+  // khớp anchor thì fallback theo index; không khớp gì thì bỏ. Sắp xếp theo commentSort tại client.
+  const groupedComments = useMemo(() => {
+    // Chuẩn hoá nội dung mỗi đoạn MỘT lần (không chạy normFull lại cho từng comment).
+    const normById = new Map<string, string>();
+    const byIndex = new Map<number, ParagraphItem>();
+    for (const paragraph of renderedParagraphs) {
+      normById.set(paragraph.id, normFull(paragraph.content));
+      byIndex.set(paragraph.index, paragraph);
+    }
+
+    // Sắp xếp client-side theo lựa chọn hiện tại (không refetch khi đổi sort).
+    const ordered = [...allParagraphComments];
+    if (commentSort === "newest") {
+      ordered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } else if (commentSort === "helpful") {
+      ordered.sort((a, b) => (b.reactions?.helpful || 0) - (a.reactions?.helpful || 0));
+    }
+    // "all": giữ nguyên thứ tự server trả về.
+
+    const map: Record<string, InlineComment[]> = {};
+    for (const paragraph of renderedParagraphs) map[paragraph.id] = [];
+
+    // Một lượt duyệt comment (không lọc lại theo từng đoạn), giữ thứ tự đã sắp trong mỗi đoạn.
+    for (const comment of ordered) {
+      let targetId: string | null = null;
+      if (comment.paragraphAnchor) {
+        for (const paragraph of renderedParagraphs) {
+          if (normById.get(paragraph.id)?.includes(comment.paragraphAnchor)) {
+            targetId = paragraph.id;
+            break;
+          }
+        }
+      }
+      if (!targetId && comment.paragraphIndex != null) {
+        targetId = byIndex.get(comment.paragraphIndex)?.id ?? null;
+      }
+      if (targetId) map[targetId].push(comment);
+    }
+
+    return map;
+  }, [renderedParagraphs, allParagraphComments, commentSort]);
 
   // Manage ad modal lifecycle: show on first load if chapter is locked by ad
   useEffect(() => {
@@ -527,22 +624,35 @@ export default function StoryReader({
     void handleRedirectAndUnlock();
   }, [countdown, showAdModal, shouldStartCountdown, unlockAd?.isForcedRedirect]);
 
-  // Load comment counts for all paragraphs on mount
+  // Tải TẤT CẢ bình luận đoạn của chương MỘT lần (nhóm theo anchor phía client), thay cho
+  // fetch từng đoạn theo index — index đổi khi chia lại đoạn sẽ làm mất comment cũ.
   useEffect(() => {
-    if (!chapterId || renderedParagraphs.length === 0) return;
+    if (!chapterId) return;
 
-    const loadCommentCounts = async () => {
+    let active = true;
+    const loadAllParagraphComments = async () => {
       try {
-        const response = await apiClient.get(`/chapters/${chapterId}/comments/counts`);
-        const counts = response.data?.data || {};
-        setParagraphCommentCounts(counts);
-      } catch (error) {
-        console.error('Failed to load comment counts:', error);
+        const response = await apiClient.get<ParagraphCommentsResponse>(`/chapters/${chapterId}/comments`, {
+          params: {
+            scope: "paragraph",
+            allParagraphs: true,
+            page: 1,
+            limit: 1000,
+          },
+        });
+        const rawComments = unwrapData<ParagraphCommentsResponse>(response?.data)?.comments || [];
+        if (active) setAllParagraphComments(normalizeComments(rawComments));
+      } catch {
+        if (active) setAllParagraphComments([]);
       }
     };
 
-    void loadCommentCounts();
-  }, [chapterId, renderedParagraphs.length]);
+    void loadAllParagraphComments();
+    return () => {
+      active = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapterId]);
 
   const flowItems = useMemo(() => {
     const items: Array<
@@ -583,6 +693,8 @@ export default function StoryReader({
       authorName: item.user?.displayName || item.user?.name || "Độc giả",
       authorAvatarUrl: item.user?.avatarUrl,
       createdAt: item.createdAt || new Date().toISOString(),
+      paragraphAnchor: item.paragraphAnchor ?? null,
+      paragraphIndex: typeof item.paragraphIndex === "number" ? item.paragraphIndex : null,
       reactions: {
         helpful: item.reactions?.helpful || 0,
         like: item.reactions?.like || 0,
@@ -605,51 +717,13 @@ export default function StoryReader({
     }));
   };
 
-  const loadParagraphComments = async (paragraphId: string, paragraphIndex: number, force = false) => {
-    if (!chapterId) return;
-    if (loadedParagraphs[paragraphId] && !force) return;
-
-    try {
-      const response = await apiClient.get<ParagraphCommentsResponse>(`/chapters/${chapterId}/comments`, {
-        params: {
-          scope: "paragraph",
-          paragraphIndex,
-          page: 1,
-          limit: 30,
-          sort: commentSort,
-        },
-      });
-      const rawComments = unwrapData<ParagraphCommentsResponse>(response?.data)?.comments || [];
-      const normalized = normalizeComments(rawComments);
-
-      setParagraphComments((prev) => ({
-        ...prev,
-        [paragraphId]: normalized,
-      }));
-    } catch {
-      setParagraphComments((prev) => ({
-        ...prev,
-        [paragraphId]: prev[paragraphId] || [],
-      }));
-    } finally {
-      setLoadedParagraphs((prev) => ({
-        ...prev,
-        [paragraphId]: true,
-      }));
-    }
-  };
-
-  const openCommentPopup = (paragraphId: string, paragraphIndex: number) => {
-    setOpenParagraphId((prev) => (prev === paragraphId ? null : paragraphId));
-    if (!loadedParagraphs[paragraphId]) {
-      void loadParagraphComments(paragraphId, paragraphIndex);
-    }
+  const openCommentPopup = (paragraph: ParagraphItem) => {
+    setOpenParagraphId((prev) => (prev === paragraph.id ? null : paragraph.id));
   };
 
   const toggleReaction = async (
     commentId: string,
     type: "helpful" | "like" | "love",
-    paragraphId?: string,
   ) => {
     try {
       const response = await apiClient.post<{ data?: { reactions?: InlineComment["reactions"] } }>(
@@ -663,21 +737,18 @@ export default function StoryReader({
       const updateOne = (item: InlineComment) =>
         item.id === commentId ? { ...item, reactions: nextReactions } : item;
 
-      if (!paragraphId) return;
-
-      setParagraphComments((prev) => ({
-        ...prev,
-        [paragraphId]: (prev[paragraphId] || []).map((comment) => ({
+      setAllParagraphComments((prev) =>
+        prev.map((comment) => ({
           ...updateOne(comment),
           replies: (comment.replies || []).map(updateOne),
         })),
-      }));
+      );
     } catch {
       // no-op for reaction errors
     }
   };
 
-  const loadMoreReplies = async (commentId: string, paragraphId?: string) => {
+  const loadMoreReplies = async (commentId: string) => {
     try {
       const response = await apiClient.get<{ data?: { replies?: ParagraphCommentsResponse["comments"] } }>(
         `/comments/${commentId}/replies`,
@@ -700,12 +771,7 @@ export default function StoryReader({
             }
           : item;
 
-      if (!paragraphId) return;
-
-      setParagraphComments((prev) => ({
-        ...prev,
-        [paragraphId]: (prev[paragraphId] || []).map(mergeReplies),
-      }));
+      setAllParagraphComments((prev) => prev.map(mergeReplies));
     } catch {
       // no-op for lazy replies errors
     }
@@ -739,7 +805,8 @@ export default function StoryReader({
       const response = await apiClient.post<{ data?: CreatedCommentResponse }>(`/chapters/${chapterId}/comments`, {
         content: contentValue,
         scope: "paragraph",
-        paragraphIndex: paragraph.index,
+        paragraphIndex: paragraph.index, // giữ index cho tương thích cũ
+        paragraphAnchor: paragraph.anchor, // neo theo nội dung
         parentId,
       });
 
@@ -750,6 +817,8 @@ export default function StoryReader({
         authorName: created?.user?.displayName || created?.user?.name || "Bạn",
         authorAvatarUrl: created?.user?.avatarUrl,
         createdAt: created?.createdAt || new Date().toISOString(),
+        paragraphAnchor: paragraph.anchor,
+        paragraphIndex: paragraph.index,
         reactions: {
           helpful: 0,
           like: 0,
@@ -759,12 +828,13 @@ export default function StoryReader({
         repliesCount: 0,
       };
 
-      setParagraphComments((prev) => ({
-        ...prev,
-        [paragraph.id]: parentId
-          ? appendReplyToComment(prev[paragraph.id] || [], parentId, newComment)
-          : [...(prev[paragraph.id] || []), newComment],
-      }));
+      // Thêm vào danh sách cấp chương: comment mới có anchor + index nên tự nhóm lại
+      // đúng đoạn vừa bấm và tăng badge của đoạn đó.
+      setAllParagraphComments((prev) =>
+        parentId
+          ? appendReplyToComment(prev, parentId, newComment)
+          : [...prev, newComment],
+      );
       setParagraphDrafts((prev) => ({ ...prev, [paragraph.id]: "" }));
       setReplyTargetByParagraph((prev) => ({ ...prev, [paragraph.id]: null }));
     } catch (error) {
@@ -798,8 +868,7 @@ export default function StoryReader({
     setOpenParagraphId(null);
     setParagraphDrafts({});
     setReplyTargetByParagraph({});
-    setParagraphComments({});
-    setLoadedParagraphs({});
+    setAllParagraphComments([]);
     setCommentSort("newest");
   }, [chapterId]);
 
@@ -848,9 +917,10 @@ export default function StoryReader({
       {flowItems.map((item) => {
         if (item.type === "paragraph") {
           const { paragraph } = item;
-          const comments = paragraphComments[paragraph.id] || [];
+          // Popup list + badge đều lấy từ nhóm theo anchor (cấp chương).
+          const comments = groupedComments[paragraph.id] || [];
           const isOpen = openParagraphId === paragraph.id;
-          const paragraphCount = paragraphCommentCounts[paragraph.index] || 0;
+          const paragraphCount = comments.length;
 
           return (
             <div key={paragraph.id} className="group mb-4 overflow-visible rounded-lg transition-colors md:mb-6">
@@ -869,7 +939,7 @@ export default function StoryReader({
                       lang={locale}
                       paragraphId={paragraph.index}
                       count={paragraphCount}
-                      onClick={() => openCommentPopup(paragraph.id, paragraph.index)}
+                      onClick={() => openCommentPopup(paragraph)}
                     />
                   </span>
                 </div>
@@ -883,9 +953,7 @@ export default function StoryReader({
                       <select
                         value={commentSort}
                         onChange={(event) => {
-                          const nextSort = event.target.value as CommentSort;
-                          setCommentSort(nextSort);
-                          void loadParagraphComments(paragraph.id, paragraph.index, true);
+                          setCommentSort(event.target.value as CommentSort);
                         }}
                         className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] dark:border-[#303133] dark:bg-[#3a3b3c]"
                       >
@@ -931,7 +999,7 @@ export default function StoryReader({
                           </div>
                           <div className="mt-2 ml-10 flex flex-wrap items-center gap-2 text-[11px]">
                             <button
-                              onClick={() => void toggleReaction(comment.id, "helpful", paragraph.id)}
+                              onClick={() => void toggleReaction(comment.id, "helpful")}
                               className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-[#303133] dark:text-gray-300 dark:hover:bg-[#464749]"
                               aria-label={`Hữu ích ${comment.reactions?.helpful || 0}`}
                               title="Hữu ích"
@@ -940,7 +1008,7 @@ export default function StoryReader({
                               <span className="ml-1 text-[10px] font-semibold leading-none">{comment.reactions?.helpful || 0}</span>
                             </button>
                             <button
-                              onClick={() => void toggleReaction(comment.id, "like", paragraph.id)}
+                              onClick={() => void toggleReaction(comment.id, "like")}
                               className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-[#303133] dark:text-gray-300 dark:hover:bg-[#464749]"
                               aria-label={`Thích ${comment.reactions?.like || 0}`}
                               title="Thích"
@@ -949,7 +1017,7 @@ export default function StoryReader({
                               <span className="ml-1 text-[10px] font-semibold leading-none">{comment.reactions?.like || 0}</span>
                             </button>
                             <button
-                              onClick={() => void toggleReaction(comment.id, "love", paragraph.id)}
+                              onClick={() => void toggleReaction(comment.id, "love")}
                               className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border border-gray-300 px-1.5 text-gray-600 hover:bg-white dark:border-[#303133] dark:text-gray-300 dark:hover:bg-[#464749]"
                               aria-label={`Yêu thích ${comment.reactions?.love || 0}`}
                               title="Yêu thích"
@@ -1012,7 +1080,7 @@ export default function StoryReader({
 
                           {(comment.repliesCount || 0) > (comment.replies?.length || 0) ? (
                             <button
-                              onClick={() => void loadMoreReplies(comment.id, paragraph.id)}
+                              onClick={() => void loadMoreReplies(comment.id)}
                               className="mt-2 ml-10 text-[11px] font-semibold text-pink-600 hover:underline"
                             >
                               Xem thêm phản hồi

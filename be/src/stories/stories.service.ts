@@ -853,22 +853,27 @@ export class StoriesService {
     // Strip audioUrl/r2AudioUrl from chapters/variants; expose only a computed hasAudio.
     const chapters = ((serialized.chapters as any[]) ?? []).map((chapter) => {
       const { audioUrl, r2AudioUrl, variants, ...chapterRest } = chapter;
+      const variantList = ((variants as any[]) ?? []).map((variant) => {
+        const {
+          audioUrl: variantAudioUrl,
+          r2AudioUrl: variantR2AudioUrl,
+          ...variantRest
+        } = variant;
+        return {
+          ...variantRest,
+          hasAudio: Boolean(
+            variantR2AudioUrl || variantAudioUrl || variantRest.audioDuration,
+          ),
+        };
+      });
       return {
         ...chapterRest,
-        hasAudio: Boolean(r2AudioUrl || audioUrl || chapterRest.audioDuration),
-        variants: ((variants as any[]) ?? []).map((variant) => {
-          const {
-            audioUrl: variantAudioUrl,
-            r2AudioUrl: variantR2AudioUrl,
-            ...variantRest
-          } = variant;
-          return {
-            ...variantRest,
-            hasAudio: Boolean(
-              variantR2AudioUrl || variantAudioUrl || variantRest.audioDuration,
-            ),
-          };
-        }),
+        // A chapter has audio if it has its own audio, or any variant does
+        // (interactive chapters may carry audio only on their variants).
+        hasAudio:
+          Boolean(r2AudioUrl || audioUrl || chapterRest.audioDuration) ||
+          variantList.some((v) => v.hasAudio),
+        variants: variantList,
       };
     });
 

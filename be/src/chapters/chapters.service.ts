@@ -275,23 +275,28 @@ export class ChaptersService {
 
     // Strip audioUrl/r2AudioUrl from the response; expose only a computed hasAudio.
     const { audioUrl, r2AudioUrl, variants, ...chapterRest } = chapter;
+    const variantList = variants.map((variant) => {
+      const {
+        audioUrl: variantAudioUrl,
+        r2AudioUrl: variantR2AudioUrl,
+        ...variantRest
+      } = variant;
+      return {
+        ...variantRest,
+        hasAudio: Boolean(
+          variantR2AudioUrl || variantAudioUrl || variantRest.audioDuration,
+        ),
+      };
+    });
     return {
       ...chapterRest,
-      hasAudio: Boolean(r2AudioUrl || audioUrl || chapterRest.audioDuration),
+      // A chapter has audio if it has its own audio, or any variant does
+      // (interactive chapters may carry audio only on their variants).
+      hasAudio:
+        Boolean(r2AudioUrl || audioUrl || chapterRest.audioDuration) ||
+        variantList.some((v) => v.hasAudio),
       timing: chapter.timingJson ?? null,
-      variants: variants.map((variant) => {
-        const {
-          audioUrl: variantAudioUrl,
-          r2AudioUrl: variantR2AudioUrl,
-          ...variantRest
-        } = variant;
-        return {
-          ...variantRest,
-          hasAudio: Boolean(
-            variantR2AudioUrl || variantAudioUrl || variantRest.audioDuration,
-          ),
-        };
-      }),
+      variants: variantList,
     };
   }
 

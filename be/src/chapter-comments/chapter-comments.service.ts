@@ -62,6 +62,7 @@ export class ChapterCommentsService {
       createdAt: comment.createdAt,
       likesCount: comment.likesCount,
       paragraphIndex: comment.timestampSeconds,
+      paragraphAnchor: comment.paragraphAnchor ?? null,
       user: {
         id: comment.user?.id,
         displayName: comment.user?.displayName || 'Doc gia',
@@ -73,6 +74,12 @@ export class ChapterCommentsService {
   }
 
   private buildScopeFilter(query: ListChapterCommentsDto) {
+    if (query.allParagraphs) {
+      return {
+        timestampSeconds: { not: null },
+      } satisfies Prisma.ChapterCommentWhereInput;
+    }
+
     if (query.scope === ChapterCommentScope.PARAGRAPH) {
       return {
         timestampSeconds: query.paragraphIndex ?? 0,
@@ -105,14 +112,16 @@ export class ChapterCommentsService {
           ? [{ likesCount: 'desc' }, { createdAt: 'desc' }]
           : [{ createdAt: 'desc' }];
 
-    const queryTake = isHelpfulMode ? Math.min(limit, 10) : limit;
+    const allParagraphs = query.allParagraphs === true;
+    const queryTake = allParagraphs ? 1000 : isHelpfulMode ? Math.min(limit, 10) : limit;
+    const querySkip = allParagraphs || isHelpfulMode ? 0 : (page - 1) * limit;
 
     const [total, rows] = await Promise.all([
       this.prisma.chapterComment.count({ where }),
       this.prisma.chapterComment.findMany({
         where,
         orderBy,
-        skip: isHelpfulMode ? 0 : (page - 1) * limit,
+        skip: querySkip,
         take: queryTake,
         include: {
           user: {
@@ -268,6 +277,7 @@ export class ChapterCommentsService {
         parentId: dto.parentId,
         content: dto.content.trim(),
         timestampSeconds: isParagraphScope ? (dto.paragraphIndex ?? 0) : null,
+        paragraphAnchor: isParagraphScope ? (dto.paragraphAnchor ?? null) : null,
       },
       include: {
         user: {

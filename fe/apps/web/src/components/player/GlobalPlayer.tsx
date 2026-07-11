@@ -98,7 +98,7 @@ export default function GlobalPlayer() {
   const toggleShuffle = useAudioStore((state) => state.toggleShuffle);
   const cycleRepeatMode = useAudioStore((state) => state.cycleRepeatMode);
   const consumeQueuedTrack = useAudioStore((state) => state.consumeQueuedTrack);
-  const resetPlayer = useAudioStore((state) => state.resetPlayer);
+  const dismissPlayer = useAudioStore((state) => state.dismissPlayer);
 
   const syncHistory = useCallback(
     async (force = false) => {
@@ -508,7 +508,7 @@ export default function GlobalPlayer() {
 
   const handleClosePlayer = () => {
     audioRef.current?.pause();
-    resetPlayer();
+    dismissPlayer();
     setDismissed(true);
   };
 

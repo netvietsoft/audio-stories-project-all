@@ -1,5 +1,5 @@
-import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsBoolean, IsEnum, IsInt, IsOptional, Min } from 'class-validator';
 import { ChapterCommentScope } from './create-chapter-comment.dto';
 
 export enum ChapterCommentSortType {
@@ -18,6 +18,17 @@ export class ListChapterCommentsDto {
   @IsInt()
   @Min(0)
   paragraphIndex?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined) return undefined;
+    if (typeof value === 'boolean') return value;
+    if (value === 'true' || value === '1') return true;
+    if (value === 'false' || value === '0') return false;
+    return undefined;
+  })
+  @IsBoolean()
+  allParagraphs?: boolean;
 
   @IsOptional()
   @Type(() => Number)

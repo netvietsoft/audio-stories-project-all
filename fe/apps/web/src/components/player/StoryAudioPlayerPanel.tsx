@@ -105,7 +105,9 @@ export default function StoryAudioPlayerPanel({
   // Lượng đã preload (buffered) — GlobalPlayer đẩy qua store; vẽ lớp "đã tải" chạy trước playhead.
   const bufferedTime = useAudioStore((state) => state.bufferedTime);
   const bufferedPercent =
-    duration > 0 ? Math.min(100, Math.max(progressPercent, (bufferedTime / duration) * 100)) : 0;
+    canSeek && duration > 0
+      ? Math.min(100, Math.max(progressPercent, (bufferedTime / duration) * 100))
+      : 0;
 
   return (
     <section className="rounded-[5px] border border-gray-300 bg-white p-2 sm:p-2.5 md:p-3 dark:border-[#303133] dark:bg-[#242526]">

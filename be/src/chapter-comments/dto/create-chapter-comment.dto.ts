@@ -24,4 +24,9 @@ export class CreateChapterCommentDto {
   @IsInt()
   @Min(0)
   paragraphIndex?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  paragraphAnchor?: string;
 }

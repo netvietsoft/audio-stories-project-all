@@ -263,6 +263,11 @@ const chapterNumberFromSlug = (input: string | undefined) => {
   return Number(match[1]);
 };
 
+// A chapter is playable only when it actually has audio. Prefer the BE-computed
+// hasAudio flag; fall back to duration for not-yet-hydrated items (matches normalizeChapter).
+const chapterHasAudio = (chapter: Pick<ChapterItem, "hasAudio" | "audioDuration">) =>
+  typeof chapter.hasAudio === "boolean" ? chapter.hasAudio : Number(chapter.audioDuration) > 0;
+
 export default function StoryChapterClient() {
   const params = useParams<{ slug: string; chapterSlug: string }>();
   const router = useRouter();
@@ -935,7 +940,7 @@ export default function StoryChapterClient() {
   const canSeekSelectedChapter = hasPlayableAudio && isSelectedChapterTrack;
 
   useEffect(() => {
-    if (!story || !selectedChapter || !selectedChapterAudioUrl || !user) return;
+    if (!story || !selectedChapter || !selectedChapterAudioUrl || !hasPlayableAudio || !user) return;
 
     const historyKey = `${selectedChapter.id}:${selectedVariant?.id || "null"}`;
     if (lastRestoredHistoryKeyRef.current === historyKey) return;
@@ -978,7 +983,7 @@ export default function StoryChapterClient() {
         };
 
         setQueue(
-          story.chapters.map((chapter) => ({
+          story.chapters.filter((chapter) => chapterHasAudio(chapter)).map((chapter) => ({
             id: chapter.id,
             storyId: story.id,
             chapterId: chapter.id,
@@ -1009,6 +1014,7 @@ export default function StoryChapterClient() {
   }, [
     currentTrack?.id,
     currentTrack?.storyId,
+    hasPlayableAudio,
     isPlaying,
     locale,
     selectedChapter,
@@ -1027,7 +1033,7 @@ export default function StoryChapterClient() {
   useEffect(() => {
     if (!story || !currentTrack || currentTrack.storyId !== story.id) return;
 
-    const refreshedQueue = story.chapters.map((item) => ({
+    const refreshedQueue = story.chapters.filter((item) => chapterHasAudio(item)).map((item) => ({
       id: item.id,
       storyId: story.id,
       chapterId: item.id,
@@ -1102,7 +1108,7 @@ export default function StoryChapterClient() {
         ? (chapter.variants?.find(v => v.id === variantId))
         : (chapter.id === selectedChapterId ? selectedVariant : null);
 
-      const mappedQueue = selectedStory.chapters.map((item) => ({
+      const mappedQueue = selectedStory.chapters.filter((item) => chapterHasAudio(item)).map((item) => ({
         id: item.id,
         storyId: selectedStory.id,
         chapterId: item.id,

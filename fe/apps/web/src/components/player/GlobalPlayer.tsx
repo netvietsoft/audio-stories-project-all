@@ -4,7 +4,7 @@ import Link from "@/components/shared/LocalizedLink";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { BookOpen, ChevronUp, Music2 } from "lucide-react";
+import { BookOpen, ChevronUp, Music2, X } from "lucide-react";
 import ShuffleRepeatControls from "@/components/player/ShuffleRepeatControls";
 import PlayerTransportControls from "@/components/player/PlayerTransportControls";
 import VolumeControl from "@/components/player/VolumeControl";
@@ -19,9 +19,15 @@ import { useUserStore } from "@/stores/user-store";
 
 const formatDuration = (seconds?: number | null) => {
   if (!seconds || seconds <= 0) return "00:00";
-  const mm = Math.floor(seconds / 60);
-  const ss = Math.floor(seconds % 60);
-  return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+  const total = Math.floor(seconds);
+  const hh = Math.floor(total / 3600);
+  const mm = Math.floor((total % 3600) / 60);
+  const ss = total % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  // Có giờ -> hh:mm:ss; dưới 1 giờ giữ mm:ss cho gọn.
+  return hh > 0
+    ? `${pad(hh)}:${pad(mm)}:${pad(ss)}`
+    : `${pad(mm)}:${pad(ss)}`;
 };
 
 const resolveFiniteDuration = (value?: number | null) => {
@@ -56,6 +62,7 @@ export default function GlobalPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isVisible, setIsVisible] = useState(true);
   const [isExpandedMobile, setIsExpandedMobile] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
   const lastSyncedProgressRef = useRef<Map<string, number>>(new Map());
   const lastSyncedMusicProgressRef = useRef<Map<string, number>>(new Map());
   const lastMusicSyncedAtRef = useRef<Map<string, number>>(new Map());
@@ -91,6 +98,7 @@ export default function GlobalPlayer() {
   const toggleShuffle = useAudioStore((state) => state.toggleShuffle);
   const cycleRepeatMode = useAudioStore((state) => state.cycleRepeatMode);
   const consumeQueuedTrack = useAudioStore((state) => state.consumeQueuedTrack);
+  const resetPlayer = useAudioStore((state) => state.resetPlayer);
 
   const syncHistory = useCallback(
     async (force = false) => {
@@ -401,6 +409,11 @@ export default function GlobalPlayer() {
     };
   }, [currentTrack, isPlaying]);
 
+  // Có track mới -> bỏ trạng thái đã tắt để player hiện lại.
+  useEffect(() => {
+    if (currentTrack) setDismissed(false);
+  }, [currentTrack?.id]);
+
   const safeDuration = useMemo(() => resolveFiniteDuration(duration), [duration]);
   const safeCurrentTime = useMemo(
     () => (safeDuration > 0 ? Math.min(Math.max(0, currentTime), safeDuration) : Math.max(0, currentTime)),
@@ -430,6 +443,11 @@ export default function GlobalPlayer() {
   }, []);
 
   if (typeof window === "undefined") {
+    return null;
+  }
+
+  // Người dùng đã bấm X để tắt hẳn -> ẩn player cho tới khi có track mới.
+  if (dismissed) {
     return null;
   }
 
@@ -486,6 +504,12 @@ export default function GlobalPlayer() {
   const handleTogglePlay = () => {
     if (!hasTrack) return;
     togglePlay(!isPlaying);
+  };
+
+  const handleClosePlayer = () => {
+    audioRef.current?.pause();
+    resetPlayer();
+    setDismissed(true);
   };
 
   const seekBy = (seconds: number) => {
@@ -557,6 +581,14 @@ export default function GlobalPlayer() {
               aria-label={t("audioProgress")}
             >
               <ChevronUp className={`h-4 w-4 transition-transform ${isExpandedMobile ? "rotate-180" : ""}`} />
+            </button>
+            <button
+              onClick={handleClosePlayer}
+              className={`rounded-full p-2 transition ${ghostControlClass}`}
+              aria-label={safeT("close", "Tắt trình phát")}
+              title={safeT("close", "Tắt trình phát")}
+            >
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>

@@ -189,6 +189,62 @@ const hasVisibleContent = (html: string) => {
   return stripped.replace(/&nbs[p]?;?|\u00A0/gi, "").trim().length > 0;
 };
 
+// Quy định: mỗi đoạn văn tối thiểu 250 từ (gộp lại nếu nhỏ hơn).
+const MIN_PARAGRAPH_WORDS = 250;
+
+const countWords = (text: string) => {
+  const t = text.replace(/\s+/g, " ").trim();
+  return t ? t.split(" ").filter(Boolean).length : 0;
+};
+
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// Text thuần: gom câu thành đoạn >= minWords, tách ở ranh giới câu cho dễ đọc.
+const chunkTextToParagraphs = (text: string, minWords: number): string[] => {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (!clean) return [];
+  const sentences = clean.split(/(?<=[.!?…])\s+/).filter(Boolean);
+  const chunks: string[] = [];
+  let buffer = "";
+  let words = 0;
+  for (const sentence of sentences) {
+    buffer = buffer ? `${buffer} ${sentence}` : sentence;
+    words += countWords(sentence);
+    if (words >= minWords) {
+      chunks.push(buffer);
+      buffer = "";
+      words = 0;
+    }
+  }
+  if (buffer) {
+    if (chunks.length) chunks[chunks.length - 1] = `${chunks[chunks.length - 1]} ${buffer}`;
+    else chunks.push(buffer);
+  }
+  return chunks;
+};
+
+// HTML có sẵn: gộp các block liên tiếp cho tới khi đạt >= minWords.
+const mergeBlocksByWords = (blocks: string[], minWords: number): string[] => {
+  const merged: string[] = [];
+  let buffer = "";
+  let words = 0;
+  for (const block of blocks) {
+    buffer += block;
+    words += getPlainTextWordCount(block);
+    if (words >= minWords) {
+      merged.push(buffer);
+      buffer = "";
+      words = 0;
+    }
+  }
+  if (buffer) {
+    if (merged.length) merged[merged.length - 1] += buffer;
+    else merged.push(buffer);
+  }
+  return merged;
+};
+
 const splitParagraphs = (chapterId: string, content: string | null | undefined): ParagraphItem[] => {
   if (!content) return [];
   const normalizedHtml = normalizeStoryContent(content);
@@ -200,11 +256,17 @@ const splitParagraphs = (chapterId: string, content: string | null | undefined):
     .filter(hasVisibleContent);
 
   if (parts.length === 0) {
-    parts = normalizedHtml
-      .split(/\n{2,}|<br\s*\/?>/gi)
-      .map((part) => part.trim())
-      .filter(hasVisibleContent)
-      .map((part) => (part.startsWith("<") ? part : `<p>${part}</p>`));
+    // Text thuần (truyện import từ .doc/.pdf): chia theo câu thành đoạn >= 250 từ.
+    const plain = normalizedHtml
+      .replace(/<br\s*\/?>/gi, " ")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    // Không bọc <p> (block) để icon comment nằm cùng dòng với chữ cuối đoạn.
+    parts = chunkTextToParagraphs(plain, MIN_PARAGRAPH_WORDS).map((text) => escapeHtml(text));
+  } else {
+    // HTML có sẵn: gộp đoạn nhỏ để mỗi đoạn >= 250 từ.
+    parts = mergeBlocksByWords(parts, MIN_PARAGRAPH_WORDS);
   }
 
   return parts.map((part, index) => ({
@@ -773,6 +835,7 @@ export default function StoryReader({
         }
         .story-paragraph-content p:last-child {
           margin-bottom: 0;
+          display: inline;
         }
       `}</style>
       <div className="relative">

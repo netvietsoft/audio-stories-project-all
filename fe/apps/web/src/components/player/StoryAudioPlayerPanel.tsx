@@ -4,6 +4,7 @@ import { type ReactNode } from "react";
 import { Timer, Volume2, VolumeX } from "lucide-react";
 
 import type { RepeatMode } from "@/lib/player/playback-modes";
+import { useAudioStore } from "@/stores/audio-store";
 import ShuffleRepeatControls from "@/components/player/ShuffleRepeatControls";
 import PlayerTransportControls from "@/components/player/PlayerTransportControls";
 
@@ -101,6 +102,10 @@ export default function StoryAudioPlayerPanel({
   footer,
 }: StoryAudioPlayerPanelProps) {
   const progressPercent = Math.min((currentTime / (duration || 1)) * 100, 100);
+  // Lượng đã preload (buffered) — GlobalPlayer đẩy qua store; vẽ lớp "đã tải" chạy trước playhead.
+  const bufferedTime = useAudioStore((state) => state.bufferedTime);
+  const bufferedPercent =
+    duration > 0 ? Math.min(100, Math.max(progressPercent, (bufferedTime / duration) * 100)) : 0;
 
   return (
     <section className="rounded-[5px] border border-gray-300 bg-white p-2 sm:p-2.5 md:p-3 dark:border-[#303133] dark:bg-[#242526]">
@@ -135,7 +140,7 @@ export default function StoryAudioPlayerPanel({
             style={{
               WebkitAppearance: "none",
               appearance: "none",
-              background: `linear-gradient(to right, #ec4899 0%, #ec4899 ${progressPercent}%, var(--time-slider-track) ${progressPercent}%, var(--time-slider-track) 100%)`,
+              background: `linear-gradient(to right, #ec4899 0%, #ec4899 ${progressPercent}%, rgba(236,72,153,0.30) ${progressPercent}%, rgba(236,72,153,0.30) ${bufferedPercent}%, var(--time-slider-track) ${bufferedPercent}%, var(--time-slider-track) 100%)`,
               borderRadius: "9999px",
               outline: "none",
             }}

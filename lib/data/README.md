@@ -6,10 +6,11 @@ envelope/endpoint. Tài liệu: [docs/07](../../docs/07-noi-backend.md).
 ## Cấu trúc
 | File | Vai trò |
 |---|---|
-| `repositories/stories_repository.dart` | `StoriesRepository`: `explore()` → `PagedBooks`; `detail(slug)` → `StoryDetail{book, chapters}`; `chapterContent(id)` → `ChapterContent`; `bySlug(slug)` → `Book`. |
+| `repositories/stories_repository.dart` | `StoriesRepository`: `explore()` → `PagedBooks`; `detail(slug)` → `StoryDetail{book, chapters}`; `chapterContent(id)` → `ChapterContent`; `bySlug(slug)` → `Book`. Cũng khai báo `TimingCue` + `activeCueIndex()` (read-along, xem bên dưới). |
 | `repositories/music_repository.dart` | `MusicRepository.list({page,limit,search})` → `List<Song>`. |
 | `repositories/audio_repository.dart` | `AudioRepository.chapterAudioUrl(id)` — resolve `/chapters/:id/audio` (302, kèm Bearer) → URL audio thật để phát. |
 | `repositories/auth_repository.dart` | `AuthRepository`: login/verifyCode/me/refresh/logout/changePassword/restoreSession. Đọc refresh từ Set-Cookie, lưu qua `TokenStore` (secure storage), gắn Bearer vào ApiClient. |
+| `reader/reader_store.dart` | `ReaderStore`: đọc/ghi settings đọc + resume + bookmark + brightness + read-along toggle (`readReadAlong()`/`saveReadAlong()`, xem bên dưới), qua `shared_preferences`. |
 | `mappers/user_mapper.dart` | `UserMapper.fromJson` (`/auth/me` → `AppUser`). |
 | `mappers/book_mapper.dart` | `BookMapper.fromJson` (story BE → `Book`; **`Book.id` = slug**) + `formatCount` (12.3M / 5.3K). |
 | `mappers/chapter_mapper.dart` | `ChapterMapper.fromJson` (chương BE → `Chapter`); `accessTypeToState` (free/timed/vip/ads → free/coin/vip). |
@@ -23,6 +24,21 @@ Screen/Notifier → Repository → ApiClient → backend
 ```
 - Repository trả model UI thuần (`Book`, …) + kiểu phân trang (`PagedBooks`) — UI không thấy JSON.
 - Mapper chịu mọi khác biệt field giữa BE và model (vd `thumbnailUrl`→`cover`, `author.name`→`author`).
+
+## Read-along (Spec 2)
+
+Timing cue cho tính năng highlight câu đang đọc + auto-scroll, đồng bộ với audio đang phát.
+
+- `TimingCue` (`repositories/stories_repository.dart`): `{startMs, endMs, paraIndex, charStart, charEnd}`.
+  `TimingCue.fromMap(Map m)` đọc key rút gọn từ BE: `s`→startMs, `e`→endMs, `p`→paraIndex (mặc định
+  `-1` nếu thiếu/không phải số), `cs`→charStart, `ce`→charEnd.
+- `activeCueIndex(List<TimingCue> cues, int posMs)` (hàm top-level, cùng file): trả về index cue có
+  `startMs <= posMs < endMs`, hoặc `null` nếu không khớp cue nào. Giả định `cues` đã sắp theo `startMs`.
+- `ChapterContent.cues` (`List<TimingCue>`, mặc định `const []`): chỉ được parse từ field `timing` của
+  API chương (`timing.cues`) ở nhánh **online**; nhánh offline/local-first trả `const []` (read-along
+  offline là việc làm sau).
+- `reader/reader_store.dart`: `readReadAlong()` (đọc bool, mặc định `false`) + `saveReadAlong(bool)`,
+  key `reader.readalong` trong `shared_preferences` — cùng pattern với `reader.brightness`.
 
 ## Mở rộng (chưa làm — theo cùng pattern)
 - `music_repository.dart` (`/music`, map sang `Song`/`Chart`; `url`→proxy/HLS).

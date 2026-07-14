@@ -7,7 +7,7 @@
 > (dio + auth + repository stories/music/categories + audio HLS). Xem [07](07-noi-backend.md).
 >
 > Quy ước: **tin code hơn doc**. Khi doc lệch code → sửa code trước rồi cập nhật doc.
-> Mọi tài liệu dưới đây dựa trên đọc code thật trong `lib/`. Cập nhật: 2026-07-02.
+> Mọi tài liệu dưới đây dựa trên đọc code thật trong `lib/`. Cập nhật: 2026-07-08.
 
 ## Bảng tài liệu
 
@@ -20,6 +20,7 @@
 | [05-components-dung-chung.md](05-components-dung-chung.md) | Component & token dùng chung: theme (`AppPalette`/`AppType`/`Gap`/`Radii`), `CoverImage`, bottom-sheets (`sheets.dart`), `AppShell`/`MiniPlayer`/`BottomNav`. |
 | [06-cache-va-tai-nguyen.md](06-cache-va-tai-nguyen.md) | **Cache & tài nguyên**: cache giải mã ảnh (`cacheWidth`/`gaplessPlayback`), asset audio/cover, placeholder gradient; cache ảnh mạng (`cached_network_image`) + audio/HLS + cache JSON (SWR, TTL theo vùng) — đã làm. |
 | [07-noi-backend.md](07-noi-backend.md) | Lộ trình thay `Demo` tĩnh bằng API thật (`../backend/be`): mapping model, envelope `{data,meta}`, audio proxy 302 / HLS, auth token, cache, ngôn ngữ nội dung. |
+| [08-read-along.md](08-read-along.md) | **Read-along**: kiến trúc tô sáng câu đang đọc theo audio (end-to-end BE + app) — admin import file phụ đề/lời (SRT/VTT/LRC) kèm audio chương, backend parse + khớp câu vào offset ký tự trong nội dung, app tô sáng đoạn đang đọc + tự cuộn theo vị trí phát. |
 | [../CHANGELOG.md](../CHANGELOG.md) | Nhật ký thay đổi app (theo ngày). |
 
 ## README theo thư mục (cục bộ trong `lib/`)

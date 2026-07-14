@@ -234,7 +234,7 @@ giữ trạng thái tô sáng/cuộn của chương cũ.
 
 ### 4.4. Test & build
 
-`flutter test` — 30 test pass; `flutter analyze` — 0 lỗi/0 cảnh báo (chỉ còn info
+`flutter test` — 52 test pass; `flutter analyze` — 0 lỗi/0 cảnh báo (chỉ còn info
 `unnecessary_underscores` có sẵn từ trước trong repo, không liên quan read-along). Build máy
 thật: `flutter build apk --release --dart-define=USE_BACKEND=true --dart-define=API_BASE_URL=<baseUrl>`
 (xem `lib/api/api_env.dart` cho thứ tự ưu tiên `API_BASE_URL`/`USE_BACKEND`/`API_ENV`).

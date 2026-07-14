@@ -136,7 +136,8 @@ class DownloadManager extends ChangeNotifier {
             final existing = _store.readChapter(ch.chapterId);
             await _store.saveChapter(OfflineChapter(
                 chapterId: ch.chapterId, storyId: detail.storyId, n: ch.n, title: ch.title,
-                content: text, hasAudio: ch.hasAudio, audioFile: existing?.audioFile));
+                content: text, hasAudio: ch.hasAudio, audioFile: existing?.audioFile,
+                cues: existing?.cues ?? const []));
             bytesText += text.length;
             textDone++;
             record = record.copyWith(savedChapters: textDone, bytesText: bytesText);
@@ -211,7 +212,8 @@ class DownloadManager extends ChangeNotifier {
       final bytes = await _download(audioUrl, storyId, chapterId);
       await _store.saveChapter(OfflineChapter(
         chapterId: chapterId, storyId: storyId, n: n, title: chapterTitle,
-        content: existing?.content ?? '', hasAudio: true, audioFile: '$chapterId.mp3'));
+        content: existing?.content ?? '', hasAudio: true, audioFile: '$chapterId.mp3',
+        cues: existing?.cues ?? const []));
       final rec = _store.download(storyId);
       if (rec == null) {
         await _store.upsertDownload(DownloadRecord(

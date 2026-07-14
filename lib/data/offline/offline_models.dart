@@ -81,6 +81,7 @@ class OfflineChapter {
     required this.content,
     required this.hasAudio,
     this.audioFile,
+    this.cues = const [],
   });
 
   final String chapterId, storyId, title, content;
@@ -88,14 +89,19 @@ class OfflineChapter {
   final bool hasAudio;
   final String? audioFile;
 
+  /// Timing cues read-along, raw map wire-format BE `{s,e,p,cs,ce}` (rỗng nếu chưa có).
+  final List<Map> cues;
+
   OfflineChapter copyWith({String? audioFile}) => OfflineChapter(
         chapterId: chapterId, storyId: storyId, n: n, title: title,
         content: content, hasAudio: hasAudio, audioFile: audioFile ?? this.audioFile,
+        cues: cues,
       );
 
   Map<String, dynamic> toMap() => {
         'chapterId': chapterId, 'storyId': storyId, 'n': n, 'title': title,
         'content': content, 'hasAudio': hasAudio, 'audioFile': audioFile,
+        'cues': cues,
       };
 
   factory OfflineChapter.fromMap(Map map) => OfflineChapter(
@@ -106,6 +112,7 @@ class OfflineChapter {
         content: (map['content'] ?? '').toString(),
         hasAudio: map['hasAudio'] == true,
         audioFile: map['audioFile']?.toString(),
+        cues: (map['cues'] as List? ?? const []).cast<Map>(),
       );
 }
 

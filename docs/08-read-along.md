@@ -7,7 +7,7 @@
 > chiếu trực tiếp với code (BE `be/src/chapters/timing/*.ts` + `chapters.service.ts`, APP
 > `lib/data/repositories/stories_repository.dart`, `lib/screens/novel/reader_screen.dart`,
 > `lib/data/reader/reader_store.dart`). Spec/plan gốc: `docs/superpowers/specs/2026-07-08-reader-readalong-import-design.md`,
-> `docs/superpowers/plans/2026-07-08-reader-readalong-import.md`. Cập nhật: 2026-07-08.
+> `docs/superpowers/plans/2026-07-08-reader-readalong-import.md`. Cập nhật: 2026-07-14 (v1.1: offline + SWR).
 
 ═══════════════════════════════════════════════════════════════════════
 ## 1. MỤC TIÊU & LUỒNG END-TO-END
@@ -176,10 +176,11 @@ int? activeCueIndex(List<TimingCue> cues, int posMs)
 ```
 
 `ChapterContent` có thêm `final List<TimingCue> cues` (mặc định `const []`). Trong
-`chapterContent(id)`: `cues` chỉ được parse từ `m['timing']['cues']` ở **nhánh online**
-(gọi `GET /chapters/:id/public`); nhánh **local-first/offline** (đọc `OfflineChapter` đã
-download) trả `ChapterContent` KHÔNG có `cues` → mặc định rỗng — read-along hiện **chưa hoạt
-động khi đọc offline** (xem §6).
+`chapterContent(id)`: nhánh **online** parse `cues` từ `m['timing']['cues']` và auto-cache
+vào `OfflineChapter.cues` (raw map); nhánh **local-first/offline** đọc `OfflineChapter.cues` đã lưu
+→ read-along HOẠT ĐỘNG khi đọc offline (từ 2026-07-14). Khi mở chương đã tải lúc ONLINE: trả bản
+local tức thì + refresh NỀN content+cues (SWR, cùng 1 response — không lệch offset), hiệu lực lần
+mở sau. Xem spec `docs/superpowers/specs/2026-07-14-readalong-offline-design.md`.
 
 ### 4.2. Persist bật/tắt — `lib/data/reader/reader_store.dart`
 
@@ -249,7 +250,7 @@ thật: `flutter build apk --release --dart-define=USE_BACKEND=true --dart-defin
 | File timing lỗi/rác | `parseTiming` trả `[]`, KHÔNG lưu gì bậy vào `timingJson` (`buildTimingJson` trả `null`); `matched`/`total` để admin tự đánh giá |
 | Sửa `content` chương sau khi đã import timing | Offset có thể lệch (`p`/`cs`/`ce` trỏ sai chỗ) → cần re-import; app `clamp` `cs`/`ce` nên không crash, chỉ tô sai vị trí |
 | Chương bị khoá (chưa unlock) | Không phát audio → `playingThis` false → không active |
-| Đọc offline (đã tải chương) | `cues` luôn rỗng ở nhánh local-first hiện tại → read-along không hoạt động khi offline |
+| Đọc offline (đã tải chương) | `cues` đọc từ `OfflineChapter.cues` đã persist → read-along hoạt động; chương tải trước 2026-07-14 (record cũ không có cues) → rỗng cho tới lần mở online kế (SWR refresh) |
 
 ═══════════════════════════════════════════════════════════════════════
 ## 6. DEFERRED / CHƯA LÀM Ở v1
@@ -257,7 +258,7 @@ thật: `flutter build apk --release --dart-define=USE_BACKEND=true --dart-defin
 
 - `ChapterVariant.timingJson` (timing cho nhánh rẽ truyện tương tác) — có trong spec ban đầu,
   **quyết định hoãn** (2026-07-08).
-- Read-along OFFLINE — chưa persist `cues` vào `OfflineChapter`; theo sau khi có nhu cầu.
+- ~~Read-along OFFLINE~~ — ĐÃ LÀM 2026-07-14 (persist `cues` vào `OfflineChapter` + SWR refresh nền).
 - Read-along trên WEB (`StoryReader.tsx`, `fe/apps/web`) — ngoài phạm vi v1.
 - Tô sáng theo TỪ (word-level) — v1 chỉ tô theo câu/dòng, đúng đơn vị của file timing.
 - Admin hiển thị lại `matched`/`total` sau khi lưu — BE đã trả field này, form admin chưa hiện.

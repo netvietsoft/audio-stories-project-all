@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../api/api_client.dart';
 import '../../api/api_endpoints.dart';
 import '../../models/models.dart';
@@ -212,38 +214,59 @@ class StoriesRepository implements StoriesRepositoryLike {
   }
 
   /// `GET /chapters/:id/public` — nội dung công khai của chương.
-  /// Local-first: nếu đã có sẵn offline VÀ (truyện đã downloaded HOẶC đang offline) → đọc local.
+  /// Local-first: nếu đã có sẵn offline VÀ (truyện đã downloaded HOẶC đang offline) → đọc local
+  /// (kèm cues read-along đã lưu); nếu lúc đó đang ONLINE → refresh NỀN content+cues từ API
+  /// (SWR — bản mới có hiệu lực lần mở chương sau).
   Future<ChapterContent> chapterContent(String id) async {
     final off = _offline;
     final offline = _connectivity?.isOnline == false;
     final isDownloaded = off?.download(_storyIdOfChapter(id))?.kind == 'downloaded';
     if (off != null && off.hasChapter(id) && (isDownloaded || offline)) {
       final c = off.readChapter(id)!;
-      return ChapterContent(id: c.chapterId, n: c.n, title: c.title, content: c.content);
+      if (!offline) unawaited(_refreshInBackground(id));
+      return ChapterContent(
+          id: c.chapterId, n: c.n, title: c.title, content: c.content,
+          cues: c.cues.map(TimingCue.fromMap).toList());
     }
+    return _fetchAndCache(id);
+  }
+
+  /// SWR: làm mới bản offline (content + cues từ CÙNG 1 response — không lệch offset).
+  /// Fire-and-forget: nuốt mọi lỗi, giữ nguyên bản local nếu fail.
+  Future<void> _refreshInBackground(String id) async {
+    try {
+      await _fetchAndCache(id);
+    } catch (_) {/* mất mạng đột ngột/API lỗi → giữ bản local */}
+  }
+
+  /// Fetch `GET /chapters/:id/public` + auto-cache text & cues vào offline store.
+  Future<ChapterContent> _fetchAndCache(String id) async {
     final data = await _api.get(ApiEndpoints.chapterPublic(id));
     final m = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
     final timingMap = m['timing'];
-    final cues = (timingMap is Map && timingMap['cues'] is List)
-        ? (timingMap['cues'] as List).whereType<Map>().map(TimingCue.fromMap).toList()
-        : <TimingCue>[];
+    final rawCues = (timingMap is Map && timingMap['cues'] is List)
+        ? (timingMap['cues'] as List).whereType<Map>().toList()
+        : const <Map>[];
     final content = ChapterContent(
       id: (m['id'] ?? id).toString(),
       n: _int(m['chapterNumber'], 1),
       title: (m['title'] ?? '').toString(),
       content: (m['content'] ?? '').toString(),
       hlsUrl: m['hlsUrl']?.toString(),
-      cues: cues,
+      cues: rawCues.map(TimingCue.fromMap).toList(),
     );
     // Auto-cache text nếu có offline store (không đụng eviction ở đây — làm khi save audio/AppState).
     // MERGE với bản ghi cũ để không xoá mất audioFile đã auto-cache trước đó.
+    // Cues ghi THEO response (không merge): server là nguồn sự thật — admin gỡ timing thì local cũng gỡ.
+    final off = _offline;
     if (off != null && content.content.isNotEmpty) {
       final existing = off.readChapter(content.id);
       await off.saveChapter(OfflineChapter(
-        chapterId: content.id,
-        storyId: existing?.storyId.isNotEmpty == true ? existing!.storyId : (m['storyId'] ?? '').toString(),
-        n: content.n, title: content.title, content: content.content,
-        hasAudio: existing?.hasAudio ?? false, audioFile: existing?.audioFile));
+          chapterId: content.id,
+          storyId: existing?.storyId.isNotEmpty == true ? existing!.storyId : (m['storyId'] ?? '').toString(),
+          n: content.n, title: content.title, content: content.content,
+          hasAudio: existing?.hasAudio ?? false, audioFile: existing?.audioFile,
+          cues: rawCues));
     }
     return content;
   }

@@ -944,8 +944,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     value: _fontSize.clamp(14.0, 30.0),
                     min: 14, max: 30, divisions: 16,
                     activeColor: AppPalette.terracotta,
-                    onChanged: (v) { final nv = v.roundToDouble(); setSheet(() => _fontSize = nv); setState(() {}); },
-                    onChangeEnd: (_) => _persistSettings(),
+                    // Kéo: chỉ rebuild sheet (mượt) — áp vào trang đọc + lưu khi THẢ tay
+                    // (setState mỗi tick sẽ re-layout cả chương dài → giật; cùng pattern BRIGHTNESS).
+                    onChanged: (v) { final nv = v.roundToDouble(); setSheet(() => _fontSize = nv); },
+                    onChangeEnd: (_) { setState(() {}); _persistSettings(); },
                   )),
                   Text('A', style: AppType.body(size: 20, color: pal.muted)),
                   SizedBox(width: 52, child: Text('${_fontSize.round()} pt', textAlign: TextAlign.right, style: AppType.item(size: 13.5, color: pal.ink))),
@@ -969,8 +971,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     value: _lineHeight.clamp(1.4, 3.0),
                     min: 1.4, max: 3.0, divisions: 16,
                     activeColor: AppPalette.terracotta,
-                    onChanged: (v) { final nv = (v * 10).roundToDouble() / 10; setSheet(() => _lineHeight = nv); setState(() {}); },
-                    onChangeEnd: (_) => _persistSettings(),
+                    onChanged: (v) { final nv = (v * 10).roundToDouble() / 10; setSheet(() => _lineHeight = nv); },
+                    onChangeEnd: (_) { setState(() {}); _persistSettings(); },
                   )),
                   SizedBox(width: 32, child: Text(_lineHeight.toStringAsFixed(1), textAlign: TextAlign.right, style: AppType.item(size: 13.5, color: pal.ink))),
                 ]),

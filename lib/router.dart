@@ -13,6 +13,7 @@ import 'screens/money/coin_store_screen.dart';
 import 'screens/money/subscription_screen.dart';
 import 'screens/money/wallet_screen.dart';
 import 'screens/novel/book_detail_screen.dart';
+import 'screens/novel/category_stories_screen.dart';
 import 'screens/novel/for_you_screen.dart';
 import 'screens/novel/reader_screen.dart';
 import 'screens/splash_screen.dart';
@@ -36,6 +37,13 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(path: '/for-you', builder: (_, __) => const ForYouScreen()),
+    GoRoute(
+      path: '/category/:id',
+      builder: (_, s) => CategoryStoriesScreen(
+        categoryId: int.tryParse(s.pathParameters['id'] ?? '') ?? 0,
+        name: s.uri.queryParameters['name'] ?? 'Category',
+      ),
+    ),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
     GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
     GoRoute(path: '/player', builder: (_, __) => const MusicPlayerScreen()),

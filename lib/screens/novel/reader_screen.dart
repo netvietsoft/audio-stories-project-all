@@ -21,6 +21,11 @@ import '../../theme/app_palette.dart';
 import '../../theme/app_type.dart';
 import '../../widgets/sheets.dart';
 
+/// Gộp ngắt dòng CỨNG trong 1 đoạn thành khoảng trắng — content một số truyện
+/// import từ nguồn PDF/txt bị wrap ~70 cột (`\n` đơn giữa câu) làm reader xuống
+/// dòng sớm. Thay 1:1 (GIỮ NGUYÊN độ dài) để offset `cs/ce` của read-along không lệch.
+String flattenHardBreaks(String para) => para.replaceAll('\n', ' ');
+
 /// Màn ĐỌC truyện (thiết kế readding/set trang/nghe truyện/cuoi trang).
 /// Top bar tuỳ chỉnh (không phải AppBar) trượt ẩn/hiện: nghe / bookmark / Aa (settings chi tiết) / danh sách chương.
 /// Menu dưới 4 tab tự ẩn khi cuộn xuống, hiện khi cuộn lên; thanh read-along khi nghe.
@@ -270,7 +275,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   double get _marginH => _margin == 'narrow' ? 14 : (_margin == 'wide' ? 34 : 20);
 
   String _snippetAtOffset() {
-    final paras = _content.split(RegExp(r'\n\s*\n')).map((p) => p.trim()).where((p) => p.isNotEmpty).toList();
+    final paras = _content.split(RegExp(r'\n\s*\n')).map((p) => flattenHardBreaks(p.trim())).where((p) => p.isNotEmpty).toList();
     if (paras.isEmpty) return '';
     // ước lượng đoạn theo tỉ lệ cuộn (đủ để nhận diện trong danh sách)
     final frac = (_scroll.hasClients && _scroll.position.maxScrollExtent > 0)
@@ -464,7 +469,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return Padding(padding: const EdgeInsets.only(top: 40), child: Center(child: CircularProgressIndicator(color: ink.withValues(alpha: 0.5))));
     }
     final base = _bodyStyle(ink);
-    final paras = _content.split(RegExp(r'\n\s*\n')).map((p) => p.trim()).where((p) => p.isNotEmpty).toList();
+    final paras = _content.split(RegExp(r'\n\s*\n')).map((p) => flattenHardBreaks(p.trim())).where((p) => p.isNotEmpty).toList();
     if (paras.isEmpty) {
       return Padding(
         padding: const EdgeInsets.only(top: 48),

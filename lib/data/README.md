@@ -6,7 +6,8 @@ envelope/endpoint. Tài liệu: [docs/07](../../docs/07-noi-backend.md).
 ## Cấu trúc
 | File | Vai trò |
 |---|---|
-| `repositories/stories_repository.dart` | `StoriesRepository`: `explore()` → `PagedBooks`; `detail(slug)` → `StoryDetail{book, chapters}`; `chapterContent(id)` → `ChapterContent`; `bySlug(slug)` → `Book`. Cũng khai báo `TimingCue` + `activeCueIndex()` (read-along, xem bên dưới). |
+| `repositories/stories_repository.dart` | `StoriesRepository`: `explore()` → `PagedBooks`; `detail(slug)` → `StoryDetail{book, chapters}`; `chapterContent(id)` → `ChapterContent`; `bySlug(slug)` → `Book`; `recommended()`/`trending()` (+`cachedRecommended`/`cachedTrending`) cho Novel Home. Cũng khai báo `TimingCue` + `activeCueIndex()` (read-along, xem bên dưới). |
+| `repositories/categories_repository.dart` | `getCategories(lang)` + `topCategories(limit,lang)` (kệ Home) + bản `cached*` đồng bộ. |
 | `repositories/music_repository.dart` | `MusicRepository.list({page,limit,search})` → `List<Song>`. |
 | `repositories/audio_repository.dart` | `AudioRepository.chapterAudioUrl(id)` — resolve `/chapters/:id/audio` (302, kèm Bearer) → URL audio thật để phát. |
 | `repositories/auth_repository.dart` | `AuthRepository`: login/verifyCode/me/refresh/logout/changePassword/restoreSession. Đọc refresh từ Set-Cookie, lưu qua `TokenStore` (secure storage), gắn Bearer vào ApiClient. |

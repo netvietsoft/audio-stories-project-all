@@ -861,9 +861,16 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 // TEXT SIZE
                 label('TEXT SIZE'),
                 Row(children: [
-                  Expanded(child: pill('A −', false, () => upd(() => _fontSize = (_fontSize - 1).clamp(14, 26)))),
-                  SizedBox(width: 80, child: Center(child: Text('${_fontSize.round()} pt', style: AppType.item(size: 15, color: pal.ink)))),
-                  Expanded(child: pill('A +', false, () => upd(() => _fontSize = (_fontSize + 1).clamp(14, 26)))),
+                  Text('A', style: AppType.body(size: 13, color: pal.muted)),
+                  Expanded(child: Slider(
+                    value: _fontSize.clamp(14.0, 30.0),
+                    min: 14, max: 30, divisions: 16,
+                    activeColor: AppPalette.terracotta,
+                    onChanged: (v) { final nv = v.roundToDouble(); setSheet(() => _fontSize = nv); setState(() {}); },
+                    onChangeEnd: (_) => _persistSettings(),
+                  )),
+                  Text('A', style: AppType.body(size: 20, color: pal.muted)),
+                  SizedBox(width: 52, child: Text('${_fontSize.round()} pt', textAlign: TextAlign.right, style: AppType.item(size: 13.5, color: pal.ink))),
                 ]),
 
                 // FONT
@@ -879,10 +886,15 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 // LINE
                 label('LINE'),
                 Row(children: [
-                  for (final h in const [1.4, 1.6, 1.8, 2.0]) ...[
-                    Expanded(child: pill(h.toString(), _lineHeight == h, () => upd(() => _lineHeight = h))),
-                    if (h != 2.0) const SizedBox(width: Gap.sm),
-                  ],
+                  Icon(Icons.format_line_spacing, size: 18, color: pal.muted),
+                  Expanded(child: Slider(
+                    value: _lineHeight.clamp(1.4, 3.0),
+                    min: 1.4, max: 3.0, divisions: 16,
+                    activeColor: AppPalette.terracotta,
+                    onChanged: (v) { final nv = (v * 10).roundToDouble() / 10; setSheet(() => _lineHeight = nv); setState(() {}); },
+                    onChangeEnd: (_) => _persistSettings(),
+                  )),
+                  SizedBox(width: 32, child: Text(_lineHeight.toStringAsFixed(1), textAlign: TextAlign.right, style: AppType.item(size: 13.5, color: pal.ink))),
                 ]),
 
                 // MARGIN

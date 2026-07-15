@@ -22,6 +22,8 @@ class ApiEndpoints {
   static const storiesHome = '/stories/home';
   static const storiesTrending = '/stories/trending';
   static const storiesCategories = '/stories/categories';
+  static const storiesCategoriesTop = '/stories/categories/top';
+  static const storiesRecommended = '/stories/recommended';
   static String storyBySlug(String slug) => '/stories/$slug';
   static String storyUnlock(String id) => '/stories/$id/unlock';
   static String chapterPublic(String id) => '/chapters/$id/public';

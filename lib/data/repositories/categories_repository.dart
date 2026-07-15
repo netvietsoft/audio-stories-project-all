@@ -30,4 +30,26 @@ class CategoriesRepository {
         .map((j) => CategoryMapper.fromJson(Map<String, dynamic>.from(j)))
         .toList();
   }
+
+  /// `GET /stories/categories/top` — thể loại nhiều truyện nhất (BE cache 1h).
+  /// Dùng làm tiêu đề 3 kệ chủ đề ở Novel Home.
+  Future<List<Category>> topCategories({int limit = 3, String lang = 'vi'}) async {
+    final data = await _api.get(ApiEndpoints.storiesCategoriesTop, query: {'limit': limit, 'lang': lang});
+    final list = unwrapList(data);
+    _cache?.writeList('cache.home.topcats.$lang', list);
+    return list
+        .whereType<Map>()
+        .map((j) => CategoryMapper.fromJson(Map<String, dynamic>.from(j)))
+        .toList();
+  }
+
+  /// Bản cache local của [topCategories] (đồng bộ). Null nếu chưa có.
+  List<Category>? cachedTopCategories({String lang = 'vi'}) {
+    final c = _cache?.readList('cache.home.topcats.$lang');
+    if (c == null) return null;
+    return c.data
+        .whereType<Map>()
+        .map((j) => CategoryMapper.fromJson(Map<String, dynamic>.from(j)))
+        .toList();
+  }
 }

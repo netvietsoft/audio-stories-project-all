@@ -142,6 +142,49 @@ class StoriesRepository implements StoriesRepositoryLike {
     return (books: books, age: c.age);
   }
 
+  static String _recommendedKey(String lang) => 'cache.home.recommended.$lang';
+  static String _trendingKey(String lang) => 'cache.home.trending.$lang';
+
+  /// `GET /stories/recommended` — truyện admin đề cử (Editor's Pick).
+  Future<List<Book>> recommended({int limit = 1, String lang = 'en'}) async {
+    final data = await _api.get(ApiEndpoints.storiesRecommended, query: {
+      'limit': limit,
+      if (lang.isNotEmpty) 'lang': lang,
+    });
+    final list = unwrapList(data);
+    _cache?.writeList(_recommendedKey(lang), list);
+    return _mapBooks(list);
+  }
+
+  /// Bản cache local của [recommended] (đồng bộ). Null nếu chưa có.
+  List<Book>? cachedRecommended(String lang) => _cachedBooks(_recommendedKey(lang));
+
+  /// `GET /stories/trending` — truyện đọc nhiều theo kỳ (BE mặc định week).
+  Future<List<Book>> trending({int limit = 10, String lang = 'en', String window = 'week'}) async {
+    final data = await _api.get(ApiEndpoints.storiesTrending, query: {
+      'limit': limit,
+      'trendWindow': window,
+      if (lang.isNotEmpty) 'lang': lang,
+    });
+    final list = unwrapList(data);
+    _cache?.writeList(_trendingKey(lang), list);
+    return _mapBooks(list);
+  }
+
+  /// Bản cache local của [trending] (đồng bộ). Null nếu chưa có.
+  List<Book>? cachedTrending(String lang) => _cachedBooks(_trendingKey(lang));
+
+  List<Book> _mapBooks(List<dynamic> list) => list
+      .whereType<Map>()
+      .map((j) => BookMapper.fromJson(Map<String, dynamic>.from(j)))
+      .toList();
+
+  List<Book>? _cachedBooks(String key) {
+    final c = _cache?.readList(key);
+    if (c == null) return null;
+    return _mapBooks(c.data);
+  }
+
   /// `GET /stories/:slug` — chi tiết + danh sách chương (`chapters[]`).
   /// Local-first: nếu đang offline HOẶC truyện đã downloaded VÀ có meta local
   /// → dựng từ local, KHÔNG gọi API. Online mà API lỗi → fallback về meta local nếu có.

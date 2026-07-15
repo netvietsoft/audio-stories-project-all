@@ -45,8 +45,9 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
   void initState() {
     super.initState();
     _repo = context.read<StoriesRepository>();
-    _loadRanking();
-    _loadHomeFeeds();
+    // KHÔNG load ở đây: _lastLang khởi tạo rỗng nên hook đổi-ngôn-ngữ trong build
+    // LUÔN chạy ở frame đầu và đã gọi _loadRanking() + _loadHomeFeeds() —
+    // gọi thêm ở initState là bắn đúp mọi request lúc mở app.
   }
 
   /// Bảng xếp hạng = truyện đọc nhiều nhất (sort=views) trong kỳ đang chọn,

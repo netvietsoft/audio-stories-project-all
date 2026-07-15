@@ -35,4 +35,27 @@ void main() {
     expect(bb.snippet, 'hello');
     expect(bb.savedAt, 111);
   });
+
+  test('customBg round-trip + thiếu key → null', () {
+    const s = ReaderSettings(bg: 4, customBg: 0xFF101820, textColor: 0xFF000000);
+    final back = ReaderSettings.fromMap(s.toMap());
+    expect(back.customBg, 0xFF101820);
+    expect(ReaderSettings.fromMap(const {}).customBg, isNull);
+    expect(s.copyWith(fontSize: 20).customBg, 0xFF101820); // copyWith giữ customBg
+  });
+
+  test('resolveLegacySettings: OLED cũ + Auto cũ resolve đúng', () {
+    // bg=4 (OLED cũ) thiếu customBg → customBg = đen, Auto trên nền đó → kem sáng
+    final oled = resolveLegacySettings(ReaderSettings.fromMap(const {'bg': 4}));
+    expect(oled.customBg, 0xFF000000);
+    expect(oled.textColor, kLegacyDarkInk);
+    // Auto trên nền Dark preset → kem sáng
+    expect(resolveLegacySettings(const ReaderSettings(bg: 3)).textColor, kLegacyDarkInk);
+    // Auto trên custom TỐI → kem sáng
+    expect(resolveLegacySettings(const ReaderSettings(bg: 4, customBg: 0xFF101010)).textColor, kLegacyDarkInk);
+    // Auto trên nền SÁNG (Cream) → Đen mặc định
+    expect(resolveLegacySettings(const ReaderSettings(bg: 0)).textColor, kDefaultTextColor);
+    // Đã có textColor → giữ nguyên
+    expect(resolveLegacySettings(const ReaderSettings(bg: 3, textColor: 0xFF112233)).textColor, 0xFF112233);
+  });
 }

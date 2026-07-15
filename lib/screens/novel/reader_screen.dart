@@ -44,7 +44,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final ValueNotifier<double> _progress = ValueNotifier(0);
 
   // ── tuỳ chỉnh đọc (set trang.png) ──
-  int _bg = 0; // 0 Cream · 1 White · 2 Sepia · 3 Dark · 4 OLED
+  int _bg = 0; // 0 Cream · 1 White · 2 Sepia · 3 Dark · 4 Custom (màu ở _customBg)
   Color? _textColor; // luôn non-null sau initState (resolveLegacySettings); mặc định Đen
   Color? _customBg;  // nền custom (bg == 4); null khi user chưa từng chọn
   double _fontSize = 18;

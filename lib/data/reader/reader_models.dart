@@ -66,7 +66,7 @@ class ReaderSettings {
 /// Màu chữ mặc định (Đen) — semantics mới sau khi bỏ Auto.
 const int kDefaultTextColor = 0xFF000000;
 
-/// Màu chữ auto CŨ trên nền tối (kem sáng — trùng `_inks[3]` của Reader).
+/// Màu chữ auto CŨ trên nền tối (kem sáng — giá trị ink của nền Dark trước đây).
 const int kLegacyDarkInk = 0xFFE8DCC4;
 
 /// Resolve settings bản cũ về semantics mới. Gọi 1 lần lúc load (initState Reader):

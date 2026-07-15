@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:screen_brightness/screen_brightness.dart';
@@ -44,7 +45,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   // ── tuỳ chỉnh đọc (set trang.png) ──
   int _bg = 0; // 0 Cream · 1 White · 2 Sepia · 3 Dark · 4 OLED
-  Color? _textColor; // null = Auto
+  Color? _textColor; // luôn non-null sau initState (resolveLegacySettings); mặc định Đen
+  Color? _customBg;  // nền custom (bg == 4); null khi user chưa từng chọn
   double _fontSize = 18;
   String _font = 'serif'; // serif · sans · dyslexia
   double _lineHeight = 1.6;
@@ -67,10 +69,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
   bool _playingThis = false; // audio của ĐÚNG chương đang hiển thị có đang phát không
 
   static const _bgs = [Color(0xFFFBF3E3), Color(0xFFFFFFFF), Color(0xFFF4E7CC), Color(0xFF15110C), Color(0xFF000000)];
-  static const _inks = [Color(0xFF2A2118), Color(0xFF2A2118), Color(0xFF3A2E1C), Color(0xFFE8DCC4), Color(0xFFD8CCB4)];
   static const _bgLabels = ['Cream', 'White', 'Sepia', 'Dark', 'OLED'];
   static const _palette = [
-    null, Color(0xFF2A2118), Color(0xFF5B4F3A), Color(0xFF8A5A2B), Color(0xFFC2683A),
+    Color(0xFF000000), Color(0xFF2A2118), Color(0xFF5B4F3A), Color(0xFF8A5A2B), Color(0xFFC2683A),
     Color(0xFF4E6E58), Color(0xFF35506E), Color(0xFF7A5470), Color(0xFF9A3B4A),
   ];
   @override
@@ -78,9 +79,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
     super.initState();
     _repo = context.read<StoriesRepository>();
     _reader = context.read<ReaderStore>();
-    final s = _reader.readSettings();
+    final s = resolveLegacySettings(_reader.readSettings());
     _bg = s.bg;
-    _textColor = s.textColor == null ? null : Color(s.textColor!);
+    _customBg = s.customBg == null ? null : Color(s.customBg!);
+    _textColor = Color(s.textColor!); // resolve đảm bảo non-null
     _fontSize = s.fontSize;
     _font = s.font;
     _lineHeight = s.lineHeight;
@@ -302,6 +304,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   void _persistSettings() {
     _reader.saveSettings(ReaderSettings(
       bg: _bg,
+      customBg: _customBg?.toARGB32(),
       textColor: _textColor?.toARGB32(),
       fontSize: _fontSize,
       font: _font,
@@ -342,8 +345,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bg = _bgs[_bg];
-    final ink = _textColor ?? _inks[_bg];
+    final bg = _bg == 4 ? (_customBg ?? const Color(kOledBlackBg)) : _bgs[_bg];
+    final ink = _textColor ?? const Color(kDefaultTextColor);
     if (_error) {
       return Scaffold(
         backgroundColor: bg,
@@ -752,6 +755,32 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
+  /// Dialog chọn màu (flutter_colorpicker). Trả màu đã chọn, hoặc null nếu Huỷ.
+  Future<Color?> _pickColor(Color initial) async {
+    var picked = initial;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => AlertDialog(
+        backgroundColor: context.pal.card,
+        contentPadding: const EdgeInsets.all(Gap.md),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: initial,
+            onColorChanged: (col) => picked = col,
+            enableAlpha: false,
+            labelTypes: const [],
+            pickerAreaHeightPercent: 0.7,
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c, false), child: Text('Huỷ', style: AppType.btn(size: 14, color: context.pal.muted))),
+          TextButton(onPressed: () => Navigator.pop(c, true), child: Text('Chọn', style: AppType.btn(size: 14, color: AppPalette.terracotta))),
+        ],
+      ),
+    );
+    return ok == true ? picked : null;
+  }
+
   // Reading settings chi tiết (thiết kế set trang.png).
   void _openSettings() {
     showModalBottomSheet<void>(
@@ -809,7 +838,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                 // BACKGROUND
                 label('BACKGROUND'),
                 Row(children: [
-                  for (var i = 0; i < _bgs.length; i++)
+                  for (var i = 0; i < 4; i++)
                     Expanded(
                       child: GestureDetector(
                         onTap: () => upd(() => _bg = i),
@@ -826,36 +855,59 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         ]),
                       ),
                     ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () async {
+                        final c = await _pickColor(_customBg ?? const Color(kOledBlackBg));
+                        if (c != null) upd(() { _customBg = c; _bg = 4; });
+                      },
+                      child: Column(children: [
+                        Container(
+                          width: 31, height: 31,
+                          decoration: BoxDecoration(
+                            color: _customBg ?? pal.surf2, shape: BoxShape.circle,
+                            border: Border.all(color: _bg == 4 ? AppPalette.terracotta : pal.line, width: _bg == 4 ? 2 : 1),
+                          ),
+                          child: _customBg == null ? Icon(Icons.colorize, size: 16, color: pal.muted) : null,
+                        ),
+                        const SizedBox(height: 4),
+                        Text('Custom', style: AppType.meta(size: 10.5, color: pal.muted)),
+                      ]),
+                    ),
+                  ),
                 ]),
 
                 // TEXT COLOR
                 label('TEXT COLOR'),
                 Wrap(spacing: 10, runSpacing: 10, children: [
                   for (final col in _palette)
-                    if (col == null)
-                      GestureDetector(
-                        onTap: () => upd(() => _textColor = null),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _textColor == null ? AppPalette.terracotta : pal.surf2,
-                            borderRadius: rounded(20),
-                            border: Border.all(color: _textColor == null ? AppPalette.terracotta : pal.line),
-                          ),
-                          child: Text('Auto', style: AppType.btn(size: 13, color: _textColor == null ? Colors.white : pal.ink)),
-                        ),
-                      )
-                    else
-                      GestureDetector(
-                        onTap: () => upd(() => _textColor = col),
-                        child: Container(
-                          width: 28, height: 28,
-                          decoration: BoxDecoration(
-                            color: col, shape: BoxShape.circle,
-                            border: Border.all(color: _textColor == col ? AppPalette.terracotta : pal.line, width: _textColor == col ? 2 : 1),
-                          ),
+                    GestureDetector(
+                      onTap: () => upd(() => _textColor = col),
+                      child: Container(
+                        width: 28, height: 28,
+                        decoration: BoxDecoration(
+                          color: col, shape: BoxShape.circle,
+                          border: Border.all(color: _textColor == col ? AppPalette.terracotta : pal.line, width: _textColor == col ? 2 : 1),
                         ),
                       ),
+                    ),
+                  Builder(builder: (_) {
+                    final isCustom = _textColor != null && !_palette.contains(_textColor);
+                    return GestureDetector(
+                      onTap: () async {
+                        final c = await _pickColor(_textColor ?? const Color(kDefaultTextColor));
+                        if (c != null) upd(() => _textColor = c);
+                      },
+                      child: Container(
+                        width: 28, height: 28,
+                        decoration: BoxDecoration(
+                          color: isCustom ? _textColor : pal.surf2, shape: BoxShape.circle,
+                          border: Border.all(color: isCustom ? AppPalette.terracotta : pal.line, width: isCustom ? 2 : 1),
+                        ),
+                        child: isCustom ? null : Icon(Icons.colorize, size: 14, color: pal.muted),
+                      ),
+                    );
+                  }),
                 ]),
 
                 // TEXT SIZE

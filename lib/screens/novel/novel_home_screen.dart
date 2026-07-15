@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/repositories/categories_repository.dart';
 import '../../data/repositories/stories_repository.dart';
 import '../../l10n/l10n_ext.dart';
 import '../../models/models.dart';
@@ -35,11 +36,17 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
   List<Book> _ranking = const [];
   bool _rankingLoading = true;
 
+  // ── 3 khối data thật (độc lập với explore/StoriesNotifier) ──
+  Book? _editorPick;                          // null → fallback value.first
+  List<(Category, List<Book>)> _shelves = const []; // kệ < 3 truyện đã bị loại
+  List<Book> _trending = const [];            // rỗng → ẩn section
+
   @override
   void initState() {
     super.initState();
     _repo = context.read<StoriesRepository>();
     _loadRanking();
+    _loadHomeFeeds();
   }
 
   /// Bảng xếp hạng = truyện đọc nhiều nhất (sort=views) trong kỳ đang chọn,
@@ -52,6 +59,51 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
       if (mounted) setState(() { _ranking = paged.books; _rankingLoading = false; });
     } catch (_) {
       if (mounted) setState(() { _ranking = const []; _rankingLoading = false; });
+    }
+  }
+
+  /// Nạp 3 khối data thật của Home. Cache-first (hiện ngay bản cache nếu có)
+  /// rồi fetch nền; mỗi khối lỗi riêng → fallback/ẩn riêng, không chặn Home.
+  Future<void> _loadHomeFeeds() async {
+    final lang = context.read<AppState>().contentLang;
+    final cachedPick = _repo.cachedRecommended(lang);
+    final cachedTrend = _repo.cachedTrending(lang);
+    if (mounted && (cachedPick?.isNotEmpty == true || cachedTrend?.isNotEmpty == true)) {
+      setState(() {
+        if (cachedPick?.isNotEmpty == true) _editorPick = cachedPick!.first;
+        if (cachedTrend?.isNotEmpty == true) _trending = cachedTrend!;
+      });
+    }
+    await Future.wait([_loadEditorPick(lang), _loadShelves(lang), _loadTrending(lang)]);
+  }
+
+  Future<void> _loadEditorPick(String lang) async {
+    try {
+      final books = await _repo.recommended(limit: 1, lang: lang);
+      if (mounted && books.isNotEmpty) setState(() => _editorPick = books.first);
+    } catch (_) {/* giữ null/cache → hero fallback value.first */}
+  }
+
+  Future<void> _loadTrending(String lang) async {
+    try {
+      final books = await _repo.trending(limit: 10, lang: lang);
+      if (mounted) setState(() => _trending = books);
+    } catch (_) {/* giữ cache/rỗng → ẩn section */}
+  }
+
+  Future<void> _loadShelves(String lang) async {
+    try {
+      final cats = await context.read<CategoriesRepository>().topCategories(limit: 3, lang: lang);
+      final results = await Future.wait(cats.map((c) => _repo.explore(categoryId: c.id, limit: 9, lang: lang)));
+      if (!mounted) return;
+      setState(() {
+        _shelves = [
+          for (var i = 0; i < cats.length; i++)
+            if (results[i].books.length >= 3) (cats[i], results[i].books),
+        ];
+      });
+    } catch (_) {
+      if (mounted) setState(() => _shelves = const []); // lỗi → ẩn kệ
     }
   }
 
@@ -72,6 +124,7 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
         if (!mounted) return;
         context.read<StoriesNotifier>().applyLang(contentLang);
         _loadRanking(); // xếp hạng cũng theo ngôn ngữ nội dung
+        _loadHomeFeeds(); // 3 khối data thật cũng theo ngôn ngữ nội dung
       });
     }
     final notifier = context.watch<StoriesNotifier>();
@@ -81,7 +134,11 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
         bottom: false,
         child: RefreshIndicator(
           color: AppPalette.terracotta,
-          onRefresh: () => context.read<StoriesNotifier>().loadExplore(forceRefresh: true),
+          onRefresh: () => Future.wait([
+            context.read<StoriesNotifier>().loadExplore(forceRefresh: true),
+            _loadHomeFeeds(),
+            _loadRanking(),
+          ]),
           child: ListView(
             padding: EdgeInsets.zero,
             physics: const AlwaysScrollableScrollPhysics(),
@@ -105,7 +162,7 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
       AsyncError(:final error) => [_errorView(context, error)],
       AsyncData(:final value) when value.isEmpty => [_emptyView(context)],
       AsyncData(:final value) => [
-          _editorHero(context, value.first),
+          _editorHero(context, _editorPick ?? value.first),
           // Continue Reading: chỉ hiện khi có lịch sử đọc THẬT (không còn demo).
           if (app.hasLastRead) ...[
             _sectionHeader(context, 'Continue Reading'),
@@ -115,37 +172,20 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
           _bookRail(context, value),
           _hotRankingHeader(context),
           ..._rankingSection(context),
-          // ── Bộ sưu tập theo chủ đề (thiết kế anh/home/2.png) ──
-          for (final c in _collections(value)) ...[
-            _sectionHeader(context, c.$1, onMore: () {}, moreLabel: 'More'),
-            _collectionRail(context, c.$2),
+          // ── Kệ theo thể loại nhiều truyện nhất (data thật /stories/categories/top) ──
+          for (final s in _shelves) ...[
+            _sectionHeader(context, s.$1.name,
+                onMore: () => context.push('/category/${s.$1.id}?name=${Uri.encodeComponent(s.$1.name)}'),
+                moreLabel: 'More'),
+            _collectionRail(context, s.$2),
           ],
-          _sectionHeader(context, 'New & Trending', onMore: () {}),
-          _bookRail(context, value.reversed.toList()),
+          // ── New & Trending (data thật /stories/trending, window week) — rỗng thì ẩn ──
+          if (_trending.isNotEmpty) ...[
+            _sectionHeader(context, 'New & Trending'),
+            _bookRail(context, _trending),
+          ],
         ],
     };
-  }
-
-  /// Nhóm truyện thành các kệ theo chủ đề. Ưu tiên khớp thể loại; không đủ 3 thì
-  /// lấy lát cắt xoay vòng của toàn danh sách để mỗi kệ khác nhau.
-  List<(String, List<Book>)> _collections(List<Book> all) {
-    List<Book> pick(List<String> genres, int skip) {
-      bool match(Book b) => genres.any((g) =>
-          b.genre.toLowerCase().contains(g.toLowerCase()) ||
-          b.trope.toLowerCase().contains(g.toLowerCase()));
-      final matched = all.where(match).toList();
-      final base = matched.length >= 3 ? matched : all;
-      final n = base.length;
-      if (n == 0) return const [];
-      final s = skip % n;
-      return [...base.skip(s), ...base.take(s)].take(9).toList();
-    }
-
-    return [
-      ('Werewolf & Fated Mates', pick(['Werewolf', 'Fantasy', 'Xianxia', 'Wuxia'], 0)),
-      ('CEO & Billionaire', pick(['Romance', 'Urban', 'CEO', 'Billionaire'], 3)),
-      ('Revenge & Rebirth', pick(['Action', 'Isekai', 'Shounen'], 6)),
-    ].where((c) => c.$2.isNotEmpty).toList();
   }
 
   /// Header trang: "Reading" + phụ đề (theo thiết kế home.png).
@@ -166,7 +206,7 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(Gap.screenH, Gap.lg, Gap.screenH, 0),
       child: GestureDetector(
-        onTap: () => context.push('/reader/${b.id}'),
+        onTap: () => context.push('/book/${b.id}'),
         child: Container(
           padding: const EdgeInsets.all(Gap.lg),
           decoration: BoxDecoration(
@@ -192,10 +232,13 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
                     Text('⭐ ${b.rating} · ${b.reads} reads · ${b.chapters} chapters',
                         style: AppType.meta(size: 12, color: Colors.white70)),
                     const SizedBox(height: Gap.md),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-                      decoration: BoxDecoration(color: const Color(0xFFFBF3E3), borderRadius: rounded(24)),
-                      child: Text('Read Now  →', style: AppType.btn(size: 14, color: const Color(0xFF7A3B55))),
+                    GestureDetector(
+                      onTap: () => context.push('/reader/${b.id}'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                        decoration: BoxDecoration(color: const Color(0xFFFBF3E3), borderRadius: rounded(24)),
+                        child: Text('Read Now  →', style: AppType.btn(size: 14, color: const Color(0xFF7A3B55))),
+                      ),
                     ),
                   ],
                 ),

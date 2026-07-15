@@ -88,6 +88,7 @@ class _CategoryStoriesScreenState extends State<CategoryStoriesScreen> {
                       itemCount: _books.length + (_hasMore ? 1 : 0),
                       itemBuilder: (_, i) {
                         if (i >= _books.length) {
+                          if (_error) return _retryRow();
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 18),
                             child: Center(child: CircularProgressIndicator(color: AppPalette.terracotta)),
@@ -118,6 +119,25 @@ class _CategoryStoriesScreenState extends State<CategoryStoriesScreen> {
           ),
         ]),
       ),
+    );
+  }
+
+  /// Hàng retry ở cuối list khi trang ≥2 fetch lỗi (thay spinner kẹt).
+  Widget _retryRow() {
+    final pal = context.pal;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Text('Không tải được trang tiếp', style: AppType.item(size: 14, color: pal.ink)),
+        const SizedBox(height: Gap.md),
+        TextButton(
+          style: TextButton.styleFrom(
+              backgroundColor: AppPalette.terracotta,
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11)),
+          onPressed: _load,
+          child: Text('Thử lại', style: AppType.btn(size: 13, color: Colors.white)),
+        ),
+      ]),
     );
   }
 

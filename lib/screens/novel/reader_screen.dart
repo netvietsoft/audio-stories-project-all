@@ -71,7 +71,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
   static const _bgs = [Color(0xFFFBF3E3), Color(0xFFFFFFFF), Color(0xFFF4E7CC), Color(0xFF15110C), Color(0xFF000000)];
   static const _bgLabels = ['Cream', 'White', 'Sepia', 'Dark', 'OLED'];
   static const _palette = [
-    Color(0xFF000000), Color(0xFF2A2118), Color(0xFF5B4F3A), Color(0xFF8A5A2B), Color(0xFFC2683A),
+    Color(0xFF000000), Color(0xFF5B4F3A), Color(0xFF8A5A2B), Color(0xFFC2683A),
     Color(0xFF4E6E58), Color(0xFF35506E), Color(0xFF7A5470), Color(0xFF9A3B4A),
   ];
   @override
@@ -842,13 +842,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () => upd(() => _bg = i),
+                        behavior: HitTestBehavior.opaque,
                         child: Column(children: [
-                          Container(
-                            width: 31, height: 31,
-                            decoration: BoxDecoration(
-                              color: _bgs[i], shape: BoxShape.circle,
-                              border: Border.all(color: _bg == i ? AppPalette.terracotta : pal.line, width: _bg == i ? 2 : 1),
-                            ),
+                          // Ô đang chọn phóng to (37 vs 31); hộp cao cố định để hàng không nhảy.
+                          SizedBox(
+                            height: 37,
+                            child: Center(child: Container(
+                              width: _bg == i ? 37 : 31, height: _bg == i ? 37 : 31,
+                              decoration: BoxDecoration(
+                                color: _bgs[i], shape: BoxShape.circle,
+                                border: Border.all(color: _bg == i ? AppPalette.terracotta : pal.line, width: _bg == i ? 2 : 1),
+                              ),
+                            )),
                           ),
                           const SizedBox(height: 4),
                           Text(_bgLabels[i], style: AppType.meta(size: 10.5, color: pal.muted)),
@@ -861,14 +866,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         final c = await _pickColor(_customBg ?? const Color(kOledBlackBg));
                         if (c != null) upd(() { _customBg = c; _bg = 4; });
                       },
+                      behavior: HitTestBehavior.opaque,
                       child: Column(children: [
-                        Container(
-                          width: 31, height: 31,
-                          decoration: BoxDecoration(
-                            color: _customBg ?? pal.surf2, shape: BoxShape.circle,
-                            border: Border.all(color: _bg == 4 ? AppPalette.terracotta : pal.line, width: _bg == 4 ? 2 : 1),
-                          ),
-                          child: _customBg == null ? Icon(Icons.colorize, size: 16, color: pal.muted) : null,
+                        SizedBox(
+                          height: 37,
+                          child: Center(child: Container(
+                            width: _bg == 4 ? 37 : 31, height: _bg == 4 ? 37 : 31,
+                            decoration: BoxDecoration(
+                              color: _customBg ?? pal.surf2, shape: BoxShape.circle,
+                              border: Border.all(color: _bg == 4 ? AppPalette.terracotta : pal.line, width: _bg == 4 ? 2 : 1),
+                            ),
+                            child: _customBg == null ? Icon(Icons.colorize, size: 16, color: pal.muted) : null,
+                          )),
                         ),
                         const SizedBox(height: 4),
                         Text('Custom', style: AppType.meta(size: 10.5, color: pal.muted)),
@@ -877,34 +886,46 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   ),
                 ]),
 
-                // TEXT COLOR
+                // TEXT COLOR — 1 hàng: 8 màu + ô picker (Row chia đều); ô đang chọn phóng to (34 vs 26).
                 label('TEXT COLOR'),
-                Wrap(spacing: 10, runSpacing: 10, children: [
+                Row(children: [
                   for (final col in _palette)
-                    GestureDetector(
-                      onTap: () => upd(() => _textColor = col),
-                      child: Container(
-                        width: 28, height: 28,
-                        decoration: BoxDecoration(
-                          color: col, shape: BoxShape.circle,
-                          border: Border.all(color: _textColor == col ? AppPalette.terracotta : pal.line, width: _textColor == col ? 2 : 1),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => upd(() => _textColor = col),
+                        behavior: HitTestBehavior.opaque,
+                        child: SizedBox(
+                          height: 34,
+                          child: Center(child: Container(
+                            width: _textColor == col ? 34 : 26, height: _textColor == col ? 34 : 26,
+                            decoration: BoxDecoration(
+                              color: col, shape: BoxShape.circle,
+                              border: Border.all(color: _textColor == col ? AppPalette.terracotta : pal.line, width: _textColor == col ? 2 : 1),
+                            ),
+                          )),
                         ),
                       ),
                     ),
                   Builder(builder: (_) {
                     final isCustom = _textColor != null && !_palette.contains(_textColor);
-                    return GestureDetector(
-                      onTap: () async {
-                        final c = await _pickColor(_textColor ?? const Color(kDefaultTextColor));
-                        if (c != null) upd(() => _textColor = c);
-                      },
-                      child: Container(
-                        width: 28, height: 28,
-                        decoration: BoxDecoration(
-                          color: isCustom ? _textColor : pal.surf2, shape: BoxShape.circle,
-                          border: Border.all(color: isCustom ? AppPalette.terracotta : pal.line, width: isCustom ? 2 : 1),
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          final c = await _pickColor(_textColor ?? const Color(kDefaultTextColor));
+                          if (c != null) upd(() => _textColor = c);
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: SizedBox(
+                          height: 34,
+                          child: Center(child: Container(
+                            width: isCustom ? 34 : 26, height: isCustom ? 34 : 26,
+                            decoration: BoxDecoration(
+                              color: isCustom ? _textColor : pal.surf2, shape: BoxShape.circle,
+                              border: Border.all(color: isCustom ? AppPalette.terracotta : pal.line, width: isCustom ? 2 : 1),
+                            ),
+                            child: isCustom ? null : Icon(Icons.colorize, size: 14, color: pal.muted),
+                          )),
                         ),
-                        child: isCustom ? null : Icon(Icons.colorize, size: 14, color: pal.muted),
                       ),
                     );
                   }),

@@ -72,6 +72,7 @@ class _CommentsSheetBodyState extends State<_CommentsSheetBody> {
   ChapterComment? _replyTo;
   String _sort = 'newest';
   int _page = 0;
+  int _epoch = 0; // đổi sort → tăng; response cũ về sau bị bỏ
   bool _hasMore = true, _loading = false, _sending = false;
 
   bool get _isChapterScope => widget.scope == 'chapter';
@@ -91,6 +92,7 @@ class _CommentsSheetBodyState extends State<_CommentsSheetBody> {
 
   @override
   void dispose() {
+    widget.scrollController.removeListener(_onScroll);
     _input.dispose();
     super.dispose();
   }
@@ -103,10 +105,11 @@ class _CommentsSheetBodyState extends State<_CommentsSheetBody> {
 
   Future<void> _loadMore() async {
     if (_loading || !_hasMore) return;
+    final myEpoch = _epoch;
     setState(() => _loading = true);
     try {
       final p = await _repo.chapterPage(widget.chapterId, page: _page + 1, sort: _sort);
-      if (!mounted) return;
+      if (!mounted || myEpoch != _epoch) return;
       setState(() {
         _items.addAll(p.items);
         _page = p.page;
@@ -114,13 +117,13 @@ class _CommentsSheetBodyState extends State<_CommentsSheetBody> {
         _loading = false;
       });
     } catch (_) {
-      if (mounted) setState(() { _loading = false; _hasMore = false; });
+      if (mounted && myEpoch == _epoch) setState(() { _loading = false; _hasMore = false; });
     }
   }
 
   void _changeSort(String s) {
     if (_sort == s) return;
-    setState(() { _sort = s; _items = []; _page = 0; _hasMore = true; });
+    setState(() { _sort = s; _items = []; _page = 0; _hasMore = true; _loading = false; _epoch++; });
     _loadMore();
   }
 
@@ -204,6 +207,7 @@ class _CommentsSheetBodyState extends State<_CommentsSheetBody> {
         ],
       ),
     );
+    ctrl.dispose();
     if (reason == null || reason.isEmpty || !mounted) return;
     try {
       await _repo.report(c.id, reason);

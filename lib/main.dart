@@ -19,6 +19,7 @@ import 'data/offline/connectivity_service.dart';
 import 'data/offline/download_manager.dart';
 import 'data/repositories/audio_repository.dart';
 import 'data/repositories/categories_repository.dart';
+import 'data/repositories/comments_repository.dart';
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/music_repository.dart';
 import 'data/repositories/stories_repository.dart';
@@ -63,6 +64,7 @@ Future<void> main() async {
   final storiesRepo = StoriesRepository(apiClient, cache, offlineStore, connectivity);
   final musicRepo = MusicRepository(apiClient, cache);
   final categoriesRepo = CategoriesRepository(apiClient, cache);
+  final commentsRepo = CommentsRepository(apiClient);
   final audioRepo = AudioRepository(apiClient);
   final authRepo = AuthRepository(apiClient, TokenStore());
   // Auto-refresh access token khi 401 (ApiClient gọi lại refresh của auth).
@@ -90,6 +92,7 @@ Future<void> main() async {
     storiesRepo: storiesRepo,
     musicRepo: musicRepo,
     categoriesRepo: categoriesRepo,
+    commentsRepo: commentsRepo,
     audioRepo: audioRepo,
     authNotifier: authNotifier,
     offlineStore: offlineStore,
@@ -106,6 +109,7 @@ class NovelVerseApp extends StatelessWidget {
     required this.storiesRepo,
     required this.musicRepo,
     required this.categoriesRepo,
+    required this.commentsRepo,
     required this.audioRepo,
     required this.authNotifier,
     required this.offlineStore,
@@ -118,6 +122,7 @@ class NovelVerseApp extends StatelessWidget {
   final StoriesRepository storiesRepo;
   final MusicRepository musicRepo;
   final CategoriesRepository categoriesRepo;
+  final CommentsRepository commentsRepo;
   final AudioRepository audioRepo;
   final AuthNotifier authNotifier;
   final OfflineStore offlineStore;
@@ -134,6 +139,7 @@ class NovelVerseApp extends StatelessWidget {
         Provider.value(value: storiesRepo),
         Provider.value(value: musicRepo),
         Provider.value(value: categoriesRepo),
+        Provider.value(value: commentsRepo),
         Provider.value(value: audioRepo),
         Provider.value(value: offlineStore),
         ChangeNotifierProvider.value(value: connectivity),

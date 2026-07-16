@@ -30,6 +30,12 @@ class ApiEndpoints {
   /// Proxy audio (302 sau entitlement). HLS m3u8 lấy từ field `hlsUrl` của response.
   static String chapterAudio(String id) => '/chapters/$id/audio';
 
+  // ── Comments (chương/đoạn) ──
+  static String chapterComments(String chapterId) => '/chapters/$chapterId/comments';
+  static String commentReplies(String commentId) => '/comments/$commentId/replies';
+  static String commentReactions(String commentId) => '/comments/$commentId/reactions';
+  static String commentReport(String commentId) => '/comments/$commentId/report';
+
   // ── Music ──
   static const music = '/music';
   static String musicBySlug(String slug) => '/music/$slug';

@@ -98,10 +98,10 @@ class CommentsRepository {
   }) async {
     final data = await _api.post(ApiEndpoints.chapterComments(chapterId), body: {
       'content': content,
-      if (parentId != null) 'parentId': parentId,
+      'parentId': ?parentId,
       'scope': scope,
-      if (paragraphIndex != null) 'paragraphIndex': paragraphIndex,
-      if (paragraphAnchor != null) 'paragraphAnchor': paragraphAnchor,
+      'paragraphIndex': ?paragraphIndex,
+      'paragraphAnchor': ?paragraphAnchor,
     });
     return ChapterComment.fromJson(Map<String, dynamic>.from(data as Map));
   }

@@ -1128,8 +1128,8 @@ Run: `"/d/SetupC/flutter/bin/flutter.bat" pub get` → resolve OK.
   Future<void> giftPulse(String storyId, {required int amount, String? message, String? chapterId}) =>
       _api.post(ApiEndpoints.storyGift(storyId), body: {
         'amount': amount,
-        if (message != null) 'message': message,
-        if (chapterId != null) 'chapterId': chapterId,
+        'message': ?message,
+        'chapterId': ?chapterId,
       });
 ```
 

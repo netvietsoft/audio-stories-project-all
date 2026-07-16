@@ -7,7 +7,7 @@ Tài liệu đầy đủ: [docs/05](../../docs/05-components-dung-chung.md).
 | File | Vai trò |
 |---|---|
 | `cover_image.dart` | `CoverImage` — bìa truyện/nhạc; thiếu ảnh → **placeholder gradient + tên** (`errorBuilder`). Cache giải mã ảnh (`cacheWidth ~ DPR`, `gaplessPlayback`). `aspect` 3/4 (truyện) hoặc 1 (nhạc/album). |
-| `sheets.dart` | 4 bottom-sheet dùng chung (helper `_showSheet` chuẩn hoá radius 22/handle/SafeArea): `showUnlockSheet` (mở khoá chương), `showGiftSheet` (tặng quà), `showCommentSheet` (bình luận), `showRatingSheet` (đánh giá sao). |
+| `sheets.dart` | 3 bottom-sheet dùng chung (helper `_showSheet` chuẩn hoá radius 22/handle/SafeArea): `showUnlockSheet` (mở khoá chương), `showGiftSheet` (tặng quà), `showRatingSheet` (đánh giá sao). |
 
 ## Ghi chú dùng
 - `CoverImage(path, title, radius, aspect)` — dùng ở mọi nơi hiển thị bìa.

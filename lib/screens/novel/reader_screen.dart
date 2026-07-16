@@ -9,9 +9,11 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../api/api_exception.dart';
+import '../../data/comments/paragraph_anchor.dart';
 import '../../data/reader/reader_store.dart';
 import '../../data/reader/reader_models.dart';
 import '../../data/repositories/audio_repository.dart';
+import '../../data/repositories/comments_repository.dart';
 import '../../data/repositories/stories_repository.dart';
 import '../../l10n/l10n_ext.dart';
 import '../../models/models.dart';
@@ -20,6 +22,7 @@ import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_type.dart';
 import '../../widgets/sheets.dart';
+import 'widgets/comments_sheet.dart';
 
 /// Gộp ngắt dòng CỨNG trong 1 đoạn thành khoảng trắng — content một số truyện
 /// import từ nguồn PDF/txt bị wrap ~70 cột (`\n` đơn giữa câu) làm reader xuống
@@ -72,6 +75,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
   final ValueNotifier<int> _activeCue = ValueNotifier(-1);
   final Map<int, GlobalKey> _paraKeys = {};
   bool _playingThis = false; // audio của ĐÚNG chương đang hiển thị có đang phát không
+
+  String _chapterId = ''; // id chương đang hiển thị (cho comments/gift)
+  List<String> _paras = const []; // đoạn đã trim+flatten — dùng chung render & comments
+  Map<int, List<ChapterComment>> _paraComments = {}; // index đoạn → comments (rỗng khi offline/lỗi)
 
   static const _bgs = [Color(0xFFFBF3E3), Color(0xFFFFFFFF), Color(0xFFF4E7CC), Color(0xFF15110C), Color(0xFF000000)];
   static const _bgLabels = ['Cream', 'White', 'Sepia', 'Dark', 'OLED'];
@@ -177,6 +184,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
         if (!mounted) return;
         _setContent(c.content.trim());
         _cues = c.cues;
+        _chapterId = ch.id;
+        _paras = _content.split(RegExp(r'\n\s*\n')).map((p) => flattenHardBreaks(p.trim())).where((p) => p.isNotEmpty).toList();
+        _loadParaComments(); // online-only, lỗi → bubble ẩn
       } catch (_) {
         if (!mounted) return;
         _setContent('');
@@ -206,6 +216,18 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   void _setContent(String text) => setState(() => _content = text);
+
+  /// Nạp comment cấp đoạn của chương (online). Lỗi/offline → map rỗng (bubble ẩn).
+  Future<void> _loadParaComments() async {
+    final chapterId = _chapterId;
+    try {
+      final all = await context.read<CommentsRepository>().paragraphAll(chapterId);
+      if (!mounted || chapterId != _chapterId) return; // đã sang chương khác
+      setState(() => _paraComments = matchCommentsToParagraphs(all, _paras));
+    } catch (_) {
+      if (mounted && chapterId == _chapterId) setState(() => _paraComments = {});
+    }
+  }
 
   /// Lưu chương đang đọc để Home hiện Continue Reading đúng thực tế.
   void _recordLastRead(Chapter ch) {
@@ -260,6 +282,8 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _progress.value = 0;
     _activeCue.value = -1;
     _paraKeys.clear();
+    _paraComments = {};
+    _paras = const [];
     _loadContent();
   }
 
@@ -469,7 +493,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return Padding(padding: const EdgeInsets.only(top: 40), child: Center(child: CircularProgressIndicator(color: ink.withValues(alpha: 0.5))));
     }
     final base = _bodyStyle(ink);
-    final paras = _content.split(RegExp(r'\n\s*\n')).map((p) => flattenHardBreaks(p.trim())).where((p) => p.isNotEmpty).toList();
+    final paras = _paras;
     if (paras.isEmpty) {
       return Padding(
         padding: const EdgeInsets.only(top: 48),
@@ -480,10 +504,42 @@ class _ReaderScreenState extends State<ReaderScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         for (var i = 0; i < paras.length; i++) ...[
-          _paragraph(i, paras[i], base, ink, _paraKey(i)),
+          // Long-press đoạn → viết/xem comment đoạn (không ảnh hưởng tap-center toggle chrome).
+          GestureDetector(
+            onLongPress: () => _openParaComments(i),
+            child: _paragraph(i, paras[i], base, ink, _paraKey(i)),
+          ),
+          if (_paraComments[i]?.isNotEmpty == true)
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: () => _openParaComments(i),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.mode_comment_outlined, size: 14, color: ink.withValues(alpha: 0.45)),
+                    const SizedBox(width: 3),
+                    Text('${_paraComments[i]!.length}', style: AppType.meta(size: 11, color: ink.withValues(alpha: 0.45))),
+                  ]),
+                ),
+              ),
+            ),
           if (i < paras.length - 1) const SizedBox(height: Gap.lg),
         ],
       ],
+    );
+  }
+
+  void _openParaComments(int i) {
+    if (_chapterId.isEmpty || i >= _paras.length) return;
+    showChapterCommentsSheet(
+      context,
+      chapterId: _chapterId,
+      scope: 'paragraph',
+      paragraphIndex: i,
+      paragraphAnchor: makeAnchor(_paras[i]),
+      initial: _paraComments[i] ?? const [],
+      onCreated: (c) => setState(() => (_paraComments[i] ??= []).add(c)),
     );
   }
 
@@ -661,7 +717,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         child: Text('— End of Chapter $_chapter —', style: AppType.meta(size: 12, color: ink.withValues(alpha: 0.55))),
       ),
       Row(children: [
-        card(Icons.mode_comment_outlined, 'Comment', () => showCommentSheet(context)),
+        card(Icons.mode_comment_outlined, 'Comment', () => showChapterCommentsSheet(context, chapterId: _chapterId, scope: 'chapter')),
         const SizedBox(width: Gap.md),
         card(Icons.favorite_border, 'Support', () => showGiftSheet(context, book.author)),
         const SizedBox(width: Gap.md),

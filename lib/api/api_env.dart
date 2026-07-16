@@ -26,10 +26,10 @@ class ApiEnv {
 
   /// Domain/IP staging (nếu có). Để trống nếu chưa dùng.
   static const String stagingBaseUrl = 'https://staging-api.example.com';
+  // ────────────────────────────────────────────────────────────────────────
 
   /// Domain WEB đọc truyện (share link chương). Đổi 1 chỗ này khi web đổi domain.
   static const String webBaseUrl = 'https://dreamtap.me';
-  // ────────────────────────────────────────────────────────────────────────
 
   /// Môi trường mặc định khi build (nếu không truyền --dart-define=API_ENV).
   static const ApiEnvironment defaultEnvironment = ApiEnvironment.dev;

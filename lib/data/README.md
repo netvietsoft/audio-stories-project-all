@@ -8,8 +8,11 @@ envelope/endpoint. Tài liệu: [docs/07](../../docs/07-noi-backend.md).
 |---|---|
 | `repositories/stories_repository.dart` | `StoriesRepository`: `explore()` → `PagedBooks`; `detail(slug)` → `StoryDetail{book, chapters}`; `chapterContent(id)` → `ChapterContent`; `bySlug(slug)` → `Book`. Cũng khai báo `TimingCue` + `activeCueIndex()` (read-along, xem bên dưới). `recommended()`/`trending()` (+`cachedRecommended`/`cachedTrending`) cho Novel Home. |
 | `repositories/categories_repository.dart` | `getCategories(lang)` + `topCategories(limit,lang)` (kệ Home) + bản `cached*` đồng bộ. |
+| `repositories/comments_repository.dart` | `ChapterComment`/`CommentPage` + `paragraphAll`/`chapterPage`/`replies`/`create`/`toggleReaction`/`report` (module chapter-comments BE). |
+| `comments/paragraph_anchor.dart` | `makeAnchor` (đồng nhất web) + `matchCommentsToParagraphs` (anchor-first, index-fallback). |
 | `repositories/music_repository.dart` | `MusicRepository.list({page,limit,search})` → `List<Song>`. |
 | `repositories/audio_repository.dart` | `AudioRepository.chapterAudioUrl(id)` — resolve `/chapters/:id/audio` (302, kèm Bearer) → URL audio thật để phát. |
+| `share_links.dart` | `buildChapterWebUrl(slug, n)` — link web chương cho nút Share (`ApiEnv.webBaseUrl`). |
 | `repositories/auth_repository.dart` | `AuthRepository`: login/verifyCode/me/refresh/logout/changePassword/restoreSession. Đọc refresh từ Set-Cookie, lưu qua `TokenStore` (secure storage), gắn Bearer vào ApiClient. |
 | `reader/reader_store.dart` | `ReaderStore`: đọc/ghi settings đọc + resume + bookmark + brightness + read-along toggle (`readReadAlong()`/`saveReadAlong()`, xem bên dưới), qua `shared_preferences`. |
 | `mappers/user_mapper.dart` | `UserMapper.fromJson` (`/auth/me` → `AppUser`). |

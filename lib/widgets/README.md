@@ -13,8 +13,8 @@ Tài liệu đầy đủ: [docs/05](../../docs/05-components-dung-chung.md).
 - `CoverImage(path, title, radius, aspect)` — dùng ở mọi nơi hiển thị bìa.
 - Sheets đọc state qua `context.read<AppState>()`, đóng bằng `Navigator.pop(c, kq)`:
   - `showUnlockSheet` trả `Future<bool>` (mở khoá → `app.unlockChapter`).
-  - `showGiftSheet` trừ coin theo quà (`Demo.gifts`).
-- Các sheet hiện thao tác **cục bộ/demo** (spend coin, thêm comment vào list tạm). Khi nối backend → thay bằng gọi API (unlock, post comment/review). Xem [docs/07 §3](../../docs/07-noi-backend.md).
+  - `showGiftSheet` gửi gift Pulse thật qua BE (amount theo vật phẩm, kèm chapterId).
+- Sheets hiện thao tác **cục bộ/demo** cho unlock/rating. Gift gọi API thật (`POST /stories/:id/gift`). Demo comment sheet đã xoá. Xem [docs/07 §3](../../docs/07-noi-backend.md).
 
 ## Khi thêm component
 - Tách ra đây **chỉ khi** dùng từ 2 màn trở lên; đặt tên file `snake_case.dart`, 1 widget công khai/ file (helper sheet là ngoại lệ — gom theo nhóm chức năng).

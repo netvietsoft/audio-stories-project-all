@@ -84,6 +84,7 @@ void main() {
     expect(detail.chapters[1].id, 'c2');
     expect(detail.chapters[1].state, ChapterState.vip);
     expect(detail.chapters[1].hasAudio, true);
+    expect(detail.book.uuid, isNull); // meta cũ chưa có uuid → degrade cũ (Support báo 'chưa đồng bộ')
   });
 
   test('H2: auto-cache text lúc online không xoá audioFile đã lưu trước đó', () async {

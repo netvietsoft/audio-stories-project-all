@@ -286,6 +286,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
     _paraKeys.clear();
     _paraComments = {};
     _paras = const [];
+    _chapterId = '';
     _loadContent();
   }
 
@@ -719,9 +720,11 @@ class _ReaderScreenState extends State<ReaderScreen> {
         child: Text('— End of Chapter $_chapter —', style: AppType.meta(size: 12, color: ink.withValues(alpha: 0.55))),
       ),
       Row(children: [
-        card(Icons.mode_comment_outlined, 'Comment', () => showChapterCommentsSheet(context, chapterId: _chapterId, scope: 'chapter')),
+        card(Icons.mode_comment_outlined, 'Comment', () {
+          if (_chapterId.isNotEmpty) showChapterCommentsSheet(context, chapterId: _chapterId, scope: 'chapter');
+        }),
         const SizedBox(width: Gap.md),
-        card(Icons.favorite_border, 'Support', () => showGiftSheet(context, author: book.author, storyUuid: book.uuid, chapterId: _chapterId)),
+        card(Icons.favorite_border, 'Support', () => showGiftSheet(context, author: book.author, storyUuid: book.uuid, chapterId: _chapterId.isEmpty ? null : _chapterId)),
         const SizedBox(width: Gap.md),
         card(Icons.ios_share, 'Share', () => Share.share('${book.title} — Chương $_chapter\n${buildChapterWebUrl(book.id, _chapter)}')),
       ]),

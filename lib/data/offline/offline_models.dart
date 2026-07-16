@@ -133,18 +133,22 @@ class OfflineStoryMeta {
     required this.discountPercent,
     required this.totalChapters,
     required this.chapters,
+    this.uuid,
   });
 
   final String storyId, synopsis, cover, author, subtitle, status, genre, trope, rating, reads;
   final int unlockPrice, discountPercent, totalChapters;
   final List<Map> chapters; // {chapterId,n,title,state,hasAudio}
 
+  /// UUID thật của truyện từ BE (storyId ở trên có thể là slug). Null nếu chưa có (download cũ).
+  final String? uuid;
+
   Map<String, dynamic> toMap() => {
         'storyId': storyId, 'synopsis': synopsis, 'cover': cover, 'author': author,
         'subtitle': subtitle, 'status': status, 'genre': genre, 'trope': trope,
         'rating': rating, 'reads': reads, 'unlockPrice': unlockPrice,
         'discountPercent': discountPercent, 'totalChapters': totalChapters,
-        'chapters': chapters,
+        'chapters': chapters, 'uuid': uuid,
       };
 
   factory OfflineStoryMeta.fromMap(Map map) {
@@ -164,6 +168,7 @@ class OfflineStoryMeta {
       discountPercent: i(map['discountPercent']),
       totalChapters: i(map['totalChapters']),
       chapters: (map['chapters'] as List? ?? const []).cast<Map>(),
+      uuid: map['uuid']?.toString(),
     );
   }
 }

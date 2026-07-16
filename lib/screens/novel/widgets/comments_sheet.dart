@@ -73,7 +73,7 @@ class _CommentsSheetBodyState extends State<_CommentsSheetBody> {
   String _sort = 'newest';
   int _page = 0;
   int _epoch = 0; // đổi sort → tăng; response cũ về sau bị bỏ
-  bool _hasMore = true, _loading = false, _sending = false;
+  bool _hasMore = true, _loading = false, _sending = false, _error = false;
 
   bool get _isChapterScope => widget.scope == 'chapter';
   CommentsRepository get _repo => context.read<CommentsRepository>();
@@ -106,7 +106,7 @@ class _CommentsSheetBodyState extends State<_CommentsSheetBody> {
   Future<void> _loadMore() async {
     if (_loading || !_hasMore) return;
     final myEpoch = _epoch;
-    setState(() => _loading = true);
+    setState(() { _loading = true; _error = false; });
     try {
       final p = await _repo.chapterPage(widget.chapterId, page: _page + 1, sort: _sort);
       if (!mounted || myEpoch != _epoch) return;
@@ -117,7 +117,8 @@ class _CommentsSheetBodyState extends State<_CommentsSheetBody> {
         _loading = false;
       });
     } catch (_) {
-      if (mounted && myEpoch == _epoch) setState(() { _loading = false; _hasMore = false; });
+      // Giữ nguyên _hasMore (KHÔNG ép false) → hàng cuối list đổi thành retry thay vì mất luôn "tải thêm".
+      if (mounted && myEpoch == _epoch) setState(() { _loading = false; _error = true; });
     }
   }
 
@@ -252,6 +253,20 @@ class _CommentsSheetBodyState extends State<_CommentsSheetBody> {
                       itemCount: _items.length + (_hasMore ? 1 : 0),
                       itemBuilder: (_, i) {
                         if (i >= _items.length) {
+                          if (_error) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              child: Center(
+                                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                                  Text('Không tải được', style: AppType.body(size: 13, color: pal.muted)),
+                                  TextButton(
+                                    onPressed: _loadMore,
+                                    child: Text('Thử lại', style: AppType.btn(size: 13, color: AppPalette.terracotta)),
+                                  ),
+                                ]),
+                              ),
+                            );
+                          }
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 14),
                             child: Center(child: CircularProgressIndicator(color: AppPalette.terracotta)),

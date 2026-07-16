@@ -29,8 +29,8 @@ const _cmt = {
 };
 
 void main() {
-  test('paragraphAll: đúng path + query, parse shape đủ field', () async {
-    final api = _FakeApi({'data': [_cmt], 'meta': {'total': 1}});
+  test('paragraphAll: shape THẬT {data:{comments:[...]},meta} — đúng path + query, parse đủ field', () async {
+    final api = _FakeApi({'data': {'comments': [_cmt]}, 'meta': {'total': 1}});
     final repo = CommentsRepository(api);
     final list = await repo.paragraphAll('ch1');
     expect(api.lastPath, '/chapters/ch1/comments');
@@ -46,9 +46,16 @@ void main() {
     expect(c.repliesCount, 4);
   });
 
-  test('chapterPage: meta phân trang + comment cấp chương (paragraphIndex null)', () async {
+  test('paragraphAll: fallback shape phẳng cũ {data:[...]} vẫn parse được (tolerant)', () async {
+    final api = _FakeApi({'data': [_cmt], 'meta': {'total': 1}});
+    final repo = CommentsRepository(api);
+    final list = await repo.paragraphAll('ch1');
+    expect(list.single.id, 'c1');
+  });
+
+  test('chapterPage: shape THẬT {data:{comments:[...]},meta} — meta phân trang + comment cấp chương (paragraphIndex null)', () async {
     final api = _FakeApi({
-      'data': [{..._cmt, 'paragraphIndex': null, 'paragraphAnchor': null, 'reactions': null}],
+      'data': {'comments': [{..._cmt, 'paragraphIndex': null, 'paragraphAnchor': null, 'reactions': null}]},
       'meta': {'page': 2, 'lastPage': 5, 'total': 99},
     });
     final repo = CommentsRepository(api);
@@ -62,24 +69,38 @@ void main() {
     expect(pageData.items.single.reactions, {'helpful': 0, 'like': 0, 'love': 0}); // reactions null → 0 hết
   });
 
-  test('create: gửi đủ body; toggleReaction: đọc reactions mới; report: đúng path', () async {
-    final api = _FakeApi(_cmt);
+  test('replies: shape THẬT {data:{replies:[...]},meta} — đúng path + parse', () async {
+    final api = _FakeApi({'data': {'replies': [_cmt]}, 'meta': {'page': 1, 'lastPage': 1, 'total': 1}});
     final repo = CommentsRepository(api);
-    await repo.create('ch1', content: 'hi', parentId: 'p1', scope: 'paragraph', paragraphIndex: 2, paragraphAnchor: 'abc');
+    final p = await repo.replies('c1');
+    expect(api.lastPath, '/comments/c1/replies');
+    expect(p.items.single.id, 'c1');
+    expect(p.total, 1);
+  });
+
+  test('create: double-wrap {data:comment} (sau ApiClient bóc 1 lớp) — gửi đủ body + parse đúng', () async {
+    final api = _FakeApi({'data': _cmt});
+    final repo = CommentsRepository(api);
+    final created = await repo.create('ch1', content: 'hi', parentId: 'p1', scope: 'paragraph', paragraphIndex: 2, paragraphAnchor: 'abc');
     expect(api.lastPath, '/chapters/ch1/comments');
     expect(api.lastBody, {'content': 'hi', 'parentId': 'p1', 'scope': 'paragraph', 'paragraphIndex': 2, 'paragraphAnchor': 'abc'});
+    expect(created.id, 'c1');
+  });
 
-    final api2 = _FakeApi({'commentId': 'c1', 'toggledOn': true, 'type': 'love', 'reactions': {'helpful': 0, 'like': 1, 'love': 7}});
-    final repo2 = CommentsRepository(api2);
-    final r = await repo2.toggleReaction('c1', 'love');
-    expect(api2.lastPath, '/comments/c1/reactions');
-    expect(api2.lastBody, {'type': 'love'});
+  test('toggleReaction: double-wrap {data:{...reactions}} — đọc reactions mới', () async {
+    final api = _FakeApi({'data': {'commentId': 'c1', 'toggledOn': true, 'type': 'love', 'reactions': {'helpful': 0, 'like': 1, 'love': 7}}});
+    final repo = CommentsRepository(api);
+    final r = await repo.toggleReaction('c1', 'love');
+    expect(api.lastPath, '/comments/c1/reactions');
+    expect(api.lastBody, {'type': 'love'});
     expect(r['love'], 7);
+  });
 
-    final api3 = _FakeApi(const {});
-    final repo3 = CommentsRepository(api3);
-    await repo3.report('c1', 'spam');
-    expect(api3.lastPath, '/comments/c1/report');
-    expect(api3.lastBody, {'reason': 'spam'});
+  test('report: đúng path + body', () async {
+    final api = _FakeApi(const {});
+    final repo = CommentsRepository(api);
+    await repo.report('c1', 'spam');
+    expect(api.lastPath, '/comments/c1/report');
+    expect(api.lastBody, {'reason': 'spam'});
   });
 }

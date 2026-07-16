@@ -238,6 +238,7 @@ class StoriesRepository implements StoriesRepositoryLike {
       synopsis: meta.synopsis,
       unlockPrice: meta.unlockPrice,
       discountPercent: meta.discountPercent,
+      uuid: meta.uuid,
     );
     final chapters = meta.chapters.map((c) => Chapter(
           n: _int(c['n'], 0),
@@ -335,7 +336,7 @@ class StoriesRepository implements StoriesRepositoryLike {
       author: d.book.author, language: 'vi', synopsis: d.book.synopsis, subtitle: d.book.subtitle,
       status: d.book.status, genre: d.book.genre, trope: d.book.trope,
       rating: d.book.rating, reads: d.book.reads, unlockPrice: d.book.unlockPrice,
-      discountPercent: d.book.discountPercent,
+      discountPercent: d.book.discountPercent, uuid: d.book.uuid,
       chapters: d.chapters.map((c) => ChapterMeta(
         chapterId: c.id, n: c.n, title: c.title,
         state: c.state.name, hasAudio: c.hasAudio)).toList());

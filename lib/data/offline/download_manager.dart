@@ -18,10 +18,14 @@ class StoryDetailData {
     required this.storyId, required this.slug, required this.title, required this.cover,
     required this.author, required this.language, required this.synopsis, required this.subtitle,
     required this.status, required this.genre, required this.trope, required this.rating,
-    required this.reads, required this.unlockPrice, required this.discountPercent, required this.chapters});
+    required this.reads, required this.unlockPrice, required this.discountPercent, required this.chapters,
+    this.uuid});
   final String storyId, slug, title, cover, author, language, synopsis, subtitle, status, genre, trope, rating, reads;
   final int unlockPrice, discountPercent;
   final List<ChapterMeta> chapters;
+
+  /// UUID thật của truyện từ BE (storyId ở trên có thể là slug). Null nếu chưa có.
+  final String? uuid;
 }
 
 abstract class StoriesRepositoryLike {
@@ -98,7 +102,8 @@ class DownloadManager extends ChangeNotifier {
           author: detail.author, subtitle: detail.subtitle, status: detail.status,
           genre: detail.genre, trope: detail.trope, rating: detail.rating, reads: detail.reads,
           unlockPrice: detail.unlockPrice, discountPercent: detail.discountPercent,
-          totalChapters: total, chapters: detail.chapters.map((c) => c.toMap()).toList()));
+          totalChapters: total, chapters: detail.chapters.map((c) => c.toMap()).toList(),
+          uuid: detail.uuid));
       if (stale()) return;
 
       // Resume: khởi từ record cũ nếu có (giữ bytes/createdAt), không reset về 0.

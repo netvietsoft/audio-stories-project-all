@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../api/api_exception.dart';
+import '../data/repositories/stories_repository.dart';
 import '../models/demo_data.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
+import '../state/auth_notifier.dart';
 import '../theme/app_dimens.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_type.dart';
@@ -97,9 +103,10 @@ Future<bool> showUnlockSheet(BuildContext context, Book book, Chapter ch) async 
   return ok == true;
 }
 
-/// Popup tặng quà cho tác giả (Support). Trừ coin theo quà chọn.
-Future<void> showGiftSheet(BuildContext context, String author) {
-  final app = context.read<AppState>();
+/// Sheet tặng quà (Support): grid vật phẩm — bấm là gửi gift Pulse THẬT qua BE
+/// (`POST /stories/:id/gift`, amount = giá vật phẩm, message = emoji + tên).
+/// [storyUuid] null (dữ liệu demo/chưa sync) → báo lỗi nhẹ. Cần đăng nhập.
+Future<void> showGiftSheet(BuildContext context, {required String author, required String? storyUuid, String? chapterId}) {
   return _showSheet<void>(context, (c) {
     final pal = context.pal;
     return Padding(
@@ -117,12 +124,31 @@ Future<void> showGiftSheet(BuildContext context, String author) {
           childAspectRatio: 0.92,
           children: Demo.gifts.map((g) => InkWell(
                 borderRadius: rounded(14),
-                onTap: () {
-                  final ok = app.spendCoins(g.coins);
+                onTap: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  if (context.read<AuthNotifier>().user == null) {
+                    Navigator.pop(c);
+                    context.push('/login');
+                    return;
+                  }
+                  if (storyUuid == null || storyUuid.isEmpty) {
+                    Navigator.pop(c);
+                    messenger.showSnackBar(const SnackBar(content: Text('Chưa đồng bộ truyện — thử lại sau')));
+                    return;
+                  }
+                  final repo = context.read<StoriesRepository>();
+                  final auth = context.read<AuthNotifier>();
                   Navigator.pop(c);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(ok ? 'Sent ${g.emoji} ${g.name} to $author!' : 'Not enough coins for ${g.name}'),
-                  ));
+                  try {
+                    await repo.giftPulse(
+                        storyUuid, amount: g.coins, message: '${g.emoji} ${g.name}', chapterId: chapterId);
+                    messenger.showSnackBar(SnackBar(content: Text('Đã tặng ${g.emoji} ${g.name} cho $author!')));
+                    unawaited(auth.refreshUser()); // đồng bộ số dư Pulse
+                  } on ApiException catch (e) {
+                    messenger.showSnackBar(SnackBar(content: Text(e.message)));
+                  } catch (_) {
+                    messenger.showSnackBar(const SnackBar(content: Text('Tặng quà thất bại — thử lại')));
+                  }
                 },
                 child: Container(
                   decoration: BoxDecoration(color: pal.surf2, borderRadius: rounded(14), border: Border.all(color: pal.line)),

@@ -27,6 +27,7 @@ abstract final class BookMapper {
       discountPercent: _asInt(j['discountPercent']),
       categoriesLabel: _categoriesLabel(categories),
       label: _label(j['label']),
+      uuid: j['id']?.toString(),
     );
   }
 

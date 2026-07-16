@@ -6,6 +6,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:screen_brightness/screen_brightness.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../api/api_exception.dart';
@@ -15,6 +16,7 @@ import '../../data/reader/reader_models.dart';
 import '../../data/repositories/audio_repository.dart';
 import '../../data/repositories/comments_repository.dart';
 import '../../data/repositories/stories_repository.dart';
+import '../../data/share_links.dart';
 import '../../l10n/l10n_ext.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
@@ -719,9 +721,9 @@ class _ReaderScreenState extends State<ReaderScreen> {
       Row(children: [
         card(Icons.mode_comment_outlined, 'Comment', () => showChapterCommentsSheet(context, chapterId: _chapterId, scope: 'chapter')),
         const SizedBox(width: Gap.md),
-        card(Icons.favorite_border, 'Support', () => showGiftSheet(context, book.author)),
+        card(Icons.favorite_border, 'Support', () => showGiftSheet(context, author: book.author, storyUuid: book.uuid, chapterId: _chapterId)),
         const SizedBox(width: Gap.md),
-        card(Icons.ios_share, 'Share', () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Share link to "${book.title}" copied')))),
+        card(Icons.ios_share, 'Share', () => Share.share('${book.title} — Chương $_chapter\n${buildChapterWebUrl(book.id, _chapter)}')),
       ]),
       const SizedBox(height: Gap.md),
       Row(children: [

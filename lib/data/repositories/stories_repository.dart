@@ -174,6 +174,14 @@ class StoriesRepository implements StoriesRepositoryLike {
   /// Bản cache local của [trending] (đồng bộ). Null nếu chưa có.
   List<Book>? cachedTrending(String lang) => _cachedBooks(_trendingKey(lang));
 
+  /// Tặng Pulse cho truyện (nút Support cuối chương). Cần đăng nhập; BE trừ số dư thật.
+  Future<void> giftPulse(String storyId, {required int amount, String? message, String? chapterId}) =>
+      _api.post(ApiEndpoints.storyGift(storyId), body: {
+        'amount': amount,
+        'message': ?message,
+        'chapterId': ?chapterId,
+      });
+
   List<Book> _mapBooks(List<dynamic> list) => list
       .whereType<Map>()
       .map((j) => BookMapper.fromJson(Map<String, dynamic>.from(j)))

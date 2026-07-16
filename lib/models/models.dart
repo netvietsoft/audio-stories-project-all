@@ -29,9 +29,13 @@ class Book {
     this.unlockPrice = 0,
     this.discountPercent = 0,
     this.categoriesLabel = '',
+    this.uuid,
   });
 
   final String id, title, author, genre, cover, trope, rating, reads, status;
+
+  /// UUID thật của truyện từ BE (Book.id là slug). Null với dữ liệu Demo.
+  final String? uuid;
   final int chapters;
   final StoryLabel? label;
 

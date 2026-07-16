@@ -26,6 +26,7 @@ class ApiEndpoints {
   static const storiesRecommended = '/stories/recommended';
   static String storyBySlug(String slug) => '/stories/$slug';
   static String storyUnlock(String id) => '/stories/$id/unlock';
+  static String storyGift(String id) => '/stories/$id/gift';
   static String chapterPublic(String id) => '/chapters/$id/public';
   /// Proxy audio (302 sau entitlement). HLS m3u8 lấy từ field `hlsUrl` của response.
   static String chapterAudio(String id) => '/chapters/$id/audio';

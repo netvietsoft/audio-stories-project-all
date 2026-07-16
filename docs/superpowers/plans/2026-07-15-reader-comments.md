@@ -1,5 +1,7 @@
 # Reader Comments + Support/Share Implementation Plan
 
+> ĐÍNH CHÍNH sau final review: list BE trả {data:{comments|replies:[...]},meta}; create/toggle bị double-wrap → repo phải bóc thêm 1 lớp data. Code đã sửa tolerant 2 shape.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Reader có bình luận thật theo đoạn (bubble + long-press) và theo chương (replies lồng + reactions), nút Support tặng Pulse thật qua BE, nút Share chia sẻ link web của chương.

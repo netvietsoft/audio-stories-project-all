@@ -29,13 +29,28 @@ class _HomeBannerCarouselState extends State<HomeBannerCarousel> {
   @override
   void initState() {
     super.initState();
-    if (widget.banners.length > 1) {
-      _timer = Timer.periodic(const Duration(seconds: 5), (_) {
-        if (!mounted || !_controller.hasClients) return;
-        final next = (_page + 1) % widget.banners.length;
-        _controller.animateToPage(next, duration: const Duration(milliseconds: 350), curve: Curves.easeOut);
-      });
+    _startTimerIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeBannerCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Số banner đổi sau rebuild (vd pull-to-refresh): 1→nhiều cần bật auto-slide,
+    // nhiều→1 phải tắt timer thừa.
+    if (widget.banners.length != oldWidget.banners.length) {
+      _timer?.cancel();
+      _timer = null;
+      _startTimerIfNeeded();
     }
+  }
+
+  void _startTimerIfNeeded() {
+    if (widget.banners.length <= 1) return;
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted || !_controller.hasClients) return;
+      final next = (_page + 1) % widget.banners.length;
+      _controller.animateToPage(next, duration: const Duration(milliseconds: 350), curve: Curves.easeOut);
+    });
   }
 
   @override

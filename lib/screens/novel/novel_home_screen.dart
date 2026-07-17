@@ -82,7 +82,7 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
         if (cachedTrend?.isNotEmpty == true) _trending = cachedTrend!;
       });
     }
-    await Future.wait([_loadEditorPick(lang), _loadShelves(lang), _loadTrending(lang), _loadBanners(), _pullHistory()]);
+    await Future.wait([_loadEditorPick(lang), _loadShelves(lang), _loadTrending(lang), _loadBanners(lang), _pullHistory()]);
   }
 
   Future<void> _loadEditorPick(String lang) async {
@@ -115,9 +115,9 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
     }
   }
 
-  Future<void> _loadBanners() async {
+  Future<void> _loadBanners(String lang) async {
     try {
-      final list = await context.read<BannersRepository>().list();
+      final list = await context.read<BannersRepository>().list(lang: lang);
       if (mounted) setState(() => _banners = list);
     } catch (_) {/* rỗng/lỗi → ẩn carousel */}
   }
@@ -157,6 +157,18 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
         context.read<StoriesNotifier>().applyLang(contentLang);
         _loadRanking(); // xếp hạng cũng theo ngôn ngữ nội dung
         _loadHomeFeeds(); // 3 khối data thật cũng theo ngôn ngữ nội dung
+      });
+    }
+    // Pull-merge history phản ứng theo login GIỮA phiên (cùng pattern hook lang
+    // ở trên): logout → reset cờ để lần login sau pull lại; login khi đang đứng
+    // ở Home → schedule pull sau frame (không gọi network trực tiếp trong build).
+    final loggedIn = context.select<AuthNotifier, bool>((a) => a.user != null);
+    if (!loggedIn) {
+      _historyPulled = false;
+    } else if (!_historyPulled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _pullHistory();
       });
     }
     final notifier = context.watch<StoriesNotifier>();

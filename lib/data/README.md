@@ -14,8 +14,8 @@ envelope/endpoint. Tài liệu: [docs/07](../../docs/07-noi-backend.md).
 | `repositories/audio_repository.dart` | `AudioRepository.chapterAudioUrl(id)` — resolve `/chapters/:id/audio` (302, kèm Bearer) → URL audio thật để phát. |
 | `share_links.dart` | `buildChapterWebUrl(slug, n)` — link web chương cho nút Share (`ApiEnv.webBaseUrl`). |
 | `repositories/auth_repository.dart` | `AuthRepository`: login/verifyCode/me/refresh/logout/changePassword/restoreSession. Đọc refresh từ Set-Cookie, lưu qua `TokenStore` (secure storage), gắn Bearer vào ApiClient. |
-| `repositories/banners_repository.dart` | `BannersRepository`: `list()` → `List<HeroBanner>`; `HeroBanner` chứa `id` (UUID), `targetUrl`, `storySlug`, `imageUrl`, `lang` (ngôn ngữ nội dung) — dùng cho banner carousel ở Home. |
-| `repositories/history_repository.dart` | `HistoryRepository`: `sync(chapters)` → POST danh sách chương vừa đọc; `list(page)` → GET lịch sử đọc từ BE (danh sách truyện, merge với local). |
+| `repositories/banners_repository.dart` | `BannersRepository.list({lang='vi'})` → `List<AppBanner>` (`GET /banners?lang=`, bảng HeroBanner BE); `AppBanner`: `id, title, imageUrl, targetUrl, storySlug` — banner carousel ở Home (storySlug → mở in-app, targetUrl → trình duyệt). |
+| `repositories/history_repository.dart` | `HistoryRepository`: `sync({storyUuid, chapterId, progressSeconds=0})` — POST tiến độ 1 cặp story+chương mỗi lần mở chương (fire-and-forget); `list({limit=50})` → GET lịch sử từ BE (`RemoteHistoryEntry`, merge với local). |
 | `reader/reader_store.dart` | `ReaderStore`: đọc/ghi settings đọc + resume + bookmark + brightness + read-along toggle (`readReadAlong()`/`saveReadAlong()`, xem bên dưới), qua `shared_preferences`. |
 | `reading_history/reading_history_store.dart` | `ReadingHistoryStore`: Hive box `readingHistory` (50 truyện gần nhất, truncate oldest); `upsert(story)` ghi khi mở chương; `truncateWords(text, 20)` rút ngắn summary; `mergeHistory(local, remote)` merge 2 chiều (bên mới hơn thắng). |
 | `mappers/user_mapper.dart` | `UserMapper.fromJson` (`/auth/me` → `AppUser`). |

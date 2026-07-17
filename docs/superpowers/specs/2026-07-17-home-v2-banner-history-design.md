@@ -5,6 +5,8 @@
 
 ## 1. Banner carousel
 
+> **⚠ Erratum 2026-07-17:** BE thật serve bảng `HeroBanner` — không có `position`, id là UUID string, key link là `targetUrl`, kèm `story{slug}`. Contract đúng: `BannersRepository.list({lang='vi'})` → `GET /banners?lang=`; `AppBanner {id: String, title, imageUrl, targetUrl: String?, storySlug: String?}`. Bấm banner: `storySlug` → mở in-app `/book/<slug>`; else `targetUrl` → browser ngoài. Chi tiết trong plan (khối ERRATUM đầu file).
+
 - **Data**: repo mới `BannersRepository.list({position = 'home_hero'})` → `GET /banners?position=home_hero` (public; BE tự lọc isActive + start/endDate, sort orderIndex). Model app `AppBanner {id:int, title, imageUrl, linkUrl: String?}` (đặt trong file repo, pattern như các repo khác). Endpoint const `banners` ĐÃ có trong api_endpoints.dart.
 - **UI** (`novel_home_screen.dart`): carousel đặt **dưới header "Reading", trên Editor's Pick**. `PageView` + auto-slide 5s (Timer, dừng khi user đang kéo — hoặc đơn giản: Timer đổi trang, animateToPage) + hàng chấm trang; ảnh `CachedNetworkImage` bo góc như thẻ hero, tỉ lệ khung ~5:2 (`AspectRatio(2.5)`). 1 banner → không auto-slide, không chấm.
 - **Hành vi bấm**: `linkUrl` null/rỗng → không bấm được; chứa `/story/` → parse slug → `context.push('/book/<slug>')` trong app; còn lại → mở trình duyệt ngoài qua **`url_launcher`** (dep MỚI).

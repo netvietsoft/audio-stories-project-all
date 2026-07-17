@@ -10,6 +10,13 @@
 
 **Spec:** `docs/superpowers/specs/2026-07-17-home-v2-banner-history-design.md`
 
+> **⚠ ERRATUM 2026-07-17 (sau review Task 1 — contract banner trong plan SAI so với BE thật, đã verify `backend/be/src/banners/banners.service.ts` + curl prod).** `GET /banners` serve bảng **HeroBanner**, không phải model `Banner{linkUrl, position}` (model chết trong schema, không endpoint nào dùng). Contract đúng, MỌI chỗ trong plan nhắc `AppBanner`/`linkUrl`/`position` phải đọc theo đây:
+> - Query BE chấp nhận: `lang` ('vi'|'en') và `active` — **KHÔNG có `position`** (whitelist drop). Repo: `BannersRepository.list({String lang = 'vi'})` → `GET /banners?lang=`.
+> - Row thật: `{id: String UUID, title (BE đã localize theo lang), subtitle, imageUrl, targetUrl, storyId, order, isActive, story: {id, slug, title} | null}` — key là **`targetUrl`** (không phải `linkUrl`).
+> - Model app: `AppBanner {id: String, title, imageUrl, targetUrl: String?, storySlug: String?}` (`storySlug` = `story.slug`; rỗng → null).
+> - **Task 5 `_open` đổi theo**: `storySlug != null` → `context.push('/book/<storySlug>')` (KHÔNG parse `/story/` từ URL nữa); ngược lại `targetUrl` != null → `launchUrl` external; cả hai null → không bấm được.
+> - Fix đã vào commit Task 1 (sau `d002465`); test fixture theo shape thật.
+
 ## Global Constraints
 
 - Dep mới DUY NHẤT: `url_launcher: ^6.3.1`. KHÔNG sửa BE.

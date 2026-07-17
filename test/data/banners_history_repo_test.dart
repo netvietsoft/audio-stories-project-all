@@ -22,18 +22,45 @@ class _FakeApi extends ApiClient {
 }
 
 void main() {
-  test('banners: đúng path/query + parse (linkUrl null OK)', () async {
-    final api = _FakeApi([
-      {'id': 1, 'title': 'Sự kiện', 'imageUrl': 'https://x/b.jpg', 'linkUrl': 'https://dreamtap.me/story/tien-nghich'},
-      {'id': 2, 'title': 'Trống link', 'imageUrl': 'https://x/c.jpg', 'linkUrl': null},
-    ]);
+  test('banners: đúng path/query + parse HeroBanner (targetUrl/story.slug null OK)', () async {
+    // Shape sau khi ApiClient bóc 1 lớp envelope: {data:[...]} → unwrapList bóc tiếp.
+    final api = _FakeApi({
+      'data': [
+        {
+          'id': 'b7f3a1c2-0d4e-4f5a-9b6c-1234567890ab',
+          'title': 'Sự kiện',
+          'subtitle': 'Đọc ngay',
+          'imageUrl': 'https://x/b.jpg',
+          'targetUrl': 'https://dreamtap.me/story/tien-nghich',
+          'storyId': 'uuid-story-1',
+          'order': 0,
+          'isActive': true,
+          'story': {'id': 'uuid-story-1', 'slug': 'tien-nghich', 'title': 'Tiên Nghịch'},
+        },
+        {
+          'id': 'c8e4b2d3-1e5f-4a6b-8c7d-abcdef123456',
+          'title': 'Trống link',
+          'subtitle': null,
+          'imageUrl': 'https://x/c.jpg',
+          'targetUrl': '',
+          'storyId': null,
+          'order': 1,
+          'isActive': true,
+          'story': null,
+        },
+      ],
+    });
     final repo = BannersRepository(api);
     final list = await repo.list();
     expect(api.lastPath, '/banners');
-    expect(api.lastQuery?['position'], 'home_hero');
+    expect(api.lastQuery, {'lang': 'vi'});
+    expect(api.lastQuery?.containsKey('position'), isFalse);
     expect(list, hasLength(2));
-    expect(list.first.linkUrl, contains('/story/'));
-    expect(list.last.linkUrl, isNull);
+    expect(list.first.id, 'b7f3a1c2-0d4e-4f5a-9b6c-1234567890ab');
+    expect(list.first.targetUrl, contains('/story/'));
+    expect(list.first.storySlug, 'tien-nghich');
+    expect(list.last.targetUrl, isNull);
+    expect(list.last.storySlug, isNull);
   });
 
   test('history sync: đúng path + body', () async {

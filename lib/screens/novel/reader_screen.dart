@@ -512,21 +512,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
             onLongPress: () => _openParaComments(i),
             child: _paragraph(i, paras[i], base, ink, _paraKey(i)),
           ),
-          if (_paraComments[i]?.isNotEmpty == true)
-            Align(
-              alignment: Alignment.centerRight,
-              child: GestureDetector(
-                onTap: () => _openParaComments(i),
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.mode_comment_outlined, size: 14, color: ink.withValues(alpha: 0.45)),
-                    const SizedBox(width: 3),
-                    Text('${_paraComments[i]!.length}', style: AppType.meta(size: 11, color: ink.withValues(alpha: 0.45))),
-                  ]),
-                ),
-              ),
-            ),
           if (i < paras.length - 1) const SizedBox(height: Gap.lg),
         ],
       ],
@@ -553,22 +538,44 @@ class _ReaderScreenState extends State<ReaderScreen> {
       valueListenable: _activeCue,
       builder: (_, active, __) {
         final cue = (active >= 0 && active < _cues.length) ? _cues[active] : null;
-        if (!_readAlongActive || cue == null || cue.paraIndex != i || cue.paraIndex < 0) {
-          return Text(text, key: key, style: base);
-        }
-        final cs = cue.charStart.clamp(0, text.length);
-        final ce = cue.charEnd.clamp(cs, text.length);
-        return Text.rich(
-          key: key,
-          TextSpan(style: base, children: [
+        final spans = <InlineSpan>[];
+        if (_readAlongActive && cue != null && cue.paraIndex == i && cue.paraIndex >= 0) {
+          final cs = cue.charStart.clamp(0, text.length);
+          final ce = cue.charEnd.clamp(cs, text.length);
+          spans.addAll([
             TextSpan(text: text.substring(0, cs)),
             TextSpan(text: text.substring(cs, ce), style: base.copyWith(
               backgroundColor: AppPalette.terracotta.withValues(alpha: 0.25),
               fontWeight: FontWeight.w600)),
             TextSpan(text: text.substring(ce)),
-          ]),
-        );
+          ]);
+        } else {
+          spans.add(TextSpan(text: text));
+        }
+        // Bubble comment INLINE ngay sau dấu chấm cuối đoạn (không chiếm dòng riêng).
+        final n = _paraComments[i]?.length ?? 0;
+        if (n > 0) spans.add(_bubbleSpan(i, n, ink));
+        return Text.rich(key: key, TextSpan(style: base, children: spans));
       },
+    );
+  }
+
+  /// 💬 + số comment, gắn inline vào cuối đoạn qua WidgetSpan; bấm mở sheet đoạn.
+  InlineSpan _bubbleSpan(int i, int n, Color ink) {
+    final c = ink.withValues(alpha: 0.45);
+    return WidgetSpan(
+      alignment: PlaceholderAlignment.middle,
+      child: GestureDetector(
+        onTap: () => _openParaComments(i),
+        child: Padding(
+          padding: const EdgeInsets.only(left: 6),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.mode_comment_outlined, size: 14, color: c),
+            const SizedBox(width: 2),
+            Text('$n', style: AppType.meta(size: 11, color: c)),
+          ]),
+        ),
+      ),
     );
   }
 

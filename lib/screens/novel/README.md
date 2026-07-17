@@ -5,11 +5,12 @@ Accent: **terracotta**. Dữ liệu từ `Demo.books` + `Demo.chaptersFor(book)`
 ## Files
 | File | Màn | Route | Điểm chính |
 |---|---|---|---|
-| `novel_home_screen.dart` | Home (tab) | `/home` tab 0 | Header "Reading", Editor's Pick (`/stories/recommended`, fallback explore), Continue Reading, For You, Hot Ranking (podium + kỳ), 3 kệ theo `/stories/categories/top` (More → `/category/:id`), New & Trending (`/stories/trending`, tuần). |
+| `novel_home_screen.dart` | Home (tab) | `/home` tab 0 | Header "Reading" + banner carousel (`GET /banners`, tự trượt 5s); Editor's Pick (`/stories/recommended`, fallback explore), Continue Reading (+ "More..." → `/reading-history`), For You, Hot Ranking (podium + kỳ), 3 kệ theo `/stories/categories/top` (More → `/category/:id`), New & Trending (`/stories/trending`, tuần). |
 | `discover_screen.dart` | Discover (tab) | tab 1 | Ô search (tĩnh), chip lọc, rail "Best New", grid 3 cột. |
 | `trending_screen.dart` | Trending (tab) | tab 2 | Chip thời gian (Today/Week/Month/All-time), bảng xếp hạng (màu rank #1/#2/#3). |
 | `book_detail_screen.dart` | Chi tiết truyện | `/book/:id` | Bìa + stat (rating→`showRatingSheet`), CTA **Read Now** (`/reader`) + **Listen** (`playSong` demo → `/audiobook`), danh sách chương (badge theo `ChapterState` + khoá), comments. |
 | `category_stories_screen.dart` | Truyện theo thể loại | `/category/:id?name=` | Đích nút "More" của kệ Home; list dọc + infinite scroll (`explore(categoryId, page)`). |
+| `reading_history_screen.dart` | Lịch sử đọc | `/reading-history` | Danh sách 50 truyện gần nhất từ Hive `readingHistory`; mỗi truyện 1 hàng (thumb + tiêu đề + tóm tắt 20 từ + progress bar + "Chương x/y" + thể loại + lượt đọc); bấm đọc tiếp ngay chương. |
 | `reader_screen.dart` | Đọc chương | `/reader/:id?ch=` | **File lớn nhất.** Chỉnh cỡ chữ (slider 14–30)/giãn dòng (slider 1.4–3.0)/nền (4 preset + custom color picker)/màu chữ (Đen mặc định + 8 màu + custom picker, không còn Auto); **read-along** (highlight câu + auto-scroll theo `timing` của chương); **comment theo đoạn** (bubble + long-press, anchor tương thích web) + sheet comment chương; Support gift Pulse thật; Share link web chương; panel khoá → `showUnlockSheet`; Prev/Next. |
 
 ## Read-along (highlight câu theo audio)

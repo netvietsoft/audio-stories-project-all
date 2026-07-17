@@ -11,10 +11,15 @@ import '../../widgets/cover_image.dart';
 /// Danh sách truyện ĐANG ĐỌC DỞ (đích nút "More..." cạnh Continue Reading).
 /// Đọc từ ReadingHistoryStore local — mở tức thì, không network.
 /// Card layout (chốt với user): thumb trái to · tiêu đề · tóm tắt 20 từ ·
-/// progress bar · "Chương x / y" · thể loại (trái) + views (phải).
-class ReadingHistoryScreen extends StatelessWidget {
+/// progress bar · "Chương x / y" · thể loại (trái) + reads (phải).
+class ReadingHistoryScreen extends StatefulWidget {
   const ReadingHistoryScreen({super.key});
 
+  @override
+  State<ReadingHistoryScreen> createState() => _ReadingHistoryScreenState();
+}
+
+class _ReadingHistoryScreenState extends State<ReadingHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final pal = context.pal;
@@ -42,7 +47,10 @@ class ReadingHistoryScreen extends StatelessWidget {
     final pal = context.pal;
     final progress = e.totalChapters > 0 ? (e.chapter / e.totalChapters).clamp(0.0, 1.0) : 0.0;
     return GestureDetector(
-      onTap: () => context.push('/reader/${e.bookId}?ch=${e.chapter}'),
+      onTap: () async {
+        await context.push('/reader/${e.bookId}?ch=${e.chapter}');
+        if (mounted) setState(() {}); // back về → build đọc lại entries()
+      },
       child: Container(
         padding: const EdgeInsets.all(Gap.md),
         decoration: BoxDecoration(

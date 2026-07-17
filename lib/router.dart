@@ -16,6 +16,7 @@ import 'screens/novel/book_detail_screen.dart';
 import 'screens/novel/category_stories_screen.dart';
 import 'screens/novel/for_you_screen.dart';
 import 'screens/novel/reader_screen.dart';
+import 'screens/novel/reading_history_screen.dart';
 import 'screens/splash_screen.dart';
 
 /// Điều hướng NovelVerse. Splash → Home (shell có bottom nav). Các màn chi tiết
@@ -44,6 +45,7 @@ final appRouter = GoRouter(
         name: s.uri.queryParameters['name'] ?? 'Category',
       ),
     ),
+    GoRoute(path: '/reading-history', builder: (_, __) => const ReadingHistoryScreen()),
     GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
     GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
     GoRoute(path: '/player', builder: (_, __) => const MusicPlayerScreen()),

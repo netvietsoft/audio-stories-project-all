@@ -17,6 +17,7 @@ import 'data/offline/file_store.dart';
 import 'data/offline/offline_store.dart';
 import 'data/offline/connectivity_service.dart';
 import 'data/offline/download_manager.dart';
+import 'data/reading_history/reading_history_store.dart';
 import 'data/repositories/audio_repository.dart';
 import 'data/repositories/banners_repository.dart';
 import 'data/repositories/categories_repository.dart';
@@ -60,6 +61,7 @@ Future<void> main() async {
     storyMeta: await Hive.openBox('storyMeta'),
     files: fileStore,
   );
+  final readingHistory = ReadingHistoryStore(await Hive.openBox('readingHistory'));
   final connectivity = ConnectivityService();
   await connectivity.start();
 
@@ -102,6 +104,7 @@ Future<void> main() async {
     audioRepo: audioRepo,
     authNotifier: authNotifier,
     offlineStore: offlineStore,
+    readingHistory: readingHistory,
     connectivity: connectivity,
     downloadManager: downloadManager,
     readerStore: readerStore,
@@ -121,6 +124,7 @@ class NovelVerseApp extends StatelessWidget {
     required this.audioRepo,
     required this.authNotifier,
     required this.offlineStore,
+    required this.readingHistory,
     required this.connectivity,
     required this.downloadManager,
     required this.readerStore,
@@ -136,6 +140,7 @@ class NovelVerseApp extends StatelessWidget {
   final AudioRepository audioRepo;
   final AuthNotifier authNotifier;
   final OfflineStore offlineStore;
+  final ReadingHistoryStore readingHistory;
   final ConnectivityService connectivity;
   final DownloadManager downloadManager;
   final ReaderStore readerStore;
@@ -154,6 +159,7 @@ class NovelVerseApp extends StatelessWidget {
         Provider.value(value: commentsRepo),
         Provider.value(value: audioRepo),
         Provider.value(value: offlineStore),
+        Provider.value(value: readingHistory),
         ChangeNotifierProvider.value(value: connectivity),
         ChangeNotifierProvider.value(value: downloadManager),
         Provider.value(value: readerStore),

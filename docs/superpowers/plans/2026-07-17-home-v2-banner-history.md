@@ -20,7 +20,7 @@
 ## Global Constraints
 
 - Dep mới DUY NHẤT: `url_launcher: ^6.3.1`. KHÔNG sửa BE.
-- Endpoint: `GET /banners?position=home_hero` (const `banners` ĐÃ có trong api_endpoints.dart) · `POST /history/sync {storyId: UUID, chapterId: UUID, progressSeconds: int ≥ 0}` (Bearer) · `GET /history?limit=50` (Bearer; row có `lastListenedAt`, `story {id, slug, title, thumbnailUrl, totalViews, status, author}`, `chapter {id, chapterNumber, title}`).
+- Endpoint: `GET /banners?lang=` (xem ERRATUM đầu file — KHÔNG có position; const `banners` ĐÃ có trong api_endpoints.dart) · `POST /history/sync {storyId: UUID, chapterId: UUID, progressSeconds: int ≥ 0}` (Bearer) · `GET /history?limit=50` (Bearer; row có `lastListenedAt`, `story {id, slug, title, thumbnailUrl, totalViews, status, author}`, `chapter {id, chapterNumber, title}`).
 - History local: Hive box `readingHistory`, entry Map thuần `{bookId, storyUuid, title, cover, synopsis, genre, reads, totalChapters, chapter, savedAt}`; giới hạn 50 entry (xoá cũ nhất); sort savedAt desc.
 - Card màn history NGUYÊN VĂN spec §4: thumb trái to (~96px) · tiêu đề 1 dòng · tóm tắt 20 TỪ (cắt theo từ + '…') · progress bar terracotta · "Chương x / y" · dòng cuối thể loại (trái) + reads (phải).
 - Khách = local-only; sync CHỈ khi `AuthNotifier.user != null`. Push cần cả `storyUuid` + `chapterId` không rỗng. Mọi lỗi sync/banner nuốt (không chặn UI).

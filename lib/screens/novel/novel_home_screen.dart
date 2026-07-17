@@ -2,17 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../data/reading_history/reading_history_store.dart';
+import '../../data/repositories/banners_repository.dart';
 import '../../data/repositories/categories_repository.dart';
+import '../../data/repositories/history_repository.dart';
 import '../../data/repositories/stories_repository.dart';
 import '../../l10n/l10n_ext.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
 import '../../state/async_value.dart';
+import '../../state/auth_notifier.dart';
 import '../../state/stories_notifier.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_type.dart';
 import '../../widgets/cover_image.dart';
+import 'widgets/home_banner_carousel.dart';
 
 class NovelHomeScreen extends StatefulWidget {
   const NovelHomeScreen({super.key});
@@ -40,6 +45,8 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
   Book? _editorPick;                          // null → fallback value.first
   List<(Category, List<Book>)> _shelves = const []; // kệ < 3 truyện đã bị loại
   List<Book> _trending = const [];            // rỗng → ẩn section
+  List<AppBanner> _banners = const [];        // rỗng/lỗi → ẩn carousel
+  bool _historyPulled = false;                // pull-merge BE 1 lần mỗi phiên (khi đã login)
 
   @override
   void initState() {
@@ -75,7 +82,7 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
         if (cachedTrend?.isNotEmpty == true) _trending = cachedTrend!;
       });
     }
-    await Future.wait([_loadEditorPick(lang), _loadShelves(lang), _loadTrending(lang)]);
+    await Future.wait([_loadEditorPick(lang), _loadShelves(lang), _loadTrending(lang), _loadBanners(), _pullHistory()]);
   }
 
   Future<void> _loadEditorPick(String lang) async {
@@ -106,6 +113,30 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
     } catch (_) {
       if (mounted) setState(() => _shelves = const []); // lỗi → ẩn kệ
     }
+  }
+
+  Future<void> _loadBanners() async {
+    try {
+      final list = await context.read<BannersRepository>().list();
+      if (mounted) setState(() => _banners = list);
+    } catch (_) {/* rỗng/lỗi → ẩn carousel */}
+  }
+
+  /// Pull lịch sử BE + merge vào store local — 1 lần mỗi phiên, chỉ khi đã login.
+  Future<void> _pullHistory() async {
+    if (_historyPulled) return;
+    final auth = context.read<AuthNotifier>();
+    if (auth.user == null) return;
+    _historyPulled = true;
+    try {
+      final store = context.read<ReadingHistoryStore>();
+      final remote = await context.read<HistoryRepository>().list();
+      final merged = mergeHistory(store.entries(), remote);
+      for (final e in merged) {
+        await store.record(e);
+      }
+      if (mounted) setState(() {}); // refresh nút More nếu vừa có history
+    } catch (_) {/* offline/lỗi → thôi, local vẫn đủ */}
   }
 
   void _selectPeriod(int i) {
@@ -163,10 +194,17 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
       AsyncError(:final error) => [_errorView(context, error)],
       AsyncData(:final value) when value.isEmpty => [_emptyView(context)],
       AsyncData(:final value) => [
+          if (_banners.isNotEmpty) HomeBannerCarousel(banners: _banners),
           _editorHero(context, _editorPick ?? value.first),
           // Continue Reading: chỉ hiện khi có lịch sử đọc THẬT (không còn demo).
           if (app.hasLastRead) ...[
-            _sectionHeader(context, 'Continue Reading'),
+            _sectionHeader(
+              context, 'Continue Reading',
+              onMore: context.read<ReadingHistoryStore>().entries().isNotEmpty
+                  ? () => context.push('/reading-history')
+                  : null,
+              moreLabel: 'More...',
+            ),
             _continueReading(context, app),
           ],
           _sectionHeader(context, 'For You', onMore: () => context.push('/for-you')),

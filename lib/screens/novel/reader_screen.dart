@@ -561,18 +561,21 @@ class _ReaderScreenState extends State<ReaderScreen> {
   }
 
   /// 💬 + số comment, gắn inline vào cuối đoạn qua WidgetSpan; bấm mở sheet đoạn.
+  /// Vùng chạm NỚI RỘNG hơn phần vẽ: behavior opaque để cả padding nhận tap
+  /// (mặc định deferToChild chỉ đúng pixel icon/chữ mới ăn — quá nhỏ, khó bấm).
   InlineSpan _bubbleSpan(int i, int n, Color ink) {
     final c = ink.withValues(alpha: 0.45);
     return WidgetSpan(
       alignment: PlaceholderAlignment.middle,
       child: GestureDetector(
         onTap: () => _openParaComments(i),
+        behavior: HitTestBehavior.opaque,
         child: Padding(
-          padding: const EdgeInsets.only(left: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.mode_comment_outlined, size: 14, color: c),
-            const SizedBox(width: 2),
-            Text('$n', style: AppType.meta(size: 11, color: c)),
+            Icon(Icons.mode_comment_outlined, size: 16, color: c),
+            const SizedBox(width: 3),
+            Text('$n', style: AppType.meta(size: 11.5, color: c)),
           ]),
         ),
       ),

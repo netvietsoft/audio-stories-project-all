@@ -86,7 +86,7 @@ class _ReadingHistoryScreenState extends State<ReadingHistoryScreen> {
                     ),
                   ),
                   const SizedBox(height: 5),
-                  Text('Chương ${e.chapter} / ${e.totalChapters}',
+                  Text(e.totalChapters > 0 ? 'Chương ${e.chapter} / ${e.totalChapters}' : 'Chương ${e.chapter}',
                       style: AppType.meta(size: 11.5, color: pal.muted)),
                   const SizedBox(height: 6),
                   Row(children: [

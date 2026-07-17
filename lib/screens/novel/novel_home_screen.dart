@@ -135,6 +135,20 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
       for (final e in merged) {
         await store.record(e);
       }
+      // Máy mới/cài lại: hasLastRead vẫn false dù vừa merge xong history remote
+      // (flag chỉ set khi mở chương TRÊN MÁY NÀY) → hydrate từ entry mới nhất
+      // để Continue Reading + nút More hiện ngay, không cần đọc lại 1 chương.
+      if (mounted && !context.read<AppState>().hasLastRead && merged.isNotEmpty) {
+        final latest = merged.first; // merged đã sort desc theo savedAt
+        context.read<AppState>().setLastRead(
+              bookId: latest.bookId,
+              title: latest.title,
+              cover: latest.cover,
+              chapter: latest.chapter,
+              chapterTitle: '',
+              total: latest.totalChapters,
+            );
+      }
       if (mounted) setState(() {}); // refresh nút More nếu vừa có history
     } catch (_) {/* offline/lỗi → thôi, local vẫn đủ */}
   }

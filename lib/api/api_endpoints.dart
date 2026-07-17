@@ -49,6 +49,8 @@ class ApiEndpoints {
   // ── Khác ──
   static const banners = '/banners';
   static const notifications = '/notifications';
+  static const historySync = '/history/sync';
+  static const history = '/history';
 
   // ── Tracking ──
   static const trackSearchOpen = '/tracking/search-open';

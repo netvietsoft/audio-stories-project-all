@@ -18,9 +18,11 @@ import 'data/offline/offline_store.dart';
 import 'data/offline/connectivity_service.dart';
 import 'data/offline/download_manager.dart';
 import 'data/repositories/audio_repository.dart';
+import 'data/repositories/banners_repository.dart';
 import 'data/repositories/categories_repository.dart';
 import 'data/repositories/comments_repository.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/repositories/history_repository.dart';
 import 'data/repositories/music_repository.dart';
 import 'data/repositories/stories_repository.dart';
 import 'router.dart';
@@ -64,6 +66,8 @@ Future<void> main() async {
   final storiesRepo = StoriesRepository(apiClient, cache, offlineStore, connectivity);
   final musicRepo = MusicRepository(apiClient, cache);
   final categoriesRepo = CategoriesRepository(apiClient, cache);
+  final bannersRepo = BannersRepository(apiClient);
+  final historyRepo = HistoryRepository(apiClient);
   final commentsRepo = CommentsRepository(apiClient);
   final audioRepo = AudioRepository(apiClient);
   final authRepo = AuthRepository(apiClient, TokenStore());
@@ -92,6 +96,8 @@ Future<void> main() async {
     storiesRepo: storiesRepo,
     musicRepo: musicRepo,
     categoriesRepo: categoriesRepo,
+    bannersRepo: bannersRepo,
+    historyRepo: historyRepo,
     commentsRepo: commentsRepo,
     audioRepo: audioRepo,
     authNotifier: authNotifier,
@@ -109,6 +115,8 @@ class NovelVerseApp extends StatelessWidget {
     required this.storiesRepo,
     required this.musicRepo,
     required this.categoriesRepo,
+    required this.bannersRepo,
+    required this.historyRepo,
     required this.commentsRepo,
     required this.audioRepo,
     required this.authNotifier,
@@ -122,6 +130,8 @@ class NovelVerseApp extends StatelessWidget {
   final StoriesRepository storiesRepo;
   final MusicRepository musicRepo;
   final CategoriesRepository categoriesRepo;
+  final BannersRepository bannersRepo;
+  final HistoryRepository historyRepo;
   final CommentsRepository commentsRepo;
   final AudioRepository audioRepo;
   final AuthNotifier authNotifier;
@@ -139,6 +149,8 @@ class NovelVerseApp extends StatelessWidget {
         Provider.value(value: storiesRepo),
         Provider.value(value: musicRepo),
         Provider.value(value: categoriesRepo),
+        Provider.value(value: bannersRepo),
+        Provider.value(value: historyRepo),
         Provider.value(value: commentsRepo),
         Provider.value(value: audioRepo),
         Provider.value(value: offlineStore),

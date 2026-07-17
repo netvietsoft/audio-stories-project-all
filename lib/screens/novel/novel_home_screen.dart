@@ -466,7 +466,8 @@ class _NovelHomeScreenState extends State<NovelHomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text('${(progress * 100).round()}% · $ch / $total chapters', style: AppType.meta(size: 11, color: pal.muted)),
+                    // total=0 (entry hydrate từ history remote-only) → giấu %/tổng chương.
+                    Text(total > 0 ? '${(progress * 100).round()}% · $ch / $total chapters' : 'Chapter $ch', style: AppType.meta(size: 11, color: pal.muted)),
                   ],
                 ),
               ),

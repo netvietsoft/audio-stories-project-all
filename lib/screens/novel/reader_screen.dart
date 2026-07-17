@@ -13,13 +13,16 @@ import '../../api/api_exception.dart';
 import '../../data/comments/paragraph_anchor.dart';
 import '../../data/reader/reader_store.dart';
 import '../../data/reader/reader_models.dart';
+import '../../data/reading_history/reading_history_store.dart';
 import '../../data/repositories/audio_repository.dart';
 import '../../data/repositories/comments_repository.dart';
+import '../../data/repositories/history_repository.dart';
 import '../../data/repositories/stories_repository.dart';
 import '../../data/share_links.dart';
 import '../../l10n/l10n_ext.dart';
 import '../../models/models.dart';
 import '../../state/app_state.dart';
+import '../../state/auth_notifier.dart';
 import '../../theme/app_dimens.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_type.dart';
@@ -243,6 +246,22 @@ class _ReaderScreenState extends State<ReaderScreen> {
           chapterTitle: ch.title,
           total: b.chapters,
         );
+    // Lịch sử đọc local-first (nguồn màn "Đang đọc" + Continue Reading More).
+    context.read<ReadingHistoryStore>().record(ReadingHistoryEntry(
+          bookId: b.id, storyUuid: b.uuid, title: b.title, cover: b.cover,
+          synopsis: b.synopsis, genre: b.genre, reads: b.reads,
+          totalChapters: b.chapters, chapter: ch.n,
+          savedAt: DateTime.now().millisecondsSinceEpoch,
+        ));
+    // Sync ngầm lên BE — CHỈ khi đã đăng nhập + đủ định danh; lỗi nuốt.
+    final auth = context.read<AuthNotifier>();
+    final uuid = b.uuid;
+    if (auth.user != null && uuid != null && uuid.isNotEmpty && ch.id.isNotEmpty) {
+      final history = context.read<HistoryRepository>();
+      unawaited(() async {
+        try { await history.sync(storyUuid: uuid, chapterId: ch.id); } catch (_) {/* offline/lỗi → thôi */}
+      }());
+    }
   }
 
   /// Title dùng cho AppState.play — PHẢI khớp với _playingThis ở build() để xác định

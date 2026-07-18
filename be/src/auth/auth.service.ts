@@ -88,13 +88,16 @@ export class AuthService {
     if (!payload || typeof payload.sub !== 'string' || !payload.sub) {
       throw new UnauthorizedException('Invalid Google token');
     }
+    if (payload.email_verified !== true) {
+      throw new UnauthorizedException('Google email is not verified');
+    }
     return {
       provider: 'google',
       provider_user_id: payload.sub,
       email: (payload.email as string | undefined) ?? null,
       name: (payload.name as string | undefined) ?? null,
       avatar_url: (payload.picture as string | undefined) ?? null,
-      raw: payload, // giữ email_verified cho check trong upsertGoogleUser
+      raw: payload, // payload gốc (đã gate email_verified ở trên)
     };
   }
 

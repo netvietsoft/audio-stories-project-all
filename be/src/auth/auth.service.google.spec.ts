@@ -64,6 +64,13 @@ describe('AuthService.verifyGoogleIdToken', () => {
     await expect(svc.verifyGoogleIdToken('tok')).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
+  it('email_verified !== true → UnauthorizedException', async () => {
+    const svc = new TestAuthService(async () => ({
+      getPayload: () => ({ ...payload, email_verified: false }),
+    }));
+    await expect(svc.verifyGoogleIdToken('tok')).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
   it('GOOGLE_CLIENT_ID thiếu/placeholder → ServiceUnavailableException', async () => {
     delete process.env.GOOGLE_CLIENT_ID;
     const svc = new TestAuthService(async () => ({ getPayload: () => payload }));

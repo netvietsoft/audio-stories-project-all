@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../api/api_env.dart';
 import '../api/api_exception.dart';
+import '../api/google_auth.dart';
 import '../data/repositories/auth_repository.dart';
 import '../models/models.dart';
 
@@ -10,8 +11,9 @@ enum AuthStatus { unknown, authenticated, unauthenticated }
 /// State xác thực toàn cục. Orchestrate login/verify/logout + giữ [user] hiện tại.
 /// Token do [AuthRepository] lưu (secure storage) + gắn vào ApiClient.
 class AuthNotifier extends ChangeNotifier {
-  AuthNotifier(this._repo);
+  AuthNotifier(this._repo, {GoogleAuth? google}) : _google = google ?? GoogleAuth();
   final AuthRepository _repo;
+  final GoogleAuth _google;
 
   AuthStatus status = AuthStatus.unknown;
   AppUser? user;
@@ -36,6 +38,30 @@ class AuthNotifier extends ChangeNotifier {
   Future<bool> login(String email, String password) => _run(() => _repo.login(email, password));
 
   Future<bool> verifyCode(String email, String code) => _run(() => _repo.verifyCode(email, code));
+
+  /// Đăng nhập Google. User hủy popup → trả false NHƯNG không set [error]
+  /// (UI thoát im lặng, không snackbar).
+  Future<bool> loginWithGoogle() async {
+    busy = true;
+    error = null;
+    notifyListeners();
+    try {
+      final idToken = await _google.idToken();
+      if (idToken == null) return false; // user hủy
+      user = await _repo.loginGoogle(idToken);
+      status = AuthStatus.authenticated;
+      return true;
+    } on ApiException catch (e) {
+      error = e.message;
+      return false;
+    } catch (e) {
+      error = 'Đã có lỗi xảy ra';
+      return false;
+    } finally {
+      busy = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> logout() async {
     await _repo.logout();

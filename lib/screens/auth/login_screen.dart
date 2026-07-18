@@ -43,6 +43,20 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _googleSignIn() async {
+    FocusScope.of(context).unfocus();
+    final auth = context.read<AuthNotifier>();
+    final ok = await auth.loginWithGoogle();
+    if (!mounted) return;
+    if (ok) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final pal = context.pal;
@@ -94,6 +108,29 @@ class _LoginScreenState extends State<LoginScreen> {
               child: auth.busy
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : Text('Đăng nhập', style: AppType.btn(color: Colors.white)),
+            ),
+          ),
+          const SizedBox(height: Gap.lg),
+          Row(children: [
+            Expanded(child: Divider(color: pal.line)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Gap.md),
+              child: Text('hoặc', style: AppType.meta(size: 12, color: pal.muted)),
+            ),
+            Expanded(child: Divider(color: pal.line)),
+          ]),
+          const SizedBox(height: Gap.lg),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: BorderSide(color: pal.line),
+                shape: RoundedRectangleBorder(borderRadius: rounded(12)),
+              ),
+              onPressed: auth.busy ? null : _googleSignIn,
+              icon: Text('G', style: AppType.hero(size: 18, color: AppPalette.terracotta)),
+              label: Text('Tiếp tục với Google', style: AppType.btn(color: pal.ink)),
             ),
           ),
         ],

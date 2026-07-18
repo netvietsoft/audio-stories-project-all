@@ -29,6 +29,7 @@ import { ResetDto } from './dto/reset.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { CheckPremiumDto } from './dto/check-premium.dto';
 import { SetUserPulseDto } from './dto/set-user-credits.dto';
+import { GoogleMobileDto } from './dto/google-mobile.dto';
 import { GoogleUser, JwtPayload } from './types';
 import {
   parseOAuthState,
@@ -88,6 +89,20 @@ export class AuthController {
       const errorRedirectUri = getDefaultRedirectUri().replace('/api/auth/google-redirect', '/auth-error');
       return res.redirect(`${errorRedirectUri}?error=${encodeURIComponent(errorMessage)}`);
     }
+  }
+
+  /** Đăng nhập Google từ mobile app: đổi idToken lấy phiên (response y hệt /auth/login). */
+  @Post('google/mobile')
+  @HttpCode(200)
+  async googleMobile(@Body() dto: GoogleMobileDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const ip = (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress;
+    const clientIp = ip ? ip.split(',')[0].trim() : undefined;
+
+    const googleData = await this.auth.verifyGoogleIdToken(dto.idToken);
+    const user = await this.auth.upsertGoogleUser(googleData, clientIp);
+    const { access, refresh } = await this.auth.issueTokens(user.id);
+    this.setRefreshCookie(res, refresh);
+    return { ok: true, access_token: access };
   }
 
   @Get('me')

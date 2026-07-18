@@ -1,11 +1,13 @@
 import {
   Injectable,
   UnauthorizedException,
+  ServiceUnavailableException,
   ForbiddenException,
   BadRequestException,
   Logger,
 } from '@nestjs/common';
 import * as argon2 from 'argon2';
+import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '@/prisma/prisma.service';
 import { User } from '@prisma/client';
 import {
@@ -57,6 +59,43 @@ export class AuthService {
 
   async upsertGoogleUser(google: GoogleUserData, ip?: string): Promise<User> {
     return this.oauthService.upsertGoogleUser(google, ip);
+  }
+
+  private googleVerifier?: OAuth2Client;
+
+  /** Seam cho unit test: test subclass override trả fake verifier. */
+  protected getGoogleVerifier(): OAuth2Client {
+    this.googleVerifier ??= new OAuth2Client();
+    return this.googleVerifier;
+  }
+
+  /**
+   * Verify Google idToken (mobile) → GoogleUserData cho upsertGoogleUser.
+   * audience = GOOGLE_CLIENT_ID (Web client — app gửi serverClientId này).
+   */
+  async verifyGoogleIdToken(idToken: string): Promise<GoogleUserData> {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId || clientId === 'placeholder') {
+      throw new ServiceUnavailableException('Google login is not configured');
+    }
+    let payload: Record<string, unknown> | undefined;
+    try {
+      const ticket = await this.getGoogleVerifier().verifyIdToken({ idToken, audience: clientId });
+      payload = ticket.getPayload() as Record<string, unknown> | undefined;
+    } catch {
+      throw new UnauthorizedException('Invalid Google token');
+    }
+    if (!payload || typeof payload.sub !== 'string' || !payload.sub) {
+      throw new UnauthorizedException('Invalid Google token');
+    }
+    return {
+      provider: 'google',
+      provider_user_id: payload.sub,
+      email: (payload.email as string | undefined) ?? null,
+      name: (payload.name as string | undefined) ?? null,
+      avatar_url: (payload.picture as string | undefined) ?? null,
+      raw: payload, // giữ email_verified cho check trong upsertGoogleUser
+    };
   }
 
   async buildUserClaims(userId: string) {

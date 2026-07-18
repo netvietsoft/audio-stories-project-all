@@ -15,5 +15,5 @@ Màn đăng nhập, dùng `AuthNotifier` (state) + `AuthRepository` (API). Tài 
 - Vào từ **Profile** → nút "Đăng nhập" (khi chưa đăng nhập) / "Đăng xuất".
 
 ## Còn lại
-- Đăng ký + verify code UI, quên/đổi mật khẩu UI, đăng nhập Google (BE có `/auth/google`).
+- Đăng ký + verify code UI, quên/đổi mật khẩu UI.
 - Guard route theo trạng thái đăng nhập (hiện các màn vẫn mở; entitlement do BE kiểm).

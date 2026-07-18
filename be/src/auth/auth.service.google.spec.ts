@@ -49,7 +49,7 @@ describe('AuthService.verifyGoogleIdToken', () => {
       avatar_url: 'https://p.example/a.jpg',
       raw: payload,
     });
-    expect((out.raw as any).email_verified).toBe(true); // upsertGoogleUser cần cờ này
+    expect((out.raw as any).email_verified).toBe(true); // gate nằm ngay trong verifyGoogleIdToken
   });
 
   it('verifier throw (token sai/hết hạn) → UnauthorizedException', async () => {

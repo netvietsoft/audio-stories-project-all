@@ -11,6 +11,7 @@
 | `api_client.dart` | `ApiClient` (Dio): base URL, bóc envelope `{data,meta}`, gắn Bearer token, **tự refresh 401** (`refreshCallback`), `postRaw` (đọc Set-Cookie cho auth), map lỗi → `ApiException` + `unwrapList`. |
 | `api_exception.dart` | `ApiException(code, message, status?)`. |
 | `token_store.dart` | `TokenStore` — lưu access/refresh token trong `flutter_secure_storage` (Keychain/Keystore). |
+| `google_auth.dart` | `GoogleAuth` — bọc `google_sign_in` v7 (`serverClientId` = `ApiEnv.googleServerClientId`), trả idToken; user hủy → null. |
 
 ## 🔧 Khi BE chuyển lên VPS — làm đúng 1 trong các cách sau
 1. **Sửa code** `api_env.dart`: điền `prodBaseUrl = 'https://api.tenmien.vn'` và đặt

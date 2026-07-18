@@ -16,6 +16,7 @@ class ApiEndpoints {
   static const authForgotPassword = '/auth/forgot-password';
   static const authResetPassword = '/auth/reset-password';
   static const authChangePassword = '/auth/change-password';
+  static const authGoogleMobile = '/auth/google/mobile';
 
   // ── Stories / Chapters ──
   static const storiesExplore = '/stories/explore';

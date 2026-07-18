@@ -31,6 +31,11 @@ class ApiEnv {
   /// Domain WEB đọc truyện (share link chương). Đổi 1 chỗ này khi web đổi domain.
   static const String webBaseUrl = 'https://dreamtap.me';
 
+  /// Web client ID Google OAuth (public, không phải secret) — audience BE verify.
+  /// PHẢI trùng GOOGLE_CLIENT_ID trong .env BE prod.
+  static const String googleServerClientId =
+      '209816344286-s7vfrlvbktgieeqbeda7do4b5i25g0jp.apps.googleusercontent.com';
+
   /// Môi trường mặc định khi build (nếu không truyền --dart-define=API_ENV).
   static const ApiEnvironment defaultEnvironment = ApiEnvironment.dev;
 

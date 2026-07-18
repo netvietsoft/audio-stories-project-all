@@ -24,6 +24,14 @@ class AuthRepository {
     return me();
   }
 
+  /// Đăng nhập Google (mobile): đổi idToken từ google_sign_in lấy phiên như login thường.
+  Future<AppUser> loginGoogle(String idToken) async {
+    final res = await _api.postRaw(ApiEndpoints.authGoogleMobile, body: {'idToken': idToken});
+    _throwIfError(res);
+    await _persistFrom(res);
+    return me();
+  }
+
   Future<AppUser> verifyCode(String email, String code) async {
     final res = await _api.postRaw(ApiEndpoints.authVerifyCode, body: {'email': email, 'code': code});
     _throwIfError(res);
